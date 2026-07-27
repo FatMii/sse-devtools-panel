@@ -10,6 +10,8 @@ Chrome DevTools 面板，用于实时查看 `text/event-stream`（SSE）响应�
 - 实时展示 Events / Raw
 - Events 列表与 JSON 抽屉支持搜索过滤（含正则）
 - `data` 为 JSON 时以可折叠树展示
+- Events 表列宽可拖拽调整
+- 导出当前流 JSON / CSV（CSV 遵循 Events 搜索过滤；含 UTF-8 BOM）
 - 一键复制 Raw / 单条 Data
 - 国际化：中文 / English（选项页可选手动语言，或跟随浏览器；扩展商店名称仍跟随浏览器）
 

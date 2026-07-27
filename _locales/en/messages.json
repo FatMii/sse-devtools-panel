@@ -107,6 +107,15 @@
   "exportJsonTitle": {
     "message": "Download the selected stream as JSON"
   },
+  "exportCsv": {
+    "message": "Export CSV"
+  },
+  "exportCsvTitle": {
+    "message": "Download visible events of the selected stream as CSV (respects Events search)"
+  },
+  "exportCsvEmpty": {
+    "message": "No events to export (check the Events search filter)."
+  },
   "importJson": {
     "message": "Import JSON"
   },

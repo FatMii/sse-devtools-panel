@@ -206,3 +206,62 @@ export function cloneStreamRecord(record: StreamRecord): StreamRecord {
     events: record.events.map((ev) => ({ ...ev })),
   };
 }
+
+/** Escape a CSV cell (RFC 4180-ish). */
+export function escapeCsvCell(value: string | number | boolean | null | undefined): string {
+  if (value === null || value === undefined) return "";
+  const str = String(value);
+  if (/[",\r\n]/.test(str)) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+function formatTimestampIso(ts: number): string {
+  return new Date(ts).toISOString();
+}
+
+/**
+ * Build a CSV snapshot of a stream.
+ * Includes UTF-8 BOM for Excel. Optional `events` overrides which rows to export
+ * (e.g. current Events search filter); defaults to all events on the record.
+ */
+export function buildStreamExportCsv(record: StreamRecord, events?: SseEvent[]): string {
+  const rows = events ?? record.events;
+  const headers = [
+    "RequestId",
+    "URL",
+    "Method",
+    "Status",
+    "Transport",
+    "StreamKind",
+    "StreamStatus",
+    "EventIndex",
+    "EventId",
+    "Event",
+    "Data",
+    "Retry",
+    "ReceivedAt",
+  ];
+
+  const lines = rows.map((ev) =>
+    [
+      escapeCsvCell(record.requestId),
+      escapeCsvCell(record.url),
+      escapeCsvCell(record.method),
+      escapeCsvCell(record.status),
+      escapeCsvCell(record.transport),
+      escapeCsvCell(record.streamKind),
+      escapeCsvCell(record.streamStatus),
+      escapeCsvCell(ev.index),
+      escapeCsvCell(ev.id),
+      escapeCsvCell(ev.event),
+      escapeCsvCell(ev.data),
+      escapeCsvCell(ev.retry),
+      escapeCsvCell(formatTimestampIso(ev.receivedAt)),
+    ].join(","),
+  );
+
+  // BOM helps Excel open UTF-8 correctly
+  return `\uFEFF${[headers.join(","), ...lines].join("\r\n")}\r\n`;
+}

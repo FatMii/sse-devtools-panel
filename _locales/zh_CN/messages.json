@@ -107,6 +107,15 @@
   "exportJsonTitle": {
     "message": "将当前选中的数据流下载为 JSON 文件"
   },
+  "exportCsv": {
+    "message": "导出 CSV"
+  },
+  "exportCsvTitle": {
+    "message": "将当前选中数据流中可见事件导出为 CSV（遵循 Events 搜索过滤）"
+  },
+  "exportCsvEmpty": {
+    "message": "没有可导出的事件（请检查 Events 搜索过滤条件）。"
+  },
   "importJson": {
     "message": "导入 JSON"
   },

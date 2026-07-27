@@ -28,6 +28,14 @@
           </button>
           <button
             type="button"
+            id="btn-export-csv"
+            data-i18n="exportCsv"
+            data-i18n-title="exportCsvTitle"
+          >
+            Export CSV
+          </button>
+          <button
+            type="button"
             id="btn-save-archive"
             data-i18n="saveArchive"
             data-i18n-title="saveArchiveTitle"
@@ -112,13 +120,25 @@
                   No stream selected
                 </div>
                 <div class="events-table-wrap" id="events-table-wrap" hidden>
-                  <table class="events-table">
+                  <table class="events-table" id="events-table">
                     <thead>
                       <tr>
-                        <th class="col-index">#</th>
-                        <th class="col-time" data-i18n="colTime">Time</th>
-                        <th class="col-event" data-i18n="colEvent">Event</th>
-                        <th class="col-data" data-i18n="colData">Data</th>
+                        <th class="col-index">
+                          #
+                          <span class="col-resizer" data-col="index" aria-hidden="true"></span>
+                        </th>
+                        <th class="col-time">
+                          <span data-i18n="colTime">Time</span>
+                          <span class="col-resizer" data-col="time" aria-hidden="true"></span>
+                        </th>
+                        <th class="col-event">
+                          <span data-i18n="colEvent">Event</span>
+                          <span class="col-resizer" data-col="event" aria-hidden="true"></span>
+                        </th>
+                        <th class="col-data">
+                          <span data-i18n="colData">Data</span>
+                          <span class="col-resizer" data-col="data" aria-hidden="true"></span>
+                        </th>
                       </tr>
                     </thead>
                     <tbody id="events-tbody"></tbody>

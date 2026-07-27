@@ -9,6 +9,8 @@
     "build": "tsc --noEmit && node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
     "test:parser": "node scripts/test-parser.mjs",
+    "test:export": "node scripts/test-export.mjs",
+    "test-only": "pnpm test:parser && pnpm test:export",
     "demo": "node demo/server.mjs"
   },
   "devDependencies": {

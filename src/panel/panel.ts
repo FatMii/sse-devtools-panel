@@ -22,12 +22,14 @@ import {
   type StreamArchiveEntry,
 } from "../shared/stream-archive-db";
 import {
+  buildStreamExportCsv,
   buildStreamExportPayload,
   createRequestId,
   parseStreamExportJson,
   streamRecordFromExport,
 } from "../shared/stream-snapshot";
 import { applyTreeSearch, createJsonTree, tryParseJsonValue } from "./json-tree";
+import { initEventsColumnResizers } from "./column-resizer";
 
 const PANEL_PORT = "sse-devtools-panel";
 const DATA_PREVIEW_LEN = 80;
@@ -79,6 +81,7 @@ const elRaw = document.getElementById("view-raw") as HTMLPreElement;
 const elStreamsUrlFilter = document.getElementById("streams-url-filter") as HTMLInputElement;
 const elStreamsTransportFilter = document.getElementById("streams-transport-filter") as HTMLSelectElement;
 const elExportJson = document.getElementById("btn-export-json") as HTMLButtonElement;
+const elExportCsv = document.getElementById("btn-export-csv") as HTMLButtonElement;
 const elImportJson = document.getElementById("btn-import-json") as HTMLButtonElement;
 const elImportFile = document.getElementById("import-file") as HTMLInputElement;
 const elSaveArchive = document.getElementById("btn-save-archive") as HTMLButtonElement;
@@ -324,10 +327,10 @@ function sanitizeFilenamePart(value: string): string {
   return value.replace(/[<>:"/\\|?*\u0000-\u001f]/g, "_").slice(0, 80) || "stream";
 }
 
-function buildExportFilename(record: StreamRecord): string {
+function buildExportFilename(record: StreamRecord, ext: "json" | "csv"): string {
   const path = shortPath(record.url).replace(/^\//, "") || "stream";
   const stamp = new Date(record.startedAt).toISOString().replace(/[:.]/g, "-");
-  return `sse-stream-${sanitizeFilenamePart(path)}-${stamp}.json`;
+  return `sse-stream-${sanitizeFilenamePart(path)}-${stamp}.${ext}`;
 }
 
 function downloadTextFile(filename: string, text: string, mime: string): void {
@@ -346,12 +349,34 @@ function downloadTextFile(filename: string, text: string, mime: string): void {
 /** Portable snapshot of the selected stream for sharing / issue repro. */
 function exportSelectedStreamJson(): void {
   const record = selectedId ? streams.get(selectedId) : undefined;
-  if (!record) return;
+  if (!record) {
+    window.alert(t("needSelectedStream"));
+    return;
+  }
   const payload = buildStreamExportPayload(record);
   downloadTextFile(
-    buildExportFilename(record),
+    buildExportFilename(record, "json"),
     `${JSON.stringify(payload, null, 2)}\n`,
     "application/json;charset=utf-8",
+  );
+}
+
+/** Spreadsheet-friendly export; respects current Events search filter. */
+function exportSelectedStreamCsv(): void {
+  const record = selectedId ? streams.get(selectedId) : undefined;
+  if (!record) {
+    window.alert(t("needSelectedStream"));
+    return;
+  }
+  const visible = getBrowsableEvents(record);
+  if (visible.length === 0) {
+    window.alert(t("exportCsvEmpty"));
+    return;
+  }
+  downloadTextFile(
+    buildExportFilename(record, "csv"),
+    buildStreamExportCsv(record, visible),
+    "text/csv;charset=utf-8",
   );
 }
 
@@ -973,6 +998,10 @@ function setupActions(): void {
     exportSelectedStreamJson();
   });
 
+  elExportCsv.addEventListener("click", () => {
+    exportSelectedStreamCsv();
+  });
+
   elImportJson.addEventListener("click", () => {
     elImportFile.value = "";
     elImportFile.click();
@@ -1123,6 +1152,7 @@ function setupResizer(): void {
 setupTabs();
 setupActions();
 setupResizer();
+initEventsColumnResizers(document.getElementById("events-table") as HTMLTableElement);
 
 function refreshLocaleUi(): void {
   document.documentElement.lang = uiLanguage();
