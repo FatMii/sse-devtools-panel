@@ -119,6 +119,9 @@ function handleRelay(msg: RelayMessage): void {
     case "stream-error":
       onError(msg.payload);
       break;
+    case "stream-discard":
+      onDiscard(msg.payload.requestId);
+      break;
   }
 }
 
@@ -132,6 +135,28 @@ function createParser(kind: StreamKind): StreamParser {
 }
 
 function onStart(payload: StreamStartPayload): void {
+  const existing = streams.get(payload.requestId);
+  if (existing) {
+    // Merge header metadata into a provisional row without wiping chunks already received.
+    existing.url = payload.url;
+    existing.method = payload.method;
+    existing.status = payload.status ?? existing.status;
+    existing.contentType = payload.contentType ?? existing.contentType;
+    existing.transport = payload.transport;
+    existing.streamKind = payload.streamKind;
+    existing.startedAt = payload.startedAt;
+    if (existing.events.length === 0 && existing.raw === "") {
+      parsers.set(payload.requestId, createParser(payload.streamKind));
+    } else if (!parsers.has(payload.requestId)) {
+      parsers.set(payload.requestId, createParser(payload.streamKind));
+    }
+    renderList();
+    if (selectedId === payload.requestId) {
+      renderDetail(true);
+    }
+    return;
+  }
+
   const record: StreamRecord = {
     requestId: payload.requestId,
     url: payload.url,
@@ -158,6 +183,19 @@ function onStart(payload: StreamStartPayload): void {
     selectedEventIndex = null;
     renderDetail();
   }
+}
+
+function onDiscard(requestId: string): void {
+  streams.delete(requestId);
+  parsers.delete(requestId);
+  if (selectedId === requestId) {
+    selectedId = null;
+    selectedEventIndex = null;
+    const next = Array.from(streams.keys())[0] ?? null;
+    selectedId = next;
+  }
+  renderList();
+  renderDetail();
 }
 
 function onChunk(payload: StreamChunkPayload): void {

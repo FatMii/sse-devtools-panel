@@ -26,6 +26,7 @@ type PostStart = (p: StreamStartPayload) => void;
 type PostChunk = (p: StreamChunkPayload) => void;
 type PostEnd = (p: StreamEndPayload) => void;
 type PostError = (p: StreamErrorPayload) => void;
+type PostDiscard = (requestId: string) => void;
 
 function install(): void {
   let seq = 0;
@@ -43,8 +44,10 @@ function install(): void {
     post({ source: MESSAGE_SOURCE, type: "stream-end", payload });
   const postError: PostError = (payload) =>
     post({ source: MESSAGE_SOURCE, type: "stream-error", payload });
+  const postDiscard: PostDiscard = (requestId) =>
+    post({ source: MESSAGE_SOURCE, type: "stream-discard", payload: { requestId } });
 
-  patchFetch(nextId, postStart, postChunk, postEnd, postError);
+  patchFetch(nextId, postStart, postChunk, postEnd, postError, postDiscard);
   patchEventSource(nextId, postStart, postChunk, postEnd, postError);
   patchXhr(nextId, postStart, postChunk, postEnd, postError);
 }
@@ -80,42 +83,178 @@ function resolveMethod(input: RequestInfo | URL, init?: RequestInit): string {
   return "GET";
 }
 
-async function readStreamBody(
-  body: ReadableStream<Uint8Array> | null,
-  requestId: string,
-  postChunk: PostChunk,
-  postEnd: PostEnd,
-  postError: PostError,
+async function pumpReadableStream(
+  body: ReadableStream<Uint8Array>,
+  sink: {
+    onBytes: (chunk: Uint8Array) => void;
+    onComplete: () => void;
+    onError: (message: string) => void;
+  },
 ): Promise<void> {
-  if (!body) {
-    postEnd({ requestId, endedAt: Date.now() });
-    return;
-  }
-
   const reader = body.getReader();
-  const decoder = new TextDecoder();
-
   try {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      const text = decoder.decode(value, { stream: true });
-      if (text) {
-        postChunk({ requestId, text });
+      if (value && value.byteLength > 0) {
+        sink.onBytes(value);
       }
     }
-    const tail = decoder.decode();
-    if (tail) {
-      postChunk({ requestId, text: tail });
-    }
-    postEnd({ requestId, endedAt: Date.now() });
+    sink.onComplete();
   } catch (err) {
-    postError({
-      requestId,
-      message: err instanceof Error ? err.message : String(err),
-      endedAt: Date.now(),
-    });
+    sink.onError(err instanceof Error ? err.message : String(err));
   }
+}
+
+function createFetchTextSink(
+  requestId: string,
+  postChunk: PostChunk,
+  postEnd: PostEnd,
+  postError: PostError,
+): {
+  onBytes: (chunk: Uint8Array) => void;
+  onComplete: () => void;
+  onError: (message: string) => void;
+} {
+  const decoder = new TextDecoder();
+  let closed = false;
+
+  const flushText = (chunk: Uint8Array | undefined, stream: boolean): void => {
+    const text = chunk ? decoder.decode(chunk, { stream }) : decoder.decode();
+    if (text) {
+      postChunk({ requestId, text });
+    }
+  };
+
+  return {
+    onBytes: (chunk) => {
+      if (closed) return;
+      flushText(chunk, true);
+    },
+    onComplete: () => {
+      if (closed) return;
+      closed = true;
+      flushText(undefined, false);
+      postEnd({ requestId, endedAt: Date.now() });
+    },
+    onError: (message) => {
+      if (closed) return;
+      closed = true;
+      flushText(undefined, false);
+      postError({ requestId, message, endedAt: Date.now() });
+    },
+  };
+}
+
+/**
+ * Observe bytes as the page consumes the body (instance-level reader wrap only).
+ * Avoids tee()/new Response(), which can disturb some app stream consumers.
+ */
+function observeStreamReads(
+  stream: ReadableStream<Uint8Array>,
+  sink: {
+    onBytes: (chunk: Uint8Array) => void;
+    onComplete: () => void;
+    onError: (message: string) => void;
+  },
+): void {
+  const originalGetReader = stream.getReader.bind(stream);
+
+  const wrapReader = <R extends ReadableStreamDefaultReader<Uint8Array> | ReadableStreamBYOBReader>(
+    reader: R,
+  ): R => {
+    const originalRead = reader.read.bind(reader) as ReadableStreamDefaultReader<Uint8Array>["read"];
+    const originalCancel = reader.cancel.bind(reader);
+
+    (reader as ReadableStreamDefaultReader<Uint8Array>).read = (async (
+      ...readArgs: Parameters<ReadableStreamDefaultReader<Uint8Array>["read"]>
+    ) => {
+      try {
+        const result = await originalRead(...readArgs);
+        if (result.done) {
+          sink.onComplete();
+        } else if ("value" in result && result.value) {
+          const value = result.value as unknown;
+          if (value instanceof Uint8Array) {
+            sink.onBytes(value);
+          } else if (ArrayBuffer.isView(value)) {
+            const view = value as ArrayBufferView;
+            sink.onBytes(new Uint8Array(view.buffer, view.byteOffset, view.byteLength));
+          }
+        }
+        return result;
+      } catch (err) {
+        sink.onError(err instanceof Error ? err.message : String(err));
+        throw err;
+      }
+    }) as ReadableStreamDefaultReader<Uint8Array>["read"];
+
+    reader.cancel = (async (...cancelArgs: Parameters<ReadableStreamDefaultReader<Uint8Array>["cancel"]>) => {
+      sink.onComplete();
+      return originalCancel(...cancelArgs);
+    }) as ReadableStreamDefaultReader<Uint8Array>["cancel"];
+
+    return reader;
+  };
+
+  Object.defineProperty(stream, "getReader", {
+    configurable: true,
+    writable: true,
+    value: (...args: Parameters<ReadableStream<Uint8Array>["getReader"]>) => {
+      const reader = originalGetReader(...(args as []));
+      return wrapReader(reader as ReadableStreamDefaultReader<Uint8Array>);
+    },
+  });
+}
+
+/**
+ * Capture fetch body bytes.
+ * Prefer clone()+pump so we do not depend on the page starting to read.
+ * Fall back to instance-level getReader observation on the page body.
+ */
+function captureFetchResponseBody(
+  response: Response,
+  sink: {
+    onBytes: (chunk: Uint8Array) => void;
+    onComplete: () => void;
+    onError: (message: string) => void;
+  },
+): Response {
+  if (!response.body) {
+    sink.onComplete();
+    return response;
+  }
+
+  try {
+    const cloned = response.clone();
+    if (cloned.body) {
+      void pumpReadableStream(cloned.body, sink);
+      return response;
+    }
+  } catch {
+    // fall through to page-read observation
+  }
+
+  observeStreamReads(response.body, sink);
+
+  try {
+    const originalClone = response.clone.bind(response);
+    Object.defineProperty(response, "clone", {
+      configurable: true,
+      writable: true,
+      value: () => {
+        const cloned = originalClone();
+        if (cloned.body) {
+          observeStreamReads(cloned.body, sink);
+        }
+        return cloned;
+      },
+    });
+  } catch {
+    // ignore
+  }
+
+  return response;
 }
 
 function patchFetch(
@@ -124,33 +263,89 @@ function patchFetch(
   postChunk: PostChunk,
   postEnd: PostEnd,
   postError: PostError,
+  postDiscard: PostDiscard,
 ): void {
   const originalFetch = window.fetch.bind(window);
+  /** Show a provisional row if headers are slow (common for long SSE). */
+  const PROVISIONAL_MS = 40;
 
   window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    const response = await originalFetch(input, init);
-    const contentType = response.headers.get("content-type");
-    const streamKind = detectStreamKind(contentType);
-    if (!streamKind) {
-      return response;
+    const requestId = nextId();
+    const url = resolveUrl(input);
+    const method = resolveMethod(input, init);
+    const startedAt = Date.now();
+    let announced = false;
+
+    const announce = (extra: {
+      status?: number;
+      contentType?: string;
+      streamKind: StreamKind;
+      url?: string;
+    }): void => {
+      postStart({
+        requestId,
+        url: extra.url ?? url,
+        method,
+        status: extra.status,
+        contentType: extra.contentType,
+        transport: "fetch",
+        streamKind: extra.streamKind,
+        startedAt,
+      });
+      announced = true;
+    };
+
+    // POST chat completions are usually long-lived; announce immediately.
+    // Other methods: only announce if headers are delayed.
+    let pendingTimer: number | undefined;
+    if (method === "POST" || method === "PUT" || method === "PATCH") {
+      announce({ streamKind: "sse" });
+    } else {
+      pendingTimer = window.setTimeout(() => {
+        if (!announced) {
+          announce({ streamKind: "sse" });
+        }
+      }, PROVISIONAL_MS);
     }
 
-    const requestId = nextId();
-    postStart({
-      requestId,
-      url: resolveUrl(input),
-      method: resolveMethod(input, init),
-      status: response.status,
-      contentType: contentType ?? undefined,
-      transport: "fetch",
-      streamKind,
-      startedAt: Date.now(),
-    });
+    try {
+      const response = await originalFetch(input, init);
+      if (pendingTimer !== undefined) {
+        window.clearTimeout(pendingTimer);
+      }
 
-    const cloned = response.clone();
-    void readStreamBody(cloned.body, requestId, postChunk, postEnd, postError);
+      const contentType = response.headers.get("content-type");
+      const streamKind = detectStreamKind(contentType);
+      if (!streamKind) {
+        if (announced) {
+          postDiscard(requestId);
+        }
+        return response;
+      }
 
-    return response;
+      // Refresh metadata once headers are known (panel merges in-place).
+      announce({
+        status: response.status,
+        contentType: contentType ?? undefined,
+        streamKind,
+        url: response.url || url,
+      });
+
+      const sink = createFetchTextSink(requestId, postChunk, postEnd, postError);
+      return captureFetchResponseBody(response, sink);
+    } catch (err) {
+      if (pendingTimer !== undefined) {
+        window.clearTimeout(pendingTimer);
+      }
+      if (announced) {
+        postError({
+          requestId,
+          message: err instanceof Error ? err.message : String(err),
+          endedAt: Date.now(),
+        });
+      }
+      throw err;
+    }
   };
 }
 

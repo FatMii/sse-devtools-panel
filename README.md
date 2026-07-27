@@ -5,7 +5,8 @@ Chrome DevTools 面板，用于实时查看 `text/event-stream`（SSE）响应�
 ## 功能
 
 - DevTools 独立 **SSE** 面板
-- 捕获 `fetch` 与 `EventSource` 的 SSE 流
+- 捕获 `fetch` / `EventSource` / `XHR` 的 SSE / NDJSON 流
+- `fetch` 流优先 tee 旁路读取，跟随页面增量消费
 - 实时展示 Events / Raw
 - Events 列表与 JSON 抽屉支持搜索过滤（含正则）
 - `data` 为 JSON 时以可折叠树展示
@@ -33,7 +34,7 @@ pnpm dev
 
 ## 原理
 
-页面 MAIN world 在文档最早阶段劫持 `fetch` / `EventSource`：对 `content-type: text/event-stream` 用 `response.clone()` 旁路读取，经 content script → service worker → DevTools panel 转发。页面原有消费不受影响。
+页面 MAIN world 在文档最早阶段劫持 `fetch` / `EventSource` / `XMLHttpRequest`：对 SSE / NDJSON 响应，优先用 `body.tee()` 旁路读取（页面继续消费另一支），必要时回退到 `clone()` 或实例级 `getReader` 观察；经 content script → service worker → DevTools panel 转发。页面原有消费不受影响。
 
 ## 本地 Demo
 
