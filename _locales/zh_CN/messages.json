@@ -29,6 +29,30 @@
   "streams": {
     "message": "数据流"
   },
+  "streamsUrlFilterPlaceholder": {
+    "message": "按 URL 关键字过滤数据流"
+  },
+  "streamsUrlFilterTitle": {
+    "message": "按 URL 文本过滤左侧数据流列表"
+  },
+  "streamsTransportFilterTitle": {
+    "message": "按请求类型过滤左侧数据流列表"
+  },
+  "transportAll": {
+    "message": "全部类型"
+  },
+  "transportFetch": {
+    "message": "Fetch"
+  },
+  "transportEventSource": {
+    "message": "EventSource"
+  },
+  "transportXhr": {
+    "message": "XHR"
+  },
+  "noStreamsMatchFilter": {
+    "message": "当前过滤条件下没有匹配的数据流"
+  },
   "emptyWaitingBefore": {
     "message": "等待"
   },

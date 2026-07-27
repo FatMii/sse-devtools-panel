@@ -28,6 +28,22 @@
       <div class="main">
         <aside class="sidebar">
           <div class="sidebar-header" data-i18n="streams">Streams</div>
+          <div class="sidebar-filters">
+            <input
+              id="streams-url-filter"
+              type="search"
+              data-i18n-placeholder="streamsUrlFilterPlaceholder"
+              data-i18n-title="streamsUrlFilterTitle"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <select id="streams-transport-filter" data-i18n-title="streamsTransportFilterTitle">
+              <option value="all" data-i18n="transportAll">All Types</option>
+              <option value="fetch" data-i18n="transportFetch">Fetch</option>
+              <option value="eventsource" data-i18n="transportEventSource">EventSource</option>
+              <option value="xhr" data-i18n="transportXhr">XHR</option>
+            </select>
+          </div>
           <ul id="stream-list" class="stream-list"></ul>
           <div id="empty-hint" class="empty-hint">
             <span data-i18n="emptyWaitingBefore">Waiting for</span>

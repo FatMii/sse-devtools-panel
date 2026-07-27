@@ -4,7 +4,9 @@ import {
   type StreamChunkPayload,
   type StreamEndPayload,
   type StreamErrorPayload,
+  type StreamKind,
   type StreamStartPayload,
+  type StreamTransport,
 } from "../shared/types";
 
 const STATE_KEY = "__SSE_DEVTOOLS_INSTALLED__";
@@ -20,6 +22,11 @@ if (!window[STATE_KEY]) {
   install();
 }
 
+type PostStart = (p: StreamStartPayload) => void;
+type PostChunk = (p: StreamChunkPayload) => void;
+type PostEnd = (p: StreamEndPayload) => void;
+type PostError = (p: StreamErrorPayload) => void;
+
 function install(): void {
   let seq = 0;
   const nextId = () => `sse-${Date.now()}-${++seq}`;
@@ -28,22 +35,35 @@ function install(): void {
     window.postMessage(msg, "*");
   };
 
-  const postStart = (payload: StreamStartPayload) =>
+  const postStart: PostStart = (payload) =>
     post({ source: MESSAGE_SOURCE, type: "stream-start", payload });
-  const postChunk = (payload: StreamChunkPayload) =>
+  const postChunk: PostChunk = (payload) =>
     post({ source: MESSAGE_SOURCE, type: "stream-chunk", payload });
-  const postEnd = (payload: StreamEndPayload) =>
+  const postEnd: PostEnd = (payload) =>
     post({ source: MESSAGE_SOURCE, type: "stream-end", payload });
-  const postError = (payload: StreamErrorPayload) =>
+  const postError: PostError = (payload) =>
     post({ source: MESSAGE_SOURCE, type: "stream-error", payload });
 
   patchFetch(nextId, postStart, postChunk, postEnd, postError);
   patchEventSource(nextId, postStart, postChunk, postEnd, postError);
+  patchXhr(nextId, postStart, postChunk, postEnd, postError);
 }
 
-function isEventStreamContentType(contentType: string | null | undefined): boolean {
-  if (!contentType) return false;
-  return contentType.toLowerCase().includes("text/event-stream");
+/** Decide whether a response Content-Type is a stream we care about. */
+function detectStreamKind(contentType: string | null | undefined): StreamKind | null {
+  if (!contentType) return null;
+  const ct = contentType.toLowerCase();
+  if (ct.includes("text/event-stream")) return "sse";
+  if (
+    ct.includes("application/x-ndjson") ||
+    ct.includes("application/ndjson") ||
+    ct.includes("application/jsonlines") ||
+    ct.includes("application/json-lines") ||
+    ct.includes("application/jsonl")
+  ) {
+    return "ndjson";
+  }
+  return null;
 }
 
 function resolveUrl(input: RequestInfo | URL): string {
@@ -63,9 +83,9 @@ function resolveMethod(input: RequestInfo | URL, init?: RequestInit): string {
 async function readStreamBody(
   body: ReadableStream<Uint8Array> | null,
   requestId: string,
-  postChunk: (p: StreamChunkPayload) => void,
-  postEnd: (p: StreamEndPayload) => void,
-  postError: (p: StreamErrorPayload) => void,
+  postChunk: PostChunk,
+  postEnd: PostEnd,
+  postError: PostError,
 ): Promise<void> {
   if (!body) {
     postEnd({ requestId, endedAt: Date.now() });
@@ -100,17 +120,18 @@ async function readStreamBody(
 
 function patchFetch(
   nextId: () => string,
-  postStart: (p: StreamStartPayload) => void,
-  postChunk: (p: StreamChunkPayload) => void,
-  postEnd: (p: StreamEndPayload) => void,
-  postError: (p: StreamErrorPayload) => void,
+  postStart: PostStart,
+  postChunk: PostChunk,
+  postEnd: PostEnd,
+  postError: PostError,
 ): void {
   const originalFetch = window.fetch.bind(window);
 
   window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const response = await originalFetch(input, init);
-
-    if (!isEventStreamContentType(response.headers.get("content-type"))) {
+    const contentType = response.headers.get("content-type");
+    const streamKind = detectStreamKind(contentType);
+    if (!streamKind) {
       return response;
     }
 
@@ -120,7 +141,9 @@ function patchFetch(
       url: resolveUrl(input),
       method: resolveMethod(input, init),
       status: response.status,
-      contentType: response.headers.get("content-type") ?? undefined,
+      contentType: contentType ?? undefined,
+      transport: "fetch",
+      streamKind,
       startedAt: Date.now(),
     });
 
@@ -142,10 +165,10 @@ function toSseFrame(typeName: string, data: string): string {
 
 function patchEventSource(
   nextId: () => string,
-  postStart: (p: StreamStartPayload) => void,
-  postChunk: (p: StreamChunkPayload) => void,
-  postEnd: (p: StreamEndPayload) => void,
-  postError: (p: StreamErrorPayload) => void,
+  postStart: PostStart,
+  postChunk: PostChunk,
+  postEnd: PostEnd,
+  postError: PostError,
 ): void {
   const OriginalEventSource = window.EventSource;
 
@@ -164,6 +187,8 @@ function patchEventSource(
       url: href,
       method: "GET",
       contentType: "text/event-stream",
+      transport: "eventsource",
+      streamKind: "sse",
       startedAt: Date.now(),
     });
 
@@ -186,7 +211,6 @@ function patchEventSource(
 
     instance.addEventListener("message", onMessage);
 
-    // Proxy addEventListener so named SSE events are also captured once
     const trackedTypes = new Set<string>(["message"]);
     const originalAdd = instance.addEventListener.bind(instance);
     instance.addEventListener = ((
@@ -226,4 +250,143 @@ function patchEventSource(
   Object.defineProperty(PatchedEventSource, "CLOSED", { value: OriginalEventSource.CLOSED });
 
   window.EventSource = PatchedEventSource as unknown as typeof EventSource;
+}
+
+/**
+ * Capture incremental XHR text bodies for SSE / NDJSON responses.
+ * Only observes readyState progression; does not alter request/response for the page.
+ */
+function patchXhr(
+  nextId: () => string,
+  postStart: PostStart,
+  postChunk: PostChunk,
+  postEnd: PostEnd,
+  postError: PostError,
+): void {
+  const OriginalXHR = window.XMLHttpRequest;
+
+  function PatchedXHR(this: XMLHttpRequest): XMLHttpRequest {
+    const xhr = new OriginalXHR();
+    let method = "GET";
+    let url = "";
+    let requestId: string | null = null;
+    let streamKind: StreamKind | null = null;
+    let captured = false;
+    let finished = false;
+    let lastLen = 0;
+
+    const originalOpen = xhr.open.bind(xhr);
+    xhr.open = ((...args: Parameters<XMLHttpRequest["open"]>) => {
+      method = String(args[0] ?? "GET").toUpperCase();
+      url = String(args[1] ?? "");
+      return originalOpen(...args);
+    }) as XMLHttpRequest["open"];
+
+    const tryStart = (): void => {
+      if (captured || finished) return;
+      if (xhr.readyState < OriginalXHR.HEADERS_RECEIVED) return;
+
+      let contentType = "";
+      try {
+        contentType = xhr.getResponseHeader("content-type") ?? "";
+      } catch {
+        return;
+      }
+
+      const kind = detectStreamKind(contentType);
+      if (!kind) return;
+
+      captured = true;
+      streamKind = kind;
+      requestId = nextId();
+      lastLen = 0;
+
+      postStart({
+        requestId,
+        url,
+        method,
+        status: xhr.status || undefined,
+        contentType: contentType || undefined,
+        transport: "xhr" satisfies StreamTransport,
+        streamKind: kind,
+        startedAt: Date.now(),
+      });
+    };
+
+    const emitDelta = (): void => {
+      if (!captured || !requestId || finished) return;
+      // responseText is only available for default / text responseType
+      if (xhr.responseType && xhr.responseType !== "text") {
+        return;
+      }
+      try {
+        const text = xhr.responseText ?? "";
+        if (text.length > lastLen) {
+          const delta = text.slice(lastLen);
+          lastLen = text.length;
+          if (delta) {
+            postChunk({ requestId, text: delta });
+          }
+        }
+      } catch {
+        // Ignore if responseText is inaccessible mid-flight
+      }
+    };
+
+    const finishOk = (): void => {
+      if (!captured || !requestId || finished) return;
+      finished = true;
+      emitDelta();
+      postEnd({ requestId, endedAt: Date.now() });
+    };
+
+    const finishErr = (message: string): void => {
+      if (!captured || !requestId || finished) return;
+      finished = true;
+      emitDelta();
+      postError({ requestId, message, endedAt: Date.now() });
+    };
+
+    xhr.addEventListener("readystatechange", () => {
+      tryStart();
+      if (xhr.readyState === OriginalXHR.LOADING || xhr.readyState === OriginalXHR.DONE) {
+        emitDelta();
+      }
+      if (xhr.readyState === OriginalXHR.DONE && captured) {
+        if (xhr.status >= 400) {
+          finishErr(`HTTP ${xhr.status}`);
+        } else {
+          finishOk();
+        }
+      }
+    });
+
+    xhr.addEventListener("error", () => {
+      if (captured) {
+        finishErr("XMLHttpRequest network error");
+      }
+    });
+
+    xhr.addEventListener("abort", () => {
+      if (captured) {
+        finishErr("XMLHttpRequest aborted");
+      }
+    });
+
+    // Silence unused warning for streamKind in edge tooling
+    void streamKind;
+
+    return xhr;
+  }
+
+  PatchedXHR.prototype = OriginalXHR.prototype;
+  Object.defineProperties(PatchedXHR, {
+    UNSENT: { value: OriginalXHR.UNSENT },
+    OPENED: { value: OriginalXHR.OPENED },
+    HEADERS_RECEIVED: { value: OriginalXHR.HEADERS_RECEIVED },
+    LOADING: { value: OriginalXHR.LOADING },
+    DONE: { value: OriginalXHR.DONE },
+  });
+
+  window.XMLHttpRequest = PatchedXHR as unknown as typeof XMLHttpRequest;
 }

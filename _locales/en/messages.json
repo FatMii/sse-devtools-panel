@@ -29,6 +29,30 @@
   "streams": {
     "message": "Streams"
   },
+  "streamsUrlFilterPlaceholder": {
+    "message": "Filter streams by URL substring"
+  },
+  "streamsUrlFilterTitle": {
+    "message": "Filter stream list by URL text"
+  },
+  "streamsTransportFilterTitle": {
+    "message": "Filter stream list by request type"
+  },
+  "transportAll": {
+    "message": "All Types"
+  },
+  "transportFetch": {
+    "message": "Fetch"
+  },
+  "transportEventSource": {
+    "message": "EventSource"
+  },
+  "transportXhr": {
+    "message": "XHR"
+  },
+  "noStreamsMatchFilter": {
+    "message": "No streams match current filters"
+  },
   "emptyWaitingBefore": {
     "message": "Waiting for"
   },

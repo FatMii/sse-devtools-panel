@@ -3,13 +3,16 @@ import type {
   RelayMessage,
   SseEvent,
   StreamRecord,
+  StreamKind,
   StreamStartPayload,
+  StreamTransport,
   StreamChunkPayload,
   StreamEndPayload,
   StreamErrorPayload,
 } from "../shared/types";
 import { applyDomI18n, initI18n, onLocaleChange, t, uiLanguage } from "../shared/i18n";
 import { SseParser, type ParsedSseEvent } from "../shared/sse-parser";
+import { NdjsonParser } from "../shared/ndjson-parser";
 import { compileTextFilter } from "../shared/text-filter";
 import { applyTreeSearch, createJsonTree, tryParseJsonValue } from "./json-tree";
 
@@ -19,8 +22,13 @@ const DRAWER_WIDTH_MIN = 20;
 const DRAWER_WIDTH_MAX = 75;
 const DRAWER_WIDTH_DEFAULT = 42;
 
+type StreamParser = {
+  push(chunk: string): ParsedSseEvent[];
+  flush(): ParsedSseEvent[];
+};
+
 const streams = new Map<string, StreamRecord>();
-const parsers = new Map<string, SseParser>();
+const parsers = new Map<string, StreamParser>();
 let selectedId: string | null = null;
 let selectedEventIndex: number | null = null;
 /** Data of the event currently shown in the drawer (for Copy). */
@@ -33,6 +41,8 @@ let activeTab: "events" | "raw" = "events";
 let drawerWidthPercent = DRAWER_WIDTH_DEFAULT;
 let eventsSearchQuery = "";
 let drawerSearchQuery = "";
+let streamsUrlFilterQuery = "";
+let streamsTransportFilter: StreamTransport | "all" = "all";
 
 const elList = document.getElementById("stream-list") as HTMLUListElement;
 const elEmpty = document.getElementById("empty-hint") as HTMLDivElement;
@@ -51,6 +61,8 @@ const elDrawerClose = document.getElementById("drawer-close") as HTMLButtonEleme
 const elDrawerCopy = document.getElementById("drawer-copy") as HTMLButtonElement;
 const elContextMenu = document.getElementById("row-context-menu") as HTMLDivElement;
 const elRaw = document.getElementById("view-raw") as HTMLPreElement;
+const elStreamsUrlFilter = document.getElementById("streams-url-filter") as HTMLInputElement;
+const elStreamsTransportFilter = document.getElementById("streams-transport-filter") as HTMLSelectElement;
 
 function connect(): void {
   const port = chrome.runtime.connect({ name: PANEL_PORT });
@@ -90,6 +102,10 @@ function stampEvents(events: ParsedSseEvent[]): SseEvent[] {
   return events.map((e) => ({ ...e, receivedAt: now }));
 }
 
+function createParser(kind: StreamKind): StreamParser {
+  return kind === "ndjson" ? new NdjsonParser() : new SseParser();
+}
+
 function onStart(payload: StreamStartPayload): void {
   const record: StreamRecord = {
     requestId: payload.requestId,
@@ -97,13 +113,15 @@ function onStart(payload: StreamStartPayload): void {
     method: payload.method,
     status: payload.status,
     contentType: payload.contentType,
+    transport: payload.transport,
+    streamKind: payload.streamKind,
     startedAt: payload.startedAt,
     streamStatus: "streaming",
     raw: "",
     events: [],
   };
   streams.set(payload.requestId, record);
-  parsers.set(payload.requestId, new SseParser());
+  parsers.set(payload.requestId, createParser(payload.streamKind));
 
   if (!selectedId) {
     selectedId = payload.requestId;
@@ -206,9 +224,39 @@ function statusLabel(status: StreamRecord["streamStatus"]): string {
   }
 }
 
+function transportLabel(transport: StreamTransport): string {
+  switch (transport) {
+    case "fetch":
+      return t("transportFetch");
+    case "eventsource":
+      return t("transportEventSource");
+    case "xhr":
+      return t("transportXhr");
+    default:
+      return transport;
+  }
+}
+
 function renderList(): void {
-  const items = Array.from(streams.values()).sort((a, b) => b.startedAt - a.startedAt);
+  const urlFilter = streamsUrlFilterQuery.trim().toLowerCase();
+  const items = Array.from(streams.values())
+    .filter((s) => {
+      if (streamsTransportFilter !== "all" && s.transport !== streamsTransportFilter) return false;
+      if (!urlFilter) return true;
+      return s.url.toLowerCase().includes(urlFilter);
+    })
+    .sort((a, b) => b.startedAt - a.startedAt);
   elEmpty.classList.toggle("hidden", items.length > 0);
+  if (items.length === 0 && streams.size > 0 && (urlFilter || streamsTransportFilter !== "all")) {
+    elEmpty.textContent = t("noStreamsMatchFilter");
+  } else {
+    elEmpty.innerHTML = `
+      <span>${escapeHtml(t("emptyWaitingBefore"))}</span>
+      <code>text/event-stream</code><span>${escapeHtml(t("emptyWaitingAfter"))}</span>
+      <br />
+      <span>${escapeHtml(t("emptyRefresh"))}</span>
+    `;
+  }
   elList.innerHTML = "";
 
   for (const s of items) {
@@ -219,6 +267,7 @@ function renderList(): void {
       <div><span class="method">${escapeHtml(s.method)}</span><span class="path">${escapeHtml(shortPath(s.url))}</span></div>
       <div class="status-row">
         <span class="badge ${s.streamStatus}">${escapeHtml(statusLabel(s.streamStatus))}</span>
+        <span class="badge">${escapeHtml(transportLabel(s.transport))}</span>
         <span>${s.status ?? "—"}</span>
         <span>${escapeHtml(t("eventsCount", String(s.events.length)))}</span>
       </div>
@@ -510,6 +559,10 @@ function setupActions(): void {
     parsers.clear();
     selectedId = null;
     selectedEventIndex = null;
+    streamsUrlFilterQuery = "";
+    streamsTransportFilter = "all";
+    elStreamsUrlFilter.value = "";
+    elStreamsTransportFilter.value = "all";
     renderList();
     renderDetail();
   });
@@ -536,6 +589,18 @@ function setupActions(): void {
   elEventsSearch.addEventListener("input", () => {
     eventsSearchQuery = elEventsSearch.value;
     applyEventsFilter();
+  });
+
+  elStreamsUrlFilter.addEventListener("input", () => {
+    streamsUrlFilterQuery = elStreamsUrlFilter.value;
+    renderList();
+  });
+
+  elStreamsTransportFilter.addEventListener("change", () => {
+    const value = elStreamsTransportFilter.value;
+    streamsTransportFilter =
+      value === "fetch" || value === "eventsource" || value === "xhr" ? value : "all";
+    renderList();
   });
 
   elDrawerSearch.addEventListener("input", () => {

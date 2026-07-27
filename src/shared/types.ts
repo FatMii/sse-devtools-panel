@@ -2,12 +2,20 @@ export const MESSAGE_SOURCE = "sse-devtools" as const;
 
 export type StreamStatus = "streaming" | "done" | "error";
 
+/** How the page opened the streaming request. */
+export type StreamTransport = "fetch" | "eventsource" | "xhr";
+
+/** Wire format of the response body. */
+export type StreamKind = "sse" | "ndjson";
+
 export interface StreamStartPayload {
   requestId: string;
   url: string;
   method: string;
   status?: number;
   contentType?: string;
+  transport: StreamTransport;
+  streamKind: StreamKind;
   startedAt: number;
 }
 
@@ -54,6 +62,8 @@ export interface StreamRecord {
   method: string;
   status?: number;
   contentType?: string;
+  transport: StreamTransport;
+  streamKind: StreamKind;
   startedAt: number;
   endedAt?: number;
   streamStatus: StreamStatus;
