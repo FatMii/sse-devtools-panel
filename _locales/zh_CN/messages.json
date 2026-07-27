@@ -1,0 +1,143 @@
+{
+  "extName": {
+    "message": "SSE DevTools",
+    "description": "扩展名称"
+  },
+  "extDescription": {
+    "message": "在 DevTools 面板中查看 SSE / text/event-stream 响应",
+    "description": "扩展描述"
+  },
+  "devtoolsPanelName": {
+    "message": "SSE",
+    "description": "DevTools 面板标题"
+  },
+  "panelTitle": {
+    "message": "SSE 检查器"
+  },
+  "copyRaw": {
+    "message": "复制 Raw"
+  },
+  "copyRawTitle": {
+    "message": "复制原始文本"
+  },
+  "clear": {
+    "message": "清空"
+  },
+  "clearTitle": {
+    "message": "清空面板（不会中断网络请求）"
+  },
+  "streams": {
+    "message": "数据流"
+  },
+  "emptyWaitingBefore": {
+    "message": "等待"
+  },
+  "emptyWaitingAfter": {
+    "message": "…"
+  },
+  "emptyRefresh": {
+    "message": "加载本扩展后请刷新页面。"
+  },
+  "tabEvents": {
+    "message": "Events"
+  },
+  "tabRaw": {
+    "message": "Raw"
+  },
+  "eventsSearchPlaceholder": {
+    "message": "过滤 Event / Data（支持正则，如 /delta|message/i）"
+  },
+  "eventsSearchTitle": {
+    "message": "匹配 Event 类型与 Data。支持正则：pattern 或 /pattern/flags"
+  },
+  "colTime": {
+    "message": "时间"
+  },
+  "colEvent": {
+    "message": "Event"
+  },
+  "colData": {
+    "message": "Data"
+  },
+  "copyData": {
+    "message": "复制 Data"
+  },
+  "copyDataTitle": {
+    "message": "复制该事件的 Data"
+  },
+  "close": {
+    "message": "关闭"
+  },
+  "drawerSearchPlaceholder": {
+    "message": "在 JSON 中搜索（支持正则）"
+  },
+  "drawerSearchTitle": {
+    "message": "支持正则：pattern 或 /pattern/flags"
+  },
+  "selectStream": {
+    "message": "请选择一条数据流"
+  },
+  "noStreamSelected": {
+    "message": "未选择数据流"
+  },
+  "noEventsYet": {
+    "message": "暂无事件…"
+  },
+  "noEventsMatch": {
+    "message": "没有匹配的事件"
+  },
+  "noMatches": {
+    "message": "无匹配结果"
+  },
+  "statusStreaming": {
+    "message": "进行中"
+  },
+  "statusDone": {
+    "message": "已完成"
+  },
+  "statusError": {
+    "message": "错误"
+  },
+  "eventsCount": {
+    "message": "$COUNT$ 个事件",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "metaError": {
+    "message": "错误：$MSG$",
+    "placeholders": {
+      "msg": {
+        "content": "$1",
+        "example": "timeout"
+      }
+    }
+  },
+  "optionsTitle": {
+    "message": "SSE DevTools 选项"
+  },
+  "optionsLanguage": {
+    "message": "语言"
+  },
+  "optionsLocaleSystem": {
+    "message": "跟随浏览器"
+  },
+  "optionsLocaleEn": {
+    "message": "English"
+  },
+  "optionsLocaleZh": {
+    "message": "中文（简体）"
+  },
+  "optionsLanguageHint": {
+    "message": "用于面板界面文案。已打开的 SSE 面板会立即生效。"
+  },
+  "openSettings": {
+    "message": "设置"
+  },
+  "openSettingsTitle": {
+    "message": "打开语言设置"
+  }
+}

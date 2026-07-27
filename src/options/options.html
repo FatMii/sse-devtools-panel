@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>SSE DevTools Options</title>
+    <link rel="stylesheet" href="./options.css" />
+  </head>
+  <body>
+    <main class="options">
+      <h1 data-i18n="optionsTitle">SSE DevTools Options</h1>
+      <label class="field">
+        <span class="field-label" data-i18n="optionsLanguage">Language</span>
+        <select id="locale-select">
+          <option value="system" data-i18n="optionsLocaleSystem">Follow browser</option>
+          <option value="en" data-i18n="optionsLocaleEn">English</option>
+          <option value="zh_CN" data-i18n="optionsLocaleZh">中文（简体）</option>
+        </select>
+      </label>
+      <p class="hint" data-i18n="optionsLanguageHint">
+        Panel UI language. If DevTools is already open, reopen the SSE panel to refresh all text.
+      </p>
+    </main>
+    <script type="module" src="./options.js"></script>
+  </body>
+</html>

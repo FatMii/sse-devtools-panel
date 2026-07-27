@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.tmp-test/
+*.local
+.DS_Store
+
+.cursor/
+ROADMAP.md

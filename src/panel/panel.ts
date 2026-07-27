@@ -1,0 +1,605 @@
+import "./panel.css";
+import type {
+  RelayMessage,
+  SseEvent,
+  StreamRecord,
+  StreamStartPayload,
+  StreamChunkPayload,
+  StreamEndPayload,
+  StreamErrorPayload,
+} from "../shared/types";
+import { applyDomI18n, initI18n, onLocaleChange, t, uiLanguage } from "../shared/i18n";
+import { SseParser, type ParsedSseEvent } from "../shared/sse-parser";
+import { compileTextFilter } from "../shared/text-filter";
+import { applyTreeSearch, createJsonTree, tryParseJsonValue } from "./json-tree";
+
+const PANEL_PORT = "sse-devtools-panel";
+const DATA_PREVIEW_LEN = 80;
+const DRAWER_WIDTH_MIN = 20;
+const DRAWER_WIDTH_MAX = 75;
+const DRAWER_WIDTH_DEFAULT = 42;
+
+const streams = new Map<string, StreamRecord>();
+const parsers = new Map<string, SseParser>();
+let selectedId: string | null = null;
+let selectedEventIndex: number | null = null;
+/** Data of the event currently shown in the drawer (for Copy). */
+let drawerEventData: string | null = null;
+/** Index of the event currently shown in the drawer. */
+let drawerEventIndex: number | null = null;
+/** Data targeted by the row context menu. */
+let contextMenuData: string | null = null;
+let activeTab: "events" | "raw" = "events";
+let drawerWidthPercent = DRAWER_WIDTH_DEFAULT;
+let eventsSearchQuery = "";
+let drawerSearchQuery = "";
+
+const elList = document.getElementById("stream-list") as HTMLUListElement;
+const elEmpty = document.getElementById("empty-hint") as HTMLDivElement;
+const elMeta = document.getElementById("meta") as HTMLDivElement;
+const elEvents = document.getElementById("view-events") as HTMLDivElement;
+const elPlaceholder = document.getElementById("events-placeholder") as HTMLDivElement;
+const elTableWrap = document.getElementById("events-table-wrap") as HTMLDivElement;
+const elTbody = document.getElementById("events-tbody") as HTMLTableSectionElement;
+const elEventsSearch = document.getElementById("events-search") as HTMLInputElement;
+const elResizer = document.getElementById("events-resizer") as HTMLDivElement;
+const elDrawer = document.getElementById("events-drawer") as HTMLElement;
+const elDrawerTitle = document.getElementById("drawer-title") as HTMLSpanElement;
+const elDrawerBody = document.getElementById("drawer-body") as HTMLDivElement;
+const elDrawerSearch = document.getElementById("drawer-search") as HTMLInputElement;
+const elDrawerClose = document.getElementById("drawer-close") as HTMLButtonElement;
+const elDrawerCopy = document.getElementById("drawer-copy") as HTMLButtonElement;
+const elContextMenu = document.getElementById("row-context-menu") as HTMLDivElement;
+const elRaw = document.getElementById("view-raw") as HTMLPreElement;
+
+function connect(): void {
+  const port = chrome.runtime.connect({ name: PANEL_PORT });
+  port.postMessage({
+    type: "init",
+    tabId: chrome.devtools.inspectedWindow.tabId,
+  });
+
+  port.onMessage.addListener((msg: RelayMessage) => {
+    handleRelay(msg);
+  });
+
+  port.onDisconnect.addListener(() => {
+    setTimeout(connect, 500);
+  });
+}
+
+function handleRelay(msg: RelayMessage): void {
+  switch (msg.type) {
+    case "stream-start":
+      onStart(msg.payload);
+      break;
+    case "stream-chunk":
+      onChunk(msg.payload);
+      break;
+    case "stream-end":
+      onEnd(msg.payload);
+      break;
+    case "stream-error":
+      onError(msg.payload);
+      break;
+  }
+}
+
+function stampEvents(events: ParsedSseEvent[]): SseEvent[] {
+  const now = Date.now();
+  return events.map((e) => ({ ...e, receivedAt: now }));
+}
+
+function onStart(payload: StreamStartPayload): void {
+  const record: StreamRecord = {
+    requestId: payload.requestId,
+    url: payload.url,
+    method: payload.method,
+    status: payload.status,
+    contentType: payload.contentType,
+    startedAt: payload.startedAt,
+    streamStatus: "streaming",
+    raw: "",
+    events: [],
+  };
+  streams.set(payload.requestId, record);
+  parsers.set(payload.requestId, new SseParser());
+
+  if (!selectedId) {
+    selectedId = payload.requestId;
+  }
+
+  renderList();
+  if (selectedId === payload.requestId) {
+    selectedEventIndex = null;
+    renderDetail();
+  }
+}
+
+function onChunk(payload: StreamChunkPayload): void {
+  const record = streams.get(payload.requestId);
+  const parser = parsers.get(payload.requestId);
+  if (!record || !parser) return;
+
+  record.raw += payload.text;
+  const events = stampEvents(parser.push(payload.text));
+  if (events.length) {
+    record.events.push(...events);
+  }
+
+  renderList();
+  if (selectedId === payload.requestId) {
+    renderDetail(true);
+  }
+}
+
+function onEnd(payload: StreamEndPayload): void {
+  const record = streams.get(payload.requestId);
+  const parser = parsers.get(payload.requestId);
+  if (!record) return;
+
+  if (parser) {
+    const rest = stampEvents(parser.flush());
+    if (rest.length) {
+      record.events.push(...rest);
+    }
+  }
+
+  record.streamStatus = "done";
+  record.endedAt = payload.endedAt;
+  renderList();
+  if (selectedId === payload.requestId) {
+    renderDetail(true);
+  }
+}
+
+function onError(payload: StreamErrorPayload): void {
+  const record = streams.get(payload.requestId);
+  if (!record) return;
+  record.streamStatus = "error";
+  record.errorMessage = payload.message;
+  record.endedAt = payload.endedAt;
+  renderList();
+  if (selectedId === payload.requestId) {
+    renderDetail();
+  }
+}
+
+function shortPath(url: string): string {
+  try {
+    const u = new URL(url, "https://example.com");
+    return u.pathname + u.search;
+  } catch {
+    return url;
+  }
+}
+
+function formatTime(ts: number): string {
+  const d = new Date(ts);
+  const pad = (n: number, len = 2) => String(n).padStart(len, "0");
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`;
+}
+
+function previewData(data: string): string {
+  const oneLine = data.replace(/\s+/g, " ").trim();
+  if (oneLine.length <= DATA_PREVIEW_LEN) return oneLine;
+  return oneLine.slice(0, DATA_PREVIEW_LEN) + "…";
+}
+
+function eventMatchesSearch(ev: SseEvent, query: string): boolean {
+  // Align with Chrome Network EventStream: filter on event type + data payload
+  const filter = compileTextFilter(query);
+  if (filter.isEmpty) return true;
+  return filter.test(ev.event) || filter.test(ev.data);
+}
+
+function statusLabel(status: StreamRecord["streamStatus"]): string {
+  switch (status) {
+    case "streaming":
+      return t("statusStreaming");
+    case "done":
+      return t("statusDone");
+    case "error":
+      return t("statusError");
+    default:
+      return status;
+  }
+}
+
+function renderList(): void {
+  const items = Array.from(streams.values()).sort((a, b) => b.startedAt - a.startedAt);
+  elEmpty.classList.toggle("hidden", items.length > 0);
+  elList.innerHTML = "";
+
+  for (const s of items) {
+    const li = document.createElement("li");
+    li.className = "stream-item" + (s.requestId === selectedId ? " active" : "");
+    li.dataset.id = s.requestId;
+    li.innerHTML = `
+      <div><span class="method">${escapeHtml(s.method)}</span><span class="path">${escapeHtml(shortPath(s.url))}</span></div>
+      <div class="status-row">
+        <span class="badge ${s.streamStatus}">${escapeHtml(statusLabel(s.streamStatus))}</span>
+        <span>${s.status ?? "—"}</span>
+        <span>${escapeHtml(t("eventsCount", String(s.events.length)))}</span>
+      </div>
+    `;
+    li.addEventListener("click", () => {
+      selectedId = s.requestId;
+      selectedEventIndex = null;
+      renderList();
+      renderDetail();
+    });
+    elList.appendChild(li);
+  }
+}
+
+function renderDetail(appendFriendly = false): void {
+  const record = selectedId ? streams.get(selectedId) : undefined;
+  if (!record) {
+    elMeta.textContent = t("selectStream");
+    elPlaceholder.hidden = false;
+    elPlaceholder.textContent = t("noStreamSelected");
+    elTableWrap.hidden = true;
+    elTbody.innerHTML = "";
+    closeDrawer();
+    elRaw.textContent = "";
+    return;
+  }
+
+  elMeta.textContent =
+    `${record.method} ${record.url}` +
+    (record.status != null ? ` · HTTP ${record.status}` : "") +
+    (record.contentType ? ` · ${record.contentType}` : "") +
+    (record.errorMessage ? ` · ${t("metaError", record.errorMessage)}` : "");
+
+  elRaw.textContent = record.raw || "";
+
+  renderEvents(record, appendFriendly);
+
+  if (activeTab === "raw") {
+    elRaw.scrollTop = elRaw.scrollHeight;
+  }
+}
+
+function renderEvents(record: StreamRecord, appendFriendly: boolean): void {
+  if (record.events.length === 0) {
+    elPlaceholder.hidden = false;
+    elPlaceholder.textContent = t("noEventsYet");
+    elTableWrap.hidden = true;
+    elTbody.innerHTML = "";
+    closeDrawer();
+    return;
+  }
+
+  elPlaceholder.hidden = true;
+  elTableWrap.hidden = false;
+
+  const existing = elTbody.querySelectorAll("tr").length;
+  if (!appendFriendly || existing === 0) {
+    elTbody.innerHTML = "";
+    for (const ev of record.events) {
+      elTbody.appendChild(createEventRow(ev));
+    }
+  } else {
+    for (let i = existing; i < record.events.length; i++) {
+      elTbody.appendChild(createEventRow(record.events[i]));
+    }
+  }
+
+  applyEventsFilter();
+  syncRowSelection();
+
+  if (selectedEventIndex != null) {
+    const ev = record.events.find((e) => e.index === selectedEventIndex);
+    if (ev) {
+      openDrawer(ev);
+    } else {
+      closeDrawer();
+    }
+  } else {
+    closeDrawer();
+  }
+
+  if (activeTab === "events" && appendFriendly && !eventsSearchQuery.trim()) {
+    elTableWrap.scrollTop = elTableWrap.scrollHeight;
+  }
+}
+
+function applyEventsFilter(): void {
+  const record = selectedId ? streams.get(selectedId) : undefined;
+  if (!record) return;
+
+  let visible = 0;
+  elTbody.querySelectorAll("tr").forEach((tr) => {
+    const idx = Number(tr.getAttribute("data-index"));
+    const ev = record.events.find((e) => e.index === idx);
+    const show = ev ? eventMatchesSearch(ev, eventsSearchQuery) : false;
+    tr.hidden = !show;
+    if (show) visible += 1;
+  });
+
+  if (record.events.length > 0 && visible === 0 && eventsSearchQuery.trim()) {
+    elPlaceholder.hidden = false;
+    elPlaceholder.textContent = t("noEventsMatch");
+    // keep table visible so clearing search restores rows without rebuild
+  } else if (record.events.length > 0) {
+    elPlaceholder.hidden = true;
+  }
+}
+
+function createEventRow(ev: SseEvent): HTMLTableRowElement {
+  const tr = document.createElement("tr");
+  tr.dataset.index = String(ev.index);
+  tr.hidden = !eventMatchesSearch(ev, eventsSearchQuery);
+  tr.innerHTML = `
+    <td class="col-index">${ev.index}</td>
+    <td class="col-time">${escapeHtml(formatTime(ev.receivedAt))}</td>
+    <td class="col-event">${escapeHtml(ev.event)}</td>
+    <td class="col-data" title="${escapeHtml(ev.data)}">${escapeHtml(previewData(ev.data))}</td>
+  `;
+  tr.addEventListener("click", () => {
+    hideContextMenu();
+    if (selectedEventIndex === ev.index) {
+      selectedEventIndex = null;
+      closeDrawer();
+      syncRowSelection();
+      return;
+    }
+    selectedEventIndex = ev.index;
+    syncRowSelection();
+    openDrawer(ev);
+  });
+  tr.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    showContextMenu(e.clientX, e.clientY, ev.data);
+  });
+  return tr;
+}
+
+async function copyText(text: string): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    ta.remove();
+  }
+}
+
+function showContextMenu(x: number, y: number, data: string): void {
+  contextMenuData = data;
+  elContextMenu.hidden = false;
+  const pad = 4;
+  const menuW = elContextMenu.offsetWidth || 140;
+  const menuH = elContextMenu.offsetHeight || 36;
+  const left = Math.min(x, window.innerWidth - menuW - pad);
+  const top = Math.min(y, window.innerHeight - menuH - pad);
+  elContextMenu.style.left = `${Math.max(pad, left)}px`;
+  elContextMenu.style.top = `${Math.max(pad, top)}px`;
+}
+
+function hideContextMenu(): void {
+  elContextMenu.hidden = true;
+  contextMenuData = null;
+}
+
+function syncRowSelection(): void {
+  elTbody.querySelectorAll("tr").forEach((tr) => {
+    const idx = Number(tr.getAttribute("data-index"));
+    tr.classList.toggle("selected", idx === selectedEventIndex);
+  });
+}
+
+function applyDrawerWidth(): void {
+  elEvents.style.setProperty("--events-drawer-width", `${drawerWidthPercent}%`);
+}
+
+function openDrawer(ev: SseEvent): void {
+  const sameEvent = drawerEventIndex === ev.index && !elDrawer.hidden;
+  elDrawer.hidden = false;
+  elResizer.hidden = false;
+  elEvents.classList.add("drawer-open");
+  applyDrawerWidth();
+  drawerEventData = ev.data;
+  drawerEventIndex = ev.index;
+  elDrawerTitle.textContent = `#${ev.index} · ${ev.event}`;
+
+  // Avoid wiping drawer search / rebuild when streaming updates the same open event
+  if (sameEvent && elDrawerBody.querySelector(".json-tree, .event-body-text")) {
+    applyDrawerSearch();
+    return;
+  }
+
+  elDrawerBody.innerHTML = "";
+  const parsed = tryParseJsonValue(ev.data);
+  if (parsed.ok) {
+    elDrawerBody.appendChild(createJsonTree(parsed.value, { defaultExpandDepth: 2 }));
+  } else {
+    const pre = document.createElement("pre");
+    pre.className = "event-body-text";
+    pre.textContent = ev.data;
+    elDrawerBody.appendChild(pre);
+  }
+  applyDrawerSearch();
+}
+
+function applyDrawerSearch(): void {
+  const tree = elDrawerBody.querySelector<HTMLElement>(".json-tree");
+  if (tree) {
+    applyTreeSearch(tree, drawerSearchQuery);
+    return;
+  }
+
+  const pre = elDrawerBody.querySelector<HTMLPreElement>(".event-body-text");
+  if (!pre || drawerEventData == null) return;
+
+  const filter = compileTextFilter(drawerSearchQuery);
+  if (filter.isEmpty) {
+    pre.textContent = drawerEventData;
+    pre.classList.remove("search-no-match");
+    return;
+  }
+
+  if (!filter.test(drawerEventData)) {
+    pre.textContent = t("noMatches");
+    pre.classList.add("search-no-match");
+    return;
+  }
+
+  pre.classList.remove("search-no-match");
+  pre.textContent = "";
+  const ranges = filter.matchRanges(drawerEventData);
+  let cursor = 0;
+  for (const range of ranges) {
+    if (range.start > cursor) {
+      pre.appendChild(document.createTextNode(drawerEventData.slice(cursor, range.start)));
+    }
+    const mark = document.createElement("mark");
+    mark.className = "search-mark";
+    mark.textContent = drawerEventData.slice(range.start, range.end);
+    pre.appendChild(mark);
+    cursor = range.end;
+  }
+  if (cursor < drawerEventData.length) {
+    pre.appendChild(document.createTextNode(drawerEventData.slice(cursor)));
+  }
+}
+
+function closeDrawer(): void {
+  selectedEventIndex = null;
+  drawerEventData = null;
+  drawerEventIndex = null;
+  elDrawer.hidden = true;
+  elResizer.hidden = true;
+  elEvents.classList.remove("drawer-open");
+  elDrawerBody.innerHTML = "";
+  elDrawerTitle.textContent = "";
+  syncRowSelection();
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function setupTabs(): void {
+  document.querySelectorAll<HTMLButtonElement>(".tab").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const tab = btn.dataset.tab as typeof activeTab;
+      if (tab !== "events" && tab !== "raw") return;
+      activeTab = tab;
+      document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
+      document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById(`view-${tab}`)?.classList.add("active");
+    });
+  });
+}
+
+function setupActions(): void {
+  document.getElementById("btn-clear")?.addEventListener("click", () => {
+    streams.clear();
+    parsers.clear();
+    selectedId = null;
+    selectedEventIndex = null;
+    renderList();
+    renderDetail();
+  });
+
+  document.getElementById("btn-copy-raw")?.addEventListener("click", async () => {
+    const record = selectedId ? streams.get(selectedId) : undefined;
+    if (!record) return;
+    await copyText(record.raw);
+  });
+
+  document.getElementById("btn-settings")?.addEventListener("click", () => {
+    void chrome.runtime.openOptionsPage();
+  });
+
+  elDrawerClose.addEventListener("click", () => {
+    closeDrawer();
+  });
+
+  elDrawerCopy.addEventListener("click", async () => {
+    if (drawerEventData == null) return;
+    await copyText(drawerEventData);
+  });
+
+  elEventsSearch.addEventListener("input", () => {
+    eventsSearchQuery = elEventsSearch.value;
+    applyEventsFilter();
+  });
+
+  elDrawerSearch.addEventListener("input", () => {
+    drawerSearchQuery = elDrawerSearch.value;
+    applyDrawerSearch();
+  });
+
+  elContextMenu.addEventListener("click", async (e) => {
+    const btn = (e.target as HTMLElement).closest("button[data-action]");
+    if (!btn) return;
+    const action = btn.getAttribute("data-action");
+    if (action === "copy-data" && contextMenuData != null) {
+      await copyText(contextMenuData);
+    }
+    hideContextMenu();
+  });
+
+  document.addEventListener("click", () => hideContextMenu());
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") hideContextMenu();
+  });
+  window.addEventListener("blur", () => hideContextMenu());
+  elTableWrap.addEventListener("scroll", () => hideContextMenu());
+}
+
+function setupResizer(): void {
+  applyDrawerWidth();
+
+  elResizer.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    const onMove = (ev: MouseEvent) => {
+      const rect = elEvents.getBoundingClientRect();
+      if (rect.width <= 0) return;
+      const fromRight = ((rect.right - ev.clientX) / rect.width) * 100;
+      drawerWidthPercent = Math.min(DRAWER_WIDTH_MAX, Math.max(DRAWER_WIDTH_MIN, fromRight));
+      applyDrawerWidth();
+    };
+    const onUp = () => {
+      document.body.classList.remove("is-resizing");
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    document.body.classList.add("is-resizing");
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  });
+}
+
+setupTabs();
+setupActions();
+setupResizer();
+
+function refreshLocaleUi(): void {
+  document.documentElement.lang = uiLanguage();
+  document.title = t("panelTitle");
+  applyDomI18n();
+  renderList();
+  renderDetail();
+}
+
+void initI18n().then(() => {
+  refreshLocaleUi();
+  connect();
+  onLocaleChange(() => {
+    refreshLocaleUi();
+  });
+});

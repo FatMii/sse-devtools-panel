@@ -1,0 +1,143 @@
+{
+  "extName": {
+    "message": "SSE DevTools",
+    "description": "Extension name"
+  },
+  "extDescription": {
+    "message": "Inspect SSE / text/event-stream responses in a DevTools panel",
+    "description": "Extension description"
+  },
+  "devtoolsPanelName": {
+    "message": "SSE",
+    "description": "DevTools panel tab title"
+  },
+  "panelTitle": {
+    "message": "SSE Inspector"
+  },
+  "copyRaw": {
+    "message": "Copy Raw"
+  },
+  "copyRawTitle": {
+    "message": "Copy raw text"
+  },
+  "clear": {
+    "message": "Clear"
+  },
+  "clearTitle": {
+    "message": "Clear panel (does not stop network)"
+  },
+  "streams": {
+    "message": "Streams"
+  },
+  "emptyWaitingBefore": {
+    "message": "Waiting for"
+  },
+  "emptyWaitingAfter": {
+    "message": "…"
+  },
+  "emptyRefresh": {
+    "message": "Refresh the page after loading this extension."
+  },
+  "tabEvents": {
+    "message": "Events"
+  },
+  "tabRaw": {
+    "message": "Raw"
+  },
+  "eventsSearchPlaceholder": {
+    "message": "Filter Event / Data (regex supported, e.g. /delta|message/i)"
+  },
+  "eventsSearchTitle": {
+    "message": "Matches Event type and Data. Supports RegExp: pattern or /pattern/flags"
+  },
+  "colTime": {
+    "message": "Time"
+  },
+  "colEvent": {
+    "message": "Event"
+  },
+  "colData": {
+    "message": "Data"
+  },
+  "copyData": {
+    "message": "Copy Data"
+  },
+  "copyDataTitle": {
+    "message": "Copy this event data"
+  },
+  "close": {
+    "message": "Close"
+  },
+  "drawerSearchPlaceholder": {
+    "message": "Search in JSON (regex supported)"
+  },
+  "drawerSearchTitle": {
+    "message": "Supports RegExp: pattern or /pattern/flags"
+  },
+  "selectStream": {
+    "message": "Select a stream"
+  },
+  "noStreamSelected": {
+    "message": "No stream selected"
+  },
+  "noEventsYet": {
+    "message": "No events yet…"
+  },
+  "noEventsMatch": {
+    "message": "No events match filter"
+  },
+  "noMatches": {
+    "message": "No matches"
+  },
+  "statusStreaming": {
+    "message": "streaming"
+  },
+  "statusDone": {
+    "message": "done"
+  },
+  "statusError": {
+    "message": "error"
+  },
+  "eventsCount": {
+    "message": "$COUNT$ events",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "metaError": {
+    "message": "Error: $MSG$",
+    "placeholders": {
+      "msg": {
+        "content": "$1",
+        "example": "timeout"
+      }
+    }
+  },
+  "optionsTitle": {
+    "message": "SSE DevTools Options"
+  },
+  "optionsLanguage": {
+    "message": "Language"
+  },
+  "optionsLocaleSystem": {
+    "message": "Follow browser"
+  },
+  "optionsLocaleEn": {
+    "message": "English"
+  },
+  "optionsLocaleZh": {
+    "message": "中文（简体）"
+  },
+  "optionsLanguageHint": {
+    "message": "Panel UI language. Changes apply immediately in an open SSE panel."
+  },
+  "openSettings": {
+    "message": "Settings"
+  },
+  "openSettingsTitle": {
+    "message": "Open language settings"
+  }
+}

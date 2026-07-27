@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>SSE Inspector</title>
+    <link rel="stylesheet" href="./panel.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="toolbar">
+        <div class="toolbar-title" data-i18n="panelTitle">SSE Inspector</div>
+        <div class="toolbar-actions">
+          <button type="button" id="btn-copy-raw" data-i18n="copyRaw" data-i18n-title="copyRawTitle">
+            Copy Raw
+          </button>
+          <button type="button" id="btn-clear" data-i18n="clear" data-i18n-title="clearTitle">Clear</button>
+          <button
+            type="button"
+            id="btn-settings"
+            data-i18n="openSettings"
+            data-i18n-title="openSettingsTitle"
+          >
+            Settings
+          </button>
+        </div>
+      </header>
+
+      <div class="main">
+        <aside class="sidebar">
+          <div class="sidebar-header" data-i18n="streams">Streams</div>
+          <ul id="stream-list" class="stream-list"></ul>
+          <div id="empty-hint" class="empty-hint">
+            <span data-i18n="emptyWaitingBefore">Waiting for</span>
+            <code>text/event-stream</code><span data-i18n="emptyWaitingAfter">…</span>
+            <br />
+            <span data-i18n="emptyRefresh">Refresh the page after loading this extension.</span>
+          </div>
+        </aside>
+
+        <section class="detail">
+          <div class="tabs">
+            <button type="button" class="tab active" data-tab="events" data-i18n="tabEvents">Events</button>
+            <button type="button" class="tab" data-tab="raw" data-i18n="tabRaw">Raw</button>
+          </div>
+          <div class="meta" id="meta"></div>
+          <div class="views">
+            <div id="view-events" class="view active events-layout">
+              <div class="events-list-pane">
+                <div class="pane-search">
+                  <input
+                    id="events-search"
+                    type="search"
+                    data-i18n-placeholder="eventsSearchPlaceholder"
+                    data-i18n-title="eventsSearchTitle"
+                    autocomplete="off"
+                    spellcheck="false"
+                  />
+                </div>
+                <div id="events-placeholder" class="placeholder" data-i18n="noStreamSelected">
+                  No stream selected
+                </div>
+                <div class="events-table-wrap" id="events-table-wrap" hidden>
+                  <table class="events-table">
+                    <thead>
+                      <tr>
+                        <th class="col-index">#</th>
+                        <th class="col-time" data-i18n="colTime">Time</th>
+                        <th class="col-event" data-i18n="colEvent">Event</th>
+                        <th class="col-data" data-i18n="colData">Data</th>
+                      </tr>
+                    </thead>
+                    <tbody id="events-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div id="events-resizer" class="events-resizer" hidden></div>
+              <aside id="events-drawer" class="events-drawer" hidden>
+                <header class="drawer-header">
+                  <span id="drawer-title" class="drawer-title"></span>
+                  <div class="drawer-actions">
+                    <button
+                      type="button"
+                      id="drawer-copy"
+                      data-i18n="copyData"
+                      data-i18n-title="copyDataTitle"
+                    >
+                      Copy Data
+                    </button>
+                    <button type="button" id="drawer-close" data-i18n="close">Close</button>
+                  </div>
+                </header>
+                <div class="pane-search drawer-search">
+                  <input
+                    id="drawer-search"
+                    type="search"
+                    data-i18n-placeholder="drawerSearchPlaceholder"
+                    data-i18n-title="drawerSearchTitle"
+                    autocomplete="off"
+                    spellcheck="false"
+                  />
+                </div>
+                <div id="drawer-body" class="drawer-body"></div>
+              </aside>
+            </div>
+            <pre id="view-raw" class="view code"></pre>
+          </div>
+        </section>
+      </div>
+    </div>
+    <div id="row-context-menu" class="context-menu" hidden>
+      <button type="button" data-action="copy-data" data-i18n="copyData">Copy Data</button>
+    </div>
+    <script type="module" src="./panel.js"></script>
+  </body>
+</html>
