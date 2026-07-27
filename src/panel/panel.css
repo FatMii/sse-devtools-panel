@@ -213,6 +213,11 @@ button.is-paused {
   border-color: var(--error);
 }
 
+.badge.warn {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
 .badge.origin {
   color: var(--accent);
   border-color: var(--accent);
@@ -800,4 +805,54 @@ body.is-resizing {
   flex-direction: column;
   gap: 6px;
   flex-shrink: 0;
+}
+
+.action-input {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 6px 8px;
+  outline: none;
+}
+
+.action-input:focus {
+  border-color: var(--accent);
+}
+
+.search-all-panel {
+  display: grid;
+  gap: 8px;
+}
+
+.search-all-results {
+  display: grid;
+  gap: 6px;
+}
+
+.search-all-item {
+  width: 100%;
+  text-align: left;
+  white-space: normal;
+}
+
+.search-all-item-main {
+  display: block;
+  font-family: var(--mono);
+}
+
+.search-all-item-sub {
+  display: block;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.search-all-empty {
+  color: var(--text-muted);
+  padding: 8px 2px;
 }

@@ -203,6 +203,18 @@
   "statsTitle": {
     "message": "Show stream statistics"
   },
+  "anomalies": {
+    "message": "Anomalies"
+  },
+  "anomaliesTitle": {
+    "message": "Scan and review suspicious events"
+  },
+  "searchAll": {
+    "message": "Search All"
+  },
+  "searchAllTitle": {
+    "message": "Search Event/Data across all streams"
+  },
   "pauseUi": {
     "message": "Pause UI"
   },
@@ -217,6 +229,69 @@
   },
   "statsDialogTitle": {
     "message": "Statistics"
+  },
+  "anomaliesDialogTitle": {
+    "message": "Anomaly Scan"
+  },
+  "anomaliesEmpty": {
+    "message": "No anomalies found."
+  },
+  "anomaliesCount": {
+    "message": "$COUNT$ anomalies",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "anomalyEmptyData": {
+    "message": "Empty data"
+  },
+  "anomalyJsonParseFailed": {
+    "message": "JSON parse failed"
+  },
+  "anomalyDuplicateId": {
+    "message": "Duplicate id"
+  },
+  "anomalyOversizedPacket": {
+    "message": "Oversized packet"
+  },
+  "anomalyEmptyDataDesc": {
+    "message": "data is empty or whitespace-only"
+  },
+  "anomalyJsonParseFailedDesc": {
+    "message": "Looks like JSON but parse failed"
+  },
+  "anomalyDuplicateIdDesc": {
+    "message": "Duplicate id detected: $ID$",
+    "placeholders": {
+      "id": {
+        "content": "$1",
+        "example": "evt-1"
+      }
+    }
+  },
+  "anomalyOversizedPacketDesc": {
+    "message": "data payload is large: $SIZE$ chars",
+    "placeholders": {
+      "size": {
+        "content": "$1",
+        "example": "19200"
+      }
+    }
+  },
+  "searchAllDialogTitle": {
+    "message": "Global Stream Search"
+  },
+  "searchAllPlaceholder": {
+    "message": "Enter text or regex (e.g. /delta|tool/i)"
+  },
+  "searchAllHint": {
+    "message": "Type a query to match Event/Data across all streams."
+  },
+  "searchAllNoResults": {
+    "message": "No matches found."
   },
   "statsStreamCount": {
     "message": "Streams"

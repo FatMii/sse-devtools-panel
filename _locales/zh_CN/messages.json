@@ -203,6 +203,18 @@
   "statsTitle": {
     "message": "查看数据流统计"
   },
+  "anomalies": {
+    "message": "异常扫描"
+  },
+  "anomaliesTitle": {
+    "message": "扫描并查看各数据流中的可疑事件"
+  },
+  "searchAll": {
+    "message": "全局搜索"
+  },
+  "searchAllTitle": {
+    "message": "跨所有 Stream 搜索 Event/Data"
+  },
   "pauseUi": {
     "message": "暂停 UI"
   },
@@ -217,6 +229,69 @@
   },
   "statsDialogTitle": {
     "message": "统计"
+  },
+  "anomaliesDialogTitle": {
+    "message": "异常扫描结果"
+  },
+  "anomaliesEmpty": {
+    "message": "未发现异常。"
+  },
+  "anomaliesCount": {
+    "message": "$COUNT$ 条异常",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "anomalyEmptyData": {
+    "message": "空 data"
+  },
+  "anomalyJsonParseFailed": {
+    "message": "JSON 解析失败"
+  },
+  "anomalyDuplicateId": {
+    "message": "重复 id"
+  },
+  "anomalyOversizedPacket": {
+    "message": "超长包"
+  },
+  "anomalyEmptyDataDesc": {
+    "message": "data 为空或仅包含空白字符"
+  },
+  "anomalyJsonParseFailedDesc": {
+    "message": "疑似 JSON，但解析失败"
+  },
+  "anomalyDuplicateIdDesc": {
+    "message": "检测到重复 id：$ID$",
+    "placeholders": {
+      "id": {
+        "content": "$1",
+        "example": "evt-1"
+      }
+    }
+  },
+  "anomalyOversizedPacketDesc": {
+    "message": "data 长度较大：$SIZE$ 字符",
+    "placeholders": {
+      "size": {
+        "content": "$1",
+        "example": "19200"
+      }
+    }
+  },
+  "searchAllDialogTitle": {
+    "message": "跨 Stream 全局搜索"
+  },
+  "searchAllPlaceholder": {
+    "message": "输入关键字或正则（如 /delta|tool/i）"
+  },
+  "searchAllHint": {
+    "message": "输入搜索条件后，将在所有 Stream 的 Event/Data 中匹配。"
+  },
+  "searchAllNoResults": {
+    "message": "没有命中结果。"
   },
   "statsStreamCount": {
     "message": "数据流数"

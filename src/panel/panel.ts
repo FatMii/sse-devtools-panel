@@ -43,6 +43,14 @@ type StreamParser = {
   flush(): ParsedSseEvent[];
 };
 
+type StreamAnomalyKind = "empty-data" | "json-parse-failed" | "duplicate-id" | "oversized-packet";
+
+type StreamAnomaly = {
+  kind: StreamAnomalyKind;
+  eventIndex: number;
+  message: string;
+};
+
 const streams = new Map<string, StreamRecord>();
 const parsers = new Map<string, StreamParser>();
 let selectedId: string | null = null;
@@ -62,6 +70,7 @@ let streamsTransportFilter: StreamTransport | "all" = "all";
 let uiPaused = false;
 let pendingListRefreshWhilePaused = false;
 let pendingDetailRefreshWhilePaused = false;
+const anomalyCache = new Map<string, { eventCount: number; anomalies: StreamAnomaly[] }>();
 
 const elList = document.getElementById("stream-list") as HTMLUListElement;
 const elEmpty = document.getElementById("empty-hint") as HTMLDivElement;
@@ -92,6 +101,8 @@ const elImportFile = document.getElementById("import-file") as HTMLInputElement;
 const elSaveArchive = document.getElementById("btn-save-archive") as HTMLButtonElement;
 const elArchives = document.getElementById("btn-archives") as HTMLButtonElement;
 const elStats = document.getElementById("btn-stats") as HTMLButtonElement;
+const elAnomalies = document.getElementById("btn-anomalies") as HTMLButtonElement;
+const elSearchAll = document.getElementById("btn-search-all") as HTMLButtonElement;
 const elDialog = document.getElementById("app-dialog") as HTMLDialogElement;
 const elDialogTitle = document.getElementById("app-dialog-title") as HTMLSpanElement;
 const elDialogBody = document.getElementById("app-dialog-body") as HTMLDivElement;
@@ -211,6 +222,7 @@ function onStart(payload: StreamStartPayload): void {
 function onDiscard(requestId: string): void {
   streams.delete(requestId);
   parsers.delete(requestId);
+  anomalyCache.delete(requestId);
   if (selectedId === requestId) {
     selectedId = null;
     selectedEventIndex = null;
@@ -350,6 +362,74 @@ function payloadPreviewForMeta(record: StreamRecord): string {
   const oneLine = text.replace(/\s+/g, " ").trim();
   const clipped = oneLine.length > 90 ? `${oneLine.slice(0, 90)}…` : oneLine;
   return record.requestPayloadTruncated ? `${clipped}…` : clipped;
+}
+
+const OVERSIZED_PACKET_THRESHOLD = 16_000;
+
+function anomalyKindLabel(kind: StreamAnomalyKind): string {
+  switch (kind) {
+    case "empty-data":
+      return t("anomalyEmptyData");
+    case "json-parse-failed":
+      return t("anomalyJsonParseFailed");
+    case "duplicate-id":
+      return t("anomalyDuplicateId");
+    case "oversized-packet":
+      return t("anomalyOversizedPacket");
+    default:
+      return kind;
+  }
+}
+
+function scanStreamAnomalies(record: StreamRecord): StreamAnomaly[] {
+  const cached = anomalyCache.get(record.requestId);
+  if (cached && cached.eventCount === record.events.length) {
+    return cached.anomalies;
+  }
+  const seenIds = new Set<string>();
+  const anomalies: StreamAnomaly[] = [];
+  for (const ev of record.events) {
+    const data = ev.data ?? "";
+    if (!data.trim()) {
+      anomalies.push({
+        kind: "empty-data",
+        eventIndex: ev.index,
+        message: t("anomalyEmptyDataDesc"),
+      });
+    }
+    const trimmed = data.trimStart();
+    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+      try {
+        JSON.parse(data);
+      } catch {
+        anomalies.push({
+          kind: "json-parse-failed",
+          eventIndex: ev.index,
+          message: t("anomalyJsonParseFailedDesc"),
+        });
+      }
+    }
+    if (ev.id) {
+      if (seenIds.has(ev.id)) {
+        anomalies.push({
+          kind: "duplicate-id",
+          eventIndex: ev.index,
+          message: t("anomalyDuplicateIdDesc", ev.id),
+        });
+      } else {
+        seenIds.add(ev.id);
+      }
+    }
+    if (data.length >= OVERSIZED_PACKET_THRESHOLD) {
+      anomalies.push({
+        kind: "oversized-packet",
+        eventIndex: ev.index,
+        message: t("anomalyOversizedPacketDesc", String(data.length)),
+      });
+    }
+  }
+  anomalyCache.set(record.requestId, { eventCount: record.events.length, anomalies });
+  return anomalies;
 }
 
 function eventMatchesSearch(ev: SseEvent, query: string): boolean {
@@ -587,6 +667,143 @@ function showStatsDialog(): void {
   openAppDialog(t("statsDialogTitle"), body);
 }
 
+function jumpToStreamEvent(requestId: string, eventIndex: number): void {
+  const record = streams.get(requestId);
+  if (!record) return;
+  selectedId = requestId;
+  selectedEventIndex = null;
+  renderList();
+  renderDetail();
+  selectEventByIndex(record, eventIndex);
+}
+
+function showAnomaliesDialog(): void {
+  const all = Array.from(streams.values())
+    .map((record) => ({ record, anomalies: scanStreamAnomalies(record) }))
+    .filter((item) => item.anomalies.length > 0)
+    .sort((a, b) => b.record.startedAt - a.record.startedAt);
+
+  const body = document.createElement("div");
+  body.className = "archives-panel";
+
+  if (all.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "search-all-empty";
+    empty.textContent = t("anomaliesEmpty");
+    body.appendChild(empty);
+    openAppDialog(t("anomaliesDialogTitle"), body);
+    return;
+  }
+
+  const list = document.createElement("ul");
+  list.className = "archives-list";
+  for (const item of all) {
+    const li = document.createElement("li");
+    li.className = "archives-item";
+
+    const meta = document.createElement("div");
+    meta.className = "archives-meta";
+    meta.innerHTML = `
+      <div class="archives-name">${escapeHtml(shortPath(item.record.url))}</div>
+      <div class="archives-sub">${escapeHtml(
+        t("anomaliesCount", String(item.anomalies.length)),
+      )}</div>
+    `;
+
+    const actions = document.createElement("div");
+    actions.className = "archives-actions";
+    for (const anomaly of item.anomalies.slice(0, 8)) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "search-all-item";
+      btn.innerHTML = `
+        <span class="search-all-item-main">#${anomaly.eventIndex} · ${escapeHtml(
+          anomalyKindLabel(anomaly.kind),
+        )}</span>
+        <span class="search-all-item-sub">${escapeHtml(anomaly.message)}</span>
+      `;
+      btn.addEventListener("click", () => {
+        closeAppDialog();
+        jumpToStreamEvent(item.record.requestId, anomaly.eventIndex);
+      });
+      actions.appendChild(btn);
+    }
+    li.append(meta, actions);
+    list.appendChild(li);
+  }
+  body.appendChild(list);
+  openAppDialog(t("anomaliesDialogTitle"), body);
+}
+
+function showGlobalSearchDialog(): void {
+  const body = document.createElement("div");
+  body.className = "search-all-panel";
+
+  const input = document.createElement("input");
+  input.className = "action-input";
+  input.type = "search";
+  input.placeholder = t("searchAllPlaceholder");
+  input.autocomplete = "off";
+  input.spellcheck = false;
+
+  const results = document.createElement("div");
+  results.className = "search-all-results";
+
+  const renderResults = (query: string): void => {
+    results.innerHTML = "";
+    const filter = compileTextFilter(query);
+    if (filter.isEmpty) {
+      const empty = document.createElement("div");
+      empty.className = "search-all-empty";
+      empty.textContent = t("searchAllHint");
+      results.appendChild(empty);
+      return;
+    }
+    const matches: Array<{ requestId: string; url: string; event: SseEvent }> = [];
+    for (const record of Array.from(streams.values()).sort((a, b) => b.startedAt - a.startedAt)) {
+      for (const ev of record.events) {
+        if (filter.test(ev.event) || filter.test(ev.data)) {
+          matches.push({ requestId: record.requestId, url: record.url, event: ev });
+          if (matches.length >= 200) break;
+        }
+      }
+      if (matches.length >= 200) break;
+    }
+    if (matches.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "search-all-empty";
+      empty.textContent = t("searchAllNoResults");
+      results.appendChild(empty);
+      return;
+    }
+    for (const match of matches) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "search-all-item";
+      btn.innerHTML = `
+        <span class="search-all-item-main">${escapeHtml(shortPath(match.url))} · #${
+          match.event.index
+        } · ${escapeHtml(match.event.event)}</span>
+        <span class="search-all-item-sub">${escapeHtml(previewData(match.event.data))}</span>
+      `;
+      btn.addEventListener("click", () => {
+        closeAppDialog();
+        jumpToStreamEvent(match.requestId, match.event.index);
+      });
+      results.appendChild(btn);
+    }
+  };
+
+  input.addEventListener("input", () => {
+    renderResults(input.value);
+  });
+
+  body.append(input, results);
+  openAppDialog(t("searchAllDialogTitle"), body);
+  input.focus();
+  renderResults("");
+}
+
 async function showArchivesDialog(): Promise<void> {
   const entries = await listStreamArchives();
   const body = document.createElement("div");
@@ -755,6 +972,7 @@ function renderList(): void {
   for (const s of items) {
     seen.add(s.requestId);
     const fingerprint = streamItemFingerprint(s);
+    const anomalyCount = scanStreamAnomalies(s).length;
     let li = elList.querySelector<HTMLLIElement>(`li[data-id="${CSS.escape(s.requestId)}"]`);
     if (!li) {
       li = document.createElement("li");
@@ -774,6 +992,7 @@ function renderList(): void {
               ? `<span class="badge origin">${escapeHtml(originLabel(s.origin) as string)}</span>`
               : ""
           }
+          ${anomalyCount > 0 ? `<span class="badge warn">!${anomalyCount}</span>` : ""}
           <span>${s.status ?? "—"}</span>
           <span>${escapeHtml(t("eventsCount", String(s.events.length)))}</span>
         </div>
@@ -1093,6 +1312,7 @@ function setupActions(): void {
   document.getElementById("btn-clear")?.addEventListener("click", () => {
     streams.clear();
     parsers.clear();
+    anomalyCache.clear();
     selectedId = null;
     selectedEventIndex = null;
     streamsUrlFilterQuery = "";
@@ -1140,6 +1360,14 @@ function setupActions(): void {
 
   elStats.addEventListener("click", () => {
     showStatsDialog();
+  });
+
+  elAnomalies.addEventListener("click", () => {
+    showAnomaliesDialog();
+  });
+
+  elSearchAll.addEventListener("click", () => {
+    showGlobalSearchDialog();
   });
 
   elPauseUi.addEventListener("click", () => {
