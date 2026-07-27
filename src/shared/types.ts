@@ -75,6 +75,19 @@ export interface StreamMetrics {
   eventsPerSec?: number;
 }
 
+export type AiProfile =
+  | "openai-compatible"
+  | "anthropic"
+  | "deepseek"
+  | "doubao"
+  | "generic";
+
+export interface StreamAiProfile {
+  profile: AiProfile;
+  confidence: number;
+  reasons: string[];
+}
+
 /** How this record entered the panel. */
 export type StreamOrigin = "live" | "imported" | "archive";
 
@@ -96,6 +109,8 @@ export interface StreamRecord {
   raw: string;
   events: SseEvent[];
   metrics?: StreamMetrics;
+  aiProfile?: StreamAiProfile;
+  transcript?: string;
   /** Present for imported / loaded-from-archive rows. */
   origin?: StreamOrigin;
 }

@@ -17,6 +17,12 @@
   "copyRaw": {
     "message": "复制 Raw"
   },
+  "copyTranscript": {
+    "message": "复制 Transcript"
+  },
+  "copyTranscriptTitle": {
+    "message": "复制当前选中流的合并文本"
+  },
   "copyRawTitle": {
     "message": "复制原始文本"
   },
@@ -67,6 +73,9 @@
   },
   "tabRaw": {
     "message": "Raw"
+  },
+  "tabTranscript": {
+    "message": "Transcript"
   },
   "eventsSearchPlaceholder": {
     "message": "过滤 Event / Data（支持正则，如 /delta|message/i）"
@@ -415,6 +424,24 @@
   },
   "metaDetailsSummary": {
     "message": "请求详情"
+  },
+  "profileOpenAi": {
+    "message": "OpenAI Compatible"
+  },
+  "profileAnthropic": {
+    "message": "Anthropic"
+  },
+  "profileDeepseek": {
+    "message": "DeepSeek"
+  },
+  "profileDoubao": {
+    "message": "豆包"
+  },
+  "profileGeneric": {
+    "message": "Generic"
+  },
+  "transcriptEmpty": {
+    "message": "当前流暂无可合并的文本输出。"
   },
   "optionsTitle": {
     "message": "SSE DevTools 选项"

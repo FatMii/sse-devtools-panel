@@ -17,6 +17,12 @@
   "copyRaw": {
     "message": "Copy Raw"
   },
+  "copyTranscript": {
+    "message": "Copy Transcript"
+  },
+  "copyTranscriptTitle": {
+    "message": "Copy merged transcript of selected stream"
+  },
   "copyRawTitle": {
     "message": "Copy raw text"
   },
@@ -67,6 +73,9 @@
   },
   "tabRaw": {
     "message": "Raw"
+  },
+  "tabTranscript": {
+    "message": "Transcript"
   },
   "eventsSearchPlaceholder": {
     "message": "Filter Event / Data (regex supported, e.g. /delta|message/i)"
@@ -415,6 +424,24 @@
   },
   "metaDetailsSummary": {
     "message": "Request details"
+  },
+  "profileOpenAi": {
+    "message": "OpenAI Compatible"
+  },
+  "profileAnthropic": {
+    "message": "Anthropic"
+  },
+  "profileDeepseek": {
+    "message": "DeepSeek"
+  },
+  "profileDoubao": {
+    "message": "Doubao"
+  },
+  "profileGeneric": {
+    "message": "Generic"
+  },
+  "transcriptEmpty": {
+    "message": "No mergeable text found in this stream."
   },
   "optionsTitle": {
     "message": "SSE DevTools Options"
