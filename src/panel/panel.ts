@@ -209,9 +209,10 @@ function onChunk(payload: StreamChunkPayload): void {
     record.events.push(...events);
   }
 
-  renderList();
+  // XHR can emit very frequent tiny deltas; avoid nuking the list DOM on every chunk.
+  scheduleRenderList();
   if (selectedId === payload.requestId) {
-    renderDetail(true);
+    scheduleRenderDetail(true);
   }
 }
 
@@ -561,6 +562,44 @@ function transportLabel(transport: StreamTransport): string {
   }
 }
 
+let listRenderScheduled = false;
+let detailRenderScheduled = false;
+let detailRenderAppendFriendly = false;
+
+function scheduleRenderList(): void {
+  if (listRenderScheduled) return;
+  listRenderScheduled = true;
+  requestAnimationFrame(() => {
+    listRenderScheduled = false;
+    renderList();
+  });
+}
+
+function scheduleRenderDetail(appendFriendly = false): void {
+  detailRenderAppendFriendly = detailRenderAppendFriendly || appendFriendly;
+  if (detailRenderScheduled) return;
+  detailRenderScheduled = true;
+  requestAnimationFrame(() => {
+    detailRenderScheduled = false;
+    const append = detailRenderAppendFriendly;
+    detailRenderAppendFriendly = false;
+    renderDetail(append);
+  });
+}
+
+function streamItemFingerprint(s: StreamRecord): string {
+  return [
+    s.requestId === selectedId ? "1" : "0",
+    s.streamStatus,
+    s.transport,
+    s.origin ?? "",
+    String(s.status ?? ""),
+    String(s.events.length),
+    s.method,
+    s.url,
+  ].join("|");
+}
+
 function renderList(): void {
   const urlFilter = streamsUrlFilterQuery.trim().toLowerCase();
   const items = Array.from(streams.values())
@@ -581,33 +620,52 @@ function renderList(): void {
       <span>${escapeHtml(t("emptyRefresh"))}</span>
     `;
   }
-  elList.innerHTML = "";
 
+  const seen = new Set<string>();
   for (const s of items) {
-    const li = document.createElement("li");
+    seen.add(s.requestId);
+    const fingerprint = streamItemFingerprint(s);
+    let li = elList.querySelector<HTMLLIElement>(`li[data-id="${CSS.escape(s.requestId)}"]`);
+    if (!li) {
+      li = document.createElement("li");
+      li.dataset.id = s.requestId;
+      elList.appendChild(li);
+    }
     li.className = "stream-item" + (s.requestId === selectedId ? " active" : "");
-    li.dataset.id = s.requestId;
-    li.innerHTML = `
-      <div><span class="method">${escapeHtml(s.method)}</span><span class="path">${escapeHtml(shortPath(s.url))}</span></div>
-      <div class="status-row">
-        <span class="badge ${s.streamStatus}">${escapeHtml(statusLabel(s.streamStatus))}</span>
-        <span class="badge">${escapeHtml(transportLabel(s.transport))}</span>
-        ${
-          originLabel(s.origin)
-            ? `<span class="badge origin">${escapeHtml(originLabel(s.origin) as string)}</span>`
-            : ""
-        }
-        <span>${s.status ?? "—"}</span>
-        <span>${escapeHtml(t("eventsCount", String(s.events.length)))}</span>
-      </div>
-    `;
-    li.addEventListener("click", () => {
-      selectedId = s.requestId;
-      selectedEventIndex = null;
-      renderList();
-      renderDetail();
-    });
-    elList.appendChild(li);
+    if (li.dataset.fingerprint !== fingerprint) {
+      li.dataset.fingerprint = fingerprint;
+      li.innerHTML = `
+        <div><span class="method">${escapeHtml(s.method)}</span><span class="path">${escapeHtml(shortPath(s.url))}</span></div>
+        <div class="status-row">
+          <span class="badge ${s.streamStatus}">${escapeHtml(statusLabel(s.streamStatus))}</span>
+          <span class="badge">${escapeHtml(transportLabel(s.transport))}</span>
+          ${
+            originLabel(s.origin)
+              ? `<span class="badge origin">${escapeHtml(originLabel(s.origin) as string)}</span>`
+              : ""
+          }
+          <span>${s.status ?? "—"}</span>
+          <span>${escapeHtml(t("eventsCount", String(s.events.length)))}</span>
+        </div>
+      `;
+    }
+  }
+
+  for (const node of Array.from(elList.children)) {
+    const li = node as HTMLLIElement;
+    const id = li.dataset.id;
+    if (!id || !seen.has(id)) {
+      li.remove();
+    }
+  }
+
+  // Keep DOM order aligned with sorted items without full rebuild.
+  for (let i = 0; i < items.length; i++) {
+    const li = elList.querySelector<HTMLLIElement>(`li[data-id="${CSS.escape(items[i].requestId)}"]`);
+    if (!li) continue;
+    if (elList.children[i] !== li) {
+      elList.insertBefore(li, elList.children[i] ?? null);
+    }
   }
 }
 
@@ -885,6 +943,19 @@ function setupTabs(): void {
 }
 
 function setupActions(): void {
+  // Prefer pointerdown: XHR streaming may rewrite row contents between mousedown/mouseup.
+  elList.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    const li = (e.target as HTMLElement | null)?.closest("li.stream-item");
+    if (!(li instanceof HTMLLIElement) || !elList.contains(li)) return;
+    const id = li.dataset.id;
+    if (!id || !streams.has(id) || id === selectedId) return;
+    selectedId = id;
+    selectedEventIndex = null;
+    renderList();
+    renderDetail();
+  });
+
   document.getElementById("btn-clear")?.addEventListener("click", () => {
     streams.clear();
     parsers.clear();
