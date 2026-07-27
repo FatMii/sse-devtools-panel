@@ -738,7 +738,7 @@ function renderList(): void {
       if (!urlFilter) return true;
       return s.url.toLowerCase().includes(urlFilter);
     })
-    .sort((a, b) => b.startedAt - a.startedAt);
+    .sort((a, b) => a.startedAt - b.startedAt);
   elEmpty.classList.toggle("hidden", items.length > 0);
   if (items.length === 0 && streams.size > 0 && (urlFilter || streamsTransportFilter !== "all")) {
     elEmpty.textContent = t("noStreamsMatchFilter");
