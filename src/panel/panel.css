@@ -273,12 +273,114 @@ button.is-paused {
 }
 
 .meta {
-  padding: 6px 12px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--border);
   color: var(--text-muted);
-  word-break: break-all;
   flex-shrink: 0;
   min-height: 28px;
+  display: grid;
+  gap: 6px;
+}
+
+.meta.is-empty .meta-line-tags,
+.meta.is-empty .meta-details {
+  display: none;
+}
+
+.meta-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.meta-line-primary {
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.meta-method {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.meta-url {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.meta-line-tags {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.meta-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  background: var(--bg-elevated);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta-chip.error {
+  color: var(--error);
+  border-color: var(--error);
+}
+
+.meta-details {
+  font-size: 11px;
+}
+
+.meta-details > summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.meta-details > summary:hover {
+  color: var(--text);
+}
+
+.meta-details-body {
+  margin-top: 6px;
+  display: grid;
+  gap: 6px;
+}
+
+.meta-detail-row {
+  display: grid;
+  gap: 4px;
+}
+
+.meta-detail-label {
+  color: var(--text-muted);
+}
+
+.meta-payload-preview {
+  margin: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 96px;
+  overflow: auto;
 }
 
 .views {
@@ -314,7 +416,6 @@ button.is-paused {
 
 /* Events split layout */
 .events-layout {
-  display: flex;
   flex-direction: row;
   padding: 0 !important;
   --events-drawer-width: 42%;

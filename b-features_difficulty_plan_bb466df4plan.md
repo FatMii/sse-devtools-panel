@@ -4,9 +4,12 @@ overview: 将「B. 真正能拉开差距」的全部能力按实现难度从低�
 todos:
   - id: phase1-panel-basics
     content: "Phase 1: 暂停 UI、TTFT/间隔指标、异常扫描、跨 Stream 全局搜索"
-    status: in_progress
+    status: completed
   - id: phase2-ai-semantic
-    content: "Phase 2: AI Profile + Merged Transcript + 通道拆分 + finish/usage"
+    content: "Phase 2: AI Profile + Merged Transcript + 通道拆分 + finish/usage（暂缓，见下方 TODO）"
+    status: pending
+  - id: phase2-transcript-vendor-adapters
+    content: "TODO: Merged Transcript — 按厂商协议适配（OpenAI / Anthropic / DeepSeek 等），含 Profile 识别 + Transcript Tab + Copy"
     status: pending
   - id: phase3-spec-export
     content: "Phase 3: SSE Spec 警告、书签标注、复现包 v2、Mock Fixture"
@@ -39,10 +42,10 @@ isProject: false
 | 3 | 异常扫描（空 data、JSON 失败、重复 id、超长包） | S–M | 新 `shared/anomaly.ts` + Dialog/角标 | 规则扫描现有 `events[]`，无捕获改动 |
 | 4 | 跨 Stream 全局搜索 | M | 面板 Toolbar/Dialog + [`text-filter.ts`](D:/workspace/github/sse-devtools/src/shared/text-filter.ts) | 复用正则，需跨列表结果导航 |
 | 5 | 书签 / 标注 | M | `SseEvent` 扩展 + 导出/存档 | 状态进 export/IndexedDB，UI 中等 |
-| 6 | Merged Transcript（先 OpenAI Compatible） | M | 新 `shared/ai-merge.ts` + Detail Tab | 纯后处理拼接 `delta.content`；不改 inject |
-| 7 | 可复现导出包 | M | [`stream-snapshot.ts`](D:/workspace/github/sse-devtools/src/shared/stream-snapshot.ts) | 扩展 v2：stats + transcript + anomalies + notes |
+| 6 | Merged Transcript（按厂商适配） | M–L | 新 `shared/ai-profile.ts` + `shared/ai-merge.ts` + Detail Tab | **暂缓**；需逐厂商协议适配，误判要可回退 `generic` |
+| 7 | 可复现导出包 | M | [`stream-snapshot.ts`](D:/workspace/github/sse-devtools/src/shared/stream-snapshot.ts) | 扩展 v2：stats + anomalies + notes（transcript 待 Phase 2 完成后再加） |
 | 8 | SSE Spec 校验器（基础） | M | [`sse-parser.ts`](D:/workspace/github/sse-devtools/src/shared/sse-parser.ts) | 解析时产出 warning；注释/缺空行/未知字段等 |
-| 9 | 协议 Profile 识别 | M–L | 新 `shared/ai-profile.ts` | 多厂商启发式；误判要可回退 `generic` |
+| 9 | 协议 Profile 识别 | M–L | 新 `shared/ai-profile.ts` | **暂缓**；与 Merged Transcript 一并实现 |
 | 10 | 通道拆分（content / reasoning / tools / meta） | M–L | Detail 多 Tab + profile 投影 | **依赖 9**；工具参数碎片拼接更难 |
 | 11 | Chunk 间隔直方图 | M–L | Stats/新 Timing 区 + SVG/CSS | 数据易算，可视化与布局成本中等 |
 | 12 | 导出 Mock / Fixture | M–L | 导出菜单 | 从 `raw`/events 生成可回放 SSE/NDJSON 文本 |
@@ -103,27 +106,38 @@ flowchart LR
 
 1. [x] **暂停 UI / 不停捕获**：Toolbar 开关；`stream-chunk` 仍写入 `streams`，不触发全量重绘。
 2. [x] **流指标**：基于现有时间戳算 TTFT（首 event − startedAt）、duration、avg/p95 gap、events/s；写入 Stats Dialog，并缓存到 record 派生字段（可不入库）。
-3. [ ] **异常扫描**：空 data、`JSON.parse` 失败、重复 `id`、单包超长；Stream 列表小角标 + Dialog 列表，点击跳到 event。
-4. [ ] **跨 Stream 全局搜索**：复用 `compileTextFilter`；结果列表显示 stream + event index，点击选中并打开抽屉。
+3. [x] **异常扫描**：空 data、`JSON.parse` 失败、重复 `id`、单包超长；Stream 列表小角标 + Dialog 列表，点击跳到 event。
+4. [x] **跨 Stream 全局搜索**：复用 `compileTextFilter`；结果列表显示 stream + event index，点击选中并打开抽屉。
 
 验收：高频流可暂停界面仍涨事件数；Stats 有 TTFT/间隔；异常与全局搜索可用。
 
-### Phase 2 — AI 语义主战场（约 2–3 周）★
+### Phase 2 — AI 语义主战场（暂缓，约 2–3 周）★
+
+> **状态：暂缓。** Merged Transcript 需按不同厂商协议分别适配（OpenAI Compatible / Anthropic / DeepSeek 等），当前已从面板移除半成品实现，待后续专项开发。
 
 目标：对标品类差异化——「看得懂 AI 流」。
 
-1. **`ai-profile.ts`**：对前 N 条可解析 JSON 做启发式，结果：`openai-compatible` | `anthropic` | `generic`（先落地前两者+generic）。
-2. **`ai-merge.ts` + Transcript Tab**：在 Detail 增加 `Transcript`（与 Events/Raw 并列）；增量拼接 content；提供 Copy Transcript。
-3. **通道拆分**：Transcript 区或子 Tab：`Content` / `Reasoning` / `Tools` / `Meta`；generic 时仅 Content=原始拼接尝试或提示「未识别」。
-4. **结束元数据增强**：从末包提取 `finish_reason` / `usage`（按 profile），展示在 meta 行或 Meta 通道。
+1. **`ai-profile.ts`**（暂缓）：对前 N 条可解析 JSON 做启发式，结果：`openai-compatible` | `anthropic` | `deepseek` | `generic`。
+2. **`ai-merge.ts` + Transcript Tab**（暂缓）：在 Detail 增加 `Transcript`（与 Events/Raw 并列）；按 profile 增量拼接 content；提供 Copy Transcript。
+3. **通道拆分**（暂缓）：Transcript 区或子 Tab：`Content` / `Reasoning` / `Tools` / `Meta`；generic 时仅 Content=原始拼接尝试或提示「未识别」。
+4. **结束元数据增强**（暂缓）：从末包提取 `finish_reason` / `usage`（按 profile），展示在 meta 行或 Meta 通道。
 
 验收：典型 `/chat/completions` 流可还原完整回答；工具调用参数可拼出；未识别协议不崩溃。
+
+#### TODO：Merged Transcript 厂商适配清单
+
+- [ ] 定义 `AiProfile` 插件接口（detect + merge），支持回退 `generic`
+- [ ] OpenAI Compatible：`choices[].delta.content` 拼接
+- [ ] Anthropic：`content_block_delta` / `message_delta` 拼接
+- [ ] DeepSeek：`message` / `update_session` / JSON Patch（`APPEND`/`BATCH`）等格式
+- [ ] Panel：Transcript Tab + Copy Transcript（放在面板内，非 toolbar）
+- [ ] 导出 v2 可选字段：`aiProfile`、`transcript`
 
 ### Phase 3 — 协议可信 + 可带走（约 1.5–2 周）
 
 1. **SSE Spec 警告**：parser 产出 `warnings[]`（或并行 lint 原始 block）；事件行/抽屉显示。
 2. **书签/标注**：事件右键 Add note；存 `notes: Record<index, string>`；进 archive/export。
-3. **复现包 v2**：JSON 含 profile、transcript、channels 摘要、metrics、anomalies、notes。
+3. **复现包 v2**：JSON 含 metrics、anomalies、notes（`aiProfile` / `transcript` 待 Phase 2 完成后补充）。
 4. **Mock Fixture 导出**：一键下载纯 `text/event-stream` 回放文件（由 events 重装 wire 格式）。
 
 验收：导出包可离线复现「看到了什么」；fixture 可被简单静态服务器重放。
@@ -164,7 +178,7 @@ flowchart LR
 | 阶段 | 主要文件 |
 |------|----------|
 | 1 | [`panel.ts`](D:/workspace/github/sse-devtools/src/panel/panel.ts) / [`panel.html`](D:/workspace/github/sse-devtools/src/panel/panel.html) / i18n |
-| 2 | 新建 `shared/ai-profile.ts`、`shared/ai-merge.ts`；panel Detail tabs；tests |
+| 2 | 新建 `shared/ai-profile.ts`、`shared/ai-merge.ts`；panel Detail tabs；tests（**暂缓**） |
 | 3 | [`sse-parser.ts`](D:/workspace/github/sse-devtools/src/shared/sse-parser.ts)、[`stream-snapshot.ts`](D:/workspace/github/sse-devtools/src/shared/stream-snapshot.ts)、archive types |
 | 4 | panel 新 Timing/Timeline 视图 + CSS |
 | 5 | [`inject-main.ts`](D:/workspace/github/sse-devtools/src/content/inject-main.ts)、[`types.ts`](D:/workspace/github/sse-devtools/src/shared/types.ts)、bridge 透传 |
@@ -183,5 +197,4 @@ flowchart LR
 
 ## 建议立即开工的第一刀
 
-**Phase 1（暂停 UI + 时序指标 + 异常扫描）→ 马上接 Phase 2 Merged Transcript。**  
-这两步难度低到中、不碰危险 inject，却能最先打出「超越列表面板」的产品感知。
+**Phase 1（暂停 UI + 时序指标 + 异常扫描）已完成 → 下一步建议 Phase 3（协议校验 + 导出增强）或 Phase 4（时序可视化）。Phase 2 Merged Transcript 暂缓，待厂商适配方案明确后再开工。**

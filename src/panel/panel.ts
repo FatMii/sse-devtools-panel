@@ -75,6 +75,11 @@ const anomalyCache = new Map<string, { eventCount: number; anomalies: StreamAnom
 const elList = document.getElementById("stream-list") as HTMLUListElement;
 const elEmpty = document.getElementById("empty-hint") as HTMLDivElement;
 const elMeta = document.getElementById("meta") as HTMLDivElement;
+const elMetaMethod = document.getElementById("meta-method") as HTMLSpanElement;
+const elMetaUrl = document.getElementById("meta-url") as HTMLSpanElement;
+const elMetaTags = document.getElementById("meta-tags") as HTMLDivElement;
+const elMetaDetails = document.getElementById("meta-details") as HTMLDetailsElement;
+const elMetaDetailsBody = document.getElementById("meta-details-body") as HTMLDivElement;
 const elEvents = document.getElementById("view-events") as HTMLDivElement;
 const elPlaceholder = document.getElementById("events-placeholder") as HTMLDivElement;
 const elTableWrap = document.getElementById("events-table-wrap") as HTMLDivElement;
@@ -360,8 +365,55 @@ function payloadPreviewForMeta(record: StreamRecord): string {
   const text = record.requestPayloadPreview;
   if (!text) return t("metaPayloadNone");
   const oneLine = text.replace(/\s+/g, " ").trim();
-  const clipped = oneLine.length > 90 ? `${oneLine.slice(0, 90)}…` : oneLine;
+  const clipped = oneLine.length > 160 ? `${oneLine.slice(0, 160)}…` : oneLine;
   return record.requestPayloadTruncated ? `${clipped}…` : clipped;
+}
+
+function renderStreamMeta(record: StreamRecord | undefined): void {
+  if (!record) {
+    elMeta.classList.add("is-empty");
+    elMetaMethod.textContent = "";
+    elMetaUrl.textContent = t("selectStream");
+    elMetaUrl.title = "";
+    elMetaTags.innerHTML = "";
+    elMetaDetails.hidden = true;
+    elMetaDetailsBody.innerHTML = "";
+    return;
+  }
+
+  elMeta.classList.remove("is-empty");
+  const headerCount = record.requestHeaders ? Object.keys(record.requestHeaders).length : 0;
+  const payloadPreview = payloadPreviewForMeta(record);
+
+  elMetaMethod.textContent = record.method;
+  elMetaUrl.textContent = shortPath(record.url);
+  elMetaUrl.title = record.url;
+
+  const tags: string[] = [];
+  if (record.status != null) {
+    tags.push(`<span class="meta-chip">${escapeHtml(`HTTP ${record.status}`)}</span>`);
+  }
+  if (record.contentType) {
+    tags.push(`<span class="meta-chip">${escapeHtml(record.contentType)}</span>`);
+  }
+  tags.push(`<span class="meta-chip">${escapeHtml(transportLabel(record.transport))}</span>`);
+  if (record.errorMessage) {
+    tags.push(
+      `<span class="meta-chip error">${escapeHtml(t("metaError", record.errorMessage))}</span>`,
+    );
+  }
+  elMetaTags.innerHTML = tags.join("");
+
+  elMetaDetails.hidden = false;
+  elMetaDetailsBody.innerHTML = `
+    <div class="meta-detail-row">
+      <span class="meta-detail-label">${escapeHtml(t("metaHeadersCount", String(headerCount)))}</span>
+    </div>
+    <div class="meta-detail-row">
+      <span class="meta-detail-label">${escapeHtml(t("metaPayloadLabel"))}</span>
+      <pre class="meta-payload-preview">${escapeHtml(payloadPreview)}</pre>
+    </div>
+  `;
 }
 
 const OVERSIZED_PACKET_THRESHOLD = 16_000;
@@ -1021,7 +1073,7 @@ function renderList(): void {
 function renderDetail(appendFriendly = false): void {
   const record = selectedId ? streams.get(selectedId) : undefined;
   if (!record) {
-    elMeta.textContent = t("selectStream");
+    renderStreamMeta(undefined);
     elPlaceholder.hidden = false;
     elPlaceholder.textContent = t("noStreamSelected");
     elTableWrap.hidden = true;
@@ -1031,16 +1083,7 @@ function renderDetail(appendFriendly = false): void {
     return;
   }
 
-  const headerCount = record.requestHeaders ? Object.keys(record.requestHeaders).length : 0;
-  const payloadPreview = payloadPreviewForMeta(record);
-  elMeta.textContent =
-    `${record.method} ${record.url}` +
-    (record.status != null ? ` · HTTP ${record.status}` : "") +
-    (record.contentType ? ` · ${record.contentType}` : "") +
-    ` · ${t("metaHeadersCount", String(headerCount))}` +
-    ` · ${t("metaPayloadPreview", payloadPreview)}` +
-    (record.errorMessage ? ` · ${t("metaError", record.errorMessage)}` : "");
-
+  renderStreamMeta(record);
   elRaw.textContent = record.raw || "";
 
   renderEvents(record, appendFriendly);

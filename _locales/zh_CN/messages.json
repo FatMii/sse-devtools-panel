@@ -410,6 +410,12 @@
   "metaPayloadNone": {
     "message": "无"
   },
+  "metaPayloadLabel": {
+    "message": "Payload"
+  },
+  "metaDetailsSummary": {
+    "message": "请求详情"
+  },
   "optionsTitle": {
     "message": "SSE DevTools 选项"
   },

@@ -121,7 +121,17 @@
             <button type="button" class="tab active" data-tab="events" data-i18n="tabEvents">Events</button>
             <button type="button" class="tab" data-tab="raw" data-i18n="tabRaw">Raw</button>
           </div>
-          <div class="meta" id="meta"></div>
+          <div class="meta" id="meta">
+            <div class="meta-line meta-line-primary">
+              <span class="meta-method" id="meta-method"></span>
+              <span class="meta-url" id="meta-url"></span>
+            </div>
+            <div class="meta-line meta-line-tags" id="meta-tags"></div>
+            <details class="meta-details" id="meta-details">
+              <summary data-i18n="metaDetailsSummary">Request details</summary>
+              <div class="meta-details-body" id="meta-details-body"></div>
+            </details>
+          </div>
           <div class="views">
             <div id="view-events" class="view active events-layout">
               <div class="events-list-pane">
