@@ -58,11 +58,14 @@ const elDrawerTitle = document.getElementById("drawer-title") as HTMLSpanElement
 const elDrawerBody = document.getElementById("drawer-body") as HTMLDivElement;
 const elDrawerSearch = document.getElementById("drawer-search") as HTMLInputElement;
 const elDrawerClose = document.getElementById("drawer-close") as HTMLButtonElement;
+const elDrawerPrev = document.getElementById("drawer-prev") as HTMLButtonElement;
+const elDrawerNext = document.getElementById("drawer-next") as HTMLButtonElement;
 const elDrawerCopy = document.getElementById("drawer-copy") as HTMLButtonElement;
 const elContextMenu = document.getElementById("row-context-menu") as HTMLDivElement;
 const elRaw = document.getElementById("view-raw") as HTMLPreElement;
 const elStreamsUrlFilter = document.getElementById("streams-url-filter") as HTMLInputElement;
 const elStreamsTransportFilter = document.getElementById("streams-transport-filter") as HTMLSelectElement;
+const elExportJson = document.getElementById("btn-export-json") as HTMLButtonElement;
 
 function connect(): void {
   const port = chrome.runtime.connect({ name: PANEL_PORT });
@@ -209,6 +212,115 @@ function eventMatchesSearch(ev: SseEvent, query: string): boolean {
   const filter = compileTextFilter(query);
   if (filter.isEmpty) return true;
   return filter.test(ev.event) || filter.test(ev.data);
+}
+
+/** Events currently visible under the Events search filter (ordered). */
+function getBrowsableEvents(record: StreamRecord): SseEvent[] {
+  return record.events.filter((ev) => eventMatchesSearch(ev, eventsSearchQuery));
+}
+
+function selectEventByIndex(record: StreamRecord, index: number): void {
+  const ev = record.events.find((e) => e.index === index);
+  if (!ev) return;
+  selectedEventIndex = index;
+  syncRowSelection();
+  openDrawer(ev);
+  const row = elTbody.querySelector<HTMLTableRowElement>(`tr[data-index="${index}"]`);
+  row?.scrollIntoView({ block: "nearest" });
+}
+
+function navigateDrawer(offset: -1 | 1): void {
+  const record = selectedId ? streams.get(selectedId) : undefined;
+  if (!record || selectedEventIndex == null) return;
+
+  const browsable = getBrowsableEvents(record);
+  if (browsable.length === 0) return;
+
+  const pos = browsable.findIndex((ev) => ev.index === selectedEventIndex);
+  if (pos === -1) return;
+
+  const nextPos = pos + offset;
+  if (nextPos < 0 || nextPos >= browsable.length) return;
+  selectEventByIndex(record, browsable[nextPos].index);
+}
+
+function updateDrawerNavButtons(): void {
+  const record = selectedId ? streams.get(selectedId) : undefined;
+  if (!record || selectedEventIndex == null || elDrawer.hidden) {
+    elDrawerPrev.disabled = true;
+    elDrawerNext.disabled = true;
+    return;
+  }
+
+  const browsable = getBrowsableEvents(record);
+  const pos = browsable.findIndex((ev) => ev.index === selectedEventIndex);
+  elDrawerPrev.disabled = pos <= 0;
+  elDrawerNext.disabled = pos === -1 || pos >= browsable.length - 1;
+}
+
+function sanitizeFilenamePart(value: string): string {
+  return value.replace(/[<>:"/\\|?*\u0000-\u001f]/g, "_").slice(0, 80) || "stream";
+}
+
+function buildExportFilename(record: StreamRecord): string {
+  const path = shortPath(record.url).replace(/^\//, "") || "stream";
+  const stamp = new Date(record.startedAt).toISOString().replace(/[:.]/g, "-");
+  return `sse-stream-${sanitizeFilenamePart(path)}-${stamp}.json`;
+}
+
+/** Portable snapshot of the selected stream for sharing / issue repro. */
+function buildStreamExportPayload(record: StreamRecord) {
+  return {
+    format: "sse-devtools-stream-v1",
+    exportedAt: Date.now(),
+    stream: {
+      requestId: record.requestId,
+      url: record.url,
+      method: record.method,
+      status: record.status,
+      contentType: record.contentType,
+      transport: record.transport,
+      streamKind: record.streamKind,
+      startedAt: record.startedAt,
+      endedAt: record.endedAt,
+      streamStatus: record.streamStatus,
+      errorMessage: record.errorMessage,
+      raw: record.raw,
+      events: record.events.map((ev) => ({
+        index: ev.index,
+        id: ev.id,
+        event: ev.event,
+        data: ev.data,
+        retry: ev.retry,
+        receivedAt: ev.receivedAt,
+        raw: ev.raw,
+      })),
+    },
+  };
+}
+
+function downloadTextFile(filename: string, text: string, mime: string): void {
+  const blob = new Blob([text], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function exportSelectedStreamJson(): void {
+  const record = selectedId ? streams.get(selectedId) : undefined;
+  if (!record) return;
+  const payload = buildStreamExportPayload(record);
+  downloadTextFile(
+    buildExportFilename(record),
+    `${JSON.stringify(payload, null, 2)}\n`,
+    "application/json;charset=utf-8",
+  );
 }
 
 function statusLabel(status: StreamRecord["streamStatus"]): string {
@@ -457,6 +569,7 @@ function openDrawer(ev: SseEvent): void {
   drawerEventData = ev.data;
   drawerEventIndex = ev.index;
   elDrawerTitle.textContent = `#${ev.index} · ${ev.event}`;
+  updateDrawerNavButtons();
 
   // Avoid wiping drawer search / rebuild when streaming updates the same open event
   if (sameEvent && elDrawerBody.querySelector(".json-tree, .event-body-text")) {
@@ -528,6 +641,7 @@ function closeDrawer(): void {
   elEvents.classList.remove("drawer-open");
   elDrawerBody.innerHTML = "";
   elDrawerTitle.textContent = "";
+  updateDrawerNavButtons();
   syncRowSelection();
 }
 
@@ -567,6 +681,10 @@ function setupActions(): void {
     renderDetail();
   });
 
+  elExportJson.addEventListener("click", () => {
+    exportSelectedStreamJson();
+  });
+
   document.getElementById("btn-copy-raw")?.addEventListener("click", async () => {
     const record = selectedId ? streams.get(selectedId) : undefined;
     if (!record) return;
@@ -581,6 +699,14 @@ function setupActions(): void {
     closeDrawer();
   });
 
+  elDrawerPrev.addEventListener("click", () => {
+    navigateDrawer(-1);
+  });
+
+  elDrawerNext.addEventListener("click", () => {
+    navigateDrawer(1);
+  });
+
   elDrawerCopy.addEventListener("click", async () => {
     if (drawerEventData == null) return;
     await copyText(drawerEventData);
@@ -589,6 +715,7 @@ function setupActions(): void {
   elEventsSearch.addEventListener("input", () => {
     eventsSearchQuery = elEventsSearch.value;
     applyEventsFilter();
+    updateDrawerNavButtons();
   });
 
   elStreamsUrlFilter.addEventListener("input", () => {
@@ -620,7 +747,25 @@ function setupActions(): void {
 
   document.addEventListener("click", () => hideContextMenu());
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") hideContextMenu();
+    if (e.key === "Escape") {
+      hideContextMenu();
+      return;
+    }
+    if (elDrawer.hidden) return;
+    const target = e.target as HTMLElement | null;
+    if (
+      target &&
+      (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)
+    ) {
+      return;
+    }
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      navigateDrawer(-1);
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      navigateDrawer(1);
+    }
   });
   window.addEventListener("blur", () => hideContextMenu());
   elTableWrap.addEventListener("scroll", () => hideContextMenu());

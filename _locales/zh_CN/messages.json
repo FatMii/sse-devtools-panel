@@ -89,6 +89,24 @@
   "copyDataTitle": {
     "message": "复制该事件的 Data"
   },
+  "drawerPrev": {
+    "message": "上一条"
+  },
+  "drawerPrevTitle": {
+    "message": "上一条事件（←）"
+  },
+  "drawerNext": {
+    "message": "下一条"
+  },
+  "drawerNextTitle": {
+    "message": "下一条事件（→）"
+  },
+  "exportJson": {
+    "message": "导出 JSON"
+  },
+  "exportJsonTitle": {
+    "message": "将当前选中的数据流下载为 JSON 文件"
+  },
   "close": {
     "message": "关闭"
   },

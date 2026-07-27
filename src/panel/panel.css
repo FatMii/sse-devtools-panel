@@ -85,6 +85,15 @@ button:active {
   background: var(--bg-active);
 }
 
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+button:disabled:hover {
+  background: var(--bg);
+}
+
 .main {
   display: flex;
   flex: 1;

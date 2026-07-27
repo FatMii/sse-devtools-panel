@@ -89,6 +89,24 @@
   "copyDataTitle": {
     "message": "Copy this event data"
   },
+  "drawerPrev": {
+    "message": "Prev"
+  },
+  "drawerPrevTitle": {
+    "message": "Previous event (←)"
+  },
+  "drawerNext": {
+    "message": "Next"
+  },
+  "drawerNextTitle": {
+    "message": "Next event (→)"
+  },
+  "exportJson": {
+    "message": "Export JSON"
+  },
+  "exportJsonTitle": {
+    "message": "Download the selected stream as JSON"
+  },
   "close": {
     "message": "Close"
   },
