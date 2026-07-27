@@ -203,6 +203,18 @@
   "statsTitle": {
     "message": "Show stream statistics"
   },
+  "pauseUi": {
+    "message": "Pause UI"
+  },
+  "pauseUiTitle": {
+    "message": "Pause UI repaint only (capture continues)"
+  },
+  "resumeUi": {
+    "message": "Resume UI"
+  },
+  "resumeUiTitle": {
+    "message": "Resume UI and flush buffered updates"
+  },
   "statsDialogTitle": {
     "message": "Statistics"
   },
@@ -232,6 +244,18 @@
   },
   "statsSelectedDuration": {
     "message": "Selected duration"
+  },
+  "statsSelectedTtft": {
+    "message": "TTFT"
+  },
+  "statsSelectedAvgGap": {
+    "message": "Avg gap"
+  },
+  "statsSelectedP95Gap": {
+    "message": "P95 gap"
+  },
+  "statsSelectedEventsPerSec": {
+    "message": "events/s"
   },
   "originImported": {
     "message": "imported"
@@ -289,6 +313,27 @@
         "example": "timeout"
       }
     }
+  },
+  "metaHeadersCount": {
+    "message": "Headers: $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "metaPayloadPreview": {
+    "message": "Payload: $TEXT$",
+    "placeholders": {
+      "text": {
+        "content": "$1",
+        "example": "{\"model\":\"gpt-4\"}"
+      }
+    }
+  },
+  "metaPayloadNone": {
+    "message": "none"
   },
   "optionsTitle": {
     "message": "SSE DevTools Options"

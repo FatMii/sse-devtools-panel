@@ -1,5 +1,6 @@
 import type {
   SseEvent,
+  StreamMetrics,
   StreamKind,
   StreamOrigin,
   StreamRecord,
@@ -23,12 +24,16 @@ export interface StreamExportBody {
   method: string;
   status?: number;
   contentType?: string;
+  requestHeaders?: Record<string, string>;
+  requestPayloadPreview?: string;
+  requestPayloadTruncated?: boolean;
   transport: StreamTransport;
   streamKind: StreamKind;
   startedAt: number;
   endedAt?: number;
   streamStatus: StreamStatus;
   errorMessage?: string;
+  metrics?: StreamMetrics;
   raw: string;
   events: Array<{
     index: number;
@@ -51,12 +56,16 @@ export function buildStreamExportPayload(record: StreamRecord): StreamExportPayl
       method: record.method,
       status: record.status,
       contentType: record.contentType,
+      requestHeaders: record.requestHeaders,
+      requestPayloadPreview: record.requestPayloadPreview,
+      requestPayloadTruncated: record.requestPayloadTruncated,
       transport: record.transport,
       streamKind: record.streamKind,
       startedAt: record.startedAt,
       endedAt: record.endedAt,
       streamStatus: record.streamStatus,
       errorMessage: record.errorMessage,
+      metrics: record.metrics,
       raw: record.raw,
       events: record.events.map((ev) => ({
         index: ev.index,
@@ -81,6 +90,18 @@ function isStreamKind(value: unknown): value is StreamKind {
 
 function isStreamStatus(value: unknown): value is StreamStatus {
   return value === "streaming" || value === "done" || value === "error";
+}
+
+function normalizeMetrics(raw: unknown): StreamMetrics | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const source = raw as Record<string, unknown>;
+  const out: StreamMetrics = {};
+  if (typeof source.ttftMs === "number") out.ttftMs = source.ttftMs;
+  if (typeof source.durationMs === "number") out.durationMs = source.durationMs;
+  if (typeof source.avgGapMs === "number") out.avgGapMs = source.avgGapMs;
+  if (typeof source.p95GapMs === "number") out.p95GapMs = source.p95GapMs;
+  if (typeof source.eventsPerSec === "number") out.eventsPerSec = source.eventsPerSec;
+  return Object.keys(out).length > 0 ? out : undefined;
 }
 
 function normalizeEvent(raw: unknown, fallbackIndex: number): SseEvent {
@@ -137,12 +158,25 @@ function normalizeStreamBody(body: Record<string, unknown>): StreamExportBody {
     method: body.method,
     status: typeof body.status === "number" ? body.status : undefined,
     contentType: typeof body.contentType === "string" ? body.contentType : undefined,
+    requestHeaders:
+      body.requestHeaders && typeof body.requestHeaders === "object"
+        ? Object.fromEntries(
+            Object.entries(body.requestHeaders as Record<string, unknown>).filter(
+              (entry): entry is [string, string] => typeof entry[1] === "string",
+            ),
+          )
+        : undefined,
+    requestPayloadPreview:
+      typeof body.requestPayloadPreview === "string" ? body.requestPayloadPreview : undefined,
+    requestPayloadTruncated:
+      typeof body.requestPayloadTruncated === "boolean" ? body.requestPayloadTruncated : undefined,
     transport: body.transport,
     streamKind: body.streamKind,
     startedAt: body.startedAt,
     endedAt: typeof body.endedAt === "number" ? body.endedAt : undefined,
     streamStatus: body.streamStatus === "streaming" ? "done" : body.streamStatus,
     errorMessage: typeof body.errorMessage === "string" ? body.errorMessage : undefined,
+    metrics: normalizeMetrics(body.metrics),
     raw: body.raw,
     events: body.events.map((ev, i) => normalizeEvent(ev, i)),
   };
@@ -188,12 +222,16 @@ export function streamRecordFromExport(
     method: body.method,
     status: body.status,
     contentType: body.contentType,
+    requestHeaders: body.requestHeaders ? { ...body.requestHeaders } : undefined,
+    requestPayloadPreview: body.requestPayloadPreview,
+    requestPayloadTruncated: body.requestPayloadTruncated,
     transport: body.transport,
     streamKind: body.streamKind,
     startedAt: body.startedAt,
     endedAt: body.endedAt,
     streamStatus: body.streamStatus === "streaming" ? "done" : body.streamStatus,
     errorMessage: body.errorMessage,
+    metrics: body.metrics ? { ...body.metrics } : undefined,
     raw: body.raw,
     events: body.events.map((ev) => ({ ...ev })),
     origin: options.origin,
@@ -203,6 +241,7 @@ export function streamRecordFromExport(
 export function cloneStreamRecord(record: StreamRecord): StreamRecord {
   return {
     ...record,
+    metrics: record.metrics ? { ...record.metrics } : undefined,
     events: record.events.map((ev) => ({ ...ev })),
   };
 }

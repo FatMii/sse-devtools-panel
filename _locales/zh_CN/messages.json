@@ -203,6 +203,18 @@
   "statsTitle": {
     "message": "查看数据流统计"
   },
+  "pauseUi": {
+    "message": "暂停 UI"
+  },
+  "pauseUiTitle": {
+    "message": "暂停界面刷新（继续捕获数据）"
+  },
+  "resumeUi": {
+    "message": "恢复 UI"
+  },
+  "resumeUiTitle": {
+    "message": "恢复界面刷新并显示暂停期间的数据"
+  },
   "statsDialogTitle": {
     "message": "统计"
   },
@@ -232,6 +244,18 @@
   },
   "statsSelectedDuration": {
     "message": "选中耗时"
+  },
+  "statsSelectedTtft": {
+    "message": "首包延迟 TTFT"
+  },
+  "statsSelectedAvgGap": {
+    "message": "平均间隔"
+  },
+  "statsSelectedP95Gap": {
+    "message": "P95 间隔"
+  },
+  "statsSelectedEventsPerSec": {
+    "message": "events/s"
   },
   "originImported": {
     "message": "导入"
@@ -289,6 +313,27 @@
         "example": "timeout"
       }
     }
+  },
+  "metaHeadersCount": {
+    "message": "请求头：$COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "metaPayloadPreview": {
+    "message": "Payload：$TEXT$",
+    "placeholders": {
+      "text": {
+        "content": "$1",
+        "example": "{\"model\":\"gpt-4\"}"
+      }
+    }
+  },
+  "metaPayloadNone": {
+    "message": "无"
   },
   "optionsTitle": {
     "message": "SSE DevTools 选项"

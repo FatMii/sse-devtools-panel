@@ -14,6 +14,12 @@ export interface StreamStartPayload {
   method: string;
   status?: number;
   contentType?: string;
+  /** Redacted request headers collected from page world (best effort). */
+  requestHeaders?: Record<string, string>;
+  /** Text preview of request payload (best effort, truncated). */
+  requestPayloadPreview?: string;
+  /** Whether payload preview was truncated. */
+  requestPayloadTruncated?: boolean;
   transport: StreamTransport;
   streamKind: StreamKind;
   startedAt: number;
@@ -61,6 +67,14 @@ export interface SseEvent {
   receivedAt: number;
 }
 
+export interface StreamMetrics {
+  ttftMs?: number;
+  durationMs?: number;
+  avgGapMs?: number;
+  p95GapMs?: number;
+  eventsPerSec?: number;
+}
+
 /** How this record entered the panel. */
 export type StreamOrigin = "live" | "imported" | "archive";
 
@@ -70,6 +84,9 @@ export interface StreamRecord {
   method: string;
   status?: number;
   contentType?: string;
+  requestHeaders?: Record<string, string>;
+  requestPayloadPreview?: string;
+  requestPayloadTruncated?: boolean;
   transport: StreamTransport;
   streamKind: StreamKind;
   startedAt: number;
@@ -78,6 +95,7 @@ export interface StreamRecord {
   errorMessage?: string;
   raw: string;
   events: SseEvent[];
+  metrics?: StreamMetrics;
   /** Present for imported / loaded-from-archive rows. */
   origin?: StreamOrigin;
 }

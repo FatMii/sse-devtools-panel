@@ -83,6 +83,131 @@ function resolveMethod(input: RequestInfo | URL, init?: RequestInit): string {
   return "GET";
 }
 
+const SENSITIVE_HEADER_RE =
+  /^(authorization|cookie|set-cookie|x-api-key|proxy-authorization)$/i;
+const MAX_PAYLOAD_PREVIEW = 4000;
+
+function redactHeaderValue(name: string, value: string): string {
+  if (SENSITIVE_HEADER_RE.test(name)) return "[REDACTED]";
+  return value;
+}
+
+function normalizeHeaders(input?: HeadersInit): Record<string, string> | undefined {
+  if (!input) return undefined;
+  const out: Record<string, string> = {};
+  try {
+    const headers = new Headers(input);
+    headers.forEach((value, key) => {
+      out[key.toLowerCase()] = redactHeaderValue(key, value);
+    });
+  } catch {
+    return undefined;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+function mergeHeaderMaps(
+  a?: Record<string, string>,
+  b?: Record<string, string>,
+): Record<string, string> | undefined {
+  if (!a && !b) return undefined;
+  if (!a) return { ...b };
+  if (!b) return { ...a };
+  return { ...a, ...b };
+}
+
+function clipPayloadText(
+  text: string,
+): { preview: string; truncated: boolean } {
+  if (text.length <= MAX_PAYLOAD_PREVIEW) {
+    return { preview: text, truncated: false };
+  }
+  return {
+    preview: text.slice(0, MAX_PAYLOAD_PREVIEW),
+    truncated: true,
+  };
+}
+
+async function payloadPreviewFromBody(
+  body: BodyInit | null | undefined,
+): Promise<{ preview?: string; truncated?: boolean }> {
+  if (body == null) return {};
+  if (typeof body === "string") {
+    const clipped = clipPayloadText(body);
+    return { preview: clipped.preview, truncated: clipped.truncated };
+  }
+  if (body instanceof URLSearchParams) {
+    const clipped = clipPayloadText(body.toString());
+    return { preview: clipped.preview, truncated: clipped.truncated };
+  }
+  if (body instanceof FormData) {
+    const fields: string[] = [];
+    body.forEach((value, key) => {
+      if (typeof value === "string") {
+        fields.push(`${key}=${value}`);
+      } else {
+        fields.push(`${key}=[blob:${value.type || "application/octet-stream"}]`);
+      }
+    });
+    const clipped = clipPayloadText(fields.join("&"));
+    return { preview: clipped.preview, truncated: clipped.truncated };
+  }
+  if (body instanceof Blob) {
+    try {
+      const text = await body.text();
+      const clipped = clipPayloadText(text);
+      return { preview: clipped.preview, truncated: clipped.truncated };
+    } catch {
+      return { preview: `[blob:${body.type || "application/octet-stream"}]` };
+    }
+  }
+  if (body instanceof ArrayBuffer || ArrayBuffer.isView(body)) {
+    const bytes = body.byteLength;
+    return { preview: `[binary:${bytes} bytes]` };
+  }
+  if (typeof ReadableStream !== "undefined" && body instanceof ReadableStream) {
+    return { preview: "[stream body]" };
+  }
+  return { preview: "[payload]" };
+}
+
+async function collectFetchRequestMeta(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<{
+  headers?: Record<string, string>;
+  payloadPreview?: string;
+  payloadTruncated?: boolean;
+}> {
+  let requestHeaders: Record<string, string> | undefined;
+  let payloadPreview: string | undefined;
+  let payloadTruncated: boolean | undefined;
+
+  if (typeof input !== "string" && !(input instanceof URL) && input instanceof Request) {
+    requestHeaders = mergeHeaderMaps(requestHeaders, normalizeHeaders(input.headers));
+    const body = input.clone();
+    try {
+      const text = await body.text();
+      if (text) {
+        const clipped = clipPayloadText(text);
+        payloadPreview = clipped.preview;
+        payloadTruncated = clipped.truncated;
+      }
+    } catch {
+      // best effort only
+    }
+  }
+
+  requestHeaders = mergeHeaderMaps(requestHeaders, normalizeHeaders(init?.headers));
+  if (init?.body != null) {
+    const fromInit = await payloadPreviewFromBody(init.body);
+    payloadPreview = fromInit.preview ?? payloadPreview;
+    payloadTruncated = fromInit.truncated ?? payloadTruncated;
+  }
+
+  return { headers: requestHeaders, payloadPreview, payloadTruncated };
+}
+
 async function pumpReadableStream(
   body: ReadableStream<Uint8Array>,
   sink: {
@@ -274,6 +399,7 @@ function patchFetch(
     const url = resolveUrl(input);
     const method = resolveMethod(input, init);
     const startedAt = Date.now();
+    const reqMeta = await collectFetchRequestMeta(input, init);
     let announced = false;
 
     const announce = (extra: {
@@ -288,6 +414,9 @@ function patchFetch(
         method,
         status: extra.status,
         contentType: extra.contentType,
+        requestHeaders: reqMeta.headers,
+        requestPayloadPreview: reqMeta.payloadPreview,
+        requestPayloadTruncated: reqMeta.payloadTruncated,
         transport: "fetch",
         streamKind: extra.streamKind,
         startedAt,
@@ -464,8 +593,10 @@ function patchXhr(
     const xhr = new OriginalXHR();
     let method = "GET";
     let url = "";
+    const requestHeaders: Record<string, string> = {};
+    let requestPayloadPreview: string | undefined;
+    let requestPayloadTruncated: boolean | undefined;
     let requestId: string | null = null;
-    let streamKind: StreamKind | null = null;
     let captured = false;
     let finished = false;
     let lastLen = 0;
@@ -476,6 +607,51 @@ function patchXhr(
       url = String(args[1] ?? "");
       return originalOpen(...args);
     }) as XMLHttpRequest["open"];
+
+    const originalSetRequestHeader = xhr.setRequestHeader.bind(xhr);
+    xhr.setRequestHeader = ((name: string, value: string) => {
+      requestHeaders[name.toLowerCase()] = redactHeaderValue(name, String(value));
+      return originalSetRequestHeader(name, value);
+    }) as XMLHttpRequest["setRequestHeader"];
+
+    const originalSend = xhr.send.bind(xhr);
+    xhr.send = ((body?: Document | XMLHttpRequestBodyInit | null) => {
+      if (body == null) {
+        requestPayloadPreview = undefined;
+        requestPayloadTruncated = undefined;
+      } else if (typeof body === "string") {
+        const clipped = clipPayloadText(body);
+        requestPayloadPreview = clipped.preview;
+        requestPayloadTruncated = clipped.truncated;
+      } else if (body instanceof URLSearchParams) {
+        const clipped = clipPayloadText(body.toString());
+        requestPayloadPreview = clipped.preview;
+        requestPayloadTruncated = clipped.truncated;
+      } else if (body instanceof FormData) {
+        const fields: string[] = [];
+        body.forEach((value, key) => {
+          if (typeof value === "string") fields.push(`${key}=${value}`);
+          else fields.push(`${key}=[blob:${value.type || "application/octet-stream"}]`);
+        });
+        const clipped = clipPayloadText(fields.join("&"));
+        requestPayloadPreview = clipped.preview;
+        requestPayloadTruncated = clipped.truncated;
+      } else if (body instanceof Blob) {
+        requestPayloadPreview = `[blob:${body.type || "application/octet-stream"}]`;
+        requestPayloadTruncated = false;
+      } else if (body instanceof ArrayBuffer || ArrayBuffer.isView(body)) {
+        const bytes = body.byteLength;
+        requestPayloadPreview = `[binary:${bytes} bytes]`;
+        requestPayloadTruncated = false;
+      } else if (typeof Document !== "undefined" && body instanceof Document) {
+        requestPayloadPreview = "[document]";
+        requestPayloadTruncated = false;
+      } else {
+        requestPayloadPreview = "[payload]";
+        requestPayloadTruncated = false;
+      }
+      return originalSend(body);
+    }) as XMLHttpRequest["send"];
 
     const tryStart = (): void => {
       if (captured || finished) return;
@@ -492,7 +668,6 @@ function patchXhr(
       if (!kind) return;
 
       captured = true;
-      streamKind = kind;
       requestId = nextId();
       lastLen = 0;
 
@@ -502,6 +677,9 @@ function patchXhr(
         method,
         status: xhr.status || undefined,
         contentType: contentType || undefined,
+        requestHeaders: Object.keys(requestHeaders).length > 0 ? { ...requestHeaders } : undefined,
+        requestPayloadPreview,
+        requestPayloadTruncated,
         transport: "xhr" satisfies StreamTransport,
         streamKind: kind,
         startedAt: Date.now(),
@@ -567,9 +745,6 @@ function patchXhr(
         finishErr("XMLHttpRequest aborted");
       }
     });
-
-    // Silence unused warning for streamKind in edge tooling
-    void streamKind;
 
     return xhr;
   }

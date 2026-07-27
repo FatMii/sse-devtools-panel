@@ -2,6 +2,7 @@ import "./panel.css";
 import type {
   RelayMessage,
   SseEvent,
+  StreamMetrics,
   StreamRecord,
   StreamKind,
   StreamStartPayload,
@@ -58,6 +59,9 @@ let eventsSearchQuery = "";
 let drawerSearchQuery = "";
 let streamsUrlFilterQuery = "";
 let streamsTransportFilter: StreamTransport | "all" = "all";
+let uiPaused = false;
+let pendingListRefreshWhilePaused = false;
+let pendingDetailRefreshWhilePaused = false;
 
 const elList = document.getElementById("stream-list") as HTMLUListElement;
 const elEmpty = document.getElementById("empty-hint") as HTMLDivElement;
@@ -83,6 +87,7 @@ const elStreamsTransportFilter = document.getElementById("streams-transport-filt
 const elExportJson = document.getElementById("btn-export-json") as HTMLButtonElement;
 const elExportCsv = document.getElementById("btn-export-csv") as HTMLButtonElement;
 const elImportJson = document.getElementById("btn-import-json") as HTMLButtonElement;
+const elPauseUi = document.getElementById("btn-pause-ui") as HTMLButtonElement;
 const elImportFile = document.getElementById("import-file") as HTMLInputElement;
 const elSaveArchive = document.getElementById("btn-save-archive") as HTMLButtonElement;
 const elArchives = document.getElementById("btn-archives") as HTMLButtonElement;
@@ -145,17 +150,24 @@ function onStart(payload: StreamStartPayload): void {
     existing.method = payload.method;
     existing.status = payload.status ?? existing.status;
     existing.contentType = payload.contentType ?? existing.contentType;
+    existing.requestHeaders = payload.requestHeaders ?? existing.requestHeaders;
+    existing.requestPayloadPreview = payload.requestPayloadPreview ?? existing.requestPayloadPreview;
+    existing.requestPayloadTruncated =
+      payload.requestPayloadTruncated ?? existing.requestPayloadTruncated;
     existing.transport = payload.transport;
     existing.streamKind = payload.streamKind;
     existing.startedAt = payload.startedAt;
-    if (existing.events.length === 0 && existing.raw === "") {
-      parsers.set(payload.requestId, createParser(payload.streamKind));
-    } else if (!parsers.has(payload.requestId)) {
+    if (!parsers.has(payload.requestId)) {
       parsers.set(payload.requestId, createParser(payload.streamKind));
     }
-    renderList();
-    if (selectedId === payload.requestId) {
-      renderDetail(true);
+    if (uiPaused) {
+      pendingListRefreshWhilePaused = true;
+      if (selectedId === payload.requestId) pendingDetailRefreshWhilePaused = true;
+    } else {
+      renderList();
+      if (selectedId === payload.requestId) {
+        renderDetail(true);
+      }
     }
     return;
   }
@@ -166,6 +178,9 @@ function onStart(payload: StreamStartPayload): void {
     method: payload.method,
     status: payload.status,
     contentType: payload.contentType,
+    requestHeaders: payload.requestHeaders,
+    requestPayloadPreview: payload.requestPayloadPreview,
+    requestPayloadTruncated: payload.requestPayloadTruncated,
     transport: payload.transport,
     streamKind: payload.streamKind,
     startedAt: payload.startedAt,
@@ -181,10 +196,15 @@ function onStart(payload: StreamStartPayload): void {
     selectedId = payload.requestId;
   }
 
-  renderList();
-  if (selectedId === payload.requestId) {
-    selectedEventIndex = null;
-    renderDetail();
+  if (uiPaused) {
+    pendingListRefreshWhilePaused = true;
+    if (selectedId === payload.requestId) pendingDetailRefreshWhilePaused = true;
+  } else {
+    renderList();
+    if (selectedId === payload.requestId) {
+      selectedEventIndex = null;
+      renderDetail();
+    }
   }
 }
 
@@ -196,6 +216,11 @@ function onDiscard(requestId: string): void {
     selectedEventIndex = null;
     const next = Array.from(streams.keys())[0] ?? null;
     selectedId = next;
+  }
+  if (uiPaused) {
+    pendingListRefreshWhilePaused = true;
+    pendingDetailRefreshWhilePaused = true;
+    return;
   }
   renderList();
   renderDetail();
@@ -212,11 +237,46 @@ function onChunk(payload: StreamChunkPayload): void {
     record.events.push(...events);
   }
 
+  if (uiPaused) {
+    pendingListRefreshWhilePaused = true;
+    if (selectedId === payload.requestId) pendingDetailRefreshWhilePaused = true;
+    return;
+  }
   // XHR can emit very frequent tiny deltas; avoid nuking the list DOM on every chunk.
   scheduleRenderList();
   if (selectedId === payload.requestId) {
     scheduleRenderDetail(true);
   }
+}
+
+function computeStreamMetrics(record: StreamRecord): StreamMetrics {
+  const events = record.events;
+  const firstTs = events[0]?.receivedAt;
+  const endedAt = record.endedAt;
+  const durationMs =
+    typeof endedAt === "number" && endedAt >= record.startedAt ? endedAt - record.startedAt : undefined;
+  const ttftMs = typeof firstTs === "number" ? Math.max(0, firstTs - record.startedAt) : undefined;
+  const gaps: number[] = [];
+  for (let i = 1; i < events.length; i += 1) {
+    const gap = events[i].receivedAt - events[i - 1].receivedAt;
+    if (Number.isFinite(gap) && gap >= 0) gaps.push(gap);
+  }
+  const avgGapMs =
+    gaps.length > 0 ? gaps.reduce((sum, ms) => sum + ms, 0) / gaps.length : undefined;
+  const p95GapMs =
+    gaps.length > 0
+      ? [...gaps].sort((a, b) => a - b)[Math.max(0, Math.ceil(gaps.length * 0.95) - 1)]
+      : undefined;
+  const eventsPerSec =
+    durationMs && durationMs > 0 ? Number((events.length / (durationMs / 1000)).toFixed(2)) : undefined;
+  return { ttftMs, durationMs, avgGapMs, p95GapMs, eventsPerSec };
+}
+
+function ensureStreamMetrics(record: StreamRecord): StreamMetrics {
+  if (record.metrics) return record.metrics;
+  const next = computeStreamMetrics(record);
+  record.metrics = next;
+  return next;
 }
 
 function onEnd(payload: StreamEndPayload): void {
@@ -233,6 +293,12 @@ function onEnd(payload: StreamEndPayload): void {
 
   record.streamStatus = "done";
   record.endedAt = payload.endedAt;
+  record.metrics = computeStreamMetrics(record);
+  if (uiPaused) {
+    pendingListRefreshWhilePaused = true;
+    if (selectedId === payload.requestId) pendingDetailRefreshWhilePaused = true;
+    return;
+  }
   renderList();
   if (selectedId === payload.requestId) {
     renderDetail(true);
@@ -245,6 +311,12 @@ function onError(payload: StreamErrorPayload): void {
   record.streamStatus = "error";
   record.errorMessage = payload.message;
   record.endedAt = payload.endedAt;
+  record.metrics = computeStreamMetrics(record);
+  if (uiPaused) {
+    pendingListRefreshWhilePaused = true;
+    if (selectedId === payload.requestId) pendingDetailRefreshWhilePaused = true;
+    return;
+  }
   renderList();
   if (selectedId === payload.requestId) {
     renderDetail();
@@ -270,6 +342,14 @@ function previewData(data: string): string {
   const oneLine = data.replace(/\s+/g, " ").trim();
   if (oneLine.length <= DATA_PREVIEW_LEN) return oneLine;
   return oneLine.slice(0, DATA_PREVIEW_LEN) + "…";
+}
+
+function payloadPreviewForMeta(record: StreamRecord): string {
+  const text = record.requestPayloadPreview;
+  if (!text) return t("metaPayloadNone");
+  const oneLine = text.replace(/\s+/g, " ").trim();
+  const clipped = oneLine.length > 90 ? `${oneLine.slice(0, 90)}…` : oneLine;
+  return record.requestPayloadTruncated ? `${clipped}…` : clipped;
 }
 
 function eventMatchesSearch(ev: SseEvent, query: string): boolean {
@@ -437,6 +517,24 @@ function formatDuration(ms: number): string {
   return `${minutes}m ${seconds}s`;
 }
 
+function formatMetricMs(ms?: number): string {
+  if (typeof ms !== "number" || !Number.isFinite(ms)) return "—";
+  return `${Math.round(ms)} ms`;
+}
+
+function setUiPaused(next: boolean): void {
+  uiPaused = next;
+  elPauseUi.classList.toggle("is-paused", uiPaused);
+  elPauseUi.textContent = uiPaused ? t("resumeUi") : t("pauseUi");
+  elPauseUi.title = uiPaused ? t("resumeUiTitle") : t("pauseUiTitle");
+  if (!uiPaused) {
+    if (pendingListRefreshWhilePaused) renderList();
+    if (pendingDetailRefreshWhilePaused) renderDetail(true);
+    pendingListRefreshWhilePaused = false;
+    pendingDetailRefreshWhilePaused = false;
+  }
+}
+
 function showStatsDialog(): void {
   const items = Array.from(streams.values());
   const eventCount = items.reduce((sum, s) => sum + s.events.length, 0);
@@ -465,6 +563,7 @@ function showStatsDialog(): void {
   `;
 
   if (selected) {
+    const selectedMetrics = ensureStreamMetrics(selected);
     const selectedDuration =
       typeof selected.endedAt === "number" ? selected.endedAt - selected.startedAt : null;
     const selectedBlock = document.createElement("div");
@@ -474,6 +573,12 @@ function showStatsDialog(): void {
       <div class="stats-row"><span>${escapeHtml(t("statsSelectedEvents"))}</span><strong>${selected.events.length}</strong></div>
       <div class="stats-row"><span>${escapeHtml(t("statsSelectedDuration"))}</span><strong>${
         selectedDuration == null ? "—" : escapeHtml(formatDuration(selectedDuration))
+      }</strong></div>
+      <div class="stats-row"><span>${escapeHtml(t("statsSelectedTtft"))}</span><strong>${escapeHtml(formatMetricMs(selectedMetrics.ttftMs))}</strong></div>
+      <div class="stats-row"><span>${escapeHtml(t("statsSelectedAvgGap"))}</span><strong>${escapeHtml(formatMetricMs(selectedMetrics.avgGapMs))}</strong></div>
+      <div class="stats-row"><span>${escapeHtml(t("statsSelectedP95Gap"))}</span><strong>${escapeHtml(formatMetricMs(selectedMetrics.p95GapMs))}</strong></div>
+      <div class="stats-row"><span>${escapeHtml(t("statsSelectedEventsPerSec"))}</span><strong>${
+        selectedMetrics.eventsPerSec == null ? "—" : escapeHtml(String(selectedMetrics.eventsPerSec))
       }</strong></div>
     `;
     body.appendChild(selectedBlock);
@@ -707,10 +812,14 @@ function renderDetail(appendFriendly = false): void {
     return;
   }
 
+  const headerCount = record.requestHeaders ? Object.keys(record.requestHeaders).length : 0;
+  const payloadPreview = payloadPreviewForMeta(record);
   elMeta.textContent =
     `${record.method} ${record.url}` +
     (record.status != null ? ` · HTTP ${record.status}` : "") +
     (record.contentType ? ` · ${record.contentType}` : "") +
+    ` · ${t("metaHeadersCount", String(headerCount))}` +
+    ` · ${t("metaPayloadPreview", payloadPreview)}` +
     (record.errorMessage ? ` · ${t("metaError", record.errorMessage)}` : "");
 
   elRaw.textContent = record.raw || "";
@@ -988,6 +1097,8 @@ function setupActions(): void {
     selectedEventIndex = null;
     streamsUrlFilterQuery = "";
     streamsTransportFilter = "all";
+    pendingListRefreshWhilePaused = false;
+    pendingDetailRefreshWhilePaused = false;
     elStreamsUrlFilter.value = "";
     elStreamsTransportFilter.value = "all";
     renderList();
@@ -1029,6 +1140,10 @@ function setupActions(): void {
 
   elStats.addEventListener("click", () => {
     showStatsDialog();
+  });
+
+  elPauseUi.addEventListener("click", () => {
+    setUiPaused(!uiPaused);
   });
 
   elDialogClose.addEventListener("click", () => {
@@ -1158,6 +1273,7 @@ function refreshLocaleUi(): void {
   document.documentElement.lang = uiLanguage();
   document.title = t("panelTitle");
   applyDomI18n();
+  setUiPaused(uiPaused);
   renderList();
   renderDetail();
 }

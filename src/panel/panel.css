@@ -96,6 +96,11 @@ button:disabled:hover {
   background: var(--bg);
 }
 
+button.is-paused {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
 .main {
   display: flex;
   flex: 1;
