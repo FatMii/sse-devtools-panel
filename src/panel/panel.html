@@ -12,11 +12,38 @@
         <div class="toolbar-actions">
           <button
             type="button"
+            id="btn-import-json"
+            data-i18n="importJson"
+            data-i18n-title="importJsonTitle"
+          >
+            Import JSON
+          </button>
+          <button
+            type="button"
             id="btn-export-json"
             data-i18n="exportJson"
             data-i18n-title="exportJsonTitle"
           >
             Export JSON
+          </button>
+          <button
+            type="button"
+            id="btn-save-archive"
+            data-i18n="saveArchive"
+            data-i18n-title="saveArchiveTitle"
+          >
+            Save
+          </button>
+          <button
+            type="button"
+            id="btn-archives"
+            data-i18n="archives"
+            data-i18n-title="archivesTitle"
+          >
+            Archives
+          </button>
+          <button type="button" id="btn-stats" data-i18n="stats" data-i18n-title="statsTitle">
+            Stats
           </button>
           <button type="button" id="btn-copy-raw" data-i18n="copyRaw" data-i18n-title="copyRawTitle">
             Copy Raw
@@ -32,6 +59,7 @@
           </button>
         </div>
       </header>
+      <input id="import-file" type="file" accept="application/json,.json" hidden />
 
       <div class="main">
         <aside class="sidebar">
@@ -150,6 +178,13 @@
     <div id="row-context-menu" class="context-menu" hidden>
       <button type="button" data-action="copy-data" data-i18n="copyData">Copy Data</button>
     </div>
+    <dialog id="app-dialog" class="app-dialog">
+      <header class="app-dialog-header">
+        <span id="app-dialog-title" class="app-dialog-title"></span>
+        <button type="button" id="app-dialog-close" data-i18n="close">Close</button>
+      </header>
+      <div id="app-dialog-body" class="app-dialog-body"></div>
+    </dialog>
     <script type="module" src="./panel.js"></script>
   </body>
 </html>

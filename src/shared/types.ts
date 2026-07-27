@@ -56,6 +56,9 @@ export interface SseEvent {
   receivedAt: number;
 }
 
+/** How this record entered the panel. */
+export type StreamOrigin = "live" | "imported" | "archive";
+
 export interface StreamRecord {
   requestId: string;
   url: string;
@@ -70,4 +73,6 @@ export interface StreamRecord {
   errorMessage?: string;
   raw: string;
   events: SseEvent[];
+  /** Present for imported / loaded-from-archive rows. */
+  origin?: StreamOrigin;
 }

@@ -64,7 +64,9 @@ body {
 
 .toolbar-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
+  justify-content: flex-end;
 }
 
 button {
@@ -204,6 +206,11 @@ button:disabled:hover {
 .badge.error {
   color: var(--error);
   border-color: var(--error);
+}
+
+.badge.origin {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 .empty-hint {
@@ -643,4 +650,108 @@ body.is-resizing {
 .placeholder {
   color: var(--text-muted);
   padding: 16px 12px;
+}
+
+.app-dialog {
+  width: min(520px, calc(100% - 24px));
+  max-height: calc(100% - 24px);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0;
+  color: var(--text);
+  background: var(--bg);
+}
+
+.app-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.app-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.app-dialog-title {
+  font-weight: 600;
+}
+
+.app-dialog-body {
+  padding: 10px;
+  overflow: auto;
+  max-height: min(70vh, 520px);
+}
+
+.stats-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.stats-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.stats-selected {
+  margin-top: 10px;
+  padding-top: 6px;
+}
+
+.stats-subtitle {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.archives-empty {
+  color: var(--text-muted);
+  padding: 8px 2px;
+}
+
+.archives-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.archives-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-elevated);
+}
+
+.archives-meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.archives-name {
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.archives-sub {
+  margin-top: 4px;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+.archives-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
 }

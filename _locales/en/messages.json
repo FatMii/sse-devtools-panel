@@ -107,6 +107,129 @@
   "exportJsonTitle": {
     "message": "Download the selected stream as JSON"
   },
+  "importJson": {
+    "message": "Import JSON"
+  },
+  "importJsonTitle": {
+    "message": "Import a previously exported stream JSON"
+  },
+  "importFailed": {
+    "message": "Import failed: $MSG$",
+    "placeholders": {
+      "msg": {
+        "content": "$1",
+        "example": "Invalid JSON"
+      }
+    }
+  },
+  "saveArchive": {
+    "message": "Save"
+  },
+  "saveArchiveTitle": {
+    "message": "Save the selected stream to local archives"
+  },
+  "archives": {
+    "message": "Archives"
+  },
+  "archivesTitle": {
+    "message": "Browse saved stream archives"
+  },
+  "archivesDialogTitle": {
+    "message": "Saved Archives"
+  },
+  "archivesEmpty": {
+    "message": "No saved archives yet."
+  },
+  "archivesOpenFailed": {
+    "message": "Failed to open archives: $MSG$",
+    "placeholders": {
+      "msg": {
+        "content": "$1",
+        "example": "IndexedDB error"
+      }
+    }
+  },
+  "archiveNamePrompt": {
+    "message": "Archive name"
+  },
+  "archiveNameRequired": {
+    "message": "Archive name cannot be empty."
+  },
+  "archiveSaved": {
+    "message": "Stream saved to archives."
+  },
+  "archiveSaveFailed": {
+    "message": "Save failed: $MSG$",
+    "placeholders": {
+      "msg": {
+        "content": "$1",
+        "example": "IndexedDB error"
+      }
+    }
+  },
+  "archiveLoad": {
+    "message": "Load"
+  },
+  "archiveDelete": {
+    "message": "Delete"
+  },
+  "archiveDeleteConfirm": {
+    "message": "Delete archive \"$NAME$\"?",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "chat session"
+      }
+    }
+  },
+  "archiveMissing": {
+    "message": "This archive no longer exists."
+  },
+  "needSelectedStream": {
+    "message": "Select a stream first."
+  },
+  "stats": {
+    "message": "Stats"
+  },
+  "statsTitle": {
+    "message": "Show stream statistics"
+  },
+  "statsDialogTitle": {
+    "message": "Statistics"
+  },
+  "statsStreamCount": {
+    "message": "Streams"
+  },
+  "statsEventCount": {
+    "message": "Events"
+  },
+  "statsStreamingCount": {
+    "message": "Streaming"
+  },
+  "statsDoneCount": {
+    "message": "Done"
+  },
+  "statsErrorCount": {
+    "message": "Error"
+  },
+  "statsAvgDuration": {
+    "message": "Avg duration"
+  },
+  "statsSelectedStream": {
+    "message": "Selected stream"
+  },
+  "statsSelectedEvents": {
+    "message": "Selected events"
+  },
+  "statsSelectedDuration": {
+    "message": "Selected duration"
+  },
+  "originImported": {
+    "message": "imported"
+  },
+  "originArchive": {
+    "message": "archive"
+  },
   "close": {
     "message": "Close"
   },

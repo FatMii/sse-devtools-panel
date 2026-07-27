@@ -14,6 +14,19 @@ import { applyDomI18n, initI18n, onLocaleChange, t, uiLanguage } from "../shared
 import { SseParser, type ParsedSseEvent } from "../shared/sse-parser";
 import { NdjsonParser } from "../shared/ndjson-parser";
 import { compileTextFilter } from "../shared/text-filter";
+import {
+  deleteStreamArchive,
+  getStreamArchive,
+  listStreamArchives,
+  saveStreamArchive,
+  type StreamArchiveEntry,
+} from "../shared/stream-archive-db";
+import {
+  buildStreamExportPayload,
+  createRequestId,
+  parseStreamExportJson,
+  streamRecordFromExport,
+} from "../shared/stream-snapshot";
 import { applyTreeSearch, createJsonTree, tryParseJsonValue } from "./json-tree";
 
 const PANEL_PORT = "sse-devtools-panel";
@@ -66,6 +79,15 @@ const elRaw = document.getElementById("view-raw") as HTMLPreElement;
 const elStreamsUrlFilter = document.getElementById("streams-url-filter") as HTMLInputElement;
 const elStreamsTransportFilter = document.getElementById("streams-transport-filter") as HTMLSelectElement;
 const elExportJson = document.getElementById("btn-export-json") as HTMLButtonElement;
+const elImportJson = document.getElementById("btn-import-json") as HTMLButtonElement;
+const elImportFile = document.getElementById("import-file") as HTMLInputElement;
+const elSaveArchive = document.getElementById("btn-save-archive") as HTMLButtonElement;
+const elArchives = document.getElementById("btn-archives") as HTMLButtonElement;
+const elStats = document.getElementById("btn-stats") as HTMLButtonElement;
+const elDialog = document.getElementById("app-dialog") as HTMLDialogElement;
+const elDialogTitle = document.getElementById("app-dialog-title") as HTMLSpanElement;
+const elDialogBody = document.getElementById("app-dialog-body") as HTMLDivElement;
+const elDialogClose = document.getElementById("app-dialog-close") as HTMLButtonElement;
 
 function connect(): void {
   const port = chrome.runtime.connect({ name: PANEL_PORT });
@@ -122,6 +144,7 @@ function onStart(payload: StreamStartPayload): void {
     streamStatus: "streaming",
     raw: "",
     events: [],
+    origin: "live",
   };
   streams.set(payload.requestId, record);
   parsers.set(payload.requestId, createParser(payload.streamKind));
@@ -268,37 +291,6 @@ function buildExportFilename(record: StreamRecord): string {
   return `sse-stream-${sanitizeFilenamePart(path)}-${stamp}.json`;
 }
 
-/** Portable snapshot of the selected stream for sharing / issue repro. */
-function buildStreamExportPayload(record: StreamRecord) {
-  return {
-    format: "sse-devtools-stream-v1",
-    exportedAt: Date.now(),
-    stream: {
-      requestId: record.requestId,
-      url: record.url,
-      method: record.method,
-      status: record.status,
-      contentType: record.contentType,
-      transport: record.transport,
-      streamKind: record.streamKind,
-      startedAt: record.startedAt,
-      endedAt: record.endedAt,
-      streamStatus: record.streamStatus,
-      errorMessage: record.errorMessage,
-      raw: record.raw,
-      events: record.events.map((ev) => ({
-        index: ev.index,
-        id: ev.id,
-        event: ev.event,
-        data: ev.data,
-        retry: ev.retry,
-        receivedAt: ev.receivedAt,
-        raw: ev.raw,
-      })),
-    },
-  };
-}
-
 function downloadTextFile(filename: string, text: string, mime: string): void {
   const blob = new Blob([text], { type: mime });
   const url = URL.createObjectURL(blob);
@@ -312,6 +304,7 @@ function downloadTextFile(filename: string, text: string, mime: string): void {
   URL.revokeObjectURL(url);
 }
 
+/** Portable snapshot of the selected stream for sharing / issue repro. */
 function exportSelectedStreamJson(): void {
   const record = selectedId ? streams.get(selectedId) : undefined;
   if (!record) return;
@@ -321,6 +314,187 @@ function exportSelectedStreamJson(): void {
     `${JSON.stringify(payload, null, 2)}\n`,
     "application/json;charset=utf-8",
   );
+}
+
+function addStaticStream(record: StreamRecord): void {
+  streams.set(record.requestId, record);
+  parsers.delete(record.requestId);
+  selectedId = record.requestId;
+  selectedEventIndex = null;
+  renderList();
+  renderDetail();
+}
+
+async function importStreamFromFile(file: File): Promise<void> {
+  const text = await file.text();
+  const body = parseStreamExportJson(text);
+  const record = streamRecordFromExport(body, {
+    requestId: createRequestId("imp"),
+    origin: "imported",
+  });
+  addStaticStream(record);
+}
+
+async function saveSelectedStreamArchive(): Promise<void> {
+  const record = selectedId ? streams.get(selectedId) : undefined;
+  if (!record) {
+    window.alert(t("needSelectedStream"));
+    return;
+  }
+  const defaultName = `${shortPath(record.url)} @ ${new Date(record.startedAt).toLocaleString()}`;
+  const name = window.prompt(t("archiveNamePrompt"), defaultName);
+  if (name == null) return;
+  if (!name.trim()) {
+    window.alert(t("archiveNameRequired"));
+    return;
+  }
+  await saveStreamArchive(name, record);
+  window.alert(t("archiveSaved"));
+}
+
+function closeAppDialog(): void {
+  if (elDialog.open) elDialog.close();
+  elDialogBody.innerHTML = "";
+  elDialogTitle.textContent = "";
+}
+
+function openAppDialog(title: string, body: HTMLElement): void {
+  elDialogTitle.textContent = title;
+  elDialogBody.innerHTML = "";
+  elDialogBody.appendChild(body);
+  if (!elDialog.open) elDialog.showModal();
+}
+
+function formatDuration(ms: number): string {
+  if (ms < 1000) return `${Math.round(ms)} ms`;
+  if (ms < 60_000) return `${(ms / 1000).toFixed(1)} s`;
+  const minutes = Math.floor(ms / 60_000);
+  const seconds = ((ms % 60_000) / 1000).toFixed(1);
+  return `${minutes}m ${seconds}s`;
+}
+
+function showStatsDialog(): void {
+  const items = Array.from(streams.values());
+  const eventCount = items.reduce((sum, s) => sum + s.events.length, 0);
+  const streaming = items.filter((s) => s.streamStatus === "streaming").length;
+  const done = items.filter((s) => s.streamStatus === "done").length;
+  const error = items.filter((s) => s.streamStatus === "error").length;
+  const durations = items
+    .filter((s) => typeof s.endedAt === "number")
+    .map((s) => (s.endedAt as number) - s.startedAt)
+    .filter((ms) => Number.isFinite(ms) && ms >= 0);
+  const avgMs =
+    durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : null;
+  const selected = selectedId ? streams.get(selectedId) : undefined;
+
+  const body = document.createElement("div");
+  body.className = "stats-grid";
+  body.innerHTML = `
+    <div class="stats-row"><span>${escapeHtml(t("statsStreamCount"))}</span><strong>${items.length}</strong></div>
+    <div class="stats-row"><span>${escapeHtml(t("statsEventCount"))}</span><strong>${eventCount}</strong></div>
+    <div class="stats-row"><span>${escapeHtml(t("statsStreamingCount"))}</span><strong>${streaming}</strong></div>
+    <div class="stats-row"><span>${escapeHtml(t("statsDoneCount"))}</span><strong>${done}</strong></div>
+    <div class="stats-row"><span>${escapeHtml(t("statsErrorCount"))}</span><strong>${error}</strong></div>
+    <div class="stats-row"><span>${escapeHtml(t("statsAvgDuration"))}</span><strong>${
+      avgMs == null ? "—" : escapeHtml(formatDuration(avgMs))
+    }</strong></div>
+  `;
+
+  if (selected) {
+    const selectedDuration =
+      typeof selected.endedAt === "number" ? selected.endedAt - selected.startedAt : null;
+    const selectedBlock = document.createElement("div");
+    selectedBlock.className = "stats-selected";
+    selectedBlock.innerHTML = `
+      <div class="stats-subtitle">${escapeHtml(t("statsSelectedStream"))}</div>
+      <div class="stats-row"><span>${escapeHtml(t("statsSelectedEvents"))}</span><strong>${selected.events.length}</strong></div>
+      <div class="stats-row"><span>${escapeHtml(t("statsSelectedDuration"))}</span><strong>${
+        selectedDuration == null ? "—" : escapeHtml(formatDuration(selectedDuration))
+      }</strong></div>
+    `;
+    body.appendChild(selectedBlock);
+  }
+
+  openAppDialog(t("statsDialogTitle"), body);
+}
+
+async function showArchivesDialog(): Promise<void> {
+  const entries = await listStreamArchives();
+  const body = document.createElement("div");
+  body.className = "archives-panel";
+
+  if (entries.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "archives-empty";
+    empty.textContent = t("archivesEmpty");
+    body.appendChild(empty);
+  } else {
+    const list = document.createElement("ul");
+    list.className = "archives-list";
+    for (const entry of entries) {
+      list.appendChild(createArchiveListItem(entry));
+    }
+    body.appendChild(list);
+  }
+
+  openAppDialog(t("archivesDialogTitle"), body);
+}
+
+function createArchiveListItem(entry: StreamArchiveEntry): HTMLLIElement {
+  const li = document.createElement("li");
+  li.className = "archives-item";
+  const meta = document.createElement("div");
+  meta.className = "archives-meta";
+  meta.innerHTML = `
+    <div class="archives-name">${escapeHtml(entry.name)}</div>
+    <div class="archives-sub">
+      ${escapeHtml(new Date(entry.savedAt).toLocaleString())}
+      · ${escapeHtml(t("eventsCount", String(entry.stream.events.length)))}
+      · ${escapeHtml(shortPath(entry.stream.url))}
+    </div>
+  `;
+  const actions = document.createElement("div");
+  actions.className = "archives-actions";
+
+  const loadBtn = document.createElement("button");
+  loadBtn.type = "button";
+  loadBtn.textContent = t("archiveLoad");
+  loadBtn.addEventListener("click", async () => {
+    const latest = await getStreamArchive(entry.id);
+    if (!latest) {
+      window.alert(t("archiveMissing"));
+      await showArchivesDialog();
+      return;
+    }
+    const record = {
+      ...latest.stream,
+      events: latest.stream.events.map((ev) => ({ ...ev })),
+      requestId: createRequestId("arc"),
+      origin: "archive" as const,
+      streamStatus: latest.stream.streamStatus === "streaming" ? ("done" as const) : latest.stream.streamStatus,
+    };
+    addStaticStream(record);
+    closeAppDialog();
+  });
+
+  const deleteBtn = document.createElement("button");
+  deleteBtn.type = "button";
+  deleteBtn.textContent = t("archiveDelete");
+  deleteBtn.addEventListener("click", async () => {
+    if (!window.confirm(t("archiveDeleteConfirm", entry.name))) return;
+    await deleteStreamArchive(entry.id);
+    await showArchivesDialog();
+  });
+
+  actions.append(loadBtn, deleteBtn);
+  li.append(meta, actions);
+  return li;
+}
+
+function originLabel(origin: StreamRecord["origin"]): string | null {
+  if (origin === "imported") return t("originImported");
+  if (origin === "archive") return t("originArchive");
+  return null;
 }
 
 function statusLabel(status: StreamRecord["streamStatus"]): string {
@@ -380,6 +554,11 @@ function renderList(): void {
       <div class="status-row">
         <span class="badge ${s.streamStatus}">${escapeHtml(statusLabel(s.streamStatus))}</span>
         <span class="badge">${escapeHtml(transportLabel(s.transport))}</span>
+        ${
+          originLabel(s.origin)
+            ? `<span class="badge origin">${escapeHtml(originLabel(s.origin) as string)}</span>`
+            : ""
+        }
         <span>${s.status ?? "—"}</span>
         <span>${escapeHtml(t("eventsCount", String(s.events.length)))}</span>
       </div>
@@ -683,6 +862,44 @@ function setupActions(): void {
 
   elExportJson.addEventListener("click", () => {
     exportSelectedStreamJson();
+  });
+
+  elImportJson.addEventListener("click", () => {
+    elImportFile.value = "";
+    elImportFile.click();
+  });
+
+  elImportFile.addEventListener("change", () => {
+    const file = elImportFile.files?.[0];
+    if (!file) return;
+    void importStreamFromFile(file).catch((err) => {
+      window.alert(t("importFailed", err instanceof Error ? err.message : String(err)));
+    });
+  });
+
+  elSaveArchive.addEventListener("click", () => {
+    void saveSelectedStreamArchive().catch((err) => {
+      window.alert(t("archiveSaveFailed", err instanceof Error ? err.message : String(err)));
+    });
+  });
+
+  elArchives.addEventListener("click", () => {
+    void showArchivesDialog().catch((err) => {
+      window.alert(t("archivesOpenFailed", err instanceof Error ? err.message : String(err)));
+    });
+  });
+
+  elStats.addEventListener("click", () => {
+    showStatsDialog();
+  });
+
+  elDialogClose.addEventListener("click", () => {
+    closeAppDialog();
+  });
+
+  elDialog.addEventListener("cancel", (e) => {
+    e.preventDefault();
+    closeAppDialog();
   });
 
   document.getElementById("btn-copy-raw")?.addEventListener("click", async () => {

@@ -107,6 +107,129 @@
   "exportJsonTitle": {
     "message": "将当前选中的数据流下载为 JSON 文件"
   },
+  "importJson": {
+    "message": "导入 JSON"
+  },
+  "importJsonTitle": {
+    "message": "导入此前导出的数据流 JSON"
+  },
+  "importFailed": {
+    "message": "导入失败：$MSG$",
+    "placeholders": {
+      "msg": {
+        "content": "$1",
+        "example": "Invalid JSON"
+      }
+    }
+  },
+  "saveArchive": {
+    "message": "保存"
+  },
+  "saveArchiveTitle": {
+    "message": "将当前选中数据流保存到本地存档"
+  },
+  "archives": {
+    "message": "存档"
+  },
+  "archivesTitle": {
+    "message": "浏览已保存的数据流存档"
+  },
+  "archivesDialogTitle": {
+    "message": "已保存存档"
+  },
+  "archivesEmpty": {
+    "message": "暂无存档。"
+  },
+  "archivesOpenFailed": {
+    "message": "打开存档失败：$MSG$",
+    "placeholders": {
+      "msg": {
+        "content": "$1",
+        "example": "IndexedDB error"
+      }
+    }
+  },
+  "archiveNamePrompt": {
+    "message": "存档名称"
+  },
+  "archiveNameRequired": {
+    "message": "存档名称不能为空。"
+  },
+  "archiveSaved": {
+    "message": "已保存到本地存档。"
+  },
+  "archiveSaveFailed": {
+    "message": "保存失败：$MSG$",
+    "placeholders": {
+      "msg": {
+        "content": "$1",
+        "example": "IndexedDB error"
+      }
+    }
+  },
+  "archiveLoad": {
+    "message": "加载"
+  },
+  "archiveDelete": {
+    "message": "删除"
+  },
+  "archiveDeleteConfirm": {
+    "message": "删除存档“$NAME$”？",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "chat session"
+      }
+    }
+  },
+  "archiveMissing": {
+    "message": "该存档已不存在。"
+  },
+  "needSelectedStream": {
+    "message": "请先选择一条数据流。"
+  },
+  "stats": {
+    "message": "统计"
+  },
+  "statsTitle": {
+    "message": "查看数据流统计"
+  },
+  "statsDialogTitle": {
+    "message": "统计"
+  },
+  "statsStreamCount": {
+    "message": "数据流数"
+  },
+  "statsEventCount": {
+    "message": "事件数"
+  },
+  "statsStreamingCount": {
+    "message": "进行中"
+  },
+  "statsDoneCount": {
+    "message": "已完成"
+  },
+  "statsErrorCount": {
+    "message": "错误"
+  },
+  "statsAvgDuration": {
+    "message": "平均耗时"
+  },
+  "statsSelectedStream": {
+    "message": "当前选中"
+  },
+  "statsSelectedEvents": {
+    "message": "选中事件数"
+  },
+  "statsSelectedDuration": {
+    "message": "选中耗时"
+  },
+  "originImported": {
+    "message": "导入"
+  },
+  "originArchive": {
+    "message": "存档"
+  },
   "close": {
     "message": "关闭"
   },
