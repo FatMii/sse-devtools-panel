@@ -85,6 +85,8 @@ let contextMenuData: string | null = null;
 let activeTab: "events" | "raw" | "timeline" | "request" = "events";
 let requestPane: "headers" | "payload" = "headers";
 let requestPayloadView: "parsed" | "source" = "parsed";
+/** Skip Request tab DOM rebuild while streaming if request meta did not change. */
+let requestViewFingerprint = "";
 let drawerWidthPercent = DRAWER_WIDTH_DEFAULT;
 let eventsSearchQuery = "";
 let drawerSearchQuery = "";
@@ -1858,14 +1860,61 @@ function appendKvRow(parent: HTMLElement, label: string, value: string): void {
   parent.appendChild(row);
 }
 
+function buildRequestViewFingerprint(record: StreamRecord): string {
+  return [
+    uiLanguage(),
+    record.requestId,
+    record.url,
+    record.method,
+    String(record.status ?? ""),
+    record.statusText ?? "",
+    record.contentType ?? "",
+    record.transport,
+    record.streamKind,
+    String(record.requestPayloadTruncated ?? false),
+    record.requestPayloadPreview ?? "",
+    JSON.stringify(record.requestHeaders ?? null),
+    JSON.stringify(record.responseHeaders ?? null),
+  ].join("\n");
+}
+
+function switchRequestPane(pane: "headers" | "payload"): void {
+  requestPane = pane;
+  const headersTab = elRequestBody.querySelector<HTMLButtonElement>(
+    '.request-subtab[data-request-pane="headers"]',
+  );
+  const payloadTab = elRequestBody.querySelector<HTMLButtonElement>(
+    '.request-subtab[data-request-pane="payload"]',
+  );
+  const paneHeaders = elRequestBody.querySelector<HTMLElement>(".request-pane-headers");
+  const panePayload = elRequestBody.querySelector<HTMLElement>(".request-pane-payload");
+  if (!headersTab || !payloadTab || !paneHeaders || !panePayload) return;
+  headersTab.classList.toggle("active", pane === "headers");
+  payloadTab.classList.toggle("active", pane === "payload");
+  paneHeaders.hidden = pane !== "headers";
+  panePayload.hidden = pane !== "payload";
+}
+
 function renderRequest(record: StreamRecord | undefined): void {
   if (!record) {
+    requestViewFingerprint = "";
     elRequestPlaceholder.hidden = false;
     elRequestPlaceholder.textContent = t("noStreamSelected");
     elRequestBody.hidden = true;
     elRequestBody.innerHTML = "";
     return;
   }
+
+  const fingerprint = buildRequestViewFingerprint(record);
+  if (
+    fingerprint === requestViewFingerprint &&
+    elRequestBody.querySelector(".request-subtabs") &&
+    !elRequestBody.hidden
+  ) {
+    // Keep current Headers/Payload selection while stream chunks keep refreshing detail.
+    return;
+  }
+  requestViewFingerprint = fingerprint;
 
   elRequestPlaceholder.hidden = true;
   elRequestBody.hidden = false;
@@ -1875,21 +1924,23 @@ function renderRequest(record: StreamRecord | undefined): void {
   subtabs.className = "request-subtabs";
   const headersTab = document.createElement("button");
   headersTab.type = "button";
+  headersTab.dataset.requestPane = "headers";
   headersTab.className = "request-subtab" + (requestPane === "headers" ? " active" : "");
   headersTab.textContent = t("requestPaneHeaders");
   const payloadTab = document.createElement("button");
   payloadTab.type = "button";
+  payloadTab.dataset.requestPane = "payload";
   payloadTab.className = "request-subtab" + (requestPane === "payload" ? " active" : "");
   payloadTab.textContent = t("requestPanePayload");
   subtabs.append(headersTab, payloadTab);
   elRequestBody.appendChild(subtabs);
 
   const paneHeaders = document.createElement("div");
-  paneHeaders.className = "request-pane";
+  paneHeaders.className = "request-pane request-pane-headers";
   paneHeaders.hidden = requestPane !== "headers";
 
   const panePayload = document.createElement("div");
-  panePayload.className = "request-pane";
+  panePayload.className = "request-pane request-pane-payload";
   panePayload.hidden = requestPane !== "payload";
 
   // ---- Headers pane (Network-like) ----
@@ -2078,19 +2129,16 @@ function renderRequest(record: StreamRecord | undefined): void {
 
   elRequestBody.append(paneHeaders, panePayload);
 
-  headersTab.addEventListener("click", () => {
-    requestPane = "headers";
-    headersTab.classList.add("active");
-    payloadTab.classList.remove("active");
-    paneHeaders.hidden = false;
-    panePayload.hidden = true;
+  // pointerdown: streaming detail refresh can destroy buttons between mousedown/mouseup.
+  headersTab.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    switchRequestPane("headers");
   });
-  payloadTab.addEventListener("click", () => {
-    requestPane = "payload";
-    payloadTab.classList.add("active");
-    headersTab.classList.remove("active");
-    paneHeaders.hidden = true;
-    panePayload.hidden = false;
+  payloadTab.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    switchRequestPane("payload");
   });
 }
 
@@ -2130,6 +2178,7 @@ function setupActions(): void {
     parsers.clear();
     anomalyCache.clear();
     specWarningCache.clear();
+    requestViewFingerprint = "";
     selectedId = null;
     selectedEventIndex = null;
     streamsUrlFilterQuery = "";
