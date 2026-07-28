@@ -116,6 +116,15 @@
   "exportCsvEmpty": {
     "message": "No events to export (check the Events search filter)."
   },
+  "exportFixture": {
+    "message": "Export Fixture"
+  },
+  "exportFixtureTitle": {
+    "message": "Download a text/event-stream mock file rebuilt from parsed events"
+  },
+  "exportFixtureEmpty": {
+    "message": "No events to export as fixture."
+  },
   "importJson": {
     "message": "Import JSON"
   },
@@ -208,6 +217,66 @@
   },
   "anomaliesTitle": {
     "message": "Scan and review suspicious events"
+  },
+  "specWarnings": {
+    "message": "Spec"
+  },
+  "specWarningsTitle": {
+    "message": "Review SSE wire-format Spec warnings"
+  },
+  "specWarningsDialogTitle": {
+    "message": "SSE Spec Warnings"
+  },
+  "specWarningsEmpty": {
+    "message": "No Spec warnings found."
+  },
+  "specWarningsCount": {
+    "message": "$COUNT$ Spec warnings",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "specStreamLevel": {
+    "message": "stream"
+  },
+  "specUnknownField": {
+    "message": "Unknown field"
+  },
+  "specInvalidRetry": {
+    "message": "Invalid retry"
+  },
+  "specNullInId": {
+    "message": "Null in id"
+  },
+  "specBom": {
+    "message": "BOM"
+  },
+  "specUnknownFieldDesc": {
+    "message": "Unknown SSE field (ignored by clients): $FIELD$",
+    "placeholders": {
+      "field": {
+        "content": "$1",
+        "example": "foo"
+      }
+    }
+  },
+  "specInvalidRetryDesc": {
+    "message": "retry must be ASCII digits only: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1",
+        "example": "1.5"
+      }
+    }
+  },
+  "specNullInIdDesc": {
+    "message": "id contains U+0000 and should be ignored per Spec"
+  },
+  "specBomDesc": {
+    "message": "Leading UTF-8 BOM (U+FEFF) is not part of the SSE field grammar"
   },
   "searchAll": {
     "message": "Search All"

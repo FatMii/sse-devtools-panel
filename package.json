@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test:parser": "node scripts/test-parser.mjs",
     "test:export": "node scripts/test-export.mjs",
-    "test-only": "pnpm test:parser && pnpm test:export",
+    "test:spec": "node scripts/test-spec.mjs",
+    "test-only": "pnpm test:parser && pnpm test:export && pnpm test:spec",
     "demo": "node demo/server.mjs"
   },
   "devDependencies": {

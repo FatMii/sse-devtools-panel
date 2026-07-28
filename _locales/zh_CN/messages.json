@@ -116,6 +116,15 @@
   "exportCsvEmpty": {
     "message": "没有可导出的事件（请检查 Events 搜索过滤条件）。"
   },
+  "exportFixture": {
+    "message": "导出 Fixture"
+  },
+  "exportFixtureTitle": {
+    "message": "将已解析事件重装为 text/event-stream，下载本地 mock/回放文件"
+  },
+  "exportFixtureEmpty": {
+    "message": "没有可导出为 Fixture 的事件。"
+  },
   "importJson": {
     "message": "导入 JSON"
   },
@@ -208,6 +217,66 @@
   },
   "anomaliesTitle": {
     "message": "扫描并查看各数据流中的可疑事件"
+  },
+  "specWarnings": {
+    "message": "Spec"
+  },
+  "specWarningsTitle": {
+    "message": "查看 SSE 线格式 Spec 警告"
+  },
+  "specWarningsDialogTitle": {
+    "message": "SSE Spec 警告"
+  },
+  "specWarningsEmpty": {
+    "message": "未发现 Spec 警告。"
+  },
+  "specWarningsCount": {
+    "message": "$COUNT$ 条 Spec 警告",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "specStreamLevel": {
+    "message": "流级"
+  },
+  "specUnknownField": {
+    "message": "未知字段"
+  },
+  "specInvalidRetry": {
+    "message": "非法 retry"
+  },
+  "specNullInId": {
+    "message": "id 含空字符"
+  },
+  "specBom": {
+    "message": "BOM"
+  },
+  "specUnknownFieldDesc": {
+    "message": "未知 SSE 字段（客户端会忽略）：$FIELD$",
+    "placeholders": {
+      "field": {
+        "content": "$1",
+        "example": "foo"
+      }
+    }
+  },
+  "specInvalidRetryDesc": {
+    "message": "retry 只能是 ASCII 数字：$VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1",
+        "example": "1.5"
+      }
+    }
+  },
+  "specNullInIdDesc": {
+    "message": "id 含 U+0000，按规范应忽略"
+  },
+  "specBomDesc": {
+    "message": "正文以 UTF-8 BOM（U+FEFF）开头，不属于 SSE 字段语法"
   },
   "searchAll": {
     "message": "全局搜索"

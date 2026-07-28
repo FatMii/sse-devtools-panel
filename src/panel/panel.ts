@@ -23,12 +23,18 @@ import {
   type StreamArchiveEntry,
 } from "../shared/stream-archive-db";
 import {
+  buildSseFixture,
   buildStreamExportCsv,
   buildStreamExportPayload,
   createRequestId,
   parseStreamExportJson,
   streamRecordFromExport,
 } from "../shared/stream-snapshot";
+import {
+  scanStreamSpecWarnings,
+  type SseSpecWarning,
+  type SseSpecWarningKind,
+} from "../shared/sse-spec";
 import { applyTreeSearch, createJsonTree, tryParseJsonValue } from "./json-tree";
 import { initEventsColumnResizers } from "./column-resizer";
 
@@ -71,6 +77,7 @@ let uiPaused = false;
 let pendingListRefreshWhilePaused = false;
 let pendingDetailRefreshWhilePaused = false;
 const anomalyCache = new Map<string, { eventCount: number; anomalies: StreamAnomaly[] }>();
+const specWarningCache = new Map<string, { eventCount: number; rawLen: number; warnings: SseSpecWarning[] }>();
 
 const elList = document.getElementById("stream-list") as HTMLUListElement;
 const elEmpty = document.getElementById("empty-hint") as HTMLDivElement;
@@ -100,6 +107,7 @@ const elStreamsUrlFilter = document.getElementById("streams-url-filter") as HTML
 const elStreamsTransportFilter = document.getElementById("streams-transport-filter") as HTMLSelectElement;
 const elExportJson = document.getElementById("btn-export-json") as HTMLButtonElement;
 const elExportCsv = document.getElementById("btn-export-csv") as HTMLButtonElement;
+const elExportFixture = document.getElementById("btn-export-fixture") as HTMLButtonElement;
 const elImportJson = document.getElementById("btn-import-json") as HTMLButtonElement;
 const elPauseUi = document.getElementById("btn-pause-ui") as HTMLButtonElement;
 const elImportFile = document.getElementById("import-file") as HTMLInputElement;
@@ -107,6 +115,7 @@ const elSaveArchive = document.getElementById("btn-save-archive") as HTMLButtonE
 const elArchives = document.getElementById("btn-archives") as HTMLButtonElement;
 const elStats = document.getElementById("btn-stats") as HTMLButtonElement;
 const elAnomalies = document.getElementById("btn-anomalies") as HTMLButtonElement;
+const elSpecWarnings = document.getElementById("btn-spec-warnings") as HTMLButtonElement;
 const elSearchAll = document.getElementById("btn-search-all") as HTMLButtonElement;
 const elDialog = document.getElementById("app-dialog") as HTMLDialogElement;
 const elDialogTitle = document.getElementById("app-dialog-title") as HTMLSpanElement;
@@ -228,6 +237,7 @@ function onDiscard(requestId: string): void {
   streams.delete(requestId);
   parsers.delete(requestId);
   anomalyCache.delete(requestId);
+  specWarningCache.delete(requestId);
   if (selectedId === requestId) {
     selectedId = null;
     selectedEventIndex = null;
@@ -484,6 +494,54 @@ function scanStreamAnomalies(record: StreamRecord): StreamAnomaly[] {
   return anomalies;
 }
 
+function getStreamSpecWarnings(record: StreamRecord): SseSpecWarning[] {
+  const cached = specWarningCache.get(record.requestId);
+  if (
+    cached &&
+    cached.eventCount === record.events.length &&
+    cached.rawLen === record.raw.length
+  ) {
+    return cached.warnings;
+  }
+  const warnings = scanStreamSpecWarnings(record);
+  specWarningCache.set(record.requestId, {
+    eventCount: record.events.length,
+    rawLen: record.raw.length,
+    warnings,
+  });
+  return warnings;
+}
+
+function specWarningKindLabel(kind: SseSpecWarningKind): string {
+  switch (kind) {
+    case "unknown-field":
+      return t("specUnknownField");
+    case "invalid-retry":
+      return t("specInvalidRetry");
+    case "null-in-id":
+      return t("specNullInId");
+    case "bom":
+      return t("specBom");
+    default:
+      return kind;
+  }
+}
+
+function specWarningMessage(warning: SseSpecWarning): string {
+  switch (warning.kind) {
+    case "unknown-field":
+      return t("specUnknownFieldDesc", warning.detail ?? "");
+    case "invalid-retry":
+      return t("specInvalidRetryDesc", warning.detail ?? "");
+    case "null-in-id":
+      return t("specNullInIdDesc");
+    case "bom":
+      return t("specBomDesc");
+    default:
+      return warning.kind;
+  }
+}
+
 function eventMatchesSearch(ev: SseEvent, query: string): boolean {
   // Align with Chrome Network EventStream: filter on event type + data payload
   const filter = compileTextFilter(query);
@@ -539,7 +597,7 @@ function sanitizeFilenamePart(value: string): string {
   return value.replace(/[<>:"/\\|?*\u0000-\u001f]/g, "_").slice(0, 80) || "stream";
 }
 
-function buildExportFilename(record: StreamRecord, ext: "json" | "csv"): string {
+function buildExportFilename(record: StreamRecord, ext: "json" | "csv" | "sse"): string {
   const path = shortPath(record.url).replace(/^\//, "") || "stream";
   const stamp = new Date(record.startedAt).toISOString().replace(/[:.]/g, "-");
   return `sse-stream-${sanitizeFilenamePart(path)}-${stamp}.${ext}`;
@@ -589,6 +647,24 @@ function exportSelectedStreamCsv(): void {
     buildExportFilename(record, "csv"),
     buildStreamExportCsv(record, visible),
     "text/csv;charset=utf-8",
+  );
+}
+
+/** Local mock/replay file: rebuild standard text/event-stream from parsed events. */
+function exportSelectedStreamFixture(): void {
+  const record = selectedId ? streams.get(selectedId) : undefined;
+  if (!record) {
+    window.alert(t("needSelectedStream"));
+    return;
+  }
+  if (record.events.length === 0) {
+    window.alert(t("exportFixtureEmpty"));
+    return;
+  }
+  downloadTextFile(
+    buildExportFilename(record, "sse"),
+    buildSseFixture(record.events),
+    "text/event-stream;charset=utf-8",
   );
 }
 
@@ -785,6 +861,73 @@ function showAnomaliesDialog(): void {
   }
   body.appendChild(list);
   openAppDialog(t("anomaliesDialogTitle"), body);
+}
+
+function showSpecWarningsDialog(): void {
+  const all = Array.from(streams.values())
+    .map((record) => ({ record, warnings: getStreamSpecWarnings(record) }))
+    .filter((item) => item.warnings.length > 0)
+    .sort((a, b) => b.record.startedAt - a.record.startedAt);
+
+  const body = document.createElement("div");
+  body.className = "archives-panel";
+
+  if (all.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "search-all-empty";
+    empty.textContent = t("specWarningsEmpty");
+    body.appendChild(empty);
+    openAppDialog(t("specWarningsDialogTitle"), body);
+    return;
+  }
+
+  const list = document.createElement("ul");
+  list.className = "archives-list";
+  for (const item of all) {
+    const li = document.createElement("li");
+    li.className = "archives-item";
+
+    const meta = document.createElement("div");
+    meta.className = "archives-meta";
+    meta.innerHTML = `
+      <div class="archives-name">${escapeHtml(shortPath(item.record.url))}</div>
+      <div class="archives-sub">${escapeHtml(
+        t("specWarningsCount", String(item.warnings.length)),
+      )}</div>
+    `;
+
+    const actions = document.createElement("div");
+    actions.className = "archives-actions";
+    for (const warning of item.warnings.slice(0, 12)) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "search-all-item";
+      const indexLabel =
+        typeof warning.eventIndex === "number" ? `#${warning.eventIndex}` : t("specStreamLevel");
+      btn.innerHTML = `
+        <span class="search-all-item-main">${escapeHtml(indexLabel)} · ${escapeHtml(
+          specWarningKindLabel(warning.kind),
+        )}</span>
+        <span class="search-all-item-sub">${escapeHtml(specWarningMessage(warning))}</span>
+      `;
+      btn.addEventListener("click", () => {
+        closeAppDialog();
+        if (typeof warning.eventIndex === "number") {
+          jumpToStreamEvent(item.record.requestId, warning.eventIndex);
+        } else {
+          selectedId = item.record.requestId;
+          selectedEventIndex = null;
+          renderList();
+          renderDetail();
+        }
+      });
+      actions.appendChild(btn);
+    }
+    li.append(meta, actions);
+    list.appendChild(li);
+  }
+  body.appendChild(list);
+  openAppDialog(t("specWarningsDialogTitle"), body);
 }
 
 function showGlobalSearchDialog(): void {
@@ -1025,6 +1168,7 @@ function renderList(): void {
     seen.add(s.requestId);
     const fingerprint = streamItemFingerprint(s);
     const anomalyCount = scanStreamAnomalies(s).length;
+    const specCount = getStreamSpecWarnings(s).length;
     let li = elList.querySelector<HTMLLIElement>(`li[data-id="${CSS.escape(s.requestId)}"]`);
     if (!li) {
       li = document.createElement("li");
@@ -1044,7 +1188,8 @@ function renderList(): void {
               ? `<span class="badge origin">${escapeHtml(originLabel(s.origin) as string)}</span>`
               : ""
           }
-          ${anomalyCount > 0 ? `<span class="badge warn">!${anomalyCount}</span>` : ""}
+          ${anomalyCount > 0 ? `<span class="badge warn" title="${escapeHtml(t("anomaliesTitle"))}">!${anomalyCount}</span>` : ""}
+          ${specCount > 0 ? `<span class="badge spec" title="${escapeHtml(t("specWarningsTitle"))}">S${specCount}</span>` : ""}
           <span>${s.status ?? "—"}</span>
           <span>${escapeHtml(t("eventsCount", String(s.events.length)))}</span>
         </div>
@@ -1163,8 +1308,19 @@ function createEventRow(ev: SseEvent): HTMLTableRowElement {
   const tr = document.createElement("tr");
   tr.dataset.index = String(ev.index);
   tr.hidden = !eventMatchesSearch(ev, eventsSearchQuery);
+  const record = selectedId ? streams.get(selectedId) : undefined;
+  const eventWarnings =
+    record && record.streamKind === "sse"
+      ? getStreamSpecWarnings(record).filter((w) => w.eventIndex === ev.index)
+      : [];
+  const warnMark =
+    eventWarnings.length > 0
+      ? `<span class="event-spec-mark" title="${escapeHtml(
+          eventWarnings.map((w) => specWarningKindLabel(w.kind)).join(", "),
+        )}">S</span>`
+      : "";
   tr.innerHTML = `
-    <td class="col-index">${ev.index}</td>
+    <td class="col-index">${ev.index}${warnMark}</td>
     <td class="col-time">${escapeHtml(formatTime(ev.receivedAt))}</td>
     <td class="col-event">${escapeHtml(ev.event)}</td>
     <td class="col-data" title="${escapeHtml(ev.data)}">${escapeHtml(previewData(ev.data))}</td>
@@ -1249,6 +1405,31 @@ function openDrawer(ev: SseEvent): void {
   }
 
   elDrawerBody.innerHTML = "";
+
+  const record = selectedId ? streams.get(selectedId) : undefined;
+  const eventWarnings =
+    record && record.streamKind === "sse"
+      ? getStreamSpecWarnings(record).filter((w) => w.eventIndex === ev.index)
+      : [];
+  if (eventWarnings.length > 0) {
+    const box = document.createElement("div");
+    box.className = "drawer-spec-warnings";
+    const title = document.createElement("div");
+    title.className = "drawer-spec-title";
+    title.textContent = t("specWarningsCount", String(eventWarnings.length));
+    box.appendChild(title);
+    const ul = document.createElement("ul");
+    for (const warning of eventWarnings) {
+      const li = document.createElement("li");
+      li.innerHTML = `<strong>${escapeHtml(specWarningKindLabel(warning.kind))}</strong> — ${escapeHtml(
+        specWarningMessage(warning),
+      )}`;
+      ul.appendChild(li);
+    }
+    box.appendChild(ul);
+    elDrawerBody.appendChild(box);
+  }
+
   const parsed = tryParseJsonValue(ev.data);
   if (parsed.ok) {
     elDrawerBody.appendChild(createJsonTree(parsed.value, { defaultExpandDepth: 2 }));
@@ -1356,6 +1537,7 @@ function setupActions(): void {
     streams.clear();
     parsers.clear();
     anomalyCache.clear();
+    specWarningCache.clear();
     selectedId = null;
     selectedEventIndex = null;
     streamsUrlFilterQuery = "";
@@ -1374,6 +1556,10 @@ function setupActions(): void {
 
   elExportCsv.addEventListener("click", () => {
     exportSelectedStreamCsv();
+  });
+
+  elExportFixture.addEventListener("click", () => {
+    exportSelectedStreamFixture();
   });
 
   elImportJson.addEventListener("click", () => {
@@ -1407,6 +1593,10 @@ function setupActions(): void {
 
   elAnomalies.addEventListener("click", () => {
     showAnomaliesDialog();
+  });
+
+  elSpecWarnings.addEventListener("click", () => {
+    showSpecWarningsDialog();
   });
 
   elSearchAll.addEventListener("click", () => {

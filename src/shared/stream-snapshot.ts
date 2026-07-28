@@ -7,6 +7,9 @@ import type {
   StreamStatus,
   StreamTransport,
 } from "./types";
+import { buildSseFixture } from "./sse-spec";
+
+export { buildSseFixture };
 
 export const STREAM_EXPORT_FORMAT = "sse-devtools-stream-v1" as const;
 

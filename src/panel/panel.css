@@ -218,9 +218,50 @@ button.is-paused {
   border-color: var(--warn);
 }
 
+.badge.spec {
+  color: #6ea8fe;
+  border-color: #6ea8fe;
+}
+
 .badge.origin {
   color: var(--accent);
   border-color: var(--accent);
+}
+
+.event-spec-mark {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 0 3px;
+  font-size: 10px;
+  line-height: 1.2;
+  color: #6ea8fe;
+  border: 1px solid #6ea8fe;
+  border-radius: 3px;
+  vertical-align: middle;
+}
+
+.drawer-spec-warnings {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, #6ea8fe 45%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, #6ea8fe 12%, transparent);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.drawer-spec-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.drawer-spec-warnings ul {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.drawer-spec-warnings li + li {
+  margin-top: 2px;
 }
 
 .empty-hint {
