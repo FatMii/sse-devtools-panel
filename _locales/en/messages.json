@@ -533,6 +533,80 @@
       }
     }
   },
+  "closeReasonComplete": {
+    "message": "complete"
+  },
+  "closeReasonAbort": {
+    "message": "aborted"
+  },
+  "closeReasonError": {
+    "message": "error"
+  },
+  "closeReasonHttpError": {
+    "message": "HTTP error"
+  },
+  "badgeAbort": {
+    "message": "abort"
+  },
+  "metaReconnects": {
+    "message": "Reconnects: $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
+  "metaLastEventId": {
+    "message": "Last-Event-ID: $ID$",
+    "placeholders": {
+      "id": {
+        "content": "$1",
+        "example": "42"
+      }
+    }
+  },
+  "reconnectBadgeTitle": {
+    "message": "$COUNT$ EventSource reconnect(s)",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
+  "timelineReconnectsTitle": {
+    "message": "EventSource reconnects"
+  },
+  "timelineReconnectsHint": {
+    "message": "Diamond marks on the track are reconnect attempts. Last-Event-ID is what the browser would send next."
+  },
+  "timelineReconnectMark": {
+    "message": "Reconnect #$COUNT$ · id $ID$ · $OFFSET$",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "1"
+      },
+      "id": {
+        "content": "$2",
+        "example": "42"
+      },
+      "offset": {
+        "content": "$3",
+        "example": "+1200ms"
+      }
+    }
+  },
+  "timelineReconnectItem": {
+    "message": "Reconnect #$COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "1"
+      }
+    }
+  },
   "metaHeadersCount": {
     "message": "Headers: $COUNT$",
     "placeholders": {
@@ -589,6 +663,18 @@
   },
   "requestContentType": {
     "message": "Content-Type"
+  },
+  "requestCloseReason": {
+    "message": "Close reason"
+  },
+  "requestErrorMessage": {
+    "message": "Error message"
+  },
+  "requestLastEventId": {
+    "message": "Last-Event-ID"
+  },
+  "requestReconnectCount": {
+    "message": "Reconnects"
   },
   "requestResponseHeadersTitle": {
     "message": "Response Headers"

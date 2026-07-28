@@ -533,6 +533,80 @@
       }
     }
   },
+  "closeReasonComplete": {
+    "message": "正常结束"
+  },
+  "closeReasonAbort": {
+    "message": "已中止"
+  },
+  "closeReasonError": {
+    "message": "错误断开"
+  },
+  "closeReasonHttpError": {
+    "message": "HTTP 错误"
+  },
+  "badgeAbort": {
+    "message": "abort"
+  },
+  "metaReconnects": {
+    "message": "重连：$COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
+  "metaLastEventId": {
+    "message": "Last-Event-ID：$ID$",
+    "placeholders": {
+      "id": {
+        "content": "$1",
+        "example": "42"
+      }
+    }
+  },
+  "reconnectBadgeTitle": {
+    "message": "EventSource 重连 $COUNT$ 次",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
+  "timelineReconnectsTitle": {
+    "message": "EventSource 重连"
+  },
+  "timelineReconnectsHint": {
+    "message": "轨道上的菱形为重连尝试；Last-Event-ID 为浏览器下次会带上的 id。"
+  },
+  "timelineReconnectMark": {
+    "message": "重连 #$COUNT$ · id $ID$ · $OFFSET$",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "1"
+      },
+      "id": {
+        "content": "$2",
+        "example": "42"
+      },
+      "offset": {
+        "content": "$3",
+        "example": "+1200ms"
+      }
+    }
+  },
+  "timelineReconnectItem": {
+    "message": "重连 #$COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "1"
+      }
+    }
+  },
   "metaHeadersCount": {
     "message": "请求头：$COUNT$",
     "placeholders": {
@@ -589,6 +663,18 @@
   },
   "requestContentType": {
     "message": "Content-Type"
+  },
+  "requestCloseReason": {
+    "message": "断开原因"
+  },
+  "requestErrorMessage": {
+    "message": "错误信息"
+  },
+  "requestLastEventId": {
+    "message": "Last-Event-ID"
+  },
+  "requestReconnectCount": {
+    "message": "重连次数"
   },
   "requestResponseHeadersTitle": {
     "message": "Response Headers"

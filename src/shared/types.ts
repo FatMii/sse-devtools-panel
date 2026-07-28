@@ -8,6 +8,16 @@ export type StreamTransport = "fetch" | "eventsource" | "xhr";
 /** Wire format of the response body. */
 export type StreamKind = "sse" | "ndjson";
 
+/** Why a stream stopped (or completed). */
+export type StreamCloseReason = "complete" | "abort" | "error" | "http_error";
+
+/** One EventSource reconnect attempt (browser auto-retry). */
+export interface StreamReconnectMark {
+  at: number;
+  reconnectCount: number;
+  lastEventId?: string;
+}
+
 export interface StreamStartPayload {
   requestId: string;
   url: string;
@@ -36,12 +46,22 @@ export interface StreamChunkPayload {
 export interface StreamEndPayload {
   requestId: string;
   endedAt: number;
+  closeReason?: Extract<StreamCloseReason, "complete" | "abort">;
 }
 
 export interface StreamErrorPayload {
   requestId: string;
   message: string;
   endedAt: number;
+  closeReason?: Extract<StreamCloseReason, "abort" | "error" | "http_error">;
+}
+
+export interface StreamReconnectPayload {
+  requestId: string;
+  at: number;
+  /** 1-based count of reconnect attempts for this EventSource. */
+  reconnectCount: number;
+  lastEventId?: string;
 }
 
 export interface StreamDiscardPayload {
@@ -53,6 +73,7 @@ export type PageToExtensionMessage =
   | { source: typeof MESSAGE_SOURCE; type: "stream-chunk"; payload: StreamChunkPayload }
   | { source: typeof MESSAGE_SOURCE; type: "stream-end"; payload: StreamEndPayload }
   | { source: typeof MESSAGE_SOURCE; type: "stream-error"; payload: StreamErrorPayload }
+  | { source: typeof MESSAGE_SOURCE; type: "stream-reconnect"; payload: StreamReconnectPayload }
   | { source: typeof MESSAGE_SOURCE; type: "stream-discard"; payload: StreamDiscardPayload };
 
 export type RelayMessage = PageToExtensionMessage & {
@@ -98,6 +119,12 @@ export interface StreamRecord {
   endedAt?: number;
   streamStatus: StreamStatus;
   errorMessage?: string;
+  closeReason?: StreamCloseReason;
+  /** Latest SSE `id` / EventSource `lastEventId` observed. */
+  lastEventId?: string;
+  /** EventSource auto-reconnect attempts. */
+  reconnectCount?: number;
+  reconnects?: StreamReconnectMark[];
   raw: string;
   events: SseEvent[];
   metrics?: StreamMetrics;

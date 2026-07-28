@@ -1,10 +1,13 @@
+import { classifyHttpStatus, classifyThrownError } from "../shared/stream-close";
 import {
   MESSAGE_SOURCE,
   type PageToExtensionMessage,
   type StreamChunkPayload,
+  type StreamCloseReason,
   type StreamEndPayload,
   type StreamErrorPayload,
   type StreamKind,
+  type StreamReconnectPayload,
   type StreamStartPayload,
   type StreamTransport,
 } from "../shared/types";
@@ -26,6 +29,7 @@ type PostStart = (p: StreamStartPayload) => void;
 type PostChunk = (p: StreamChunkPayload) => void;
 type PostEnd = (p: StreamEndPayload) => void;
 type PostError = (p: StreamErrorPayload) => void;
+type PostReconnect = (p: StreamReconnectPayload) => void;
 type PostDiscard = (requestId: string) => void;
 
 function install(): void {
@@ -44,11 +48,13 @@ function install(): void {
     post({ source: MESSAGE_SOURCE, type: "stream-end", payload });
   const postError: PostError = (payload) =>
     post({ source: MESSAGE_SOURCE, type: "stream-error", payload });
+  const postReconnect: PostReconnect = (payload) =>
+    post({ source: MESSAGE_SOURCE, type: "stream-reconnect", payload });
   const postDiscard: PostDiscard = (requestId) =>
     post({ source: MESSAGE_SOURCE, type: "stream-discard", payload: { requestId } });
 
   patchFetch(nextId, postStart, postChunk, postEnd, postError, postDiscard);
-  patchEventSource(nextId, postStart, postChunk, postEnd, postError);
+  patchEventSource(nextId, postStart, postChunk, postEnd, postError, postReconnect);
   patchXhr(nextId, postStart, postChunk, postEnd, postError);
 }
 
@@ -237,7 +243,7 @@ async function pumpReadableStream(
   sink: {
     onBytes: (chunk: Uint8Array) => void;
     onComplete: () => void;
-    onError: (message: string) => void;
+    onError: (message: string, closeReason?: Extract<StreamCloseReason, "abort" | "error">) => void;
   },
 ): Promise<void> {
   const reader = body.getReader();
@@ -251,7 +257,8 @@ async function pumpReadableStream(
     }
     sink.onComplete();
   } catch (err) {
-    sink.onError(err instanceof Error ? err.message : String(err));
+    const classified = classifyThrownError(err);
+    sink.onError(classified.message, classified.closeReason);
   }
 }
 
@@ -263,7 +270,7 @@ function createFetchTextSink(
 ): {
   onBytes: (chunk: Uint8Array) => void;
   onComplete: () => void;
-  onError: (message: string) => void;
+  onError: (message: string, closeReason?: Extract<StreamCloseReason, "abort" | "error">) => void;
 } {
   const decoder = new TextDecoder();
   let closed = false;
@@ -284,13 +291,13 @@ function createFetchTextSink(
       if (closed) return;
       closed = true;
       flushText(undefined, false);
-      postEnd({ requestId, endedAt: Date.now() });
+      postEnd({ requestId, endedAt: Date.now(), closeReason: "complete" });
     },
-    onError: (message) => {
+    onError: (message, closeReason = "error") => {
       if (closed) return;
       closed = true;
       flushText(undefined, false);
-      postError({ requestId, message, endedAt: Date.now() });
+      postError({ requestId, message, endedAt: Date.now(), closeReason });
     },
   };
 }
@@ -304,7 +311,7 @@ function observeStreamReads(
   sink: {
     onBytes: (chunk: Uint8Array) => void;
     onComplete: () => void;
-    onError: (message: string) => void;
+    onError: (message: string, closeReason?: Extract<StreamCloseReason, "abort" | "error">) => void;
   },
 ): void {
   const originalGetReader = stream.getReader.bind(stream);
@@ -333,13 +340,14 @@ function observeStreamReads(
         }
         return result;
       } catch (err) {
-        sink.onError(err instanceof Error ? err.message : String(err));
+        const classified = classifyThrownError(err);
+        sink.onError(classified.message, classified.closeReason);
         throw err;
       }
     }) as ReadableStreamDefaultReader<Uint8Array>["read"];
 
     reader.cancel = (async (...cancelArgs: Parameters<ReadableStreamDefaultReader<Uint8Array>["cancel"]>) => {
-      sink.onComplete();
+      sink.onError("ReadableStream cancelled", "abort");
       return originalCancel(...cancelArgs);
     }) as ReadableStreamDefaultReader<Uint8Array>["cancel"];
 
@@ -366,7 +374,7 @@ function captureFetchResponseBody(
   sink: {
     onBytes: (chunk: Uint8Array) => void;
     onComplete: () => void;
-    onError: (message: string) => void;
+    onError: (message: string, closeReason?: Extract<StreamCloseReason, "abort" | "error">) => void;
   },
 ): Response {
   if (!response.body) {
@@ -497,10 +505,12 @@ function patchFetch(
         window.clearTimeout(pendingTimer);
       }
       if (announced) {
+        const classified = classifyThrownError(err);
         postError({
           requestId,
-          message: err instanceof Error ? err.message : String(err),
+          message: classified.message,
           endedAt: Date.now(),
+          closeReason: classified.closeReason,
         });
       }
       throw err;
@@ -508,13 +518,14 @@ function patchFetch(
   };
 }
 
-function toSseFrame(typeName: string, data: string): string {
+function toSseFrame(typeName: string, data: string, id?: string): string {
+  const idLine = id ? `id: ${id}\n` : "";
   const eventLine = typeName !== "message" ? `event: ${typeName}\n` : "";
   const dataLines = data
     .split("\n")
     .map((line) => `data: ${line}`)
     .join("\n");
-  return `${eventLine}${dataLines}\n\n`;
+  return `${idLine}${eventLine}${dataLines}\n\n`;
 }
 
 function patchEventSource(
@@ -523,6 +534,7 @@ function patchEventSource(
   postChunk: PostChunk,
   postEnd: PostEnd,
   postError: PostError,
+  postReconnect: PostReconnect,
 ): void {
   const OriginalEventSource = window.EventSource;
 
@@ -535,6 +547,9 @@ function patchEventSource(
     const requestId = nextId();
     const href = typeof url === "string" ? url : url.href;
     let ended = false;
+    let clientClosed = false;
+    let reconnectCount = 0;
+    let lastEventId = "";
 
     postStart({
       requestId,
@@ -546,13 +561,28 @@ function patchEventSource(
       startedAt: Date.now(),
     });
 
-    const finish = (error?: string) => {
+    const finish = (
+      mode: "end" | "error",
+      closeReason: StreamCloseReason,
+      message?: string,
+    ) => {
       if (ended) return;
       ended = true;
-      if (error) {
-        postError({ requestId, message: error, endedAt: Date.now() });
+      const endedAt = Date.now();
+      if (mode === "error") {
+        postError({
+          requestId,
+          message: message || "EventSource error",
+          endedAt,
+          closeReason:
+            closeReason === "abort" || closeReason === "http_error" ? closeReason : "error",
+        });
       } else {
-        postEnd({ requestId, endedAt: Date.now() });
+        postEnd({
+          requestId,
+          endedAt,
+          closeReason: closeReason === "abort" ? "abort" : "complete",
+        });
       }
     };
 
@@ -560,7 +590,10 @@ function patchEventSource(
       const me = ev as MessageEvent;
       const typeName = me.type && me.type !== "message" ? me.type : "message";
       const data = typeof me.data === "string" ? me.data : String(me.data ?? "");
-      postChunk({ requestId, text: toSseFrame(typeName, data) });
+      const eventId =
+        typeof me.lastEventId === "string" && me.lastEventId ? me.lastEventId : undefined;
+      if (eventId) lastEventId = eventId;
+      postChunk({ requestId, text: toSseFrame(typeName, data, eventId) });
     };
 
     instance.addEventListener("message", onMessage);
@@ -580,17 +613,30 @@ function patchEventSource(
     }) as typeof instance.addEventListener;
 
     instance.addEventListener("error", () => {
+      if (ended) return;
       if (instance.readyState === OriginalEventSource.CLOSED) {
-        finish();
-      } else {
-        finish("EventSource error");
+        if (clientClosed) {
+          finish("error", "abort", "EventSource closed by client");
+        } else {
+          finish("error", "error", "EventSource connection closed");
+        }
+        return;
       }
+      // CONNECTING — browser will auto-reconnect; keep the stream open.
+      reconnectCount += 1;
+      postReconnect({
+        requestId,
+        at: Date.now(),
+        reconnectCount,
+        lastEventId: lastEventId || undefined,
+      });
     });
 
     const originalClose = instance.close.bind(instance);
     instance.close = (): void => {
+      clientClosed = true;
       originalClose();
-      finish();
+      finish("error", "abort", "EventSource closed by client");
     };
 
     return instance;
@@ -757,14 +803,17 @@ function patchXhr(
       if (!captured || !requestId || finished) return;
       finished = true;
       emitDelta();
-      postEnd({ requestId, endedAt: Date.now() });
+      postEnd({ requestId, endedAt: Date.now(), closeReason: "complete" });
     };
 
-    const finishErr = (message: string): void => {
+    const finishErr = (
+      message: string,
+      closeReason: Extract<StreamCloseReason, "abort" | "error" | "http_error">,
+    ): void => {
       if (!captured || !requestId || finished) return;
       finished = true;
       emitDelta();
-      postError({ requestId, message, endedAt: Date.now() });
+      postError({ requestId, message, endedAt: Date.now(), closeReason });
     };
 
     xhr.addEventListener("readystatechange", () => {
@@ -774,7 +823,8 @@ function patchXhr(
       }
       if (xhr.readyState === OriginalXHR.DONE && captured) {
         if (xhr.status >= 400) {
-          finishErr(`HTTP ${xhr.status}`);
+          const classified = classifyHttpStatus(xhr.status);
+          finishErr(classified.message, classified.closeReason);
         } else {
           finishOk();
         }
@@ -783,13 +833,13 @@ function patchXhr(
 
     xhr.addEventListener("error", () => {
       if (captured) {
-        finishErr("XMLHttpRequest network error");
+        finishErr("XMLHttpRequest network error", "error");
       }
     });
 
     xhr.addEventListener("abort", () => {
       if (captured) {
-        finishErr("XMLHttpRequest aborted");
+        finishErr("XMLHttpRequest aborted", "abort");
       }
     });
 

@@ -10,8 +10,11 @@ import type {
   StreamChunkPayload,
   StreamEndPayload,
   StreamErrorPayload,
+  StreamReconnectPayload,
+  StreamCloseReason,
 } from "../shared/types";
 import { applyDomI18n, initI18n, onLocaleChange, t, uiLanguage } from "../shared/i18n";
+import { latestEventIdFromEvents } from "../shared/stream-close";
 import { SseParser, type ParsedSseEvent } from "../shared/sse-parser";
 import { NdjsonParser } from "../shared/ndjson-parser";
 import { compileTextFilter } from "../shared/text-filter";
@@ -173,6 +176,9 @@ function handleRelay(msg: RelayMessage): void {
     case "stream-error":
       onError(msg.payload);
       break;
+    case "stream-reconnect":
+      onReconnect(msg.payload);
+      break;
     case "stream-discard":
       onDiscard(msg.payload.requestId);
       break;
@@ -287,6 +293,8 @@ function onChunk(payload: StreamChunkPayload): void {
   const events = stampEvents(parser.push(payload.text));
   if (events.length) {
     record.events.push(...events);
+    const latestId = latestEventIdFromEvents(events);
+    if (latestId) record.lastEventId = latestId;
   }
 
   if (uiPaused) {
@@ -340,11 +348,14 @@ function onEnd(payload: StreamEndPayload): void {
     const rest = stampEvents(parser.flush());
     if (rest.length) {
       record.events.push(...rest);
+      const latestId = latestEventIdFromEvents(rest);
+      if (latestId) record.lastEventId = latestId;
     }
   }
 
   record.streamStatus = "done";
   record.endedAt = payload.endedAt;
+  record.closeReason = payload.closeReason ?? "complete";
   record.metrics = computeStreamMetrics(record);
   if (uiPaused) {
     pendingListRefreshWhilePaused = true;
@@ -362,6 +373,7 @@ function onError(payload: StreamErrorPayload): void {
   if (!record) return;
   record.streamStatus = "error";
   record.errorMessage = payload.message;
+  record.closeReason = payload.closeReason ?? "error";
   record.endedAt = payload.endedAt;
   record.metrics = computeStreamMetrics(record);
   if (uiPaused) {
@@ -372,6 +384,32 @@ function onError(payload: StreamErrorPayload): void {
   renderList();
   if (selectedId === payload.requestId) {
     renderDetail();
+  }
+}
+
+function onReconnect(payload: StreamReconnectPayload): void {
+  const record = streams.get(payload.requestId);
+  if (!record) return;
+  record.reconnectCount = payload.reconnectCount;
+  if (payload.lastEventId) {
+    record.lastEventId = payload.lastEventId;
+  }
+  const mark = {
+    at: payload.at,
+    reconnectCount: payload.reconnectCount,
+    lastEventId: payload.lastEventId,
+  };
+  if (!record.reconnects) record.reconnects = [mark];
+  else record.reconnects.push(mark);
+
+  if (uiPaused) {
+    pendingListRefreshWhilePaused = true;
+    if (selectedId === payload.requestId) pendingDetailRefreshWhilePaused = true;
+    return;
+  }
+  renderList();
+  if (selectedId === payload.requestId) {
+    renderDetail(true);
   }
 }
 
@@ -427,9 +465,28 @@ function renderStreamMeta(record: StreamRecord | undefined): void {
   if (record.requestPayloadPreview) {
     tags.push(`<span class="meta-chip">${escapeHtml(t("requestHasBody"))}</span>`);
   }
+  if (record.closeReason && record.closeReason !== "complete") {
+    tags.push(
+      `<span class="meta-chip ${record.closeReason === "abort" ? "warn" : "error"}">${escapeHtml(
+        closeReasonLabel(record.closeReason),
+      )}</span>`,
+    );
+  }
   if (record.errorMessage) {
     tags.push(
       `<span class="meta-chip error">${escapeHtml(t("metaError", record.errorMessage))}</span>`,
+    );
+  }
+  if (record.reconnectCount && record.reconnectCount > 0) {
+    tags.push(
+      `<span class="meta-chip warn">${escapeHtml(
+        t("metaReconnects", String(record.reconnectCount)),
+      )}</span>`,
+    );
+  }
+  if (record.lastEventId) {
+    tags.push(
+      `<span class="meta-chip">${escapeHtml(t("metaLastEventId", record.lastEventId))}</span>`,
     );
   }
   elMetaTags.innerHTML = tags.join("");
@@ -1211,6 +1268,21 @@ function statusLabel(status: StreamRecord["streamStatus"]): string {
   }
 }
 
+function closeReasonLabel(reason: StreamCloseReason): string {
+  switch (reason) {
+    case "complete":
+      return t("closeReasonComplete");
+    case "abort":
+      return t("closeReasonAbort");
+    case "error":
+      return t("closeReasonError");
+    case "http_error":
+      return t("closeReasonHttpError");
+    default:
+      return reason;
+  }
+}
+
 function transportLabel(transport: StreamTransport): string {
   switch (transport) {
     case "fetch":
@@ -1259,6 +1331,10 @@ function streamItemFingerprint(s: StreamRecord): string {
     String(s.events.length),
     s.method,
     s.url,
+    s.closeReason ?? "",
+    String(s.reconnectCount ?? 0),
+    s.lastEventId ?? "",
+    s.errorMessage ?? "",
   ].join("|");
 }
 
@@ -1310,6 +1386,20 @@ function renderList(): void {
           }
           ${anomalyCount > 0 ? `<span class="badge warn" title="${escapeHtml(t("anomaliesTitle"))}">!${anomalyCount}</span>` : ""}
           ${specCount > 0 ? `<span class="badge spec" title="${escapeHtml(t("specWarningsTitle"))}">S${specCount}</span>` : ""}
+          ${
+            (s.reconnectCount ?? 0) > 0
+              ? `<span class="badge reconnect" title="${escapeHtml(
+                  t("reconnectBadgeTitle", String(s.reconnectCount)),
+                )}">R${s.reconnectCount}</span>`
+              : ""
+          }
+          ${
+            s.closeReason === "abort"
+              ? `<span class="badge abort" title="${escapeHtml(closeReasonLabel("abort"))}">${escapeHtml(
+                  t("badgeAbort"),
+                )}</span>`
+              : ""
+          }
           <span>${s.status ?? "—"}</span>
           <span>${escapeHtml(t("eventsCount", String(s.events.length)))}</span>
         </div>
@@ -1671,7 +1761,12 @@ function renderTimeline(record: StreamRecord | undefined): void {
 
   const origin = record.startedAt;
   const marks = buildTimelineMarks(record.events, origin);
-  const spanMs = Math.max(timelineSpanMs(marks), 1);
+  const reconnects = record.reconnects ?? [];
+  const reconnectMaxOffset = reconnects.reduce((max, item) => {
+    const offset = item.at - origin;
+    return Number.isFinite(offset) && offset > max ? offset : max;
+  }, 0);
+  const spanMs = Math.max(timelineSpanMs(marks), reconnectMaxOffset, 1);
   const gaps = collectEventGaps(record.events);
   const metrics = ensureStreamMetrics(record);
 
@@ -1764,6 +1859,51 @@ function renderTimeline(record: StreamRecord | undefined): void {
 
   trackSection.appendChild(svg);
   elTimelineBody.appendChild(trackSection);
+
+  if (reconnects.length > 0) {
+    for (const reconnect of reconnects) {
+      const offsetMs = Math.max(0, reconnect.at - origin);
+      const x = padL + (Math.min(offsetMs, spanMs) / spanMs) * plotW;
+      const marker = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+      marker.setAttribute("class", "reconnect-mark");
+      marker.setAttribute(
+        "points",
+        `${x},${trackY - 20} ${x + 5},${trackY - 10} ${x},${trackY} ${x - 5},${trackY - 10}`,
+      );
+      marker.setAttribute(
+        "title",
+        t("timelineReconnectMark", [
+          String(reconnect.reconnectCount),
+          reconnect.lastEventId ? reconnect.lastEventId : "—",
+          `+${Math.round(offsetMs)}ms`,
+        ]),
+      );
+      svg.appendChild(marker);
+    }
+
+    const reconnectSection = document.createElement("section");
+    reconnectSection.className = "timeline-section timeline-reconnects";
+    const reconnectTitle = document.createElement("div");
+    reconnectTitle.className = "timeline-section-title";
+    reconnectTitle.textContent = t("timelineReconnectsTitle");
+    const reconnectHint = document.createElement("div");
+    reconnectHint.className = "timeline-section-hint";
+    reconnectHint.textContent = t("timelineReconnectsHint");
+    reconnectSection.append(reconnectTitle, reconnectHint);
+
+    for (const reconnect of reconnects) {
+      const row = document.createElement("div");
+      row.className = "timeline-reconnect-item";
+      const offsetMs = Math.max(0, reconnect.at - origin);
+      row.innerHTML = `
+        <span>${escapeHtml(t("timelineReconnectItem", String(reconnect.reconnectCount)))}</span>
+        <span>${escapeHtml(`+${Math.round(offsetMs)}ms`)}</span>
+        <code>${escapeHtml(reconnect.lastEventId || "—")}</code>
+      `;
+      reconnectSection.appendChild(row);
+    }
+    elTimelineBody.appendChild(reconnectSection);
+  }
 
   const histSection = document.createElement("section");
   histSection.className = "timeline-section";
@@ -1965,6 +2105,18 @@ function renderRequest(record: StreamRecord | undefined): void {
   appendKvRow(generalKv, t("requestStreamKind"), record.streamKind);
   if (record.contentType) {
     appendKvRow(generalKv, t("requestContentType"), record.contentType);
+  }
+  if (record.closeReason) {
+    appendKvRow(generalKv, t("requestCloseReason"), closeReasonLabel(record.closeReason));
+  }
+  if (record.errorMessage) {
+    appendKvRow(generalKv, t("requestErrorMessage"), record.errorMessage);
+  }
+  if (record.lastEventId) {
+    appendKvRow(generalKv, t("requestLastEventId"), record.lastEventId);
+  }
+  if ((record.reconnectCount ?? 0) > 0) {
+    appendKvRow(generalKv, t("requestReconnectCount"), String(record.reconnectCount));
   }
   general.appendChild(generalKv);
   paneHeaders.appendChild(general);

@@ -1,13 +1,16 @@
 import type {
   SseEvent,
+  StreamCloseReason,
   StreamMetrics,
   StreamKind,
   StreamOrigin,
   StreamRecord,
+  StreamReconnectMark,
   StreamStatus,
   StreamTransport,
 } from "./types";
 import { buildSseFixture } from "./sse-spec";
+import { isStreamCloseReason, normalizeReconnectMarks } from "./stream-close";
 
 export { buildSseFixture };
 
@@ -38,6 +41,10 @@ export interface StreamExportBody {
   endedAt?: number;
   streamStatus: StreamStatus;
   errorMessage?: string;
+  closeReason?: StreamCloseReason;
+  lastEventId?: string;
+  reconnectCount?: number;
+  reconnects?: StreamReconnectMark[];
   metrics?: StreamMetrics;
   raw: string;
   events: Array<{
@@ -72,6 +79,10 @@ export function buildStreamExportPayload(record: StreamRecord): StreamExportPayl
       endedAt: record.endedAt,
       streamStatus: record.streamStatus,
       errorMessage: record.errorMessage,
+      closeReason: record.closeReason,
+      lastEventId: record.lastEventId,
+      reconnectCount: record.reconnectCount,
+      reconnects: record.reconnects?.map((item) => ({ ...item })),
       metrics: record.metrics,
       raw: record.raw,
       events: record.events.map((ev) => ({
@@ -192,6 +203,10 @@ function normalizeStreamBody(body: Record<string, unknown>): StreamExportBody {
     endedAt: typeof body.endedAt === "number" ? body.endedAt : undefined,
     streamStatus: body.streamStatus === "streaming" ? "done" : body.streamStatus,
     errorMessage: typeof body.errorMessage === "string" ? body.errorMessage : undefined,
+    closeReason: isStreamCloseReason(body.closeReason) ? body.closeReason : undefined,
+    lastEventId: typeof body.lastEventId === "string" ? body.lastEventId : undefined,
+    reconnectCount: typeof body.reconnectCount === "number" ? body.reconnectCount : undefined,
+    reconnects: normalizeReconnectMarks(body.reconnects),
     metrics: normalizeMetrics(body.metrics),
     raw: body.raw,
     events: body.events.map((ev, i) => normalizeEvent(ev, i)),
@@ -249,6 +264,10 @@ export function streamRecordFromExport(
     endedAt: body.endedAt,
     streamStatus: body.streamStatus === "streaming" ? "done" : body.streamStatus,
     errorMessage: body.errorMessage,
+    closeReason: body.closeReason,
+    lastEventId: body.lastEventId,
+    reconnectCount: body.reconnectCount,
+    reconnects: body.reconnects?.map((item) => ({ ...item })),
     metrics: body.metrics ? { ...body.metrics } : undefined,
     raw: body.raw,
     events: body.events.map((ev) => ({ ...ev })),
@@ -260,6 +279,7 @@ export function cloneStreamRecord(record: StreamRecord): StreamRecord {
   return {
     ...record,
     metrics: record.metrics ? { ...record.metrics } : undefined,
+    reconnects: record.reconnects?.map((item) => ({ ...item })),
     events: record.events.map((ev) => ({ ...ev })),
   };
 }
