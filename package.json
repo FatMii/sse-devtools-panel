@@ -10,8 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test:parser": "node scripts/test-parser.mjs",
     "test:export": "node scripts/test-export.mjs",
-    "test:ai-merge": "node scripts/test-ai-merge.mjs",
-    "test-only": "pnpm test:parser && pnpm test:export && pnpm test:ai-merge",
+    "test-only": "pnpm test:parser && pnpm test:export",
     "demo": "node demo/server.mjs"
   },
   "devDependencies": {

@@ -1,5 +1,4 @@
 import type {
-  AiProfile,
   SseEvent,
   StreamMetrics,
   StreamKind,
@@ -35,8 +34,6 @@ export interface StreamExportBody {
   streamStatus: StreamStatus;
   errorMessage?: string;
   metrics?: StreamMetrics;
-  aiProfile?: { profile: AiProfile; confidence?: number; reasons?: string[] };
-  transcript?: string;
   raw: string;
   events: Array<{
     index: number;
@@ -69,8 +66,6 @@ export function buildStreamExportPayload(record: StreamRecord): StreamExportPayl
       streamStatus: record.streamStatus,
       errorMessage: record.errorMessage,
       metrics: record.metrics,
-      aiProfile: record.aiProfile,
-      transcript: record.transcript,
       raw: record.raw,
       events: record.events.map((ev) => ({
         index: ev.index,
@@ -107,28 +102,6 @@ function normalizeMetrics(raw: unknown): StreamMetrics | undefined {
   if (typeof source.p95GapMs === "number") out.p95GapMs = source.p95GapMs;
   if (typeof source.eventsPerSec === "number") out.eventsPerSec = source.eventsPerSec;
   return Object.keys(out).length > 0 ? out : undefined;
-}
-
-function normalizeAiProfile(
-  raw: unknown,
-): { profile: AiProfile; confidence?: number; reasons?: string[] } | undefined {
-  if (!raw || typeof raw !== "object") return undefined;
-  const source = raw as Record<string, unknown>;
-  const profile = source.profile;
-  if (
-    profile !== "openai-compatible" &&
-    profile !== "anthropic" &&
-    profile !== "deepseek" &&
-    profile !== "doubao" &&
-    profile !== "generic"
-  ) {
-    return undefined;
-  }
-  const confidence = typeof source.confidence === "number" ? source.confidence : undefined;
-  const reasons = Array.isArray(source.reasons)
-    ? source.reasons.filter((item): item is string => typeof item === "string")
-    : undefined;
-  return { profile, confidence, reasons };
 }
 
 function normalizeEvent(raw: unknown, fallbackIndex: number): SseEvent {
@@ -204,8 +177,6 @@ function normalizeStreamBody(body: Record<string, unknown>): StreamExportBody {
     streamStatus: body.streamStatus === "streaming" ? "done" : body.streamStatus,
     errorMessage: typeof body.errorMessage === "string" ? body.errorMessage : undefined,
     metrics: normalizeMetrics(body.metrics),
-    aiProfile: normalizeAiProfile(body.aiProfile),
-    transcript: typeof body.transcript === "string" ? body.transcript : undefined,
     raw: body.raw,
     events: body.events.map((ev, i) => normalizeEvent(ev, i)),
   };
@@ -261,14 +232,6 @@ export function streamRecordFromExport(
     streamStatus: body.streamStatus === "streaming" ? "done" : body.streamStatus,
     errorMessage: body.errorMessage,
     metrics: body.metrics ? { ...body.metrics } : undefined,
-    aiProfile: body.aiProfile
-      ? {
-          profile: body.aiProfile.profile,
-          confidence: body.aiProfile.confidence ?? 0,
-          reasons: body.aiProfile.reasons ?? [],
-        }
-      : undefined,
-    transcript: body.transcript,
     raw: body.raw,
     events: body.events.map((ev) => ({ ...ev })),
     origin: options.origin,
@@ -279,14 +242,6 @@ export function cloneStreamRecord(record: StreamRecord): StreamRecord {
   return {
     ...record,
     metrics: record.metrics ? { ...record.metrics } : undefined,
-    aiProfile: record.aiProfile
-      ? {
-          profile: record.aiProfile.profile,
-          confidence: record.aiProfile.confidence,
-          reasons: [...record.aiProfile.reasons],
-        }
-      : undefined,
-    transcript: record.transcript,
     events: record.events.map((ev) => ({ ...ev })),
   };
 }

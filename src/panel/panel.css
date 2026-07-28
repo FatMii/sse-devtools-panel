@@ -334,11 +334,6 @@ button.is-paused {
   white-space: nowrap;
 }
 
-.meta-chip.profile {
-  color: var(--accent);
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
-}
-
 .meta-chip.error {
   color: var(--error);
   border-color: var(--error);
@@ -409,35 +404,6 @@ button.is-paused {
 
 .view.active.events-layout {
   display: flex;
-}
-
-.view.active.transcript-layout {
-  display: flex;
-  flex-direction: column;
-  padding: 0 !important;
-}
-
-.transcript-toolbar {
-  flex-shrink: 0;
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
-  padding: 6px 8px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-elevated);
-}
-
-.transcript-body {
-  flex: 1;
-  min-height: 0;
-  margin: 0;
-  padding: 10px 12px;
-  overflow: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
-  line-height: 1.45;
-  font-family: var(--mono);
-  font-size: 12px;
 }
 
 .view.code {

@@ -1,7 +1,6 @@
 import "./panel.css";
 import type {
   RelayMessage,
-  StreamAiProfile,
   SseEvent,
   StreamMetrics,
   StreamRecord,
@@ -32,8 +31,6 @@ import {
 } from "../shared/stream-snapshot";
 import { applyTreeSearch, createJsonTree, tryParseJsonValue } from "./json-tree";
 import { initEventsColumnResizers } from "./column-resizer";
-import { detectAiProfile } from "../shared/ai-profile";
-import { buildMergedTranscript } from "../shared/ai-merge";
 
 const PANEL_PORT = "sse-devtools-panel";
 const DATA_PREVIEW_LEN = 80;
@@ -64,7 +61,7 @@ let drawerEventData: string | null = null;
 let drawerEventIndex: number | null = null;
 /** Data targeted by the row context menu. */
 let contextMenuData: string | null = null;
-let activeTab: "events" | "transcript" | "raw" = "events";
+let activeTab: "events" | "raw" = "events";
 let drawerWidthPercent = DRAWER_WIDTH_DEFAULT;
 let eventsSearchQuery = "";
 let drawerSearchQuery = "";
@@ -74,11 +71,6 @@ let uiPaused = false;
 let pendingListRefreshWhilePaused = false;
 let pendingDetailRefreshWhilePaused = false;
 const anomalyCache = new Map<string, { eventCount: number; anomalies: StreamAnomaly[] }>();
-const aiProfileCache = new Map<string, { eventCount: number; result: StreamAiProfile }>();
-const transcriptCache = new Map<
-  string,
-  { eventCount: number; profile: string; value: string }
->();
 
 const elList = document.getElementById("stream-list") as HTMLUListElement;
 const elEmpty = document.getElementById("empty-hint") as HTMLDivElement;
@@ -104,8 +96,6 @@ const elDrawerNext = document.getElementById("drawer-next") as HTMLButtonElement
 const elDrawerCopy = document.getElementById("drawer-copy") as HTMLButtonElement;
 const elContextMenu = document.getElementById("row-context-menu") as HTMLDivElement;
 const elRaw = document.getElementById("view-raw") as HTMLPreElement;
-const elTranscriptBody = document.getElementById("transcript-body") as HTMLPreElement;
-const elCopyTranscript = document.getElementById("btn-copy-transcript") as HTMLButtonElement;
 const elStreamsUrlFilter = document.getElementById("streams-url-filter") as HTMLInputElement;
 const elStreamsTransportFilter = document.getElementById("streams-transport-filter") as HTMLSelectElement;
 const elExportJson = document.getElementById("btn-export-json") as HTMLButtonElement;
@@ -238,8 +228,6 @@ function onDiscard(requestId: string): void {
   streams.delete(requestId);
   parsers.delete(requestId);
   anomalyCache.delete(requestId);
-  aiProfileCache.delete(requestId);
-  transcriptCache.delete(requestId);
   if (selectedId === requestId) {
     selectedId = null;
     selectedEventIndex = null;
@@ -381,62 +369,6 @@ function payloadPreviewForMeta(record: StreamRecord): string {
   return record.requestPayloadTruncated ? `${clipped}…` : clipped;
 }
 
-function aiProfileLabel(profile: StreamAiProfile["profile"]): string {
-  switch (profile) {
-    case "openai-compatible":
-      return t("profileOpenAi");
-    case "anthropic":
-      return t("profileAnthropic");
-    case "deepseek":
-      return t("profileDeepseek");
-    case "doubao":
-      return t("profileDoubao");
-    default:
-      return t("profileGeneric");
-  }
-}
-
-function ensureAiProfile(record: StreamRecord): StreamAiProfile {
-  const cached = aiProfileCache.get(record.requestId);
-  if (cached && cached.eventCount === record.events.length) {
-    record.aiProfile = cached.result;
-    return cached.result;
-  }
-  const detected = detectAiProfile(record.events, {
-    url: record.url,
-    contentType: record.contentType,
-  });
-  const result: StreamAiProfile = {
-    profile: detected.profile,
-    confidence: detected.confidence,
-    reasons: detected.reasons,
-  };
-  aiProfileCache.set(record.requestId, { eventCount: record.events.length, result });
-  record.aiProfile = result;
-  return result;
-}
-
-function ensureTranscript(record: StreamRecord): string {
-  const profile = ensureAiProfile(record).profile;
-  const cached = transcriptCache.get(record.requestId);
-  if (
-    cached &&
-    cached.eventCount === record.events.length &&
-    cached.profile === profile
-  ) {
-    record.transcript = cached.value;
-    return cached.value;
-  }
-  const merged = buildMergedTranscript(record.events, profile);
-  transcriptCache.set(record.requestId, {
-    eventCount: record.events.length,
-    profile,
-    value: merged,
-  });
-  record.transcript = merged;
-  return merged;
-}
-
 function renderStreamMeta(record: StreamRecord | undefined): void {
   if (!record) {
     elMeta.classList.add("is-empty");
@@ -450,7 +382,6 @@ function renderStreamMeta(record: StreamRecord | undefined): void {
   }
 
   elMeta.classList.remove("is-empty");
-  const aiProfile = ensureAiProfile(record);
   const headerCount = record.requestHeaders ? Object.keys(record.requestHeaders).length : 0;
   const payloadPreview = payloadPreviewForMeta(record);
 
@@ -466,9 +397,6 @@ function renderStreamMeta(record: StreamRecord | undefined): void {
     tags.push(`<span class="meta-chip">${escapeHtml(record.contentType)}</span>`);
   }
   tags.push(`<span class="meta-chip">${escapeHtml(transportLabel(record.transport))}</span>`);
-  tags.push(
-    `<span class="meta-chip profile">${escapeHtml(aiProfileLabel(aiProfile.profile))}</span>`,
-  );
   if (record.errorMessage) {
     tags.push(
       `<span class="meta-chip error">${escapeHtml(t("metaError", record.errorMessage))}</span>`,
@@ -1151,22 +1079,17 @@ function renderDetail(appendFriendly = false): void {
     elTableWrap.hidden = true;
     elTbody.innerHTML = "";
     closeDrawer();
-    elTranscriptBody.textContent = "";
     elRaw.textContent = "";
     return;
   }
 
-  const transcript = ensureTranscript(record);
   renderStreamMeta(record);
-  elTranscriptBody.textContent = transcript || t("transcriptEmpty");
   elRaw.textContent = record.raw || "";
 
   renderEvents(record, appendFriendly);
 
   if (activeTab === "raw") {
     elRaw.scrollTop = elRaw.scrollHeight;
-  } else if (activeTab === "transcript") {
-    elTranscriptBody.scrollTop = elTranscriptBody.scrollHeight;
   }
 }
 
@@ -1405,7 +1328,7 @@ function setupTabs(): void {
   document.querySelectorAll<HTMLButtonElement>(".tab").forEach((btn) => {
     btn.addEventListener("click", () => {
       const tab = btn.dataset.tab as typeof activeTab;
-      if (tab !== "events" && tab !== "raw" && tab !== "transcript") return;
+      if (tab !== "events" && tab !== "raw") return;
       activeTab = tab;
       document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
       document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
@@ -1433,8 +1356,6 @@ function setupActions(): void {
     streams.clear();
     parsers.clear();
     anomalyCache.clear();
-    aiProfileCache.clear();
-    transcriptCache.clear();
     selectedId = null;
     selectedEventIndex = null;
     streamsUrlFilterQuery = "";
@@ -1509,12 +1430,6 @@ function setupActions(): void {
     const record = selectedId ? streams.get(selectedId) : undefined;
     if (!record) return;
     await copyText(record.raw);
-  });
-
-  elCopyTranscript.addEventListener("click", async () => {
-    const record = selectedId ? streams.get(selectedId) : undefined;
-    if (!record) return;
-    await copyText(ensureTranscript(record));
   });
 
   document.getElementById("btn-settings")?.addEventListener("click", () => {
