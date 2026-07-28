@@ -13,9 +13,12 @@ export interface StreamStartPayload {
   url: string;
   method: string;
   status?: number;
+  statusText?: string;
   contentType?: string;
   /** Redacted request headers collected from page world (best effort). */
   requestHeaders?: Record<string, string>;
+  /** Redacted response headers (best effort). */
+  responseHeaders?: Record<string, string>;
   /** Text preview of request payload (best effort, truncated). */
   requestPayloadPreview?: string;
   /** Whether payload preview was truncated. */
@@ -83,8 +86,10 @@ export interface StreamRecord {
   url: string;
   method: string;
   status?: number;
+  statusText?: string;
   contentType?: string;
   requestHeaders?: Record<string, string>;
+  responseHeaders?: Record<string, string>;
   requestPayloadPreview?: string;
   requestPayloadTruncated?: boolean;
   transport: StreamTransport;

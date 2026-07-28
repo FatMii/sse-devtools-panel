@@ -43,6 +43,13 @@ import {
   timelineSpanMs,
   type HistogramBin,
 } from "../shared/stream-timing";
+import {
+  looksLikeUrlEncoded,
+  parseQueryStringParams,
+  parseUrlEncodedPairs,
+  requestContentType,
+  type NameValuePair,
+} from "../shared/request-view";
 import { applyTreeSearch, createJsonTree, tryParseJsonValue } from "./json-tree";
 import { initEventsColumnResizers } from "./column-resizer";
 
@@ -75,7 +82,9 @@ let drawerEventData: string | null = null;
 let drawerEventIndex: number | null = null;
 /** Data targeted by the row context menu. */
 let contextMenuData: string | null = null;
-let activeTab: "events" | "raw" | "timeline" = "events";
+let activeTab: "events" | "raw" | "timeline" | "request" = "events";
+let requestPane: "headers" | "payload" = "headers";
+let requestPayloadView: "parsed" | "source" = "parsed";
 let drawerWidthPercent = DRAWER_WIDTH_DEFAULT;
 let eventsSearchQuery = "";
 let drawerSearchQuery = "";
@@ -93,8 +102,6 @@ const elMeta = document.getElementById("meta") as HTMLDivElement;
 const elMetaMethod = document.getElementById("meta-method") as HTMLSpanElement;
 const elMetaUrl = document.getElementById("meta-url") as HTMLSpanElement;
 const elMetaTags = document.getElementById("meta-tags") as HTMLDivElement;
-const elMetaDetails = document.getElementById("meta-details") as HTMLDetailsElement;
-const elMetaDetailsBody = document.getElementById("meta-details-body") as HTMLDivElement;
 const elEvents = document.getElementById("view-events") as HTMLDivElement;
 const elPlaceholder = document.getElementById("events-placeholder") as HTMLDivElement;
 const elTableWrap = document.getElementById("events-table-wrap") as HTMLDivElement;
@@ -113,6 +120,8 @@ const elContextMenu = document.getElementById("row-context-menu") as HTMLDivElem
 const elRaw = document.getElementById("view-raw") as HTMLPreElement;
 const elTimelinePlaceholder = document.getElementById("timeline-placeholder") as HTMLDivElement;
 const elTimelineBody = document.getElementById("timeline-body") as HTMLDivElement;
+const elRequestPlaceholder = document.getElementById("request-placeholder") as HTMLDivElement;
+const elRequestBody = document.getElementById("request-body") as HTMLDivElement;
 const elStreamsUrlFilter = document.getElementById("streams-url-filter") as HTMLInputElement;
 const elStreamsTransportFilter = document.getElementById("streams-transport-filter") as HTMLSelectElement;
 const elExportJson = document.getElementById("btn-export-json") as HTMLButtonElement;
@@ -184,8 +193,10 @@ function onStart(payload: StreamStartPayload): void {
     existing.url = payload.url;
     existing.method = payload.method;
     existing.status = payload.status ?? existing.status;
+    existing.statusText = payload.statusText ?? existing.statusText;
     existing.contentType = payload.contentType ?? existing.contentType;
     existing.requestHeaders = payload.requestHeaders ?? existing.requestHeaders;
+    existing.responseHeaders = payload.responseHeaders ?? existing.responseHeaders;
     existing.requestPayloadPreview = payload.requestPayloadPreview ?? existing.requestPayloadPreview;
     existing.requestPayloadTruncated =
       payload.requestPayloadTruncated ?? existing.requestPayloadTruncated;
@@ -212,8 +223,10 @@ function onStart(payload: StreamStartPayload): void {
     url: payload.url,
     method: payload.method,
     status: payload.status,
+    statusText: payload.statusText,
     contentType: payload.contentType,
     requestHeaders: payload.requestHeaders,
+    responseHeaders: payload.responseHeaders,
     requestPayloadPreview: payload.requestPayloadPreview,
     requestPayloadTruncated: payload.requestPayloadTruncated,
     transport: payload.transport,
@@ -381,14 +394,6 @@ function previewData(data: string): string {
   return oneLine.slice(0, DATA_PREVIEW_LEN) + "…";
 }
 
-function payloadPreviewForMeta(record: StreamRecord): string {
-  const text = record.requestPayloadPreview;
-  if (!text) return t("metaPayloadNone");
-  const oneLine = text.replace(/\s+/g, " ").trim();
-  const clipped = oneLine.length > 160 ? `${oneLine.slice(0, 160)}…` : oneLine;
-  return record.requestPayloadTruncated ? `${clipped}…` : clipped;
-}
-
 function renderStreamMeta(record: StreamRecord | undefined): void {
   if (!record) {
     elMeta.classList.add("is-empty");
@@ -396,14 +401,11 @@ function renderStreamMeta(record: StreamRecord | undefined): void {
     elMetaUrl.textContent = t("selectStream");
     elMetaUrl.title = "";
     elMetaTags.innerHTML = "";
-    elMetaDetails.hidden = true;
-    elMetaDetailsBody.innerHTML = "";
     return;
   }
 
   elMeta.classList.remove("is-empty");
   const headerCount = record.requestHeaders ? Object.keys(record.requestHeaders).length : 0;
-  const payloadPreview = payloadPreviewForMeta(record);
 
   elMetaMethod.textContent = record.method;
   elMetaUrl.textContent = shortPath(record.url);
@@ -417,23 +419,18 @@ function renderStreamMeta(record: StreamRecord | undefined): void {
     tags.push(`<span class="meta-chip">${escapeHtml(record.contentType)}</span>`);
   }
   tags.push(`<span class="meta-chip">${escapeHtml(transportLabel(record.transport))}</span>`);
+  if (headerCount > 0) {
+    tags.push(`<span class="meta-chip">${escapeHtml(t("metaHeadersCount", String(headerCount)))}</span>`);
+  }
+  if (record.requestPayloadPreview) {
+    tags.push(`<span class="meta-chip">${escapeHtml(t("requestHasBody"))}</span>`);
+  }
   if (record.errorMessage) {
     tags.push(
       `<span class="meta-chip error">${escapeHtml(t("metaError", record.errorMessage))}</span>`,
     );
   }
   elMetaTags.innerHTML = tags.join("");
-
-  elMetaDetails.hidden = false;
-  elMetaDetailsBody.innerHTML = `
-    <div class="meta-detail-row">
-      <span class="meta-detail-label">${escapeHtml(t("metaHeadersCount", String(headerCount)))}</span>
-    </div>
-    <div class="meta-detail-row">
-      <span class="meta-detail-label">${escapeHtml(t("metaPayloadLabel"))}</span>
-      <pre class="meta-payload-preview">${escapeHtml(payloadPreview)}</pre>
-    </div>
-  `;
 }
 
 const OVERSIZED_PACKET_THRESHOLD = 16_000;
@@ -1347,6 +1344,7 @@ function renderDetail(appendFriendly = false): void {
     closeDrawer();
     elRaw.textContent = "";
     renderTimeline(undefined);
+    renderRequest(undefined);
     return;
   }
 
@@ -1355,6 +1353,7 @@ function renderDetail(appendFriendly = false): void {
 
   renderEvents(record, appendFriendly);
   renderTimeline(record);
+  renderRequest(record);
 
   if (activeTab === "raw") {
     elRaw.scrollTop = elRaw.scrollHeight;
@@ -1628,7 +1627,7 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function activateTab(tab: "events" | "raw" | "timeline"): void {
+function activateTab(tab: "events" | "raw" | "timeline" | "request"): void {
   activeTab = tab;
   document.querySelectorAll(".tab").forEach((node) => {
     const btn = node as HTMLButtonElement;
@@ -1817,15 +1816,296 @@ function renderTimeline(record: StreamRecord | undefined): void {
   elTimelineBody.appendChild(gapBox);
 }
 
+function createNameValueTable(
+  pairs: NameValuePair[],
+  options?: { redactValues?: boolean },
+): HTMLTableElement {
+  const table = document.createElement("table");
+  table.className = "request-headers-table";
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>${escapeHtml(t("requestHeaderName"))}</th>
+        <th>${escapeHtml(t("requestHeaderValue"))}</th>
+      </tr>
+    </thead>
+  `;
+  const tbody = document.createElement("tbody");
+  for (const pair of pairs) {
+    const tr = document.createElement("tr");
+    const isRedacted = options?.redactValues && pair.value === "[REDACTED]";
+    tr.innerHTML = `
+      <td class="request-header-name"><code>${escapeHtml(pair.name)}</code></td>
+      <td class="request-header-value${isRedacted ? " is-redacted" : ""}"><code>${escapeHtml(pair.value)}</code></td>
+    `;
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+  return table;
+}
+
+function headersToPairs(headers?: Record<string, string>): NameValuePair[] {
+  if (!headers) return [];
+  return Object.entries(headers)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([name, value]) => ({ name, value }));
+}
+
+function appendKvRow(parent: HTMLElement, label: string, value: string): void {
+  const row = document.createElement("div");
+  row.className = "request-kv-row";
+  row.innerHTML = `<span>${escapeHtml(label)}</span><code class="request-url">${escapeHtml(value)}</code>`;
+  parent.appendChild(row);
+}
+
+function renderRequest(record: StreamRecord | undefined): void {
+  if (!record) {
+    elRequestPlaceholder.hidden = false;
+    elRequestPlaceholder.textContent = t("noStreamSelected");
+    elRequestBody.hidden = true;
+    elRequestBody.innerHTML = "";
+    return;
+  }
+
+  elRequestPlaceholder.hidden = true;
+  elRequestBody.hidden = false;
+  elRequestBody.innerHTML = "";
+
+  const subtabs = document.createElement("div");
+  subtabs.className = "request-subtabs";
+  const headersTab = document.createElement("button");
+  headersTab.type = "button";
+  headersTab.className = "request-subtab" + (requestPane === "headers" ? " active" : "");
+  headersTab.textContent = t("requestPaneHeaders");
+  const payloadTab = document.createElement("button");
+  payloadTab.type = "button";
+  payloadTab.className = "request-subtab" + (requestPane === "payload" ? " active" : "");
+  payloadTab.textContent = t("requestPanePayload");
+  subtabs.append(headersTab, payloadTab);
+  elRequestBody.appendChild(subtabs);
+
+  const paneHeaders = document.createElement("div");
+  paneHeaders.className = "request-pane";
+  paneHeaders.hidden = requestPane !== "headers";
+
+  const panePayload = document.createElement("div");
+  panePayload.className = "request-pane";
+  panePayload.hidden = requestPane !== "payload";
+
+  // ---- Headers pane (Network-like) ----
+  const general = document.createElement("section");
+  general.className = "request-section";
+  const generalTitle = document.createElement("div");
+  generalTitle.className = "request-section-title";
+  generalTitle.textContent = t("requestGeneralTitle");
+  general.appendChild(generalTitle);
+  const generalKv = document.createElement("div");
+  generalKv.className = "request-kv";
+  appendKvRow(generalKv, t("requestUrl"), record.url);
+  appendKvRow(generalKv, t("requestMethod"), record.method);
+  if (record.status != null) {
+    const statusLabel =
+      record.statusText && record.statusText.trim()
+        ? `${record.status} ${record.statusText}`
+        : String(record.status);
+    appendKvRow(generalKv, t("requestStatus"), statusLabel);
+  }
+  appendKvRow(generalKv, t("requestTransport"), transportLabel(record.transport));
+  appendKvRow(generalKv, t("requestStreamKind"), record.streamKind);
+  if (record.contentType) {
+    appendKvRow(generalKv, t("requestContentType"), record.contentType);
+  }
+  general.appendChild(generalKv);
+  paneHeaders.appendChild(general);
+
+  const responseSection = document.createElement("section");
+  responseSection.className = "request-section";
+  const responseTitle = document.createElement("div");
+  responseTitle.className = "request-section-title";
+  responseTitle.textContent = t("requestResponseHeadersTitle");
+  responseSection.appendChild(responseTitle);
+  const responsePairs = headersToPairs(record.responseHeaders);
+  if (responsePairs.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "request-empty";
+    empty.textContent = t("requestResponseHeadersEmpty");
+    responseSection.appendChild(empty);
+  } else {
+    responseSection.appendChild(createNameValueTable(responsePairs, { redactValues: true }));
+  }
+  paneHeaders.appendChild(responseSection);
+
+  const requestHeadersSection = document.createElement("section");
+  requestHeadersSection.className = "request-section";
+  const requestHeadersTitle = document.createElement("div");
+  requestHeadersTitle.className = "request-section-title";
+  requestHeadersTitle.textContent = t("requestHeadersTitle");
+  requestHeadersSection.appendChild(requestHeadersTitle);
+  const requestHeadersHint = document.createElement("div");
+  requestHeadersHint.className = "request-section-hint";
+  requestHeadersHint.textContent = t("requestHeadersHint");
+  requestHeadersSection.appendChild(requestHeadersHint);
+  const requestPairs = headersToPairs(record.requestHeaders);
+  if (requestPairs.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "request-empty";
+    empty.textContent = t("requestHeadersEmpty");
+    requestHeadersSection.appendChild(empty);
+  } else {
+    requestHeadersSection.appendChild(createNameValueTable(requestPairs, { redactValues: true }));
+  }
+  paneHeaders.appendChild(requestHeadersSection);
+
+  // ---- Payload pane (Network-like) ----
+  const queryParams = parseQueryStringParams(record.url);
+  const querySection = document.createElement("section");
+  querySection.className = "request-section";
+  const queryTitle = document.createElement("div");
+  queryTitle.className = "request-section-title";
+  queryTitle.textContent = t("requestQueryTitle");
+  querySection.appendChild(queryTitle);
+  if (queryParams.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "request-empty";
+    empty.textContent = t("requestQueryEmpty");
+    querySection.appendChild(empty);
+  } else {
+    querySection.appendChild(createNameValueTable(queryParams));
+  }
+  panePayload.appendChild(querySection);
+
+  const payload = record.requestPayloadPreview ?? "";
+  const reqCt = (requestContentType(record.requestHeaders) ?? "").toLowerCase();
+  const isForm =
+    reqCt.includes("application/x-www-form-urlencoded") ||
+    (!reqCt.includes("json") && looksLikeUrlEncoded(payload));
+  const formPairs = isForm && payload ? parseUrlEncodedPairs(payload) : [];
+
+  if (formPairs.length > 0) {
+    const formSection = document.createElement("section");
+    formSection.className = "request-section";
+    const formTitle = document.createElement("div");
+    formTitle.className = "request-section-title";
+    formTitle.textContent = t("requestFormDataTitle");
+    formSection.appendChild(formTitle);
+    formSection.appendChild(createNameValueTable(formPairs));
+    if (record.requestPayloadTruncated) {
+      const hint = document.createElement("div");
+      hint.className = "request-section-hint";
+      hint.textContent = t("requestBodyTruncatedHint");
+      formSection.appendChild(hint);
+    }
+    panePayload.appendChild(formSection);
+  }
+
+  const bodySection = document.createElement("section");
+  bodySection.className = "request-section";
+  const bodyTitleRow = document.createElement("div");
+  bodyTitleRow.className = "request-section-title-row";
+  const bodyTitle = document.createElement("div");
+  bodyTitle.className = "request-section-title";
+  bodyTitle.textContent = t("requestBodyTitle");
+  bodyTitleRow.appendChild(bodyTitle);
+
+  const viewToggle = document.createElement("div");
+  viewToggle.className = "request-view-toggle";
+  const parsedBtn = document.createElement("button");
+  parsedBtn.type = "button";
+  parsedBtn.className = "request-view-btn" + (requestPayloadView === "parsed" ? " active" : "");
+  parsedBtn.textContent = t("requestPayloadParsed");
+  const sourceBtn = document.createElement("button");
+  sourceBtn.type = "button";
+  sourceBtn.className = "request-view-btn" + (requestPayloadView === "source" ? " active" : "");
+  sourceBtn.textContent = t("requestPayloadSource");
+  viewToggle.append(parsedBtn, sourceBtn);
+  bodyTitleRow.appendChild(viewToggle);
+  bodySection.appendChild(bodyTitleRow);
+
+  const bodyHint = document.createElement("div");
+  bodyHint.className = "request-section-hint";
+  bodyHint.textContent = record.requestPayloadTruncated
+    ? t("requestBodyTruncatedHint")
+    : t("requestBodyHint");
+  bodySection.appendChild(bodyHint);
+
+  const bodyContent = document.createElement("div");
+  bodyContent.className = "request-payload-content";
+
+  const renderPayloadContent = (): void => {
+    bodyContent.innerHTML = "";
+    parsedBtn.classList.toggle("active", requestPayloadView === "parsed");
+    sourceBtn.classList.toggle("active", requestPayloadView === "source");
+    if (!payload) {
+      const empty = document.createElement("div");
+      empty.className = "request-empty";
+      empty.textContent = t("requestBodyEmpty");
+      bodyContent.appendChild(empty);
+      return;
+    }
+    if (requestPayloadView === "source") {
+      const pre = document.createElement("pre");
+      pre.className = "request-payload-text";
+      pre.textContent = payload;
+      bodyContent.appendChild(pre);
+      return;
+    }
+    const parsed = tryParseJsonValue(payload);
+    if (parsed.ok) {
+      bodyContent.appendChild(createJsonTree(parsed.value, { defaultExpandDepth: 2 }));
+      return;
+    }
+    if (formPairs.length > 0) {
+      bodyContent.appendChild(createNameValueTable(formPairs));
+      return;
+    }
+    const pre = document.createElement("pre");
+    pre.className = "request-payload-text";
+    pre.textContent = payload;
+    bodyContent.appendChild(pre);
+  };
+
+  parsedBtn.addEventListener("click", () => {
+    requestPayloadView = "parsed";
+    renderPayloadContent();
+  });
+  sourceBtn.addEventListener("click", () => {
+    requestPayloadView = "source";
+    renderPayloadContent();
+  });
+  renderPayloadContent();
+  bodySection.appendChild(bodyContent);
+  panePayload.appendChild(bodySection);
+
+  elRequestBody.append(paneHeaders, panePayload);
+
+  headersTab.addEventListener("click", () => {
+    requestPane = "headers";
+    headersTab.classList.add("active");
+    payloadTab.classList.remove("active");
+    paneHeaders.hidden = false;
+    panePayload.hidden = true;
+  });
+  payloadTab.addEventListener("click", () => {
+    requestPane = "payload";
+    payloadTab.classList.add("active");
+    headersTab.classList.remove("active");
+    paneHeaders.hidden = true;
+    panePayload.hidden = false;
+  });
+}
+
 function setupTabs(): void {
   document.querySelectorAll<HTMLButtonElement>(".tab").forEach((btn) => {
     btn.addEventListener("click", () => {
       const tab = btn.dataset.tab as typeof activeTab;
-      if (tab !== "events" && tab !== "raw" && tab !== "timeline") return;
+      if (tab !== "events" && tab !== "raw" && tab !== "timeline" && tab !== "request") return;
       activateTab(tab);
       if (tab === "timeline") {
         const record = selectedId ? streams.get(selectedId) : undefined;
         renderTimeline(record);
+      } else if (tab === "request") {
+        const record = selectedId ? streams.get(selectedId) : undefined;
+        renderRequest(record);
       }
     });
   });

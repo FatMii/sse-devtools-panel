@@ -136,6 +136,7 @@
           <div class="tabs">
             <button type="button" class="tab active" data-tab="events" data-i18n="tabEvents">Events</button>
             <button type="button" class="tab" data-tab="timeline" data-i18n="tabTimeline">Timeline</button>
+            <button type="button" class="tab" data-tab="request" data-i18n="tabRequest">Request</button>
             <button type="button" class="tab" data-tab="raw" data-i18n="tabRaw">Raw</button>
           </div>
           <div class="meta" id="meta">
@@ -144,10 +145,6 @@
               <span class="meta-url" id="meta-url"></span>
             </div>
             <div class="meta-line meta-line-tags" id="meta-tags"></div>
-            <details class="meta-details" id="meta-details">
-              <summary data-i18n="metaDetailsSummary">Request details</summary>
-              <div class="meta-details-body" id="meta-details-body"></div>
-            </details>
           </div>
           <div class="views">
             <div id="view-events" class="view active events-layout">
@@ -241,6 +238,12 @@
                 No stream selected
               </div>
               <div id="timeline-body" class="timeline-body" hidden></div>
+            </div>
+            <div id="view-request" class="view request-view">
+              <div id="request-placeholder" class="placeholder" data-i18n="noStreamSelected">
+                No stream selected
+              </div>
+              <div id="request-body" class="request-body" hidden></div>
             </div>
             <pre id="view-raw" class="view code"></pre>
           </div>

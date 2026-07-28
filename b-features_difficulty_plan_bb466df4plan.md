@@ -18,7 +18,7 @@ todos:
     content: "Phase 4: Chunk 间隔直方图 + Event Timeline"
     status: completed
   - id: phase5-capture-depth
-    content: "Phase 5: 请求头/体关联、Abort 原因、Last-Event-ID/重连、针对性加深 hook"
+    content: "Phase 5: 请求头/体关联（Request Tab 已完成）、Abort 原因、Last-Event-ID/重连、针对性加深 hook"
     status: pending
   - id: phase6-scale-diff
     content: "Phase 6: Events 虚拟列表 + 双流 Diff"
@@ -148,7 +148,7 @@ flowchart LR
 
 ### Phase 5 — 捕获层加深（约 2–3 周）
 
-1. **请求关联**：`StreamStartPayload` 增加可选 `requestHeaders` / `requestBodyPreview`（长度上限 + 敏感头脱敏）；面板 Meta/侧栏只读展示。
+1. [x] **请求关联（Request Tab）**：捕获 `requestHeaders` / `responseHeaders` / `requestPayloadPreview`（256KB 截断 + 敏感头脱敏）；面板 **Request** Tab 仿 Network：`Headers`（General / Response Headers / Request Headers）+ `Payload`（Query / Form Data / Request Payload Parsed|Source）。
 2. **Abort / 断开原因**：fetch/XHR abort、error 分类写入 `errorMessage` 或新字段。
 3. **Last-Event-ID / 重连**：加强 EventSource hook，记录 reconnect 次数与 id 序列；列表/Timeline 标注。
 4. **更深 stream hook**：仅针对已确认漏抓场景补丁，不做无目标全量 hook。

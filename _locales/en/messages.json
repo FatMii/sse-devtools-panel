@@ -68,6 +68,9 @@
   "tabTimeline": {
     "message": "Timeline"
   },
+  "tabRequest": {
+    "message": "Request"
+  },
   "tabRaw": {
     "message": "Raw"
   },
@@ -556,6 +559,84 @@
   },
   "metaDetailsSummary": {
     "message": "Request details"
+  },
+  "requestHasBody": {
+    "message": "has body"
+  },
+  "requestPaneHeaders": {
+    "message": "Headers"
+  },
+  "requestPanePayload": {
+    "message": "Payload"
+  },
+  "requestGeneralTitle": {
+    "message": "General"
+  },
+  "requestMethod": {
+    "message": "Request Method"
+  },
+  "requestUrl": {
+    "message": "Request URL"
+  },
+  "requestTransport": {
+    "message": "Transport"
+  },
+  "requestStreamKind": {
+    "message": "Stream kind"
+  },
+  "requestStatus": {
+    "message": "Status Code"
+  },
+  "requestContentType": {
+    "message": "Content-Type"
+  },
+  "requestResponseHeadersTitle": {
+    "message": "Response Headers"
+  },
+  "requestResponseHeadersEmpty": {
+    "message": "No response headers captured (EventSource / provisional start)."
+  },
+  "requestHeadersTitle": {
+    "message": "Request Headers"
+  },
+  "requestHeadersHint": {
+    "message": "Captured from page JS (fetch/XHR). Browser-added headers may be missing. Sensitive values show as [REDACTED]."
+  },
+  "requestHeadersEmpty": {
+    "message": "No request headers captured for this stream."
+  },
+  "requestHeaderName": {
+    "message": "Name"
+  },
+  "requestHeaderValue": {
+    "message": "Value"
+  },
+  "requestQueryTitle": {
+    "message": "Query String Parameters"
+  },
+  "requestQueryEmpty": {
+    "message": "No query string parameters."
+  },
+  "requestFormDataTitle": {
+    "message": "Form Data"
+  },
+  "requestBodyTitle": {
+    "message": "Request Payload"
+  },
+  "requestPayloadParsed": {
+    "message": "Parsed"
+  },
+  "requestPayloadSource": {
+    "message": "Source"
+  },
+  "requestBodyHint": {
+    "message": "Best-effort preview from the page request body (up to 256KB)."
+  },
+  "requestBodyTruncatedHint": {
+    "message": "Payload truncated at 256KB for memory safety."
+  },
+  "requestBodyEmpty": {
+    "message": "No request payload (GET/EventSource, or body unavailable)."
   },
   "optionsTitle": {
     "message": "SSE DevTools Options"

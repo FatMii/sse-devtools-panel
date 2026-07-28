@@ -26,8 +26,10 @@ export interface StreamExportBody {
   url: string;
   method: string;
   status?: number;
+  statusText?: string;
   contentType?: string;
   requestHeaders?: Record<string, string>;
+  responseHeaders?: Record<string, string>;
   requestPayloadPreview?: string;
   requestPayloadTruncated?: boolean;
   transport: StreamTransport;
@@ -58,8 +60,10 @@ export function buildStreamExportPayload(record: StreamRecord): StreamExportPayl
       url: record.url,
       method: record.method,
       status: record.status,
+      statusText: record.statusText,
       contentType: record.contentType,
       requestHeaders: record.requestHeaders,
+      responseHeaders: record.responseHeaders,
       requestPayloadPreview: record.requestPayloadPreview,
       requestPayloadTruncated: record.requestPayloadTruncated,
       transport: record.transport,
@@ -160,11 +164,20 @@ function normalizeStreamBody(body: Record<string, unknown>): StreamExportBody {
     url: body.url,
     method: body.method,
     status: typeof body.status === "number" ? body.status : undefined,
+    statusText: typeof body.statusText === "string" ? body.statusText : undefined,
     contentType: typeof body.contentType === "string" ? body.contentType : undefined,
     requestHeaders:
       body.requestHeaders && typeof body.requestHeaders === "object"
         ? Object.fromEntries(
             Object.entries(body.requestHeaders as Record<string, unknown>).filter(
+              (entry): entry is [string, string] => typeof entry[1] === "string",
+            ),
+          )
+        : undefined,
+    responseHeaders:
+      body.responseHeaders && typeof body.responseHeaders === "object"
+        ? Object.fromEntries(
+            Object.entries(body.responseHeaders as Record<string, unknown>).filter(
               (entry): entry is [string, string] => typeof entry[1] === "string",
             ),
           )
@@ -224,8 +237,10 @@ export function streamRecordFromExport(
     url: body.url,
     method: body.method,
     status: body.status,
+    statusText: body.statusText,
     contentType: body.contentType,
     requestHeaders: body.requestHeaders ? { ...body.requestHeaders } : undefined,
+    responseHeaders: body.responseHeaders ? { ...body.responseHeaders } : undefined,
     requestPayloadPreview: body.requestPayloadPreview,
     requestPayloadTruncated: body.requestPayloadTruncated,
     transport: body.transport,

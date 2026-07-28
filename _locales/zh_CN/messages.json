@@ -68,6 +68,9 @@
   "tabTimeline": {
     "message": "时间线"
   },
+  "tabRequest": {
+    "message": "请求"
+  },
   "tabRaw": {
     "message": "Raw"
   },
@@ -556,6 +559,84 @@
   },
   "metaDetailsSummary": {
     "message": "请求详情"
+  },
+  "requestHasBody": {
+    "message": "有请求体"
+  },
+  "requestPaneHeaders": {
+    "message": "Headers"
+  },
+  "requestPanePayload": {
+    "message": "Payload"
+  },
+  "requestGeneralTitle": {
+    "message": "General"
+  },
+  "requestMethod": {
+    "message": "Request Method"
+  },
+  "requestUrl": {
+    "message": "Request URL"
+  },
+  "requestTransport": {
+    "message": "传输方式"
+  },
+  "requestStreamKind": {
+    "message": "流类型"
+  },
+  "requestStatus": {
+    "message": "Status Code"
+  },
+  "requestContentType": {
+    "message": "Content-Type"
+  },
+  "requestResponseHeadersTitle": {
+    "message": "Response Headers"
+  },
+  "requestResponseHeadersEmpty": {
+    "message": "未捕获到响应头（EventSource / 临时建连阶段）。"
+  },
+  "requestHeadersTitle": {
+    "message": "Request Headers"
+  },
+  "requestHeadersHint": {
+    "message": "来自页面 JS（fetch/XHR）尽力采集；浏览器自动附加的头可能缺失。敏感值显示为 [REDACTED]。"
+  },
+  "requestHeadersEmpty": {
+    "message": "未捕获到该流的请求头。"
+  },
+  "requestHeaderName": {
+    "message": "Name"
+  },
+  "requestHeaderValue": {
+    "message": "Value"
+  },
+  "requestQueryTitle": {
+    "message": "Query String Parameters"
+  },
+  "requestQueryEmpty": {
+    "message": "无查询参数。"
+  },
+  "requestFormDataTitle": {
+    "message": "Form Data"
+  },
+  "requestBodyTitle": {
+    "message": "Request Payload"
+  },
+  "requestPayloadParsed": {
+    "message": "Parsed"
+  },
+  "requestPayloadSource": {
+    "message": "Source"
+  },
+  "requestBodyHint": {
+    "message": "从页面请求体尽力采集的预览（上限 256KB）。"
+  },
+  "requestBodyTruncatedHint": {
+    "message": "请求体预览已截断至 256KB（内存保护）。"
+  },
+  "requestBodyEmpty": {
+    "message": "无请求体（GET/EventSource，或请求体不可用）。"
   },
   "optionsTitle": {
     "message": "SSE DevTools 选项"

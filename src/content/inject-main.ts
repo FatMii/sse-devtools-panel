@@ -84,8 +84,9 @@ function resolveMethod(input: RequestInfo | URL, init?: RequestInit): string {
 }
 
 const SENSITIVE_HEADER_RE =
-  /^(authorization|cookie|set-cookie|x-api-key|proxy-authorization)$/i;
-const MAX_PAYLOAD_PREVIEW = 4000;
+  /^(authorization|cookie|set-cookie|x-api-key|api-key|x-auth-token|proxy-authorization)$/i;
+/** Align closer to Network panel usable payload size (still capped for extension memory). */
+const MAX_PAYLOAD_PREVIEW = 256_000;
 
 function redactHeaderValue(name: string, value: string): string {
   if (SENSITIVE_HEADER_RE.test(name)) return "[REDACTED]";
@@ -104,6 +105,29 @@ function normalizeHeaders(input?: HeadersInit): Record<string, string> | undefin
     return undefined;
   }
   return Object.keys(out).length > 0 ? out : undefined;
+}
+
+function normalizeResponseHeaders(headers: Headers): Record<string, string> {
+  const out: Record<string, string> = {};
+  headers.forEach((value, key) => {
+    out[key.toLowerCase()] = redactHeaderValue(key, value);
+  });
+  return out;
+}
+
+function parseRawResponseHeaders(raw: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const line of raw.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const colon = trimmed.indexOf(":");
+    if (colon <= 0) continue;
+    const name = trimmed.slice(0, colon).trim();
+    const value = trimmed.slice(colon + 1).trim();
+    if (!name) continue;
+    out[name.toLowerCase()] = redactHeaderValue(name, value);
+  }
+  return out;
 }
 
 function mergeHeaderMaps(
@@ -404,17 +428,21 @@ function patchFetch(
 
     const announce = (extra: {
       status?: number;
+      statusText?: string;
       contentType?: string;
       streamKind: StreamKind;
       url?: string;
+      responseHeaders?: Record<string, string>;
     }): void => {
       postStart({
         requestId,
         url: extra.url ?? url,
         method,
         status: extra.status,
+        statusText: extra.statusText,
         contentType: extra.contentType,
         requestHeaders: reqMeta.headers,
+        responseHeaders: extra.responseHeaders,
         requestPayloadPreview: reqMeta.payloadPreview,
         requestPayloadTruncated: reqMeta.payloadTruncated,
         transport: "fetch",
@@ -455,9 +483,11 @@ function patchFetch(
       // Refresh metadata once headers are known (panel merges in-place).
       announce({
         status: response.status,
+        statusText: response.statusText || undefined,
         contentType: contentType ?? undefined,
         streamKind,
         url: response.url || url,
+        responseHeaders: normalizeResponseHeaders(response.headers),
       });
 
       const sink = createFetchTextSink(requestId, postChunk, postEnd, postError);
@@ -671,13 +701,30 @@ function patchXhr(
       requestId = nextId();
       lastLen = 0;
 
+      let responseHeaders: Record<string, string> | undefined;
+      let statusText: string | undefined;
+      try {
+        const raw = xhr.getAllResponseHeaders();
+        if (raw) responseHeaders = parseRawResponseHeaders(raw);
+      } catch {
+        // ignore
+      }
+      try {
+        statusText = xhr.statusText || undefined;
+      } catch {
+        // ignore
+      }
+
       postStart({
         requestId,
         url,
         method,
         status: xhr.status || undefined,
+        statusText,
         contentType: contentType || undefined,
         requestHeaders: Object.keys(requestHeaders).length > 0 ? { ...requestHeaders } : undefined,
+        responseHeaders:
+          responseHeaders && Object.keys(responseHeaders).length > 0 ? responseHeaders : undefined,
         requestPayloadPreview,
         requestPayloadTruncated,
         transport: "xhr" satisfies StreamTransport,
