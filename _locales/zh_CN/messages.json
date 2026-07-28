@@ -65,6 +65,9 @@
   "tabEvents": {
     "message": "Events"
   },
+  "tabTimeline": {
+    "message": "时间线"
+  },
   "tabRaw": {
     "message": "Raw"
   },
@@ -400,6 +403,75 @@
   },
   "statsSelectedEventsPerSec": {
     "message": "events/s"
+  },
+  "timelineMeta": {
+    "message": "$COUNT$ 个事件 · 跨度 $SPAN$ · p95 间隔 $P95$",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "42"
+      },
+      "span": {
+        "content": "$2",
+        "example": "1.2 s"
+      },
+      "p95": {
+        "content": "$3",
+        "example": "80 ms"
+      }
+    }
+  },
+  "timelineTrackTitle": {
+    "message": "事件到达时间线"
+  },
+  "timelineTrackHint": {
+    "message": "每个刻度是一个事件。红色表示到达前等待 ≥250ms。点击刻度可打开该事件。"
+  },
+  "timelineGapHistogram": {
+    "message": "相邻事件等待时长分布"
+  },
+  "timelineGapHistogramHint": {
+    "message": "横轴：两次事件之间等了多久；纵轴：这种等待发生了多少次。黄色柱（≥500ms）表示较长停顿。"
+  },
+  "timelineGapHistogramX": {
+    "message": "两次事件之间的等待 →"
+  },
+  "timelineGapHistogramY": {
+    "message": "次数"
+  },
+  "timelineGapHistogramEmpty": {
+    "message": "至少需要 2 个事件才能展示等待分布。"
+  },
+  "timelineGapBinTitle": {
+    "message": "$RANGE$：$COUNT$ 次等待",
+    "placeholders": {
+      "range": {
+        "content": "$1",
+        "example": "≥1s"
+      },
+      "count": {
+        "content": "$2",
+        "example": "3"
+      }
+    }
+  },
+  "timelineLargestGaps": {
+    "message": "最长等待"
+  },
+  "timelineLargestGapsHint": {
+    "message": "点击可跳到这次长等待之后到达的事件。"
+  },
+  "timelineGapBeforeEvent": {
+    "message": "到达 #$INDEX$ 前等待",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "42"
+      }
+    }
+  },
+  "timelineNoGaps": {
+    "message": "尚无事件间隔。"
   },
   "originImported": {
     "message": "导入"

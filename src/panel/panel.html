@@ -135,6 +135,7 @@
         <section class="detail">
           <div class="tabs">
             <button type="button" class="tab active" data-tab="events" data-i18n="tabEvents">Events</button>
+            <button type="button" class="tab" data-tab="timeline" data-i18n="tabTimeline">Timeline</button>
             <button type="button" class="tab" data-tab="raw" data-i18n="tabRaw">Raw</button>
           </div>
           <div class="meta" id="meta">
@@ -234,6 +235,12 @@
                 </div>
                 <div id="drawer-body" class="drawer-body"></div>
               </aside>
+            </div>
+            <div id="view-timeline" class="view timeline-view">
+              <div id="timeline-placeholder" class="placeholder" data-i18n="noStreamSelected">
+                No stream selected
+              </div>
+              <div id="timeline-body" class="timeline-body" hidden></div>
             </div>
             <pre id="view-raw" class="view code"></pre>
           </div>

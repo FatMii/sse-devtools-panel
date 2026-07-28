@@ -35,6 +35,14 @@ import {
   type SseSpecWarning,
   type SseSpecWarningKind,
 } from "../shared/sse-spec";
+import {
+  buildGapHistogram,
+  buildTimelineMarks,
+  collectEventGaps,
+  largestGaps,
+  timelineSpanMs,
+  type HistogramBin,
+} from "../shared/stream-timing";
 import { applyTreeSearch, createJsonTree, tryParseJsonValue } from "./json-tree";
 import { initEventsColumnResizers } from "./column-resizer";
 
@@ -67,7 +75,7 @@ let drawerEventData: string | null = null;
 let drawerEventIndex: number | null = null;
 /** Data targeted by the row context menu. */
 let contextMenuData: string | null = null;
-let activeTab: "events" | "raw" = "events";
+let activeTab: "events" | "raw" | "timeline" = "events";
 let drawerWidthPercent = DRAWER_WIDTH_DEFAULT;
 let eventsSearchQuery = "";
 let drawerSearchQuery = "";
@@ -103,6 +111,8 @@ const elDrawerNext = document.getElementById("drawer-next") as HTMLButtonElement
 const elDrawerCopy = document.getElementById("drawer-copy") as HTMLButtonElement;
 const elContextMenu = document.getElementById("row-context-menu") as HTMLDivElement;
 const elRaw = document.getElementById("view-raw") as HTMLPreElement;
+const elTimelinePlaceholder = document.getElementById("timeline-placeholder") as HTMLDivElement;
+const elTimelineBody = document.getElementById("timeline-body") as HTMLDivElement;
 const elStreamsUrlFilter = document.getElementById("streams-url-filter") as HTMLInputElement;
 const elStreamsTransportFilter = document.getElementById("streams-transport-filter") as HTMLSelectElement;
 const elExportJson = document.getElementById("btn-export-json") as HTMLButtonElement;
@@ -730,6 +740,117 @@ function formatMetricMs(ms?: number): string {
   return `${Math.round(ms)} ms`;
 }
 
+function formatGapBinLabel(bin: HistogramBin): string {
+  if (!Number.isFinite(bin.toMs)) {
+    return bin.fromMs >= 1000 ? `≥${bin.fromMs / 1000}s` : `≥${bin.fromMs}ms`;
+  }
+  return `${bin.fromMs}–${bin.toMs}ms`;
+}
+
+function createGapHistogramSvg(bins: HistogramBin[]): SVGSVGElement {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", "gap-histogram");
+  svg.setAttribute("viewBox", "0 0 440 170");
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", t("timelineGapHistogram"));
+
+  const maxCount = Math.max(1, ...bins.map((b) => b.count));
+  const padL = 42;
+  const padR = 12;
+  const padT = 22;
+  const padB = 48;
+  const plotW = 440 - padL - padR;
+  const plotH = 170 - padT - padB;
+  const gap = 4;
+  const barW = Math.max(8, (plotW - gap * (bins.length - 1)) / bins.length);
+  const hotThreshold = 500;
+
+  // Y-axis baseline + value ticks
+  const axis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  axis.setAttribute("class", "plot-axis");
+  axis.setAttribute("x1", String(padL));
+  axis.setAttribute("y1", String(padT));
+  axis.setAttribute("x2", String(padL));
+  axis.setAttribute("y2", String(padT + plotH));
+  svg.appendChild(axis);
+
+  const base = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  base.setAttribute("class", "plot-axis");
+  base.setAttribute("x1", String(padL));
+  base.setAttribute("y1", String(padT + plotH));
+  base.setAttribute("x2", String(padL + plotW));
+  base.setAttribute("y2", String(padT + plotH));
+  svg.appendChild(base);
+
+  for (const ratio of [0, 0.5, 1]) {
+    const value = Math.round(maxCount * ratio);
+    const y = padT + plotH - ratio * plotH;
+    const tick = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    tick.setAttribute("class", "axis-label");
+    tick.setAttribute("x", String(padL - 6));
+    tick.setAttribute("y", String(y + 3));
+    tick.setAttribute("text-anchor", "end");
+    tick.textContent = String(value);
+    svg.appendChild(tick);
+  }
+
+  const yTitle = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  yTitle.setAttribute("class", "axis-title");
+  yTitle.setAttribute("x", "10");
+  yTitle.setAttribute("y", String(padT + plotH / 2));
+  yTitle.setAttribute("text-anchor", "middle");
+  yTitle.setAttribute("transform", `rotate(-90 10 ${padT + plotH / 2})`);
+  yTitle.textContent = t("timelineGapHistogramY");
+  svg.appendChild(yTitle);
+
+  for (let i = 0; i < bins.length; i += 1) {
+    const bin = bins[i];
+    const h = (bin.count / maxCount) * plotH;
+    const x = padL + i * (barW + gap);
+    const y = padT + plotH - h;
+    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rect.setAttribute("class", `bar${bin.fromMs >= hotThreshold ? " is-hot" : ""}`);
+    rect.setAttribute("x", String(x));
+    rect.setAttribute("y", String(y));
+    rect.setAttribute("width", String(barW));
+    rect.setAttribute("height", String(Math.max(bin.count > 0 ? 2 : 0, h)));
+    rect.setAttribute("rx", "2");
+    rect.setAttribute(
+      "title",
+      t("timelineGapBinTitle", [formatGapBinLabel(bin), String(bin.count)]),
+    );
+    svg.appendChild(rect);
+
+    if (bin.count > 0) {
+      const countText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      countText.setAttribute("class", "count-label");
+      countText.setAttribute("x", String(x + barW / 2));
+      countText.setAttribute("y", String(Math.max(14, y - 4)));
+      countText.setAttribute("text-anchor", "middle");
+      countText.textContent = String(bin.count);
+      svg.appendChild(countText);
+    }
+
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    label.setAttribute("class", "axis-label bin-label");
+    label.setAttribute("x", String(x + barW / 2));
+    label.setAttribute("y", String(padT + plotH + 14));
+    label.setAttribute("text-anchor", "middle");
+    label.textContent = formatGapBinLabel(bin);
+    svg.appendChild(label);
+  }
+
+  const xTitle = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  xTitle.setAttribute("class", "axis-title");
+  xTitle.setAttribute("x", String(padL + plotW / 2));
+  xTitle.setAttribute("y", "164");
+  xTitle.setAttribute("text-anchor", "middle");
+  xTitle.textContent = t("timelineGapHistogramX");
+  svg.appendChild(xTitle);
+
+  return svg;
+}
+
 function setUiPaused(next: boolean): void {
   uiPaused = next;
   elPauseUi.classList.toggle("is-paused", uiPaused);
@@ -1225,6 +1346,7 @@ function renderDetail(appendFriendly = false): void {
     elTbody.innerHTML = "";
     closeDrawer();
     elRaw.textContent = "";
+    renderTimeline(undefined);
     return;
   }
 
@@ -1232,6 +1354,7 @@ function renderDetail(appendFriendly = false): void {
   elRaw.textContent = record.raw || "";
 
   renderEvents(record, appendFriendly);
+  renderTimeline(record);
 
   if (activeTab === "raw") {
     elRaw.scrollTop = elRaw.scrollHeight;
@@ -1505,16 +1628,205 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+function activateTab(tab: "events" | "raw" | "timeline"): void {
+  activeTab = tab;
+  document.querySelectorAll(".tab").forEach((node) => {
+    const btn = node as HTMLButtonElement;
+    btn.classList.toggle("active", btn.dataset.tab === tab);
+  });
+  document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
+  document.getElementById(`view-${tab}`)?.classList.add("active");
+}
+
+function jumpToSelectedEventFromTimeline(eventIndex: number): void {
+  const record = selectedId ? streams.get(selectedId) : undefined;
+  if (!record) return;
+  activateTab("events");
+  selectEventByIndex(record, eventIndex);
+}
+
+const TIMELINE_STALL_MS = 250;
+
+function renderTimeline(record: StreamRecord | undefined): void {
+  if (!record) {
+    elTimelinePlaceholder.hidden = false;
+    elTimelinePlaceholder.textContent = t("noStreamSelected");
+    elTimelineBody.hidden = true;
+    elTimelineBody.innerHTML = "";
+    return;
+  }
+
+  if (record.events.length === 0) {
+    elTimelinePlaceholder.hidden = false;
+    elTimelinePlaceholder.textContent = t("noEventsYet");
+    elTimelineBody.hidden = true;
+    elTimelineBody.innerHTML = "";
+    return;
+  }
+
+  elTimelinePlaceholder.hidden = true;
+  elTimelineBody.hidden = false;
+  elTimelineBody.innerHTML = "";
+
+  const origin = record.startedAt;
+  const marks = buildTimelineMarks(record.events, origin);
+  const spanMs = Math.max(timelineSpanMs(marks), 1);
+  const gaps = collectEventGaps(record.events);
+  const metrics = ensureStreamMetrics(record);
+
+  const meta = document.createElement("div");
+  meta.className = "timeline-meta";
+  meta.textContent = t("timelineMeta", [
+    String(record.events.length),
+    formatMetricMs(metrics.durationMs ?? spanMs),
+    formatMetricMs(metrics.p95GapMs),
+  ]);
+  elTimelineBody.appendChild(meta);
+
+  const trackSection = document.createElement("section");
+  trackSection.className = "timeline-section";
+  const trackTitle = document.createElement("div");
+  trackTitle.className = "timeline-section-title";
+  trackTitle.textContent = t("timelineTrackTitle");
+  const trackHint = document.createElement("div");
+  trackHint.className = "timeline-section-hint";
+  trackHint.textContent = t("timelineTrackHint");
+  trackSection.append(trackTitle, trackHint);
+
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", "timeline-track-svg");
+  svg.setAttribute("viewBox", "0 0 640 72");
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", t("timelineTrackTitle"));
+
+  const padL = 16;
+  const padR = 16;
+  const trackY = 28;
+  const plotW = 640 - padL - padR;
+
+  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  line.setAttribute("class", "track-line");
+  line.setAttribute("x1", String(padL));
+  line.setAttribute("y1", String(trackY));
+  line.setAttribute("x2", String(padL + plotW));
+  line.setAttribute("y2", String(trackY));
+  svg.appendChild(line);
+
+  for (const mark of marks) {
+    const x = padL + (mark.offsetMs / spanMs) * plotW;
+    const isStall = typeof mark.gapFromPrevMs === "number" && mark.gapFromPrevMs >= TIMELINE_STALL_MS;
+    const isSelected = selectedEventIndex === mark.index;
+    const tick = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    tick.setAttribute(
+      "class",
+      `tick${isSelected ? " is-selected" : ""}${isStall && !isSelected ? " is-stall" : ""}`,
+    );
+    tick.setAttribute("x", String(x - 2));
+    tick.setAttribute("y", String(trackY - 14));
+    tick.setAttribute("width", "4");
+    tick.setAttribute("height", "28");
+    tick.setAttribute("rx", "1");
+    tick.setAttribute("data-index", String(mark.index));
+    tick.setAttribute(
+      "title",
+      `#${mark.index} · ${mark.event} · +${Math.round(mark.offsetMs)}ms` +
+        (mark.gapFromPrevMs != null ? ` · gap ${Math.round(mark.gapFromPrevMs)}ms` : ""),
+    );
+    tick.addEventListener("click", () => {
+      jumpToSelectedEventFromTimeline(mark.index);
+    });
+    svg.appendChild(tick);
+  }
+
+  const label0 = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  label0.setAttribute("class", "axis-label");
+  label0.setAttribute("x", String(padL));
+  label0.setAttribute("y", "58");
+  label0.textContent = "0";
+  svg.appendChild(label0);
+
+  const labelMid = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  labelMid.setAttribute("class", "axis-label");
+  labelMid.setAttribute("x", String(padL + plotW / 2));
+  labelMid.setAttribute("y", "58");
+  labelMid.setAttribute("text-anchor", "middle");
+  labelMid.textContent = formatMetricMs(spanMs / 2);
+  svg.appendChild(labelMid);
+
+  const labelEnd = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  labelEnd.setAttribute("class", "axis-label");
+  labelEnd.setAttribute("x", String(padL + plotW));
+  labelEnd.setAttribute("y", "58");
+  labelEnd.setAttribute("text-anchor", "end");
+  labelEnd.textContent = formatMetricMs(spanMs);
+  svg.appendChild(labelEnd);
+
+  trackSection.appendChild(svg);
+  elTimelineBody.appendChild(trackSection);
+
+  const histSection = document.createElement("section");
+  histSection.className = "timeline-section";
+  const histTitle = document.createElement("div");
+  histTitle.className = "timeline-section-title";
+  histTitle.textContent = t("timelineGapHistogram");
+  const histHint = document.createElement("div");
+  histHint.className = "timeline-section-hint";
+  histHint.textContent = t("timelineGapHistogramHint");
+  histSection.append(histTitle, histHint);
+  if (gaps.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "timeline-meta";
+    empty.textContent = t("timelineGapHistogramEmpty");
+    histSection.appendChild(empty);
+  } else {
+    histSection.appendChild(createGapHistogramSvg(buildGapHistogram(gaps)));
+  }
+  elTimelineBody.appendChild(histSection);
+
+  const gapBox = document.createElement("section");
+  gapBox.className = "timeline-section timeline-gaps";
+  const gapTitle = document.createElement("div");
+  gapTitle.className = "timeline-section-title";
+  gapTitle.textContent = t("timelineLargestGaps");
+  const gapHint = document.createElement("div");
+  gapHint.className = "timeline-section-hint";
+  gapHint.textContent = t("timelineLargestGapsHint");
+  gapBox.append(gapTitle, gapHint);
+
+  const topGaps = largestGaps(gaps, 5);
+  if (topGaps.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "timeline-meta";
+    empty.textContent = t("timelineNoGaps");
+    gapBox.appendChild(empty);
+  } else {
+    for (const gap of topGaps) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "timeline-gap-item";
+      btn.innerHTML = `
+        <span>${escapeHtml(t("timelineGapBeforeEvent", String(gap.afterIndex)))}</span>
+        <strong>${escapeHtml(formatMetricMs(gap.gapMs))}</strong>
+      `;
+      btn.addEventListener("click", () => {
+        jumpToSelectedEventFromTimeline(gap.afterIndex);
+      });
+      gapBox.appendChild(btn);
+    }
+  }
+  elTimelineBody.appendChild(gapBox);
+}
+
 function setupTabs(): void {
   document.querySelectorAll<HTMLButtonElement>(".tab").forEach((btn) => {
     btn.addEventListener("click", () => {
       const tab = btn.dataset.tab as typeof activeTab;
-      if (tab !== "events" && tab !== "raw") return;
-      activeTab = tab;
-      document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
-      document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
-      btn.classList.add("active");
-      document.getElementById(`view-${tab}`)?.classList.add("active");
+      if (tab !== "events" && tab !== "raw" && tab !== "timeline") return;
+      activateTab(tab);
+      if (tab === "timeline") {
+        const record = selectedId ? streams.get(selectedId) : undefined;
+        renderTimeline(record);
+      }
     });
   });
 }

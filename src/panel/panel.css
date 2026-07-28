@@ -902,6 +902,144 @@ body.is-resizing {
   margin-bottom: 6px;
 }
 
+.gap-histogram {
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  display: block;
+}
+
+.gap-histogram .bar {
+  fill: color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+.gap-histogram .bar.is-hot {
+  fill: var(--warn);
+}
+
+.gap-histogram .plot-axis {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.gap-histogram .axis-label {
+  fill: var(--text-muted);
+  font-size: 9px;
+}
+
+.gap-histogram .bin-label {
+  font-size: 8px;
+}
+
+.gap-histogram .axis-title {
+  fill: var(--text-muted);
+  font-size: 10px;
+}
+
+.gap-histogram .count-label {
+  fill: var(--text);
+  font-size: 9px;
+}
+
+.timeline-view.active {
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+.timeline-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+
+.timeline-meta {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.timeline-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.timeline-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.timeline-section-title {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.timeline-section-hint {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.timeline-track-svg {
+  width: 100%;
+  height: 72px;
+  display: block;
+}
+
+.timeline-track-svg .track-line {
+  stroke: var(--border);
+  stroke-width: 2;
+}
+
+.timeline-track-svg .tick {
+  fill: color-mix(in srgb, var(--accent) 75%, transparent);
+  cursor: pointer;
+}
+
+.timeline-track-svg .tick:hover {
+  fill: var(--accent);
+}
+
+.timeline-track-svg .tick.is-selected {
+  fill: var(--warn);
+}
+
+.timeline-track-svg .tick.is-stall {
+  fill: #e36d6d;
+}
+
+.timeline-track-svg .axis-label {
+  fill: var(--text-muted);
+  font-size: 10px;
+}
+
+.timeline-gaps {
+  display: grid;
+  gap: 6px;
+}
+
+.timeline-gap-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+}
+
+.timeline-gap-item:hover {
+  border-color: var(--accent);
+}
+
 .archives-empty {
   color: var(--text-muted);
   padding: 8px 2px;

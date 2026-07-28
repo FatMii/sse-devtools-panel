@@ -16,7 +16,7 @@ todos:
     status: completed
   - id: phase4-timing-viz
     content: "Phase 4: Chunk 间隔直方图 + Event Timeline"
-    status: pending
+    status: completed
   - id: phase5-capture-depth
     content: "Phase 5: 请求头/体关联、Abort 原因、Last-Event-ID/重连、针对性加深 hook"
     status: pending
@@ -141,8 +141,8 @@ flowchart LR
 
 ### Phase 4 — 时序可视化（约 1.5–2 周）
 
-1. **Chunk 间隔直方图**（先做）：Stats 内 SVG 柱状图即可。
-2. **Timeline Waterfall**（后做）：横轴时间，点击联动 Events 行与抽屉。
+1. [x] **Chunk 间隔直方图**：Stats Dialog 内 SVG 柱状图（按 gap 分箱）。
+2. [x] **Timeline Waterfall**：Detail 增加 Timeline Tab；横轴时间刻度；大间隔高亮；点击刻度/最大间隔跳到 Events 行并打开抽屉。
 
 验收：卡顿间隔一眼可见；Timeline 与表格选中同步。
 
@@ -196,4 +196,4 @@ flowchart LR
 
 ## 建议立即开工的第一刀
 
-**Phase 1 已完成。Phase 3（Spec 警告 + Mock Fixture）已完成。Phase 2 Transcript 整包暂缓 → 下一步建议 Phase 4（时序可视化）。Transcript 回做见上方 TODO 清单。**
+**Phase 1 / 3 / 4 已完成。Phase 2 Transcript 整包暂缓 → 下一步建议 Phase 5（捕获层加深）或回做 Transcript。Transcript 回做见上方 TODO 清单。**

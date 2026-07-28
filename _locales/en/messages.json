@@ -65,6 +65,9 @@
   "tabEvents": {
     "message": "Events"
   },
+  "tabTimeline": {
+    "message": "Timeline"
+  },
   "tabRaw": {
     "message": "Raw"
   },
@@ -400,6 +403,75 @@
   },
   "statsSelectedEventsPerSec": {
     "message": "events/s"
+  },
+  "timelineMeta": {
+    "message": "$COUNT$ events · span $SPAN$ · p95 gap $P95$",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "42"
+      },
+      "span": {
+        "content": "$2",
+        "example": "1.2 s"
+      },
+      "p95": {
+        "content": "$3",
+        "example": "80 ms"
+      }
+    }
+  },
+  "timelineTrackTitle": {
+    "message": "Event arrival timeline"
+  },
+  "timelineTrackHint": {
+    "message": "Each tick is one event on the time axis. Red ticks had a wait ≥250ms before them. Click a tick to open that event."
+  },
+  "timelineGapHistogram": {
+    "message": "Wait-time distribution between events"
+  },
+  "timelineGapHistogramHint": {
+    "message": "X-axis: how long you waited between two events. Y-axis: how many times that wait length occurred. Yellow bars (≥500ms) are longer stalls."
+  },
+  "timelineGapHistogramX": {
+    "message": "Wait between events →"
+  },
+  "timelineGapHistogramY": {
+    "message": "Times"
+  },
+  "timelineGapHistogramEmpty": {
+    "message": "Need at least 2 events to show wait distribution."
+  },
+  "timelineGapBinTitle": {
+    "message": "$RANGE$: $COUNT$ waits",
+    "placeholders": {
+      "range": {
+        "content": "$1",
+        "example": "≥1s"
+      },
+      "count": {
+        "content": "$2",
+        "example": "3"
+      }
+    }
+  },
+  "timelineLargestGaps": {
+    "message": "Largest waits"
+  },
+  "timelineLargestGapsHint": {
+    "message": "Jump to the event that arrived after each long wait."
+  },
+  "timelineGapBeforeEvent": {
+    "message": "Wait before #$INDEX$",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "42"
+      }
+    }
+  },
+  "timelineNoGaps": {
+    "message": "No inter-event waits yet."
   },
   "originImported": {
     "message": "imported"
