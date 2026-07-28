@@ -31,9 +31,20 @@ export function createJsonTree(value: unknown, options?: { defaultExpandDepth?: 
   const depth = options?.defaultExpandDepth ?? 1;
   const root = document.createElement("div");
   root.className = "json-tree";
-  root.appendChild(renderNode(null, value, 0, depth, true));
+  root.appendChild(renderNode(null, value, 0, depth, true, true, "$"));
+  const firstFocusable = root.querySelector<HTMLElement>(".json-focusable");
+  if (firstFocusable) {
+    setActiveLine(firstFocusable);
+  }
   return root;
 }
+
+type JsonTreeContextMenuDetail = {
+  x: number;
+  y: number;
+  path: string;
+  copyValue?: string;
+};
 
 /**
  * Filter / highlight nodes by query (substring or RegExp). Returns match count.
@@ -94,6 +105,7 @@ function expandCollection(row: HTMLElement): void {
   const arrow = head.querySelector<HTMLElement>(".json-arrow");
   const preview = head.querySelector<HTMLElement>(".json-preview");
   const openBrace = head.querySelector<HTMLElement>(".json-brace");
+  const headComma = head.querySelector<HTMLElement>(".json-comma");
 
   row.classList.add("expanded");
   if (arrow && !arrow.classList.contains("json-arrow-empty")) {
@@ -104,6 +116,9 @@ function expandCollection(row: HTMLElement): void {
   if (openBrace) openBrace.hidden = false;
   if (children) children.hidden = false;
   if (closeLine) closeLine.hidden = false;
+  if (headComma) {
+    headComma.hidden = true;
+  }
 }
 
 function renderNode(
@@ -112,14 +127,16 @@ function renderNode(
   depth: number,
   expandDepth: number,
   isRoot: boolean,
+  isLast: boolean,
+  path: string,
 ): HTMLElement {
   const type = valueType(value);
 
   if (type === "object" || type === "array") {
-    return renderCollection(key, value as object | unknown[], depth, expandDepth, isRoot, type);
+    return renderCollection(key, value as object | unknown[], depth, expandDepth, isRoot, type, isLast, path);
   }
 
-  return renderLeaf(key, value, type);
+  return renderLeaf(key, value, type, path);
 }
 
 function renderCollection(
@@ -129,6 +146,8 @@ function renderCollection(
   expandDepth: number,
   isRoot: boolean,
   type: "object" | "array",
+  isLast: boolean,
+  path: string,
 ): HTMLElement {
   const entries =
     type === "array"
@@ -138,10 +157,11 @@ function renderCollection(
   const expanded = depth < expandDepth;
   const row = document.createElement("div");
   row.className = "json-node json-collection" + (expanded ? " expanded" : "");
-  row.dataset.searchText = key ?? (type === "array" ? "array" : "object");
+  row.dataset.searchText = [path, key ?? (type === "array" ? "array" : "object")].filter(Boolean).join(" ");
+  row.dataset.path = path;
 
   const head = document.createElement("div");
-  head.className = "json-line json-toggle-line";
+  head.className = "json-line json-toggle-line json-focusable";
   head.tabIndex = 0;
   head.setAttribute("role", "button");
   head.setAttribute("aria-expanded", expanded ? "true" : "false");
@@ -181,6 +201,12 @@ function renderCollection(
     closeInline.className = "json-brace";
     closeInline.textContent = type === "array" ? "]" : "}";
     head.appendChild(closeInline);
+    if (!isLast) {
+      const comma = document.createElement("span");
+      comma.className = "json-comma";
+      comma.textContent = ",";
+      head.appendChild(comma);
+    }
     arrow.textContent = "";
     arrow.classList.add("json-arrow-empty");
     row.appendChild(head);
@@ -191,8 +217,11 @@ function renderCollection(
   children.className = "json-children";
   children.hidden = !expanded;
 
-  for (const [k, v] of entries) {
-    children.appendChild(renderNode(k, v, depth + 1, expandDepth, false));
+  for (let i = 0; i < entries.length; i += 1) {
+    const [k, v] = entries[i];
+    children.appendChild(
+      renderNode(k, v, depth + 1, expandDepth, false, i === entries.length - 1, buildChildPath(path, k, type)),
+    );
   }
 
   const closeLine = document.createElement("div");
@@ -201,7 +230,19 @@ function renderCollection(
   closeBrace.className = "json-brace";
   closeBrace.textContent = type === "array" ? "]" : "}";
   closeLine.appendChild(closeBrace);
+  const closeComma = document.createElement("span");
+  closeComma.className = "json-comma";
+  closeComma.textContent = ",";
+  closeComma.hidden = isLast;
+  closeLine.appendChild(closeComma);
   closeLine.hidden = !expanded;
+
+  const headComma = document.createElement("span");
+  headComma.className = "json-comma";
+  headComma.textContent = ",";
+  headComma.dataset.isLast = isLast ? "1" : "0";
+  headComma.hidden = expanded || isLast;
+  head.appendChild(headComma);
 
   const toggle = () => {
     const next = !row.classList.contains("expanded");
@@ -212,17 +253,34 @@ function renderCollection(
     openBrace.hidden = !next;
     children.hidden = !next;
     closeLine.hidden = !next;
+    headComma.hidden = next || isLast;
   };
 
   head.addEventListener("click", (e) => {
     e.stopPropagation();
+    setActiveLine(head);
     toggle();
   });
+  head.addEventListener("focus", () => {
+    setActiveLine(head);
+  });
   head.addEventListener("keydown", (e) => {
+    if (handleTreeNavigationKey(e, head, row)) {
+      return;
+    }
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       toggle();
     }
+  });
+  head.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dispatchJsonTreeContextMenu(head, {
+      x: e.clientX,
+      y: e.clientY,
+      path,
+    });
   });
 
   row.appendChild(head);
@@ -231,15 +289,22 @@ function renderCollection(
   return row;
 }
 
-function renderLeaf(key: string | null, value: unknown, type: string): HTMLElement {
+function renderLeaf(
+  key: string | null,
+  value: unknown,
+  type: string,
+  path: string,
+): HTMLElement {
   const row = document.createElement("div");
   row.className = "json-node json-leaf";
+  row.dataset.path = path;
 
   const formatted = formatPrimitive(value, type);
-  row.dataset.searchText = [key, formatted].filter(Boolean).join(" ");
+  row.dataset.searchText = [path, key, formatted].filter(Boolean).join(" ");
 
   const line = document.createElement("div");
-  line.className = "json-line";
+  line.className = "json-line json-focusable";
+  line.tabIndex = 0;
 
   const spacer = document.createElement("span");
   spacer.className = "json-arrow json-arrow-empty";
@@ -258,8 +323,130 @@ function renderLeaf(key: string | null, value: unknown, type: string): HTMLEleme
   valEl.textContent = formatted;
   line.appendChild(valEl);
 
+  line.addEventListener("click", () => {
+    setActiveLine(line);
+  });
+  line.addEventListener("focus", () => {
+    setActiveLine(line);
+  });
+  line.addEventListener("keydown", (e) => {
+    handleTreeNavigationKey(e, line);
+  });
+  line.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dispatchJsonTreeContextMenu(line, {
+      x: e.clientX,
+      y: e.clientY,
+      path,
+      copyValue: toCopyValue(value, type),
+    });
+  });
+
   row.appendChild(line);
   return row;
+}
+
+function toCopyValue(value: unknown, type: string): string {
+  if (type === "string") return String(value);
+  if (type === "number" || type === "boolean" || type === "null") return String(value);
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function buildChildPath(parentPath: string, key: string, parentType: "object" | "array"): string {
+  if (parentType === "array") {
+    return `${parentPath}[${key}]`;
+  }
+  if (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key)) {
+    return `${parentPath}.${key}`;
+  }
+  return `${parentPath}[${JSON.stringify(key)}]`;
+}
+
+function handleTreeNavigationKey(
+  e: KeyboardEvent,
+  current: HTMLElement,
+  currentCollectionRow?: HTMLElement,
+): boolean {
+  if (e.key === "ArrowDown") {
+    e.preventDefault();
+    focusSibling(current, 1);
+    return true;
+  }
+  if (e.key === "ArrowUp") {
+    e.preventDefault();
+    focusSibling(current, -1);
+    return true;
+  }
+
+  if (e.key === "ArrowRight" && currentCollectionRow) {
+    if (!currentCollectionRow.classList.contains("expanded")) {
+      e.preventDefault();
+      current.click();
+      return true;
+    }
+    const childHead = currentCollectionRow.querySelector<HTMLElement>(
+      ":scope > .json-children > .json-node > .json-focusable",
+    );
+    if (childHead) {
+      e.preventDefault();
+      childHead.focus();
+      return true;
+    }
+  }
+
+  if (e.key === "ArrowLeft") {
+    if (currentCollectionRow?.classList.contains("expanded")) {
+      e.preventDefault();
+      current.click();
+      return true;
+    }
+    const node = current.closest<HTMLElement>(".json-node");
+    const parentNode = node?.parentElement?.closest<HTMLElement>(".json-node.json-collection");
+    const parentHead = parentNode?.querySelector<HTMLElement>(":scope > .json-toggle-line");
+    if (parentHead) {
+      e.preventDefault();
+      parentHead.focus();
+      return true;
+    }
+  }
+  return false;
+}
+
+function focusSibling(current: HTMLElement, delta: 1 | -1): void {
+  const root = current.closest<HTMLElement>(".json-tree");
+  if (!root) return;
+  const focusables = Array.from(root.querySelectorAll<HTMLElement>(".json-focusable")).filter(isElementVisible);
+  const idx = focusables.indexOf(current);
+  if (idx < 0) return;
+  const next = focusables[idx + delta];
+  if (next) next.focus();
+}
+
+function isElementVisible(el: HTMLElement): boolean {
+  return !el.hidden && el.getClientRects().length > 0;
+}
+
+function setActiveLine(line: HTMLElement): void {
+  const root = line.closest<HTMLElement>(".json-tree");
+  if (!root) return;
+  root.querySelectorAll<HTMLElement>(".json-line.is-active").forEach((node) => {
+    node.classList.remove("is-active");
+  });
+  line.classList.add("is-active");
+}
+
+function dispatchJsonTreeContextMenu(target: HTMLElement, detail: JsonTreeContextMenuDetail): void {
+  target.dispatchEvent(
+    new CustomEvent<JsonTreeContextMenuDetail>("json-tree-contextmenu", {
+      bubbles: true,
+      detail,
+    }),
+  );
 }
 
 function valueType(value: unknown): string {

@@ -724,6 +724,18 @@
   "requestBodyEmpty": {
     "message": "无请求体（GET/EventSource，或请求体不可用）。"
   },
+  "jsonShowMore": {
+    "message": "展开"
+  },
+  "jsonShowLess": {
+    "message": "收起"
+  },
+  "jsonCopyValue": {
+    "message": "复制值"
+  },
+  "jsonCopyPath": {
+    "message": "复制路径"
+  },
   "optionsTitle": {
     "message": "SSE DevTools 选项"
   },

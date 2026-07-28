@@ -1,15 +1,15 @@
 ---
 name: B-features difficulty plan
-overview: 将「B. 真正能拉开差距」的全部能力按实现难度从低到高排序，并给出依赖驱动的分阶段开发计划：先做纯面板/后处理能力，再做 AI 语义层，最后做捕获层与分发层。
+overview: 按依赖与收益的分阶段计划。对照 2026-07-28 代码：Phase 1/3/4/5(1–3) 已完成；Phase 2 Transcript 整包暂缓；更深 stream hook 与生态项暂时不做。
 todos:
   - id: phase1-panel-basics
     content: "Phase 1: 暂停 UI、TTFT/间隔指标、异常扫描、跨 Stream 全局搜索"
     status: completed
   - id: phase2-ai-semantic
-    content: "Phase 2: AI Profile + Merged Transcript + 通道拆分 + finish/usage（暂缓，见下方 TODO）"
-    status: pending
+    content: "Phase 2: AI Profile + Merged Transcript + 通道拆分 + finish/usage（暂缓）"
+    status: cancelled
   - id: phase2-transcript-deferred
-    content: "TODO: Transcript 面板整包回做 — Profile 识别、Merged Transcript、通道拆分、finish/usage（OpenAI/Anthropic/DeepSeek/Doubao）"
+    content: "TODO: Transcript 回做 — Profile、Merged Transcript、通道拆分、finish/usage（OpenAI/Anthropic/DeepSeek/Doubao）"
     status: pending
   - id: phase3-spec-fixture
     content: "Phase 3: SSE Spec 警告 + Mock Fixture 导出"
@@ -18,155 +18,141 @@ todos:
     content: "Phase 4: Chunk 间隔直方图 + Event Timeline"
     status: completed
   - id: phase5-capture-depth
-    content: "Phase 5: 请求头/体关联（Request Tab 已完成）、Abort 原因（已完成）、Last-Event-ID/重连（已完成）、针对性加深 hook"
-    status: pending
-  - id: phase6-scale-diff
-    content: "Phase 6: Events 虚拟列表 + 双流 Diff"
-    status: pending
-  - id: phase7-ecosystem
-    content: "Phase 7: HAR 导出、SW 捕获 spike、多浏览器/商店（有余力）"
-    status: pending
+    content: "Phase 5: Request Tab + Abort/closeReason + EventSource 重连/Last-Event-ID"
+    status: completed
+  - id: phase5-deeper-stream-hook-deferred
+    content: "TODO: 更深 ReadableStream hook — 仅针对已确认漏抓场景补丁，暂挂"
+    status: cancelled
 isProject: false
 ---
 
 # B 组功能：难度排序与开发计划
 
+## 当前状态总览（2026-07-28 对照代码）
+
+| 阶段 | 状态 | 说明 |
+|------|:----:|------|
+| Phase 1 面板基础 | **已完成** | Pause UI、流指标、异常扫描、全局搜索 |
+| Phase 2 AI / Transcript | **暂缓** | 代码无 `ai-profile` / Transcript Tab；整包回退待回做 |
+| Phase 3 Spec + Fixture | **已完成** | Spec 警告 + `.sse` Fixture 导出 |
+| Phase 4 时序可视化 | **已完成** | Timeline Tab：直方图 + 瀑布 + 大间隔跳转 |
+| Phase 5 捕获加深 | **主体完成** | Request / closeReason / 重连已做；更深 stream hook **暂挂** |
+| 原 Phase 6 生态等 | **不做** | 虚拟列表、双流 Diff、HAR、SW、多浏览器商店 — 已删阶段 |
+
+**面板 Detail Tabs（现状）：** Events · Timeline · Request · Raw（无 Transcript）。
+
+**已有导出：** `sse-devtools-stream-v1` JSON · CSV · Fixture `.sse`（无 HAR）。
+
+---
+
 ## 难度排序（低 → 高）
 
-难度综合：改动面、是否动 inject 捕获层、是否重写面板渲染、是否引入复杂可视化/多格式兼容。粗估：S 小 · M 中 · L 大 · XL 极大。
+难度综合：改动面、是否动 inject、是否重写面板渲染、多格式兼容。粗估：S 小 · M 中 · L 大 · XL 极大。
 
-| 序 | 功能 | 难度 | 主要落点 | 为何是这个难度 |
-|---:|------|:----:|----------|----------------|
-| 1 | 暂停 UI / 不停捕获 | S | [`panel.ts`](D:/workspace/github/sse-devtools/src/panel/panel.ts) | 增加 `uiPaused` 标志，跳过 `scheduleRender*`，消息照收 |
-| 2 | 流结束元数据（TTFT / 时长 / 均间隔 / events·s） | S | [`types.ts`](D:/workspace/github/sse-devtools/src/shared/types.ts) + Stats | `startedAt` / `receivedAt` / `endedAt` 已有，纯计算 |
-| 3 | 异常扫描（空 data、JSON 失败、重复 id、超长包） | S–M | 新 `shared/anomaly.ts` + Dialog/角标 | 规则扫描现有 `events[]`，无捕获改动 |
-| 4 | 跨 Stream 全局搜索 | M | 面板 Toolbar/Dialog + [`text-filter.ts`](D:/workspace/github/sse-devtools/src/shared/text-filter.ts) | 复用正则，需跨列表结果导航 |
-| 5 | Merged Transcript（按厂商适配） | M–L | 新 `shared/ai-profile.ts` + `shared/ai-merge.ts` + Detail Tab | **暂缓/已回退**：需按厂商协议适配，误判回退 `generic` |
-| 6 | SSE Spec 校验器（基础） | M | [`sse-parser.ts`](D:/workspace/github/sse-devtools/src/shared/sse-parser.ts) | 解析时产出 warning；未知字段、缺空行分隔、BOM 等 |
-| 7 | 协议 Profile 识别 | M–L | 新 `shared/ai-profile.ts` | **暂缓/已回退**；与 Transcript 一并实现 |
-| 8 | 通道拆分（content / reasoning / tools / meta） | M–L | Detail 多 Tab + profile 投影 | **暂缓/已回退**；依赖 7 |
-| 9 | Chunk 间隔直方图 | M–L | Stats/新 Timing 区 + SVG/CSS | 数据易算，可视化与布局成本中等 |
-| 10 | 导出 Mock / Fixture | M–L | 导出菜单 | 从 `raw`/events 生成可回放 `text/event-stream` 文件 |
-| 11 | Event Timeline / Waterfall | L | 新视图（canvas/SVG） | 交互、缩放、与行选中联动 |
-| 12 | 双流 Diff | L | Dialog + diff 算法 | 选两条 archive/imported；文本/事件序列两种模式 |
-| 13 | 请求侧关联（Headers / Body） | L | [`inject-main.ts`](D:/workspace/github/sse-devtools/src/content/inject-main.ts) + types | **要改捕获协议**；Body 截断/脱敏策略 |
-| 14 | Last-Event-ID / 重连可视化 | L | EventSource hook 加深 | 需记录重连、`Last-Event-ID`、retry |
-| 15 | 虚拟列表（万级 events） | L | Events 表渲染重写 | 与列宽拖拽、筛选、选中、抽屉联动成本高 |
-| 16 | 更深 ReadableStream + Abort 原因 | L–XL | inject | 边界多、易影响页面行为，需充分回归 |
-| 17 | HAR-friendly 导出 | L–XL | 导出 | **实质依赖 13**；字段映射与兼容成本高 |
-| 18 | Service Worker 内 fetch 捕获 | XL | 扩展架构 | MV3/SW 世界隔离，可靠性差，宜最后 spike |
-| 19 | Firefox / Edge 适配 + 商店打磨 | XL | 工程/产品 | 非核心能力，属分发与兼容 |
+| 序 | 功能 | 难度 | 状态 | 主要落点 |
+|---:|------|:----:|:----:|----------|
+| 1 | 暂停 UI / 不停捕获 | S | **已完成** | [`panel.ts`](D:/workspace/github/sse-devtools/src/panel/panel.ts) `uiPaused` |
+| 2 | 流指标（TTFT / 时长 / gap / events·s） | S | **已完成** | `StreamMetrics` + Stats Dialog |
+| 3 | 异常扫描 | S–M | **已完成** | `panel.ts` 内联 `scanStreamAnomalies`（非独立 `anomaly.ts`） |
+| 4 | 跨 Stream 全局搜索 | M | **已完成** | Search All Dialog + [`text-filter.ts`](D:/workspace/github/sse-devtools/src/shared/text-filter.ts) |
+| 5 | Merged Transcript | M–L | **暂缓** | 待回做 `ai-profile` / `ai-merge` |
+| 6 | SSE Spec 校验器 | M | **已完成** | [`sse-spec.ts`](D:/workspace/github/sse-devtools/src/shared/sse-spec.ts) |
+| 7 | 协议 Profile 识别 | M–L | **暂缓** | 与 Transcript 一并 |
+| 8 | 通道拆分 | M–L | **暂缓** | 与 Transcript 一并 |
+| 9 | Chunk 间隔直方图 | M–L | **已完成** | Timeline 内 SVG（不在 Stats Dialog） |
+| 10 | Mock / Fixture 导出 | M–L | **已完成** | `buildSseFixture` → `.sse` |
+| 11 | Event Timeline / Waterfall | L | **已完成** | Timeline Tab |
+| 12 | 请求侧关联（Headers / Body） | L | **已完成** | inject + Request Tab + [`request-view.ts`](D:/workspace/github/sse-devtools/src/shared/request-view.ts) |
+| 13 | Last-Event-ID / 重连 | L | **已完成** | EventSource hook + `stream-reconnect` |
+| 14a | Abort / closeReason | L | **已完成** | [`stream-close.ts`](D:/workspace/github/sse-devtools/src/shared/stream-close.ts) + inject |
+| 14b | 更深 ReadableStream hook | L–XL | **暂挂** | 等确认漏抓 case；当前仅 clone + 可选 getReader 观察 |
+| 15 | HAR-friendly 导出 | L–XL | **不做** | — |
+| 16 | Service Worker 内 fetch | XL | **不做** | — |
+| 17 | Firefox / Edge + 商店 | XL | **不做** | — |
+| — | 虚拟列表 / 双流 Diff | L | **不做** | 原规模阶段已删 |
 
 ```mermaid
 flowchart LR
-  subgraph easy [Low]
+  subgraph done [Done]
     Pause[PauseUI]
     Metrics[StreamMetrics]
     Anomaly[AnomalyScan]
-  end
-  subgraph mid [Mid]
-    GlobalSearch[GlobalSearch]
-    Merge[MergedTranscript]
-    Profile[AiProfile]
-    Channels[ChannelSplit]
+    Search[GlobalSearch]
     Spec[SseValidator]
     Fixture[MockFixture]
-  end
-  subgraph hard [High]
     Timeline[Timeline]
     Req[RequestMeta]
-    Virtual[VirtualList]
-    SW[ServiceWorker]
+    Close[CloseReason]
+    Reconnect[ESReconnect]
+  end
+  subgraph deferred [Deferred]
+    Profile[AiProfile]
+    Merge[MergedTranscript]
+    Channels[ChannelSplit]
+    DeepHook[DeeperStreamHook]
   end
   Profile --> Merge
   Profile --> Channels
   Metrics --> Timeline
-  Req --> HAR[HarExport]
 ```
 
 ---
 
-## 开发计划（按依赖与收益，不是纯难度序）
+## 开发计划（按依赖与收益）
 
 原则：
-- 先做**不改 inject** 的面板/后处理，快速形成差异化叙事。
-- AI 语义以 **OpenAI Compatible 优先**，其它厂商用同一 Profile 接口增量加。
-- 捕获层加深单独成阶段，避免和 UI 大改并行失控。
-- 导出：现有 `sse-devtools-stream-v1` JSON / CSV 保持；Phase 3 只新增 **wire 格式 fixture**（`.sse` / `.txt`），不做复现包 v2。
+- 先做**不改 inject** 的面板/后处理，再加深捕获层。
+- AI 语义以 **OpenAI Compatible 优先**；回做时用真实抓包驱动。
+- 导出：保持 JSON v1 / CSV / `.sse` fixture；不做复现包 v2、不做 HAR（现阶段）。
 
-### Phase 1 — 面板基础增强（约 1 周）
+### Phase 1 — 面板基础增强 ✅
 
-目标：调试大流量时更稳，统计从「个数」变成「时序」。
+1. [x] **暂停 UI / 不停捕获**：Toolbar；chunk 仍写入，跳过全量重绘。
+2. [x] **流指标**：TTFT、duration、avg/p95 gap、events/s → Stats Dialog + `record.metrics`。
+3. [x] **异常扫描**：空 data、`JSON.parse` 失败、重复 `id`、超长包（≥16KB）；列表 `!N` + Dialog 跳转。实现位于 `panel.ts`（未拆 `shared/anomaly.ts`）。
+4. [x] **跨 Stream 全局搜索**：`compileTextFilter`；结果含 stream + event index，点击打开抽屉。
 
-1. [x] **暂停 UI / 不停捕获**：Toolbar 开关；`stream-chunk` 仍写入 `streams`，不触发全量重绘。
-2. [x] **流指标**：基于现有时间戳算 TTFT（首 event − startedAt）、duration、avg/p95 gap、events/s；写入 Stats Dialog，并缓存到 record 派生字段（可不入库）。
-3. [x] **异常扫描**：空 data、`JSON.parse` 失败、重复 `id`、单包超长；Stream 列表小角标 + Dialog 列表，点击跳到 event。
-4. [x] **跨 Stream 全局搜索**：复用 `compileTextFilter`；结果列表显示 stream + event index，点击选中并打开抽屉。
+### Phase 2 — AI 语义 ★ 暂缓
 
-验收：高频流可暂停界面仍涨事件数；Stats 有 TTFT/间隔；异常与全局搜索可用。
+> **状态：暂缓（2026-07-28 回退）。** 代码库无 `ai-profile.ts` / `ai-merge.ts` / Transcript Tab；勿与其它阶段并行硬塞。
 
-### Phase 2 — AI 语义主战场（暂缓，约 2–3 周）★
+目标（回做时）：「看得懂 AI 流」。
 
-> **状态：暂缓（2026-07-28 回退）。** Transcript 面板、AI Profile、通道拆分、finish/usage 相关半成品已全部从代码库移除；后续专项回做，勿与 Phase 3/4 并行硬塞。
+1. [ ] **`ai-profile.ts`**：`openai-compatible` | `anthropic` | `deepseek` | `doubao` | `generic`
+2. [ ] **`ai-merge.ts` + Transcript Tab**
+3. [ ] **通道拆分**：Content / Reasoning / Tools / Meta
+4. [ ] **结束元数据**：`finish_reason` / `usage` → meta chips
 
-目标：对标品类差异化——「看得懂 AI 流」。
-
-1. [ ] **`ai-profile.ts`**：启发式识别 `openai-compatible` | `anthropic` | `deepseek` | `doubao` | `generic`。
-2. [ ] **`ai-merge.ts` + Transcript Tab**：Detail 增加 `Transcript`；按 profile 拼接 content；Copy Transcript 放在面板内。
-3. [ ] **通道拆分**：Transcript 区子 Tab：`Content` / `Reasoning` / `Tools` / `Meta`。
-4. [ ] **结束元数据增强**：从末包提取 `finish_reason` / `usage`（按 profile），展示在 meta chips。
-
-验收：典型 `/chat/completions` 流可还原完整回答；工具调用参数可拼出；未识别协议不崩溃。
-
-#### TODO：Transcript 回做清单（回头再实现）
+#### TODO：Transcript 回做清单
 
 - [ ] 新建 `shared/ai-profile.ts` + `shared/ai-merge.ts`
 - [ ] OpenAI Compatible：`choices[].delta.content` / `reasoning_content` / `tool_calls`
 - [ ] Anthropic：`content_block_delta` / thinking / `input_json_delta` / `stop_reason`
-- [ ] DeepSeek：`message` / `update_session` / JSON Patch（`APPEND`/`BATCH`）
+- [ ] DeepSeek：`message` / `update_session` / JSON Patch
 - [ ] Doubao：OpenAI 网关 + 原生 `content_type`/`block_type`/`patch_value`
-- [ ] Panel：Transcript Tab + 通道子 Tab + Copy（面板内）
+- [ ] Panel：Transcript Tab + 通道子 Tab + Copy
 - [ ] Meta chips：`finish_reason` / `usage`
-- [ ] 导出可选字段：`aiProfile`、`transcript`、`transcriptChannels`、`endMeta`
-- [ ] 用真实网页抓包精调首包与 patch 边界
+- [ ] 导出可选：`aiProfile`、`transcript`、`transcriptChannels`、`endMeta`
+- [ ] 用真实网页抓包精调边界
 
-> 备注：曾经短暂落地过上述能力，因厂商协议差异大、半成品体验不稳，于 2026-07-28 整包删除；回做时建议先用真实 OpenAI/Anthropic/DeepSeek/豆包抓包样本驱动，再写 UI。
+### Phase 3 — 协议校验 + Fixture ✅
 
-### Phase 3 — 协议校验 + Fixture 导出（约 1 周）
+1. [x] **SSE Spec 警告**：[`sse-spec.ts`](D:/workspace/github/sse-devtools/src/shared/sse-spec.ts)（unknown-field / invalid-retry / null-in-id / bom）；列表 `S*`、事件标记、Spec Dialog。
+2. [x] **Mock Fixture 导出**：`Export Fixture` → 标准 `text/event-stream`（`.sse`）。
 
-1. [x] **SSE Spec 警告**：对照 WHATWG SSE 规范做基础 lint；扫描事件 `raw` / 流级 BOM，产出 warnings；列表角标 `S*`、事件行标记、抽屉列表、Spec Dialog。
-2. [x] **Mock Fixture 导出**：`Export Fixture` 将已解析 events 重装为标准 `text/event-stream`（`.sse`），供本地 mock/回放。
+### Phase 4 — 时序可视化 ✅
 
-验收：不合规 wire 有可见警告；导出的 `.sse` 可用简单静态服务器按 event-stream 重放。
+1. [x] **Chunk 间隔直方图**：Timeline 页内 SVG（非 Stats Dialog）。
+2. [x] **Timeline Waterfall**：横轴刻度、大间隔高亮（≥250ms）、点击跳 Events；含重连菱形标记。
 
-### Phase 4 — 时序可视化（约 1.5–2 周）
+### Phase 5 — 捕获层加深 ✅ / 暂挂
 
-1. [x] **Chunk 间隔直方图**：Stats Dialog 内 SVG 柱状图（按 gap 分箱）。
-2. [x] **Timeline Waterfall**：Detail 增加 Timeline Tab；横轴时间刻度；大间隔高亮；点击刻度/最大间隔跳到 Events 行并打开抽屉。
+1. [x] **请求关联（Request Tab）**：`requestHeaders` / `responseHeaders` / `requestPayloadPreview`（256KB + 敏感头脱敏）；仿 Network：Headers + Payload。
+2. [x] **Abort / 断开原因**：`closeReason` = `complete` | `abort` | `error` | `http_error`；列表 abort 角标、meta / Request General。
+3. [x] **Last-Event-ID / 重连**：CONNECTING 不误结束；`reconnectCount` / `reconnects[]` / `lastEventId`；列表 `R*` + Timeline。
+4. [ ] **更深 stream hook（暂挂）**：当前捕获 = `clone()+pump`，失败则实例级 `getReader` 观察；**无** `pipeThrough` / `pipeTo` / 页面侧 `tee` 深度 hook。
 
-验收：卡顿间隔一眼可见；Timeline 与表格选中同步。
-
-### Phase 5 — 捕获层加深（约 2–3 周）
-
-1. [x] **请求关联（Request Tab）**：捕获 `requestHeaders` / `responseHeaders` / `requestPayloadPreview`（256KB 截断 + 敏感头脱敏）；面板 **Request** Tab 仿 Network：`Headers`（General / Response Headers / Request Headers）+ `Payload`（Query / Form Data / Request Payload Parsed|Source）。
-2. [x] **Abort / 断开原因**：fetch/XHR/EventSource 分类写入 `closeReason`（`complete` / `abort` / `error` / `http_error`）+ `errorMessage`；列表 abort 角标、meta chips。
-3. [x] **Last-Event-ID / 重连**：EventSource hook 在 CONNECTING 时不再误结束流；记录 `reconnectCount` / `reconnects[]` / `lastEventId`；列表 `R*` 角标 + Timeline 菱形标记。
-4. **更深 stream hook**：仅针对已确认漏抓场景补丁，不做无目标全量 hook。
-
-验收：能看到请求头/体摘要；EventSource 重连可观察；已知漏抓 case 回归通过。
-
-### Phase 6 — 规模与对比（约 2 周）
-
-1. **虚拟列表**：Events 表虚拟化，保留列宽拖拽、筛选、选中、右键。
-2. **双流 Diff**：从 Archives/当前列表选 A/B；先做 Transcript 文本 diff，再做 event 序列 diff。
-
-验收：1 万+ events 可滚动操作；两条存档可对比回答差异。
-
-### Phase 7 — 生态（有余力再做）
-
-1. HAR-friendly（在 Phase 5 请求元数据齐全后）。
-2. Service Worker 捕获：先做可行性 spike，再决定是否正式做。
-3. Firefox/Edge + 商店素材/审核：产品向，不阻塞核心能力。
+> **备注：** 第 4 项等真实漏抓复现再按 case 补丁；禁止无目标全量重写 Stream API。
 
 ---
 
@@ -175,25 +161,15 @@ flowchart LR
 | 阶段 | 主要文件 |
 |------|----------|
 | 1 | [`panel.ts`](D:/workspace/github/sse-devtools/src/panel/panel.ts) / [`panel.html`](D:/workspace/github/sse-devtools/src/panel/panel.html) / i18n |
-| 2 | 新建 `shared/ai-profile.ts`、`shared/ai-merge.ts`；panel Transcript tab；tests（**暂缓/已回退**） |
-| 3 | [`sse-parser.ts`](D:/workspace/github/sse-devtools/src/shared/sse-parser.ts) + fixture 导出（可落 `stream-snapshot.ts` 旁）+ panel 导出菜单 |
-| 4 | panel 新 Timing/Timeline 视图 + CSS |
-| 5 | [`inject-main.ts`](D:/workspace/github/sse-devtools/src/content/inject-main.ts)、[`types.ts`](D:/workspace/github/sse-devtools/src/shared/types.ts)、bridge 透传 |
-| 6 | Events 表渲染大改；diff 模块 |
-| 7 | 导出/打包/文档 |
+| 2 | 待建 `shared/ai-profile.ts`、`shared/ai-merge.ts`；panel Transcript（**暂缓**） |
+| 3 | [`sse-spec.ts`](D:/workspace/github/sse-devtools/src/shared/sse-spec.ts) + [`stream-snapshot.ts`](D:/workspace/github/sse-devtools/src/shared/stream-snapshot.ts) |
+| 4 | [`stream-timing.ts`](D:/workspace/github/sse-devtools/src/shared/stream-timing.ts) + panel Timeline |
+| 5 | [`inject-main.ts`](D:/workspace/github/sse-devtools/src/content/inject-main.ts)、[`types.ts`](D:/workspace/github/sse-devtools/src/shared/types.ts)、[`stream-close.ts`](D:/workspace/github/sse-devtools/src/shared/stream-close.ts)、[`request-view.ts`](D:/workspace/github/sse-devtools/src/shared/request-view.ts) |
 
 ---
 
-## 明确不做或压后（本计划内）
+## 建议下一步
 
-- **书签 / 标注**：不做。
-- **复现包 v2**（扩展 JSON snapshot 塞 metrics/anomalies/notes）：不做；现有 v1 JSON/CSV 导出已够用。
-- 不并行启动 SW 捕获与虚拟列表（风险叠加）。
-- 不在 Phase 2 追求「支持天下所有国内模型 UI」；用 Profile 插件式扩展。
-- 不对真实上游做「一键重放请求」（鉴权/副作用）；只做 **本地 fixture 回放文件**。
-
----
-
-## 建议立即开工的第一刀
-
-**Phase 1 / 3 / 4 已完成。Phase 2 Transcript 整包暂缓 → 下一步建议 Phase 5（捕获层加深）或回做 Transcript。Transcript 回做见上方 TODO 清单。**
+1. **优先**：回做 **Phase 2 Transcript**（真实 OpenAI / Anthropic / DeepSeek / 豆包抓包驱动）。
+2. **按需**：遇到漏抓再补 Phase 5 第 4 项更深 stream hook。
+3. 其余生态 / Diff / 虚拟列表：**不做**，除非单独立项。

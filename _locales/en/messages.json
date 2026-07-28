@@ -724,6 +724,18 @@
   "requestBodyEmpty": {
     "message": "No request payload (GET/EventSource, or body unavailable)."
   },
+  "jsonShowMore": {
+    "message": "show more"
+  },
+  "jsonShowLess": {
+    "message": "show less"
+  },
+  "jsonCopyValue": {
+    "message": "copy value"
+  },
+  "jsonCopyPath": {
+    "message": "copy path"
+  },
   "optionsTitle": {
     "message": "SSE DevTools Options"
   },

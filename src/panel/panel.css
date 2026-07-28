@@ -752,6 +752,7 @@ body.is-resizing {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
+  gap: 4px;
   min-height: 18px;
   padding: 0 2px;
   border-radius: 2px;
@@ -766,9 +767,20 @@ body.is-resizing {
   background: var(--bg-hover);
 }
 
+.json-line.is-active {
+  background: color-mix(in srgb, var(--accent) 36%, transparent);
+}
+
+.json-line.is-active:hover {
+  background: color-mix(in srgb, var(--accent) 42%, transparent);
+}
+
 .json-toggle-line:focus-visible {
-  outline: 1px solid var(--accent);
-  outline-offset: 1px;
+  outline: none;
+}
+
+.json-focusable:focus-visible {
+  outline: none;
 }
 
 .json-arrow {
@@ -797,6 +809,10 @@ body.is-resizing {
 
 .json-brace,
 .json-preview {
+  color: var(--text-muted);
+}
+
+.json-comma {
   color: var(--text-muted);
 }
 

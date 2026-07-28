@@ -83,8 +83,11 @@ let selectedEventIndex: number | null = null;
 let drawerEventData: string | null = null;
 /** Index of the event currently shown in the drawer. */
 let drawerEventIndex: number | null = null;
-/** Data targeted by the row context menu. */
-let contextMenuData: string | null = null;
+type ContextMenuData =
+  | { kind: "event-data"; data: string }
+  | { kind: "json-node"; path: string; value?: string };
+/** Data targeted by the row / json-tree context menu. */
+let contextMenuData: ContextMenuData | null = null;
 let activeTab: "events" | "raw" | "timeline" | "request" = "events";
 let requestPane: "headers" | "payload" = "headers";
 let requestPayloadView: "parsed" | "source" = "parsed";
@@ -122,6 +125,13 @@ const elDrawerPrev = document.getElementById("drawer-prev") as HTMLButtonElement
 const elDrawerNext = document.getElementById("drawer-next") as HTMLButtonElement;
 const elDrawerCopy = document.getElementById("drawer-copy") as HTMLButtonElement;
 const elContextMenu = document.getElementById("row-context-menu") as HTMLDivElement;
+const elMenuCopyData = elContextMenu.querySelector<HTMLButtonElement>('button[data-action="copy-data"]');
+const elMenuCopyJsonValue = elContextMenu.querySelector<HTMLButtonElement>(
+  'button[data-action="copy-json-value"]',
+);
+const elMenuCopyJsonPath = elContextMenu.querySelector<HTMLButtonElement>(
+  'button[data-action="copy-json-path"]',
+);
 const elRaw = document.getElementById("view-raw") as HTMLPreElement;
 const elTimelinePlaceholder = document.getElementById("timeline-placeholder") as HTMLDivElement;
 const elTimelineBody = document.getElementById("timeline-body") as HTMLDivElement;
@@ -1574,7 +1584,10 @@ async function copyText(text: string): Promise<void> {
 }
 
 function showContextMenu(x: number, y: number, data: string): void {
-  contextMenuData = data;
+  contextMenuData = { kind: "event-data", data };
+  if (elMenuCopyData) elMenuCopyData.hidden = false;
+  if (elMenuCopyJsonValue) elMenuCopyJsonValue.hidden = true;
+  if (elMenuCopyJsonPath) elMenuCopyJsonPath.hidden = true;
   elContextMenu.hidden = false;
   const pad = 4;
   const menuW = elContextMenu.offsetWidth || 140;
@@ -1585,9 +1598,31 @@ function showContextMenu(x: number, y: number, data: string): void {
   elContextMenu.style.top = `${Math.max(pad, top)}px`;
 }
 
+function showJsonTreeContextMenu(x: number, y: number, path: string, value?: string): void {
+  contextMenuData = { kind: "json-node", path, value };
+  if (elMenuCopyData) elMenuCopyData.hidden = true;
+  if (elMenuCopyJsonValue) elMenuCopyJsonValue.hidden = value == null;
+  if (elMenuCopyJsonPath) elMenuCopyJsonPath.hidden = false;
+  elContextMenu.hidden = false;
+  const pad = 4;
+  const menuW = elContextMenu.offsetWidth || 180;
+  const menuH = elContextMenu.offsetHeight || 72;
+  const left = Math.min(x, window.innerWidth - menuW - pad);
+  const top = Math.min(y, window.innerHeight - menuH - pad);
+  elContextMenu.style.left = `${Math.max(pad, left)}px`;
+  elContextMenu.style.top = `${Math.max(pad, top)}px`;
+}
+
 function hideContextMenu(): void {
   elContextMenu.hidden = true;
   contextMenuData = null;
+}
+
+function bindJsonTreeContextMenu(tree: HTMLElement): void {
+  tree.addEventListener("json-tree-contextmenu", (event) => {
+    const e = event as CustomEvent<{ x: number; y: number; path: string; copyValue?: string }>;
+    showJsonTreeContextMenu(e.detail.x, e.detail.y, e.detail.path, e.detail.copyValue);
+  });
 }
 
 function syncRowSelection(): void {
@@ -1646,7 +1681,9 @@ function openDrawer(ev: SseEvent): void {
 
   const parsed = tryParseJsonValue(ev.data);
   if (parsed.ok) {
-    elDrawerBody.appendChild(createJsonTree(parsed.value, { defaultExpandDepth: 2 }));
+    const tree = createJsonTree(parsed.value, { defaultExpandDepth: 2 });
+    bindJsonTreeContextMenu(tree);
+    elDrawerBody.appendChild(tree);
   } else {
     const pre = document.createElement("pre");
     pre.className = "event-body-text";
@@ -2254,7 +2291,9 @@ function renderRequest(record: StreamRecord | undefined): void {
     }
     const parsed = tryParseJsonValue(payload);
     if (parsed.ok) {
-      bodyContent.appendChild(createJsonTree(parsed.value, { defaultExpandDepth: 2 }));
+      const tree = createJsonTree(parsed.value, { defaultExpandDepth: 2 });
+      bindJsonTreeContextMenu(tree);
+      bodyContent.appendChild(tree);
       return;
     }
     if (formPairs.length > 0) {
@@ -2463,8 +2502,14 @@ function setupActions(): void {
     const btn = (e.target as HTMLElement).closest("button[data-action]");
     if (!btn) return;
     const action = btn.getAttribute("data-action");
-    if (action === "copy-data" && contextMenuData != null) {
-      await copyText(contextMenuData);
+    if (action === "copy-data" && contextMenuData?.kind === "event-data") {
+      await copyText(contextMenuData.data);
+    } else if (action === "copy-json-value" && contextMenuData?.kind === "json-node") {
+      if (contextMenuData.value != null) {
+        await copyText(contextMenuData.value);
+      }
+    } else if (action === "copy-json-path" && contextMenuData?.kind === "json-node") {
+      await copyText(contextMenuData.path);
     }
     hideContextMenu();
   });
