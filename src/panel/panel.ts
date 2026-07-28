@@ -630,14 +630,48 @@ function getBrowsableEvents(record: StreamRecord): SseEvent[] {
   return record.events.filter((ev) => eventMatchesSearch(ev, eventsSearchQuery));
 }
 
-function selectEventByIndex(record: StreamRecord, index: number): void {
+function scrollEventRowIntoView(
+  row: HTMLTableRowElement,
+  mode: "nearest" | "start",
+): void {
+  const wrap = elTableWrap;
+  const wrapRect = wrap.getBoundingClientRect();
+  const rowRect = row.getBoundingClientRect();
+  const thead = wrap.querySelector("thead");
+  const headerHeight = thead ? thead.getBoundingClientRect().height : 0;
+  const pad = 4;
+
+  if (mode === "start") {
+    const targetTop = Math.max(0, row.offsetTop - headerHeight - pad);
+    wrap.scrollTop = targetTop;
+    return;
+  }
+
+  const visibleTop = wrapRect.top + headerHeight;
+  const visibleBottom = wrapRect.bottom;
+  if (rowRect.top < visibleTop) {
+    wrap.scrollTop -= visibleTop - rowRect.top + pad;
+    return;
+  }
+  if (rowRect.bottom > visibleBottom) {
+    wrap.scrollTop += rowRect.bottom - visibleBottom + pad;
+  }
+}
+
+function selectEventByIndex(
+  record: StreamRecord,
+  index: number,
+  options?: { scrollMode?: "nearest" | "start" },
+): void {
   const ev = record.events.find((e) => e.index === index);
   if (!ev) return;
   selectedEventIndex = index;
   syncRowSelection();
   openDrawer(ev);
   const row = elTbody.querySelector<HTMLTableRowElement>(`tr[data-index="${index}"]`);
-  row?.scrollIntoView({ block: "nearest" });
+  if (row) {
+    scrollEventRowIntoView(row, options?.scrollMode ?? "nearest");
+  }
 }
 
 function navigateDrawer(offset: -1 | 1): void {
@@ -989,7 +1023,9 @@ function jumpToStreamEvent(requestId: string, eventIndex: number): void {
   selectedEventIndex = null;
   renderList();
   renderDetail();
-  selectEventByIndex(record, eventIndex);
+  // Keep global-search jump behavior stable even when user is on Timeline/Raw/Request.
+  activateTab("events");
+  selectEventByIndex(record, eventIndex, { scrollMode: "start" });
 }
 
 function showAnomaliesDialog(): void {
@@ -1770,7 +1806,7 @@ function jumpToSelectedEventFromTimeline(eventIndex: number): void {
   const record = selectedId ? streams.get(selectedId) : undefined;
   if (!record) return;
   activateTab("events");
-  selectEventByIndex(record, eventIndex);
+  selectEventByIndex(record, eventIndex, { scrollMode: "start" });
 }
 
 const TIMELINE_STALL_MS = 250;
