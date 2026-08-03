@@ -85,14 +85,27 @@
           </button>
         </div>
 
-        <div class="toolbar-spacer"></div>
-
-        <div class="connection-summary" id="connection-summary" aria-live="polite">
-          <i class="live-dot" id="live-dot" hidden></i>
-          <span id="connection-summary-text">0 live · 0 streams · 0 events</span>
-        </div>
-
         <div class="toolbar-group">
+          <button type="button" class="tool-btn" id="btn-pause-ui" data-i18n-title="pauseUiTitle">
+            <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M6 4h3v12H6zm5 0h3v12h-3z" />
+            </svg>
+            <span class="tool-label" data-i18n="pauseUi">Pause UI</span>
+          </button>
+          <button type="button" class="tool-btn danger tool-btn-danger" id="btn-clear" data-i18n-title="clearTitle">
+            <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M4 5h12m-8 3v5m4-5v5M6 5l1-2h6l1 2m-8 0 1 12h6l1-12" />
+            </svg>
+            <span class="tool-label" data-i18n="clear">Clear</span>
+          </button>
+          <button type="button" class="tool-btn tool-btn-icon" id="btn-settings" data-i18n-title="openSettingsTitle">
+            <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
+              <path
+                d="M10 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm0-4 1 2 2 .7 2-1 .9.9-1 2 .7 2 2 1v1.3l-2 1-.7 2 1 2-.9.9-2-1-2 .7-1 2H8.7l-1-2-2-.7-2 1-.9-.9 1-2-.7-2-2-1V9.7l2-1 .7-2-1-2 .9-.9 2 1 2-.7 1-2Z"
+              />
+            </svg>
+            <span class="visually-hidden" data-i18n="openSettings">Settings</span>
+          </button>
           <div class="menu" id="more-menu">
             <button
               type="button"
@@ -126,33 +139,6 @@
               </button>
             </div>
           </div>
-
-          <button type="button" class="tool-btn" id="btn-copy-raw" data-i18n-title="copyRawTitle">
-            <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
-              <path d="M7 6h9v10H7zM4 13H3V3h10v1" />
-            </svg>
-            <span class="tool-label" data-i18n="copyRaw">Copy Raw</span>
-          </button>
-          <button type="button" class="tool-btn" id="btn-pause-ui" data-i18n-title="pauseUiTitle">
-            <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
-              <path d="M6 4h3v12H6zm5 0h3v12h-3z" />
-            </svg>
-            <span class="tool-label" data-i18n="pauseUi">Pause UI</span>
-          </button>
-          <button type="button" class="tool-btn danger tool-btn-danger" id="btn-clear" data-i18n-title="clearTitle">
-            <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
-              <path d="M4 5h12m-8 3v5m4-5v5M6 5l1-2h6l1 2m-8 0 1 12h6l1-12" />
-            </svg>
-            <span class="tool-label" data-i18n="clear">Clear</span>
-          </button>
-          <button type="button" class="tool-btn tool-btn-icon" id="btn-settings" data-i18n-title="openSettingsTitle">
-            <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
-              <path
-                d="M10 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm0-4 1 2 2 .7 2-1 .9.9-1 2 .7 2 2 1v1.3l-2 1-.7 2 1 2-.9.9-2-1-2 .7-1 2H8.7l-1-2-2-.7-2 1-.9-.9 1-2-.7-2-2-1V9.7l2-1 .7-2-1-2 .9-.9 2 1 2-.7 1-2Z"
-              />
-            </svg>
-            <span class="visually-hidden" data-i18n="openSettings">Settings</span>
-          </button>
         </div>
       </header>
 
@@ -203,11 +189,11 @@
                 <span data-i18n="tabEvents">Events</span>
                 <span class="tab-count" id="tab-count-events" hidden></span>
               </button>
-              <button type="button" class="tab" data-tab="timeline">
-                <span data-i18n="tabTimeline">Timeline</span>
-              </button>
               <button type="button" class="tab" data-tab="request">
                 <span data-i18n="tabRequest">Request</span>
+              </button>
+              <button type="button" class="tab" data-tab="timeline">
+                <span data-i18n="tabTimeline">Timeline</span>
               </button>
               <button type="button" class="tab" data-tab="raw">
                 <span data-i18n="tabRaw">Raw</span>
@@ -328,19 +314,29 @@
                 <div id="drawer-body" class="drawer-body"></div>
               </aside>
             </div>
-            <div id="view-timeline" class="view timeline-view">
-              <div id="timeline-placeholder" class="placeholder" data-i18n="noStreamSelected">
-                No stream selected
-              </div>
-              <div id="timeline-body" class="timeline-body" hidden></div>
-            </div>
             <div id="view-request" class="view request-view">
               <div id="request-placeholder" class="placeholder" data-i18n="noStreamSelected">
                 No stream selected
               </div>
               <div id="request-body" class="request-body" hidden></div>
             </div>
-            <pre id="view-raw" class="view code"></pre>
+            <div id="view-timeline" class="view timeline-view">
+              <div id="timeline-placeholder" class="placeholder" data-i18n="noStreamSelected">
+                No stream selected
+              </div>
+              <div id="timeline-body" class="timeline-body" hidden></div>
+            </div>
+            <div id="view-raw" class="view raw-view">
+              <div class="raw-toolbar">
+                <button type="button" class="tool-btn" id="btn-copy-raw" data-i18n-title="copyRawTitle">
+                  <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
+                    <path d="M7 6h9v10H7zM4 13H3V3h10v1" />
+                  </svg>
+                  <span class="tool-label" data-i18n="copyRaw">Copy Raw</span>
+                </button>
+              </div>
+              <pre id="raw-body" class="raw-body code"></pre>
+            </div>
           </div>
         </section>
       </div>

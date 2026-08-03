@@ -132,7 +132,7 @@ const elMenuCopyJsonValue = elContextMenu.querySelector<HTMLButtonElement>(
 const elMenuCopyJsonPath = elContextMenu.querySelector<HTMLButtonElement>(
   'button[data-action="copy-json-path"]',
 );
-const elRaw = document.getElementById("view-raw") as HTMLPreElement;
+const elRaw = document.getElementById("raw-body") as HTMLPreElement;
 const elTimelinePlaceholder = document.getElementById("timeline-placeholder") as HTMLDivElement;
 const elTimelineBody = document.getElementById("timeline-body") as HTMLDivElement;
 const elRequestPlaceholder = document.getElementById("request-placeholder") as HTMLDivElement;
@@ -156,8 +156,6 @@ const elDialogTitle = document.getElementById("app-dialog-title") as HTMLSpanEle
 const elDialogBody = document.getElementById("app-dialog-body") as HTMLDivElement;
 const elDialogClose = document.getElementById("app-dialog-close") as HTMLButtonElement;
 const elStreamsCount = document.getElementById("streams-count") as HTMLSpanElement | null;
-const elConnectionSummaryText = document.getElementById("connection-summary-text") as HTMLSpanElement | null;
-const elLiveDot = document.getElementById("live-dot") as HTMLElement | null;
 const elStatusbarCapture = document.getElementById("statusbar-capture") as HTMLSpanElement | null;
 const elStatusbarLocale = document.getElementById("statusbar-locale") as HTMLSpanElement | null;
 const elEventsFilterHint = document.getElementById("events-filter-hint") as HTMLSpanElement | null;
@@ -1025,22 +1023,6 @@ function toggleMenu(panel: HTMLDivElement | null, btn: HTMLButtonElement | null)
   }
 }
 
-function updateConnectionSummary(): void {
-  const all = Array.from(streams.values());
-  const live = all.filter((s) => s.streamStatus === "streaming").length;
-  const events = all.reduce((sum, s) => sum + s.events.length, 0);
-  if (elConnectionSummaryText) {
-    elConnectionSummaryText.textContent = t("connectionSummary", [
-      String(live),
-      String(all.length),
-      String(events),
-    ]);
-  }
-  if (elLiveDot) {
-    elLiveDot.hidden = live === 0;
-  }
-}
-
 function updateTabCounts(record: StreamRecord | undefined): void {
   if (elTabCountEvents) {
     if (record && record.events.length > 0) {
@@ -1509,7 +1491,6 @@ function renderList(): void {
   if (elStreamsCount) {
     elStreamsCount.textContent = t("streamsCount", [String(items.length), String(streams.size)]);
   }
-  updateConnectionSummary();
   if (items.length === 0 && streams.size > 0 && (urlFilter || streamsTransportFilter !== "all")) {
     elEmpty.textContent = t("noStreamsMatchFilter");
   } else {
