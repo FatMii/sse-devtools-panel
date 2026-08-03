@@ -1,48 +1,138 @@
-# SSE DevTools
+# EventStream Panel
 
-Chrome DevTools 面板，用于实时查看 `text/event-stream`（SSE）响应。不依赖 Network 的 Preview/Response（流式接口经常白屏）。
+[![CI](https://github.com/FatMii/eventstream-panel/actions/workflows/ci.yml/badge.svg)](https://github.com/FatMii/eventstream-panel/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
-## 功能
+**Chrome 里真正能看懂的 Event Stream 面板。**
 
-- DevTools 独立 **SSE** 面板
-- 捕获 `fetch` / `EventSource` / `XHR` 的 SSE / NDJSON 流
-- `fetch` 流优先 tee 旁路读取，跟随页面增量消费
-- 实时展示 Events / Raw
-- Events 列表与 JSON 抽屉支持搜索过滤（含正则）
-- `data` 为 JSON 时以可折叠树展示
-- Events 表列宽可拖拽调整
-- 导出当前流 JSON / CSV（CSV 遵循 Events 搜索过滤；含 UTF-8 BOM）
-- 一键复制 Raw / 单条 Data
-- 国际化：中文 / English（选项页可选手动语言，或跟随浏览器；扩展商店名称仍跟随浏览器）
+调试 SSE / NDJSON 时，Network 的 Preview 经常白屏、等流结束才出内容，或者干脆什么都没有。  
+EventStream Panel 在页面最早阶段旁路捕获流数据，塞进独立的 DevTools 面板——**边流边看**，不打断页面原有消费。
+
+```bash
+pnpm i && pnpm build
+# chrome://extensions → 加载 dist/ → F12 → EventStream → 刷新页面
+```
+
+> `v0.1.0` · Manifest V3 · 本地加载 · 尚未上架 Chrome Web Store
+
+---
+
+## 为什么需要它
+
+| Chrome Network | EventStream Panel |
+| --- | --- |
+| 流式接口 Preview 常白屏 | 实时拆成 Events，边收边渲染 |
+| 结束后才能翻 Response | Timeline 看间隔、卡顿、重连 |
+| 看不到 chunk 节奏 | Stats：TTFT / gap / events·s |
+| 只剩一坨 raw text | JSON 树、Spec 告警、异常扫描 |
+
+适合：AI 对话流、通知推送、进度上报、任何 `text/event-stream` / NDJSON 长连接。
+
+---
+
+## 能做什么
+
+**捕获** — `fetch` · `EventSource` · `XHR`  
+优先 `clone()` 旁路读取，失败再观察 `getReader`；记下 `abort` / `error` / 重连 / `Last-Event-ID`。
+
+**四个 Tab**
+
+- **Events** — 列表 + 可折叠 JSON 树 + 正则过滤 + 列宽拖拽
+- **Timeline** — 到达瀑布、间隔直方图、≥250ms 卡顿高亮、重连菱形
+- **Request** — 仿 Network：Headers / Payload（敏感头脱敏）
+- **Raw** — 原文一键复制
+
+**分析** — Pause UI（停绘不停抓）· Stats · Anomalies · SSE Spec 校验 · 跨 Stream 全局搜索  
+
+**带走** — 导出 JSON / CSV / `.sse` Fixture · 导入回放 · IndexedDB Archives
+
+中英界面；选项页可固定语言或跟随浏览器。
+
+---
+
+## 安装
+
+```bash
+git clone https://github.com/FatMii/eventstream-panel.git
+cd eventstream-panel
+pnpm i
+pnpm build
+```
+
+1. 打开 `chrome://extensions`，打开「开发者模式」
+2. 「加载已解压的扩展程序」→ 选仓库里的 **`dist`**
+3. 打开目标站 → <kbd>F12</kbd> → **EventStream**
+4. **刷新页面**（注入发生在 `document_start`），再打流式接口
+
+改代码时用 `pnpm dev` 监听构建，扩展页点「重新加载」即可。
+
+### 30 秒 Demo
+
+```bash
+pnpm build && pnpm demo
+```
+
+打开 <http://127.0.0.1:8765> → 加载扩展 → DevTools **EventStream** → 刷新 → **Start stream**。
+
+---
 
 ## 开发
 
 ```bash
-pnpm i
-pnpm build
-# 或监听重建
-pnpm dev
+pnpm build       # 类型检查 + 打包
+pnpm dev         # watch
+pnpm typecheck
+pnpm test-only   # parser / export / spec / timing / request-view / close
 ```
 
-产物在 `dist/`。
+更完整的协作说明见 [CONTRIBUTING.md](./CONTRIBUTING.md)。公开仓库与分支保护步骤见 [docs/GITHUB_SETUP.md](./docs/GITHUB_SETUP.md)。
 
-## 安装
+| | |
+| --- | --- |
+| `src/content/inject-main.ts` | MAIN world 劫持 |
+| bridge content script | ISOLATED → 扩展 |
+| service worker | 消息中继 |
+| `src/panel/` | 面板 UI |
+| `src/shared/` | 解析 · 时序 · Spec · 导出 |
+| `_locales/` | i18n |
 
-1. 打开 `chrome://extensions`
-2. 开启「开发者模式」
-3. 「加载已解压的扩展程序」→ 选择本仓库的 `dist` 目录
-4. 打开目标网页，按 F12，切换到 **SSE** 面板
-5. **刷新页面**（注入脚本在 `document_start` 生效），再触发流式接口
+---
 
-## 原理
+## 怎么工作的
 
-页面 MAIN world 在文档最早阶段劫持 `fetch` / `EventSource` / `XMLHttpRequest`：对 SSE / NDJSON 响应，优先用 `body.tee()` 旁路读取（页面继续消费另一支），必要时回退到 `clone()` 或实例级 `getReader` 观察；经 content script → service worker → DevTools panel 转发。页面原有消费不受影响。
+```text
+Page (MAIN)                 Extension                    DevTools
+─────────────────────       ──────────────────           ─────────
+patch fetch / ES / XHR
+        │
+   clone() + pump  ──postMessage──► bridge ──► SW ──► EventStream Panel
+   (or observe getReader)              │
+        │                              └─ 页面自己的 body 消费不受影响
+        ▼
+   页面继续读原 Response
+```
 
-## 本地 Demo
+---
+
+## 限制
+
+- 只面向 **Chromium** DevTools
+- 抓不到页面 **Service Worker** 里发起的 fetch
+- 更深的 Stream API hook（`pipeThrough` / `pipeTo` 等）还没做——有漏抓欢迎带复现开 Issue
+- AI Transcript（多厂商合并视图）做过一版后回退了，之后会用真实抓包重做
+
+---
+
+## 贡献
+
+Issue / PR 都欢迎，请先读 [CONTRIBUTING.md](./CONTRIBUTING.md)。发 PR 前请跑：
 
 ```bash
-pnpm build
-node demo/server.mjs
+pnpm test-only && pnpm typecheck && pnpm build
 ```
 
-浏览器打开 `http://127.0.0.1:8765`，加载扩展并打开 DevTools → **SSE**，刷新页面后点 **Start stream**。
+写清：复现步骤、Chrome 版本、能不能用本地 Demo 打出来。
+
+## License
+
+[MIT](./LICENSE) © FatMii

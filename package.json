@@ -1,9 +1,11 @@
 {
-  "name": "sse-devtools",
+  "name": "eventstream-panel",
   "version": "0.1.0",
   "private": true,
-  "description": "Chrome DevTools panel for inspecting SSE / text/event-stream responses",
+  "license": "MIT",
+  "description": "Chrome DevTools panel for inspecting EventStream (SSE / NDJSON) responses",
   "type": "module",
+  "packageManager": "pnpm@10.13.1",
   "scripts": {
     "dev": "node scripts/build.mjs --watch",
     "build": "tsc --noEmit && node scripts/build.mjs",
