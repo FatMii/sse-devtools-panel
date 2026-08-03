@@ -21,7 +21,7 @@
             data-i18n-title="importJsonTitle"
           >
             <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
-              <path d="M10 3v9m0 0 3-3m-3 3L7 9M4 14v2h12v-2" />
+              <path d="M10 3v9M7 9l3 3 3-3M4 15h12" />
             </svg>
             <span class="tool-label" data-i18n="importJson">Import JSON</span>
           </button>
@@ -29,7 +29,7 @@
           <div class="menu" id="export-menu">
             <button
               type="button"
-              class="tool-btn"
+              class="tool-btn primary"
               id="btn-export-menu"
               data-i18n-title="exportMenuTitle"
               aria-haspopup="menu"
@@ -37,7 +37,7 @@
               aria-controls="export-menu-panel"
             >
               <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
-                <path d="M10 12V3m0 9 3-3m-3 3L7 9M4 14v2h12v-2" />
+                <path d="M10 12V3M7 6l3-3 3 3M4 15h12" />
               </svg>
               <span class="tool-label" data-i18n="exportMenu">Export</span>
               <svg class="tool-caret" viewBox="0 0 12 12" aria-hidden="true">
@@ -139,7 +139,7 @@
             </svg>
             <span class="tool-label" data-i18n="pauseUi">Pause UI</span>
           </button>
-          <button type="button" class="tool-btn tool-btn-danger" id="btn-clear" data-i18n-title="clearTitle">
+          <button type="button" class="tool-btn danger tool-btn-danger" id="btn-clear" data-i18n-title="clearTitle">
             <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
               <path d="M4 5h12m-8 3v5m4-5v5M6 5l1-2h6l1 2m-8 0 1 12h6l1-12" />
             </svg>
@@ -164,7 +164,7 @@
             <span class="eyebrow" data-i18n="streams">Streams</span>
             <span class="count" id="streams-count">0 / 0</span>
           </div>
-          <div class="sidebar-filters">
+          <div class="filter-box">
             <div class="input-wrap">
               <svg class="input-icon" viewBox="0 0 20 20" aria-hidden="true">
                 <circle cx="8.5" cy="8.5" r="4.5" />
@@ -217,11 +217,9 @@
           </div>
 
           <div class="meta request-bar" id="meta">
-            <div class="meta-line meta-line-primary">
-              <span class="meta-method" id="meta-method"></span>
-              <span class="meta-url" id="meta-url"></span>
-            </div>
-            <div class="meta-line meta-line-tags" id="meta-tags"></div>
+            <span class="meta-method method-label" id="meta-method"></span>
+            <span class="meta-url request-url" id="meta-url"></span>
+            <span class="request-detail meta-line-tags" id="meta-tags"></span>
           </div>
 
           <div class="views">
@@ -247,11 +245,11 @@
                 <div id="events-placeholder" class="placeholder" data-i18n="noStreamSelected">
                   No stream selected
                 </div>
-                <div class="events-table-wrap" id="events-table-wrap" hidden>
+                <div class="events-table-wrap table-scroll" id="events-table-wrap" hidden>
                   <table class="events-table" id="events-table">
                     <thead>
                       <tr>
-                        <th class="col-index">
+                        <th class="col-index col-n">
                           #
                           <span class="col-resizer" data-col="index" aria-hidden="true"></span>
                         </th>
@@ -273,9 +271,9 @@
                   </table>
                 </div>
               </div>
-              <div id="events-resizer" class="events-resizer" hidden></div>
-              <aside id="events-drawer" class="events-drawer" hidden>
-                <header class="drawer-header">
+              <div id="events-resizer" class="events-resizer drag-rail" hidden title="Resize drawer"></div>
+              <aside id="events-drawer" class="events-drawer drawer" hidden>
+                <header class="drawer-header drawer-head">
                   <span id="drawer-title" class="drawer-title"></span>
                   <div class="drawer-actions">
                     <button

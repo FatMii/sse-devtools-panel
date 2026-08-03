@@ -473,55 +473,56 @@ function renderStreamMeta(record: StreamRecord | undefined): void {
   }
 
   elMeta.classList.remove("is-empty");
-  const headerCount = record.requestHeaders ? Object.keys(record.requestHeaders).length : 0;
 
   elMetaMethod.textContent = record.method;
-  elMetaUrl.textContent = shortPath(record.url);
+  elMetaUrl.textContent = record.url;
   elMetaUrl.title = record.url;
 
-  const tags: string[] = [];
+  const bits: string[] = [];
   if (record.status != null) {
     const statusClass =
       record.streamStatus === "error" ? "error" : record.status >= 400 ? "error" : "ok";
-    tags.push(
-      `<span class="meta-chip ${statusClass}">${escapeHtml(`HTTP ${record.status}`)}</span>`,
-    );
+    const statusText =
+      record.statusText && record.statusText.trim()
+        ? `${record.status} ${record.statusText}`
+        : `HTTP ${record.status}`;
+    bits.push(`<b class="meta-chip ${statusClass}">${escapeHtml(statusText)}</b>`);
   }
   if (record.contentType) {
-    tags.push(`<span class="meta-chip">${escapeHtml(record.contentType)}</span>`);
+    bits.push(`<span class="meta-chip">${escapeHtml(record.contentType)}</span>`);
   }
-  tags.push(`<span class="meta-chip">${escapeHtml(transportLabel(record.transport))}</span>`);
-  if (headerCount > 0) {
-    tags.push(`<span class="meta-chip">${escapeHtml(t("metaHeadersCount", String(headerCount)))}</span>`);
-  }
-  if (record.requestPayloadPreview) {
-    tags.push(`<span class="meta-chip">${escapeHtml(t("requestHasBody"))}</span>`);
+  const durationMs =
+    typeof record.endedAt === "number"
+      ? record.endedAt - record.startedAt
+      : Date.now() - record.startedAt;
+  if (Number.isFinite(durationMs) && durationMs >= 0) {
+    bits.push(`<span class="meta-chip">${escapeHtml(formatDuration(durationMs))}</span>`);
   }
   if (record.closeReason && record.closeReason !== "complete") {
-    tags.push(
+    bits.push(
       `<span class="meta-chip ${record.closeReason === "abort" ? "warn" : "error"}">${escapeHtml(
         closeReasonLabel(record.closeReason),
       )}</span>`,
     );
   }
   if (record.errorMessage) {
-    tags.push(
+    bits.push(
       `<span class="meta-chip error">${escapeHtml(t("metaError", record.errorMessage))}</span>`,
     );
   }
   if (record.reconnectCount && record.reconnectCount > 0) {
-    tags.push(
+    bits.push(
       `<span class="meta-chip warn">${escapeHtml(
         t("metaReconnects", String(record.reconnectCount)),
       )}</span>`,
     );
   }
   if (record.lastEventId) {
-    tags.push(
+    bits.push(
       `<span class="meta-chip">${escapeHtml(t("metaLastEventId", record.lastEventId))}</span>`,
     );
   }
-  elMetaTags.innerHTML = tags.join("");
+  elMetaTags.innerHTML = bits.join("");
 }
 
 const OVERSIZED_PACKET_THRESHOLD = 16_000;
@@ -1532,7 +1533,7 @@ function renderList(): void {
       li.dataset.id = s.requestId;
       elList.appendChild(li);
     }
-    li.className = "stream-item" + (s.requestId === selectedId ? " active" : "");
+    li.className = "stream" + (s.requestId === selectedId ? " active" : "");
     if (li.dataset.fingerprint !== fingerprint) {
       li.dataset.fingerprint = fingerprint;
       const transportClass =
@@ -1566,7 +1567,7 @@ function renderList(): void {
           }
           <span>${s.status != null ? `HTTP ${s.status}` : "—"}</span>
           <span>${escapeHtml(t("eventsCount", String(s.events.length)))}</span>
-          <span class="stream-status ${s.streamStatus}"><i></i>${escapeHtml(streamStatusShort(s.streamStatus))}</span>
+          <span class="status ${s.streamStatus}"><i></i>${escapeHtml(streamStatusShort(s.streamStatus))}</span>
         </div>
       `;
     }
@@ -1722,10 +1723,10 @@ function createEventRow(ev: SseEvent): HTMLTableRowElement {
         )}">S</span>`
       : "";
   tr.innerHTML = `
-    <td class="col-index">${ev.index}${warnMark}</td>
+    <td class="col-index col-n">${ev.index}${warnMark}</td>
     <td class="col-time">${escapeHtml(formatTime(ev.receivedAt))}</td>
     <td class="col-event">${escapeHtml(ev.event)}</td>
-    <td class="col-data" title="${escapeHtml(ev.data)}">${escapeHtml(previewData(ev.data))}</td>
+    <td class="col-data data-cell" title="${escapeHtml(ev.data)}">${escapeHtml(previewData(ev.data))}</td>
   `;
   tr.addEventListener("click", () => {
     hideContextMenu();
@@ -2533,7 +2534,7 @@ function setupActions(): void {
   // Prefer pointerdown: XHR streaming may rewrite row contents between mousedown/mouseup.
   elList.addEventListener("pointerdown", (e) => {
     if (e.button !== 0) return;
-    const li = (e.target as HTMLElement | null)?.closest("li.stream-item");
+    const li = (e.target as HTMLElement | null)?.closest("li.stream, li.stream-item");
     if (!(li instanceof HTMLLIElement) || !elList.contains(li)) return;
     const id = li.dataset.id;
     if (!id || !streams.has(id) || id === selectedId) return;

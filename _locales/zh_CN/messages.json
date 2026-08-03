@@ -781,6 +781,43 @@
   "toastArchiveSaved": {
     "message": "已保存到存档"
   },
+  "connectionSummary": {
+    "message": "$LIVE$ live · $STREAMS$ streams · $EVENTS$ events",
+    "placeholders": {
+      "live": { "content": "$1", "example": "1" },
+      "streams": { "content": "$2", "example": "3" },
+      "events": { "content": "$3", "example": "42" }
+    }
+  },
+  "streamsCount": {
+    "message": "$VISIBLE$ / $TOTAL$",
+    "placeholders": {
+      "visible": { "content": "$1", "example": "3" },
+      "total": { "content": "$2", "example": "3" }
+    }
+  },
+  "eventsFilterHint": {
+    "message": "$VISIBLE$ / $TOTAL$ 匹配",
+    "placeholders": {
+      "visible": { "content": "$1", "example": "42" },
+      "total": { "content": "$2", "example": "42" }
+    }
+  },
+  "rawSizeKb": {
+    "message": "$SIZE$ KB",
+    "placeholders": {
+      "size": { "content": "$1", "example": "4.7" }
+    }
+  },
+  "statusLive": {
+    "message": "LIVE"
+  },
+  "statusDoneShort": {
+    "message": "DONE"
+  },
+  "statusErrorShort": {
+    "message": "ERROR"
+  },
   "optionsTitle": {
     "message": "EventStream Panel 选项"
   },
