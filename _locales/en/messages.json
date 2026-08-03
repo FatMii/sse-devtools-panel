@@ -1,18 +1,18 @@
 {
   "extName": {
-    "message": "SSE DevTools",
+    "message": "EventStream Panel",
     "description": "Extension name"
   },
   "extDescription": {
-    "message": "Inspect SSE / text/event-stream responses in a DevTools panel",
+    "message": "Inspect EventStream (SSE / NDJSON) responses in a DevTools panel",
     "description": "Extension description"
   },
   "devtoolsPanelName": {
-    "message": "SSE",
+    "message": "EventStream",
     "description": "DevTools panel tab title"
   },
   "panelTitle": {
-    "message": "SSE Inspector"
+    "message": "EventStream Panel"
   },
   "copyRaw": {
     "message": "Copy Raw"
@@ -736,8 +736,53 @@
   "jsonCopyPath": {
     "message": "copy path"
   },
+  "exportMenu": {
+    "message": "Export"
+  },
+  "exportMenuTitle": {
+    "message": "Export the selected stream"
+  },
+  "moreMenu": {
+    "message": "More"
+  },
+  "moreMenuTitle": {
+    "message": "More analysis actions"
+  },
+  "sidebarFooter": {
+    "message": "Captures Fetch · EventSource · XHR · NDJSON"
+  },
+  "statusbarTransports": {
+    "message": "Fetch / EventSource / XHR"
+  },
+  "statusbarCaptureActive": {
+    "message": "● CAPTURE ACTIVE"
+  },
+  "statusbarCapturePaused": {
+    "message": "● CAPTURE PAUSED"
+  },
+  "toastCopied": {
+    "message": "Copied"
+  },
+  "toastExportedJson": {
+    "message": "Exported JSON"
+  },
+  "toastExportedCsv": {
+    "message": "Exported CSV ($COUNT$ events)",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "toastExportedFixture": {
+    "message": "Exported Fixture"
+  },
+  "toastArchiveSaved": {
+    "message": "Saved to archives"
+  },
   "optionsTitle": {
-    "message": "SSE DevTools Options"
+    "message": "EventStream Panel Options"
   },
   "optionsLanguage": {
     "message": "Language"
@@ -752,7 +797,7 @@
     "message": "中文（简体）"
   },
   "optionsLanguageHint": {
-    "message": "Panel UI language. Changes apply immediately in an open SSE panel."
+    "message": "Panel UI language. Changes apply immediately in an open EventStream panel."
   },
   "openSettings": {
     "message": "Settings"

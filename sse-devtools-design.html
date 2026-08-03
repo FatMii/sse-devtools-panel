@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EventStream Panel · Panel redesign</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --canvas: #181a1d;
+        --surface-1: #1f2226;
+        --surface-2: #272b30;
+        --surface-hover: #2e343a;
+        --surface-selected: #153a56;
+        --stroke: #373d44;
+        --stroke-strong: #4a535d;
+        --text: #d8dde4;
+        --text-muted: #89939e;
+        --text-faint: #626c76;
+        --accent: #53a8e8;
+        --accent-strong: #78bfff;
+        --accent-wash: #102f46;
+        --good: #75c58a;
+        --warning: #d3ad54;
+        --danger: #e37868;
+        --mono: "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+        --sans: "Segoe UI Variable", "Noto Sans SC", "Microsoft YaHei UI", sans-serif;
+        --r-sm: 3px;
+        --r-md: 5px;
+        --sidebar: 286px;
+        --drawer: 358px;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-width: 960px;
+        min-height: 620px;
+        overflow: hidden;
+        color: var(--text);
+        background: var(--canvas);
+        font: 12px/1.45 var(--sans);
+      }
+
+      button, input, select { font: inherit; }
+      button {
+        border: 1px solid transparent;
+        border-radius: var(--r-sm);
+        color: var(--text);
+        background: transparent;
+        cursor: pointer;
+      }
+      button:hover { background: var(--surface-hover); }
+      button:focus-visible, input:focus-visible, select:focus-visible {
+        outline: 1px solid var(--accent-strong);
+        outline-offset: -1px;
+      }
+
+      .app { height: 100vh; display: grid; grid-template-rows: 42px 1fr 24px; }
+      .toolbar {
+        display: flex; align-items: center; gap: 12px;
+        padding: 0 10px; border-bottom: 1px solid var(--stroke);
+        background: var(--surface-1);
+      }
+      .brand {
+        display: flex; align-items: center; gap: 8px; min-width: 174px;
+        color: var(--text); font-size: 13px; font-weight: 650; letter-spacing: .1px;
+      }
+      .pulse-mark {
+        position: relative; width: 18px; height: 18px; border: 1px solid var(--accent);
+        border-radius: 50%;
+      }
+      .pulse-mark::before, .pulse-mark::after {
+        content: ""; position: absolute; background: var(--accent);
+      }
+      .pulse-mark::before { left: 3px; right: 3px; top: 8px; height: 1px; }
+      .pulse-mark::after { width: 3px; height: 6px; left: 7px; top: 5px; }
+      .toolbar-group { display: flex; align-items: center; gap: 2px; }
+      .toolbar-separator { width: 1px; height: 18px; background: var(--stroke); margin: 0 5px; }
+      .tool-btn {
+        min-height: 26px; padding: 0 7px; display: inline-flex; align-items: center;
+        gap: 5px; color: var(--text-muted); white-space: nowrap;
+      }
+      .tool-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.65; }
+      .tool-btn:hover { color: var(--text); }
+      .tool-btn.primary { color: var(--accent-strong); }
+      .tool-btn.danger:hover { color: var(--danger); }
+      .toolbar-spacer { flex: 1; }
+      .connection-summary {
+        display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted);
+        font-family: var(--mono); font-size: 11px;
+      }
+      .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--good); }
+
+      .workbench { min-height: 0; display: grid; grid-template-columns: var(--sidebar) 1fr; }
+      .sidebar {
+        display: flex; flex-direction: column; min-width: 0; background: var(--surface-1);
+        border-right: 1px solid var(--stroke);
+      }
+      .panel-heading {
+        height: 39px; padding: 0 10px; display: flex; align-items: center; justify-content: space-between;
+        border-bottom: 1px solid var(--stroke);
+      }
+      .eyebrow {
+        color: var(--text-muted); font-size: 10px; font-weight: 700; letter-spacing: .75px;
+        text-transform: uppercase;
+      }
+      .count { color: var(--text-faint); font: 11px var(--mono); }
+      .filter-box { display: grid; grid-template-columns: 1fr 86px; gap: 6px; padding: 9px 10px; border-bottom: 1px solid var(--stroke); }
+      .input-wrap { position: relative; }
+      .input-wrap svg { position: absolute; top: 7px; left: 8px; width: 13px; height: 13px; stroke: var(--text-faint); fill: none; stroke-width: 1.5; }
+      input, select {
+        width: 100%; height: 28px; padding: 0 8px; border: 1px solid var(--stroke);
+        border-radius: var(--r-sm); color: var(--text); background: var(--canvas);
+      }
+      .input-wrap input { padding-left: 27px; font-family: var(--mono); font-size: 11px; }
+      select { color: var(--text-muted); font-size: 11px; }
+      .stream-list { margin: 0; padding: 6px 0; overflow: auto; list-style: none; }
+      .stream {
+        position: relative; margin: 0 6px 2px; padding: 8px 8px 8px 10px; border: 1px solid transparent;
+        border-radius: var(--r-md); cursor: pointer;
+      }
+      .stream:hover { background: var(--surface-hover); }
+      .stream.active { background: var(--surface-selected); border-color: #235475; }
+      .stream.active::before { content: ""; position: absolute; top: 8px; bottom: 8px; left: -1px; width: 2px; background: var(--accent-strong); }
+      .stream-path { overflow: hidden; color: var(--text); font-family: var(--mono); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+      .stream-meta { display: flex; align-items: center; gap: 5px; margin-top: 6px; color: var(--text-faint); font: 10px var(--mono); }
+      .badge {
+        display: inline-flex; align-items: center; height: 17px; padding: 0 5px; border: 1px solid var(--stroke-strong);
+        border-radius: 2px; color: var(--text-muted); font: 9px/1 var(--mono); letter-spacing: .15px;
+      }
+      .badge.fetch { color: #a6c6eb; border-color: #466a8d; }
+      .badge.xhr { color: #d0b8ea; border-color: #70578c; }
+      .badge.eventsource { color: #b9d39e; border-color: #607b4f; }
+      .status { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
+      .status i { width: 5px; height: 5px; border-radius: 50%; background: var(--good); }
+      .status.done i { background: var(--text-faint); }
+      .status.error { color: var(--danger); }
+      .status.error i { background: var(--danger); }
+      .sidebar-footer { margin-top: auto; padding: 9px 10px; border-top: 1px solid var(--stroke); color: var(--text-faint); font-size: 10px; }
+
+      .detail { min-width: 0; display: grid; grid-template-rows: 40px 44px 1fr; }
+      .detail-nav { display: flex; align-items: center; padding: 0 12px; border-bottom: 1px solid var(--stroke); background: var(--surface-1); }
+      .tab {
+        position: relative; height: 40px; padding: 0 13px; border-radius: 0; color: var(--text-muted);
+      }
+      .tab.active { color: var(--text); }
+      .tab.active::after { content: ""; position: absolute; right: 10px; bottom: 0; left: 10px; height: 2px; background: var(--accent); }
+      .tab-count { margin-left: 5px; color: var(--text-faint); font: 10px var(--mono); }
+      .detail-actions { margin-left: auto; display: flex; gap: 4px; }
+      .compact-btn { height: 26px; padding: 0 8px; color: var(--text-muted); border: 1px solid var(--stroke); }
+      .compact-btn:hover { color: var(--text); border-color: var(--stroke-strong); }
+      .request-bar { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 9px; min-width: 0; padding: 0 12px; border-bottom: 1px solid var(--stroke); background: var(--canvas); }
+      .method-label { color: var(--accent-strong); font: 700 10px var(--mono); }
+      .request-url { min-width: 0; overflow: hidden; color: var(--text-muted); font: 11px var(--mono); text-overflow: ellipsis; white-space: nowrap; }
+      .request-detail { display: flex; gap: 8px; color: var(--text-faint); font: 10px var(--mono); white-space: nowrap; }
+      .request-detail b { color: var(--good); font-weight: 500; }
+
+      .event-layout { min-height: 0; display: grid; grid-template-columns: minmax(350px, 1fr) 5px var(--drawer); }
+      .event-list { min-width: 0; min-height: 0; display: grid; grid-template-rows: 43px 1fr; }
+      .searchbar { display: flex; align-items: center; gap: 8px; padding: 0 11px; border-bottom: 1px solid var(--stroke); }
+      .searchbar .input-wrap { flex: 1; max-width: 480px; }
+      .searchbar input { height: 27px; }
+      .filter-hint { color: var(--text-faint); font: 10px var(--mono); white-space: nowrap; }
+      .table-scroll { overflow: auto; }
+      table { width: 100%; min-width: 670px; border-collapse: collapse; table-layout: fixed; font-family: var(--mono); font-size: 11px; }
+      th, td { padding: 7px 9px; border-right: 1px solid var(--stroke); border-bottom: 1px solid var(--stroke); text-align: left; vertical-align: middle; }
+      th { position: sticky; top: 0; z-index: 1; color: var(--text-muted); background: var(--surface-2); font-size: 10px; font-weight: 600; }
+      th:last-child, td:last-child { border-right: 0; }
+      th .resize-handle { position: absolute; top: 0; right: -3px; width: 6px; height: 100%; cursor: col-resize; }
+      th .resize-handle:hover { background: var(--accent); }
+      .col-n { width: 54px; color: var(--text-faint); }
+      .col-time { width: 106px; color: var(--text-muted); }
+      .col-event { width: 110px; color: #b9d39e; }
+      tbody tr { cursor: pointer; }
+      tbody tr:hover { background: var(--surface-hover); }
+      tbody tr.selected { background: var(--accent-wash); box-shadow: inset 2px 0 0 var(--accent); }
+      .data-cell { overflow: hidden; color: #c7cdd4; text-overflow: ellipsis; white-space: nowrap; }
+      .new-event { display: inline-block; width: 5px; height: 5px; margin-right: 5px; background: var(--accent); border-radius: 50%; vertical-align: 1px; }
+      .drag-rail { background: var(--stroke); cursor: col-resize; }
+      .drag-rail:hover { background: var(--accent); }
+      .drawer { min-width: 0; display: grid; grid-template-rows: 43px 43px 1fr; background: var(--surface-1); }
+      .drawer-head { display: flex; align-items: center; gap: 7px; padding: 0 10px; border-bottom: 1px solid var(--stroke); }
+      .drawer-title { overflow: hidden; color: var(--text); font: 600 11px var(--mono); text-overflow: ellipsis; white-space: nowrap; }
+      .drawer-actions { display: flex; gap: 3px; margin-left: auto; }
+      .icon-btn { width: 25px; height: 25px; display: inline-grid; place-items: center; color: var(--text-muted); }
+      .icon-btn:hover { color: var(--text); }
+      .icon-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.7; }
+      .drawer-search { padding: 8px 10px; border-bottom: 1px solid var(--stroke); }
+      .drawer-search input { height: 27px; font-family: var(--mono); font-size: 11px; }
+      .json { overflow: auto; padding: 11px 12px 32px; color: #c8d0d8; font: 11px/1.7 var(--mono); }
+      .json-line { padding-left: 16px; white-space: pre; }
+      .json-line.root { padding-left: 0; }
+      .twisty { display: inline-block; width: 15px; color: var(--text-faint); cursor: pointer; }
+      .key { color: #8cb7dc; }
+      .str { color: #b8d09f; }
+      .num { color: #d6b177; }
+      .bool { color: #c7a8d8; }
+      mark { padding: 0 1px; color: inherit; background: #765d2a; }
+
+      .statusbar { display: flex; align-items: center; gap: 14px; padding: 0 10px; border-top: 1px solid var(--stroke); color: var(--text-faint); background: var(--surface-1); font: 10px var(--mono); }
+      .statusbar span:first-child { color: var(--accent); }
+      .statusbar .right { margin-left: auto; }
+      .toast {
+        position: fixed; right: 14px; bottom: 36px; display: none; align-items: center; gap: 8px;
+        padding: 8px 10px; border: 1px solid #427a58; border-radius: var(--r-md); color: var(--text);
+        background: #1d3024; font-size: 11px;
+      }
+      .toast.show { display: flex; }
+      .toast i { width: 6px; height: 6px; border-radius: 50%; background: var(--good); }
+
+      @media (max-width: 1100px) {
+        :root { --sidebar: 238px; --drawer: 300px; }
+        .tool-btn .tool-label { display: none; }
+        .tool-btn { width: 28px; justify-content: center; padding: 0; }
+      }
+      @media (max-width: 820px) {
+        :root { --sidebar: 206px; --drawer: 0px; }
+        .drawer, .drag-rail { display: none; }
+        .event-layout { grid-template-columns: 1fr; }
+        .connection-summary { display: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <header class="toolbar">
+        <div class="brand"><span class="pulse-mark"></span><span>EventStream Panel</span></div>
+        <div class="toolbar-group">
+          <button class="tool-btn" title="导入 JSON"><svg viewBox="0 0 20 20"><path d="M10 3v9m0 0 3-3m-3 3L7 9M4 14v2h12v-2"/></svg><span class="tool-label">导入</span></button>
+          <button class="tool-btn primary" data-export title="导出当前可见事件 CSV"><svg viewBox="0 0 20 20"><path d="M10 12V3m0 9 3-3m-3 3L7 9M4 14v2h12v-2"/></svg><span class="tool-label">导出</span></button>
+          <span class="toolbar-separator"></span>
+          <button class="tool-btn" title="保存到本地存档"><svg viewBox="0 0 20 20"><path d="M4 3h10l2 2v12H4zM7 3v5h6V3m-7 13h8"/></svg><span class="tool-label">保存</span></button>
+          <button class="tool-btn" title="查看存档"><svg viewBox="0 0 20 20"><path d="M4 4h12v12H4zM7 7h6m-6 3h6m-6 3h4"/></svg><span class="tool-label">存档</span></button>
+          <button class="tool-btn" title="数据统计"><svg viewBox="0 0 20 20"><path d="M4 16V9m4 7V4m4 12v-6m4 6V7"/></svg><span class="tool-label">统计</span></button>
+        </div>
+        <div class="toolbar-spacer"></div>
+        <div class="connection-summary"><i class="live-dot"></i> 1 live · 3 streams · 42 events</div>
+        <div class="toolbar-group">
+          <button class="tool-btn" title="复制 Raw"><svg viewBox="0 0 20 20"><path d="M7 6h9v10H7zM4 13H3V3h10v1"/></svg><span class="tool-label">复制 Raw</span></button>
+          <button class="tool-btn danger" title="清空面板"><svg viewBox="0 0 20 20"><path d="M4 5h12m-8 3v5m4-5v5M6 5l1-2h6l1 2m-8 0 1 12h6l1-12"/></svg><span class="tool-label">清空</span></button>
+          <button class="tool-btn" title="设置"><svg viewBox="0 0 20 20"><path d="M10 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm0-4 1 2 2 .7 2-1 .9.9-1 2 .7 2 2 1v1.3l-2 1-.7 2 1 2-.9.9-2-1-2 .7-1 2H8.7l-1-2-2-.7-2 1-.9-.9 1-2-.7-2-2-1V9.7l2-1 .7-2-1-2 .9-.9 2 1 2-.7 1-2Z"/></svg></button>
+        </div>
+      </header>
+
+      <div class="workbench">
+        <aside class="sidebar" aria-label="数据流列表">
+          <div class="panel-heading"><span class="eyebrow">Streams</span><span class="count">03 / 03</span></div>
+          <div class="filter-box">
+            <div class="input-wrap"><svg viewBox="0 0 20 20"><circle cx="8.5" cy="8.5" r="4.5"/><path d="m12 12 4 4"/></svg><input value="chat" aria-label="按 URL 过滤" /></div>
+            <select aria-label="请求类型"><option>全部类型</option><option>Fetch</option><option>XHR</option></select>
+          </div>
+          <ul class="stream-list">
+            <li class="stream active">
+              <div class="stream-path">/api/chat/completions</div>
+              <div class="stream-meta"><span class="badge fetch">FETCH</span><span>HTTP 200</span><span>42 events</span><span class="status"><i></i>LIVE</span></div>
+            </li>
+            <li class="stream">
+              <div class="stream-path">/v1/conversation/stream</div>
+              <div class="stream-meta"><span class="badge eventsource">EVENTSOURCE</span><span>HTTP 200</span><span>17 events</span><span class="status done"><i></i>DONE</span></div>
+            </li>
+            <li class="stream">
+              <div class="stream-path">/api/agent/run</div>
+              <div class="stream-meta"><span class="badge xhr">XHR</span><span>HTTP 500</span><span>3 events</span><span class="status error"><i></i>ERROR</span></div>
+            </li>
+          </ul>
+          <div class="sidebar-footer">捕获 Fetch · EventSource · XHR · NDJSON</div>
+        </aside>
+
+        <section class="detail">
+          <nav class="detail-nav">
+            <button class="tab active" data-tab="events">Events <span class="tab-count">42</span></button>
+            <button class="tab" data-tab="raw">Raw <span class="tab-count">4.7 KB</span></button>
+            <div class="detail-actions"><button class="compact-btn">⇧ 跟随最新</button><button class="compact-btn">⋯</button></div>
+          </nav>
+          <div class="request-bar">
+            <span class="method-label">POST</span>
+            <span class="request-url">https://api.example.dev/api/chat/completions?model=gpt-4o-mini</span>
+            <span class="request-detail"><b>200 OK</b><span>text/event-stream</span><span>00:14.283</span></span>
+          </div>
+          <div class="event-layout">
+            <section class="event-list">
+              <div class="searchbar">
+                <div class="input-wrap"><svg viewBox="0 0 20 20"><circle cx="8.5" cy="8.5" r="4.5"/><path d="m12 12 4 4"/></svg><input value="/delta|message/i" aria-label="过滤 Event 和 Data" /></div>
+                <span class="filter-hint">42 / 42 匹配 · 正则</span>
+              </div>
+              <div class="table-scroll">
+                <table>
+                  <thead><tr><th class="col-n">#<span class="resize-handle"></span></th><th class="col-time">TIME<span class="resize-handle"></span></th><th class="col-event">EVENT<span class="resize-handle"></span></th><th>DATA<span class="resize-handle"></span></th></tr></thead>
+                  <tbody>
+                    <tr><td class="col-n">38</td><td class="col-time">16:42:10.182</td><td class="col-event">delta</td><td class="data-cell">{"choices":[{"delta":{"content":"stream "}}]}</td></tr>
+                    <tr><td class="col-n">39</td><td class="col-time">16:42:10.253</td><td class="col-event">delta</td><td class="data-cell">{"choices":[{"delta":{"content":"responses "}}]}</td></tr>
+                    <tr class="selected"><td class="col-n">40</td><td class="col-time">16:42:10.319</td><td class="col-event"><i class="new-event"></i>delta</td><td class="data-cell">{"choices":[{"delta":{"content":"reliably."}}]}</td></tr>
+                    <tr><td class="col-n">41</td><td class="col-time">16:42:10.395</td><td class="col-event">message</td><td class="data-cell">{"choices":[{"finish_reason":"stop"}]}</td></tr>
+                    <tr><td class="col-n">42</td><td class="col-time">16:42:10.396</td><td class="col-event">done</td><td class="data-cell">[DONE]</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+            <div class="drag-rail" title="拖拽调整 JSON 面板宽度"></div>
+            <aside class="drawer" aria-label="事件 JSON 详情">
+              <header class="drawer-head">
+                <span class="drawer-title">Event #40 · delta</span>
+                <div class="drawer-actions">
+                  <button class="icon-btn" title="上一条"><svg viewBox="0 0 20 20"><path d="m12 4-6 6 6 6"/></svg></button>
+                  <button class="icon-btn" title="下一条"><svg viewBox="0 0 20 20"><path d="m8 4 6 6-6 6"/></svg></button>
+                  <button class="icon-btn" data-copy title="复制 Data"><svg viewBox="0 0 20 20"><path d="M7 6h9v10H7zM4 13H3V3h10v1"/></svg></button>
+                  <button class="icon-btn" title="关闭"><svg viewBox="0 0 20 20"><path d="m5 5 10 10M15 5 5 15"/></svg></button>
+                </div>
+              </header>
+              <div class="drawer-search"><input value="content" aria-label="搜索 JSON 字段" /></div>
+              <div class="json" aria-label="格式化 JSON 数据">
+                <div class="json-line root"><span class="twisty">▼</span>{</div>
+                <div class="json-line"><span class="twisty">▼</span><span class="key">"choices"</span>: [</div>
+                <div class="json-line"><span class="twisty">▼</span>{</div>
+                <div class="json-line"><span class="twisty">▼</span><span class="key">"delta"</span>: {</div>
+                <div class="json-line"><span class="twisty"> </span><span class="key">"<mark>content</mark>"</span>: <span class="str">"reliably."</span></div>
+                <div class="json-line"><span class="twisty"> </span>}</div>
+                <div class="json-line"><span class="twisty"> </span><span class="key">"index"</span>: <span class="num">0</span></div>
+                <div class="json-line"><span class="twisty"> </span>}</div>
+                <div class="json-line"><span class="twisty"> </span>]</div>
+                <div class="json-line root"><span class="twisty"> </span>}</div>
+              </div>
+            </aside>
+          </div>
+        </section>
+      </div>
+
+      <footer class="statusbar"><span>● CAPTURE ACTIVE</span><span>Fetch / EventSource / XHR</span><span class="right">中文 · 0.1.0</span></footer>
+    </main>
+    <div class="toast" id="toast"><i></i><span>CSV 已导出（42 条可见事件）</span></div>
+    <script>
+      document.querySelectorAll("[data-tab]").forEach((tab) => tab.addEventListener("click", () => {
+        document.querySelectorAll("[data-tab]").forEach((item) => item.classList.remove("active"));
+        tab.classList.add("active");
+      }));
+      document.querySelectorAll(".stream").forEach((stream) => stream.addEventListener("click", () => {
+        document.querySelectorAll(".stream").forEach((item) => item.classList.remove("active"));
+        stream.classList.add("active");
+      }));
+      document.querySelector("[data-export]").addEventListener("click", () => {
+        const toast = document.querySelector("#toast");
+        toast.classList.add("show");
+        window.setTimeout(() => toast.classList.remove("show"), 2200);
+      });
+      document.querySelector("[data-copy]").addEventListener("click", () => {
+        const toast = document.querySelector("#toast");
+        toast.querySelector("span").textContent = "Data 已复制到剪贴板";
+        toast.classList.add("show");
+        window.setTimeout(() => toast.classList.remove("show"), 2200);
+      });
+    </script>
+  </body>
+</html>

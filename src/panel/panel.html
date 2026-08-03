@@ -2,120 +2,183 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>SSE Inspector</title>
+    <title>EventStream Panel</title>
     <link rel="stylesheet" href="./panel.css" />
   </head>
   <body>
     <div class="app">
       <header class="toolbar">
-        <div class="toolbar-title" data-i18n="panelTitle">SSE Inspector</div>
-        <div class="toolbar-actions">
+        <div class="brand">
+          <span class="pulse-mark" aria-hidden="true"></span>
+          <span class="toolbar-title" data-i18n="panelTitle">EventStream Panel</span>
+        </div>
+
+        <div class="toolbar-group">
           <button
             type="button"
+            class="tool-btn"
             id="btn-import-json"
-            data-i18n="importJson"
             data-i18n-title="importJsonTitle"
           >
-            Import JSON
+            <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M10 3v9m0 0 3-3m-3 3L7 9M4 14v2h12v-2" />
+            </svg>
+            <span class="tool-label" data-i18n="importJson">Import JSON</span>
           </button>
-          <button
-            type="button"
-            id="btn-export-json"
-            data-i18n="exportJson"
-            data-i18n-title="exportJsonTitle"
-          >
-            Export JSON
+
+          <div class="menu" id="export-menu">
+            <button
+              type="button"
+              class="tool-btn"
+              id="btn-export-menu"
+              data-i18n-title="exportMenuTitle"
+              aria-haspopup="menu"
+              aria-expanded="false"
+              aria-controls="export-menu-panel"
+            >
+              <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M10 12V3m0 9 3-3m-3 3L7 9M4 14v2h12v-2" />
+              </svg>
+              <span class="tool-label" data-i18n="exportMenu">Export</span>
+              <svg class="tool-caret" viewBox="0 0 12 12" aria-hidden="true">
+                <path d="M3 4.5 6 8l3-3.5" />
+              </svg>
+            </button>
+            <div class="menu-panel" id="export-menu-panel" role="menu" hidden>
+              <button type="button" role="menuitem" id="btn-export-json" data-i18n="exportJson" data-i18n-title="exportJsonTitle">
+                Export JSON
+              </button>
+              <button type="button" role="menuitem" id="btn-export-csv" data-i18n="exportCsv" data-i18n-title="exportCsvTitle">
+                Export CSV
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                id="btn-export-fixture"
+                data-i18n="exportFixture"
+                data-i18n-title="exportFixtureTitle"
+              >
+                Export Fixture
+              </button>
+            </div>
+          </div>
+
+          <span class="toolbar-separator" aria-hidden="true"></span>
+
+          <button type="button" class="tool-btn" id="btn-save-archive" data-i18n-title="saveArchiveTitle">
+            <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M4 3h10l2 2v12H4zM7 3v5h6V3m-7 13h8" />
+            </svg>
+            <span class="tool-label" data-i18n="saveArchive">Save</span>
           </button>
-          <button
-            type="button"
-            id="btn-export-csv"
-            data-i18n="exportCsv"
-            data-i18n-title="exportCsvTitle"
-          >
-            Export CSV
+          <button type="button" class="tool-btn" id="btn-archives" data-i18n-title="archivesTitle">
+            <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M4 4h12v12H4zM7 7h6m-6 3h6m-6 3h4" />
+            </svg>
+            <span class="tool-label" data-i18n="archives">Archives</span>
           </button>
-          <button
-            type="button"
-            id="btn-export-fixture"
-            data-i18n="exportFixture"
-            data-i18n-title="exportFixtureTitle"
-          >
-            Export Fixture
+          <button type="button" class="tool-btn" id="btn-stats" data-i18n-title="statsTitle">
+            <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M4 16V9m4 7V4m4 12v-6m4 6V7" />
+            </svg>
+            <span class="tool-label" data-i18n="stats">Stats</span>
           </button>
-          <button
-            type="button"
-            id="btn-save-archive"
-            data-i18n="saveArchive"
-            data-i18n-title="saveArchiveTitle"
-          >
-            Save
+        </div>
+
+        <div class="toolbar-spacer"></div>
+
+        <div class="connection-summary" id="connection-summary" aria-live="polite">
+          <i class="live-dot" id="live-dot" hidden></i>
+          <span id="connection-summary-text">0 live · 0 streams · 0 events</span>
+        </div>
+
+        <div class="toolbar-group">
+          <div class="menu" id="more-menu">
+            <button
+              type="button"
+              class="tool-btn"
+              id="btn-more-menu"
+              data-i18n-title="moreMenuTitle"
+              aria-haspopup="menu"
+              aria-expanded="false"
+              aria-controls="more-menu-panel"
+            >
+              <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M4 10h.01M10 10h.01M16 10h.01" stroke-linecap="round" stroke-width="2.5" />
+              </svg>
+              <span class="tool-label" data-i18n="moreMenu">More</span>
+            </button>
+            <div class="menu-panel menu-panel-end" id="more-menu-panel" role="menu" hidden>
+              <button type="button" role="menuitem" id="btn-anomalies" data-i18n="anomalies" data-i18n-title="anomaliesTitle">
+                Anomalies
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                id="btn-spec-warnings"
+                data-i18n="specWarnings"
+                data-i18n-title="specWarningsTitle"
+              >
+                Spec
+              </button>
+              <button type="button" role="menuitem" id="btn-search-all" data-i18n="searchAll" data-i18n-title="searchAllTitle">
+                Search All
+              </button>
+            </div>
+          </div>
+
+          <button type="button" class="tool-btn" id="btn-copy-raw" data-i18n-title="copyRawTitle">
+            <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M7 6h9v10H7zM4 13H3V3h10v1" />
+            </svg>
+            <span class="tool-label" data-i18n="copyRaw">Copy Raw</span>
           </button>
-          <button
-            type="button"
-            id="btn-archives"
-            data-i18n="archives"
-            data-i18n-title="archivesTitle"
-          >
-            Archives
+          <button type="button" class="tool-btn" id="btn-pause-ui" data-i18n-title="pauseUiTitle">
+            <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M6 4h3v12H6zm5 0h3v12h-3z" />
+            </svg>
+            <span class="tool-label" data-i18n="pauseUi">Pause UI</span>
           </button>
-          <button type="button" id="btn-stats" data-i18n="stats" data-i18n-title="statsTitle">
-            Stats
+          <button type="button" class="tool-btn tool-btn-danger" id="btn-clear" data-i18n-title="clearTitle">
+            <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M4 5h12m-8 3v5m4-5v5M6 5l1-2h6l1 2m-8 0 1 12h6l1-12" />
+            </svg>
+            <span class="tool-label" data-i18n="clear">Clear</span>
           </button>
-          <button
-            type="button"
-            id="btn-anomalies"
-            data-i18n="anomalies"
-            data-i18n-title="anomaliesTitle"
-          >
-            Anomalies
-          </button>
-          <button
-            type="button"
-            id="btn-spec-warnings"
-            data-i18n="specWarnings"
-            data-i18n-title="specWarningsTitle"
-          >
-            Spec
-          </button>
-          <button
-            type="button"
-            id="btn-search-all"
-            data-i18n="searchAll"
-            data-i18n-title="searchAllTitle"
-          >
-            Search All
-          </button>
-          <button type="button" id="btn-copy-raw" data-i18n="copyRaw" data-i18n-title="copyRawTitle">
-            Copy Raw
-          </button>
-          <button type="button" id="btn-pause-ui" data-i18n="pauseUi" data-i18n-title="pauseUiTitle">
-            Pause UI
-          </button>
-          <button type="button" id="btn-clear" data-i18n="clear" data-i18n-title="clearTitle">Clear</button>
-          <button
-            type="button"
-            id="btn-settings"
-            data-i18n="openSettings"
-            data-i18n-title="openSettingsTitle"
-          >
-            Settings
+          <button type="button" class="tool-btn tool-btn-icon" id="btn-settings" data-i18n-title="openSettingsTitle">
+            <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
+              <path
+                d="M10 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm0-4 1 2 2 .7 2-1 .9.9-1 2 .7 2 2 1v1.3l-2 1-.7 2 1 2-.9.9-2-1-2 .7-1 2H8.7l-1-2-2-.7-2 1-.9-.9 1-2-.7-2-2-1V9.7l2-1 .7-2-1-2 .9-.9 2 1 2-.7 1-2Z"
+              />
+            </svg>
+            <span class="visually-hidden" data-i18n="openSettings">Settings</span>
           </button>
         </div>
       </header>
+
       <input id="import-file" type="file" accept="application/json,.json" hidden />
 
-      <div class="main">
+      <div class="workbench">
         <aside class="sidebar">
-          <div class="sidebar-header" data-i18n="streams">Streams</div>
+          <div class="panel-heading">
+            <span class="eyebrow" data-i18n="streams">Streams</span>
+            <span class="count" id="streams-count">0 / 0</span>
+          </div>
           <div class="sidebar-filters">
-            <input
-              id="streams-url-filter"
-              type="search"
-              data-i18n-placeholder="streamsUrlFilterPlaceholder"
-              data-i18n-title="streamsUrlFilterTitle"
-              autocomplete="off"
-              spellcheck="false"
-            />
+            <div class="input-wrap">
+              <svg class="input-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <circle cx="8.5" cy="8.5" r="4.5" />
+                <path d="m12 12 4 4" />
+              </svg>
+              <input
+                id="streams-url-filter"
+                type="search"
+                data-i18n-placeholder="streamsUrlFilterPlaceholder"
+                data-i18n-title="streamsUrlFilterTitle"
+                autocomplete="off"
+                spellcheck="false"
+              />
+            </div>
             <select id="streams-transport-filter" data-i18n-title="streamsTransportFilterTitle">
               <option value="all" data-i18n="transportAll">All Types</option>
               <option value="fetch" data-i18n="transportFetch">Fetch</option>
@@ -130,34 +193,56 @@
             <br />
             <span data-i18n="emptyRefresh">Refresh the page after loading this extension.</span>
           </div>
+          <div class="sidebar-footer" data-i18n="sidebarFooter">Captures Fetch · EventSource · XHR · NDJSON</div>
         </aside>
 
         <section class="detail">
-          <div class="tabs">
-            <button type="button" class="tab active" data-tab="events" data-i18n="tabEvents">Events</button>
-            <button type="button" class="tab" data-tab="timeline" data-i18n="tabTimeline">Timeline</button>
-            <button type="button" class="tab" data-tab="request" data-i18n="tabRequest">Request</button>
-            <button type="button" class="tab" data-tab="raw" data-i18n="tabRaw">Raw</button>
+          <div class="detail-nav">
+            <div class="tabs">
+              <button type="button" class="tab active" data-tab="events">
+                <span data-i18n="tabEvents">Events</span>
+                <span class="tab-count" id="tab-count-events" hidden></span>
+              </button>
+              <button type="button" class="tab" data-tab="timeline">
+                <span data-i18n="tabTimeline">Timeline</span>
+              </button>
+              <button type="button" class="tab" data-tab="request">
+                <span data-i18n="tabRequest">Request</span>
+              </button>
+              <button type="button" class="tab" data-tab="raw">
+                <span data-i18n="tabRaw">Raw</span>
+                <span class="tab-count" id="tab-count-raw" hidden></span>
+              </button>
+            </div>
           </div>
-          <div class="meta" id="meta">
+
+          <div class="meta request-bar" id="meta">
             <div class="meta-line meta-line-primary">
               <span class="meta-method" id="meta-method"></span>
               <span class="meta-url" id="meta-url"></span>
             </div>
             <div class="meta-line meta-line-tags" id="meta-tags"></div>
           </div>
+
           <div class="views">
             <div id="view-events" class="view active events-layout">
               <div class="events-list-pane">
-                <div class="pane-search">
-                  <input
-                    id="events-search"
-                    type="search"
-                    data-i18n-placeholder="eventsSearchPlaceholder"
-                    data-i18n-title="eventsSearchTitle"
-                    autocomplete="off"
-                    spellcheck="false"
-                  />
+                <div class="pane-search searchbar">
+                  <div class="input-wrap">
+                    <svg class="input-icon" viewBox="0 0 20 20" aria-hidden="true">
+                      <circle cx="8.5" cy="8.5" r="4.5" />
+                      <path d="m12 12 4 4" />
+                    </svg>
+                    <input
+                      id="events-search"
+                      type="search"
+                      data-i18n-placeholder="eventsSearchPlaceholder"
+                      data-i18n-title="eventsSearchTitle"
+                      autocomplete="off"
+                      spellcheck="false"
+                    />
+                  </div>
+                  <span class="filter-hint" id="events-filter-hint" hidden></span>
                 </div>
                 <div id="events-placeholder" class="placeholder" data-i18n="noStreamSelected">
                   No stream selected
@@ -195,40 +280,52 @@
                   <div class="drawer-actions">
                     <button
                       type="button"
+                      class="icon-btn"
                       id="drawer-prev"
-                      data-i18n="drawerPrev"
                       data-i18n-title="drawerPrevTitle"
                     >
-                      Prev
+                      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m12 4-6 6 6 6" /></svg>
+                      <span class="visually-hidden" data-i18n="drawerPrev">Prev</span>
                     </button>
                     <button
                       type="button"
+                      class="icon-btn"
                       id="drawer-next"
-                      data-i18n="drawerNext"
                       data-i18n-title="drawerNextTitle"
                     >
-                      Next
+                      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m8 4 6 6-6 6" /></svg>
+                      <span class="visually-hidden" data-i18n="drawerNext">Next</span>
                     </button>
                     <button
                       type="button"
+                      class="icon-btn"
                       id="drawer-copy"
-                      data-i18n="copyData"
                       data-i18n-title="copyDataTitle"
                     >
-                      Copy Data
+                      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 6h9v10H7zM4 13H3V3h10v1" /></svg>
+                      <span class="visually-hidden" data-i18n="copyData">Copy Data</span>
                     </button>
-                    <button type="button" id="drawer-close" data-i18n="close">Close</button>
+                    <button type="button" class="icon-btn" id="drawer-close" data-i18n-title="close">
+                      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" /></svg>
+                      <span class="visually-hidden" data-i18n="close">Close</span>
+                    </button>
                   </div>
                 </header>
                 <div class="pane-search drawer-search">
-                  <input
-                    id="drawer-search"
-                    type="search"
-                    data-i18n-placeholder="drawerSearchPlaceholder"
-                    data-i18n-title="drawerSearchTitle"
-                    autocomplete="off"
-                    spellcheck="false"
-                  />
+                  <div class="input-wrap">
+                    <svg class="input-icon" viewBox="0 0 20 20" aria-hidden="true">
+                      <circle cx="8.5" cy="8.5" r="4.5" />
+                      <path d="m12 12 4 4" />
+                    </svg>
+                    <input
+                      id="drawer-search"
+                      type="search"
+                      data-i18n-placeholder="drawerSearchPlaceholder"
+                      data-i18n-title="drawerSearchTitle"
+                      autocomplete="off"
+                      spellcheck="false"
+                    />
+                  </div>
                 </div>
                 <div id="drawer-body" class="drawer-body"></div>
               </aside>
@@ -249,12 +346,25 @@
           </div>
         </section>
       </div>
+
+      <footer class="statusbar">
+        <span class="statusbar-capture" id="statusbar-capture">● CAPTURE ACTIVE</span>
+        <span class="statusbar-transports" data-i18n="statusbarTransports">Fetch / EventSource / XHR</span>
+        <span class="statusbar-right" id="statusbar-locale"></span>
+      </footer>
     </div>
+
+    <div id="toast" class="toast" hidden role="status" aria-live="polite">
+      <i class="toast-dot" aria-hidden="true"></i>
+      <span id="toast-text"></span>
+    </div>
+
     <div id="row-context-menu" class="context-menu" hidden>
       <button type="button" data-action="copy-data" data-i18n="copyData">Copy Data</button>
       <button type="button" data-action="copy-json-value" data-i18n="jsonCopyValue">copy value</button>
       <button type="button" data-action="copy-json-path" data-i18n="jsonCopyPath">copy path</button>
     </div>
+
     <dialog id="app-dialog" class="app-dialog">
       <header class="app-dialog-header">
         <span id="app-dialog-title" class="app-dialog-title"></span>
@@ -262,6 +372,7 @@
       </header>
       <div id="app-dialog-body" class="app-dialog-body"></div>
     </dialog>
+
     <script type="module" src="./panel.js"></script>
   </body>
 </html>

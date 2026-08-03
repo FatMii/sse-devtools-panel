@@ -1,18 +1,18 @@
 {
   "extName": {
-    "message": "SSE DevTools",
+    "message": "EventStream Panel",
     "description": "扩展名称"
   },
   "extDescription": {
-    "message": "在 DevTools 面板中查看 SSE / text/event-stream 响应",
+    "message": "在 DevTools 面板中查看 EventStream（SSE / NDJSON）响应",
     "description": "扩展描述"
   },
   "devtoolsPanelName": {
-    "message": "SSE",
+    "message": "EventStream",
     "description": "DevTools 面板标题"
   },
   "panelTitle": {
-    "message": "SSE 检查器"
+    "message": "EventStream Panel"
   },
   "copyRaw": {
     "message": "复制 Raw"
@@ -736,8 +736,53 @@
   "jsonCopyPath": {
     "message": "复制路径"
   },
+  "exportMenu": {
+    "message": "导出"
+  },
+  "exportMenuTitle": {
+    "message": "导出当前选中的流"
+  },
+  "moreMenu": {
+    "message": "更多"
+  },
+  "moreMenuTitle": {
+    "message": "更多分析操作"
+  },
+  "sidebarFooter": {
+    "message": "捕获 Fetch · EventSource · XHR · NDJSON"
+  },
+  "statusbarTransports": {
+    "message": "Fetch / EventSource / XHR"
+  },
+  "statusbarCaptureActive": {
+    "message": "● 捕获中"
+  },
+  "statusbarCapturePaused": {
+    "message": "● 捕获已暂停"
+  },
+  "toastCopied": {
+    "message": "已复制"
+  },
+  "toastExportedJson": {
+    "message": "已导出 JSON"
+  },
+  "toastExportedCsv": {
+    "message": "已导出 CSV（$COUNT$ 条事件）",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "toastExportedFixture": {
+    "message": "已导出 Fixture"
+  },
+  "toastArchiveSaved": {
+    "message": "已保存到存档"
+  },
   "optionsTitle": {
-    "message": "SSE DevTools 选项"
+    "message": "EventStream Panel 选项"
   },
   "optionsLanguage": {
     "message": "语言"
@@ -752,7 +797,7 @@
     "message": "中文（简体）"
   },
   "optionsLanguageHint": {
-    "message": "用于面板界面文案。已打开的 SSE 面板会立即生效。"
+    "message": "用于面板界面文案。已打开的 EventStream 面板会立即生效。"
   },
   "openSettings": {
     "message": "设置"

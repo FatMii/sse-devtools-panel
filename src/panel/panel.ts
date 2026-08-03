@@ -13,7 +13,7 @@ import type {
   StreamReconnectPayload,
   StreamCloseReason,
 } from "../shared/types";
-import { applyDomI18n, initI18n, onLocaleChange, t, uiLanguage } from "../shared/i18n";
+import { applyDomI18n, getActiveLocale, initI18n, onLocaleChange, t, uiLanguage } from "../shared/i18n";
 import { latestEventIdFromEvents } from "../shared/stream-close";
 import { SseParser, type ParsedSseEvent } from "../shared/sse-parser";
 import { NdjsonParser } from "../shared/ndjson-parser";
@@ -155,6 +155,24 @@ const elDialog = document.getElementById("app-dialog") as HTMLDialogElement;
 const elDialogTitle = document.getElementById("app-dialog-title") as HTMLSpanElement;
 const elDialogBody = document.getElementById("app-dialog-body") as HTMLDivElement;
 const elDialogClose = document.getElementById("app-dialog-close") as HTMLButtonElement;
+const elStreamsCount = document.getElementById("streams-count") as HTMLSpanElement | null;
+const elConnectionSummaryText = document.getElementById("connection-summary-text") as HTMLSpanElement | null;
+const elLiveDot = document.getElementById("live-dot") as HTMLElement | null;
+const elStatusbarCapture = document.getElementById("statusbar-capture") as HTMLSpanElement | null;
+const elStatusbarLocale = document.getElementById("statusbar-locale") as HTMLSpanElement | null;
+const elEventsFilterHint = document.getElementById("events-filter-hint") as HTMLSpanElement | null;
+const elTabCountEvents = document.getElementById("tab-count-events") as HTMLSpanElement | null;
+const elTabCountRaw = document.getElementById("tab-count-raw") as HTMLSpanElement | null;
+const elToast = document.getElementById("toast") as HTMLDivElement | null;
+const elToastText = document.getElementById("toast-text") as HTMLSpanElement | null;
+const elExportMenu = document.getElementById("export-menu") as HTMLDivElement | null;
+const elExportMenuBtn = document.getElementById("btn-export-menu") as HTMLButtonElement | null;
+const elExportMenuPanel = document.getElementById("export-menu-panel") as HTMLDivElement | null;
+const elMoreMenu = document.getElementById("more-menu") as HTMLDivElement | null;
+const elMoreMenuBtn = document.getElementById("btn-more-menu") as HTMLButtonElement | null;
+const elMoreMenuPanel = document.getElementById("more-menu-panel") as HTMLDivElement | null;
+
+let toastTimer: ReturnType<typeof setTimeout> | null = null;
 
 function connect(): void {
   const port = chrome.runtime.connect({ name: PANEL_PORT });
@@ -463,7 +481,11 @@ function renderStreamMeta(record: StreamRecord | undefined): void {
 
   const tags: string[] = [];
   if (record.status != null) {
-    tags.push(`<span class="meta-chip">${escapeHtml(`HTTP ${record.status}`)}</span>`);
+    const statusClass =
+      record.streamStatus === "error" ? "error" : record.status >= 400 ? "error" : "ok";
+    tags.push(
+      `<span class="meta-chip ${statusClass}">${escapeHtml(`HTTP ${record.status}`)}</span>`,
+    );
   }
   if (record.contentType) {
     tags.push(`<span class="meta-chip">${escapeHtml(record.contentType)}</span>`);
@@ -739,6 +761,7 @@ function exportSelectedStreamJson(): void {
     `${JSON.stringify(payload, null, 2)}\n`,
     "application/json;charset=utf-8",
   );
+  showToast(t("toastExportedJson"));
 }
 
 /** Spreadsheet-friendly export; respects current Events search filter. */
@@ -758,6 +781,7 @@ function exportSelectedStreamCsv(): void {
     buildStreamExportCsv(record, visible),
     "text/csv;charset=utf-8",
   );
+  showToast(t("toastExportedCsv", String(visible.length)));
 }
 
 /** Local mock/replay file: rebuild standard text/event-stream from parsed events. */
@@ -776,6 +800,7 @@ function exportSelectedStreamFixture(): void {
     buildSseFixture(record.events),
     "text/event-stream;charset=utf-8",
   );
+  showToast(t("toastExportedFixture"));
 }
 
 function addStaticStream(record: StreamRecord): void {
@@ -811,7 +836,7 @@ async function saveSelectedStreamArchive(): Promise<void> {
     return;
   }
   await saveStreamArchive(name, record);
-  window.alert(t("archiveSaved"));
+  showToast(t("toastArchiveSaved"));
 }
 
 function closeAppDialog(): void {
@@ -954,13 +979,99 @@ function createGapHistogramSvg(bins: HistogramBin[]): SVGSVGElement {
 function setUiPaused(next: boolean): void {
   uiPaused = next;
   elPauseUi.classList.toggle("is-paused", uiPaused);
-  elPauseUi.textContent = uiPaused ? t("resumeUi") : t("pauseUi");
+  const label = elPauseUi.querySelector(".tool-label");
+  if (label) {
+    label.textContent = uiPaused ? t("resumeUi") : t("pauseUi");
+  }
   elPauseUi.title = uiPaused ? t("resumeUiTitle") : t("pauseUiTitle");
+  if (elStatusbarCapture) {
+    elStatusbarCapture.textContent = uiPaused ? t("statusbarCapturePaused") : t("statusbarCaptureActive");
+    elStatusbarCapture.classList.toggle("is-paused", uiPaused);
+  }
   if (!uiPaused) {
     if (pendingListRefreshWhilePaused) renderList();
     if (pendingDetailRefreshWhilePaused) renderDetail(true);
     pendingListRefreshWhilePaused = false;
     pendingDetailRefreshWhilePaused = false;
+  }
+}
+
+function showToast(message: string): void {
+  if (!elToast || !elToastText) return;
+  elToastText.textContent = message;
+  elToast.hidden = false;
+  if (toastTimer != null) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    if (elToast) elToast.hidden = true;
+    toastTimer = null;
+  }, 2200);
+}
+
+function closeAllMenus(): void {
+  if (elExportMenuPanel) elExportMenuPanel.hidden = true;
+  if (elMoreMenuPanel) elMoreMenuPanel.hidden = true;
+  elExportMenuBtn?.setAttribute("aria-expanded", "false");
+  elMoreMenuBtn?.setAttribute("aria-expanded", "false");
+}
+
+function toggleMenu(panel: HTMLDivElement | null, btn: HTMLButtonElement | null): void {
+  if (!panel || !btn) return;
+  const willOpen = panel.hidden;
+  closeAllMenus();
+  if (willOpen) {
+    panel.hidden = false;
+    btn.setAttribute("aria-expanded", "true");
+  }
+}
+
+function updateConnectionSummary(): void {
+  const all = Array.from(streams.values());
+  const live = all.filter((s) => s.streamStatus === "streaming").length;
+  const events = all.reduce((sum, s) => sum + s.events.length, 0);
+  if (elConnectionSummaryText) {
+    elConnectionSummaryText.textContent = t("connectionSummary", [
+      String(live),
+      String(all.length),
+      String(events),
+    ]);
+  }
+  if (elLiveDot) {
+    elLiveDot.hidden = live === 0;
+  }
+}
+
+function updateTabCounts(record: StreamRecord | undefined): void {
+  if (elTabCountEvents) {
+    if (record && record.events.length > 0) {
+      elTabCountEvents.hidden = false;
+      elTabCountEvents.textContent = String(record.events.length);
+    } else {
+      elTabCountEvents.hidden = true;
+      elTabCountEvents.textContent = "";
+    }
+  }
+  if (elTabCountRaw) {
+    if (record && record.raw) {
+      const kb = (record.raw.length / 1024).toFixed(record.raw.length >= 10240 ? 0 : 1);
+      elTabCountRaw.hidden = false;
+      elTabCountRaw.textContent = t("rawSizeKb", kb);
+    } else {
+      elTabCountRaw.hidden = true;
+      elTabCountRaw.textContent = "";
+    }
+  }
+}
+
+function streamStatusShort(status: StreamRecord["streamStatus"]): string {
+  switch (status) {
+    case "streaming":
+      return t("statusLive");
+    case "done":
+      return t("statusDoneShort");
+    case "error":
+      return t("statusErrorShort");
+    default:
+      return statusLabel(status);
   }
 }
 
@@ -1394,6 +1505,10 @@ function renderList(): void {
     })
     .sort((a, b) => a.startedAt - b.startedAt);
   elEmpty.classList.toggle("hidden", items.length > 0);
+  if (elStreamsCount) {
+    elStreamsCount.textContent = t("streamsCount", [String(items.length), String(streams.size)]);
+  }
+  updateConnectionSummary();
   if (items.length === 0 && streams.size > 0 && (urlFilter || streamsTransportFilter !== "all")) {
     elEmpty.textContent = t("noStreamsMatchFilter");
   } else {
@@ -1420,11 +1535,14 @@ function renderList(): void {
     li.className = "stream-item" + (s.requestId === selectedId ? " active" : "");
     if (li.dataset.fingerprint !== fingerprint) {
       li.dataset.fingerprint = fingerprint;
+      const transportClass =
+        s.transport === "fetch" || s.transport === "xhr" || s.transport === "eventsource"
+          ? s.transport
+          : "";
       li.innerHTML = `
-        <div><span class="method">${escapeHtml(s.method)}</span><span class="path">${escapeHtml(shortPath(s.url))}</span></div>
-        <div class="status-row">
-          <span class="badge ${s.streamStatus}">${escapeHtml(statusLabel(s.streamStatus))}</span>
-          <span class="badge">${escapeHtml(transportLabel(s.transport))}</span>
+        <div class="stream-path"><span class="method">${escapeHtml(s.method)}</span>${escapeHtml(shortPath(s.url))}</div>
+        <div class="stream-meta">
+          <span class="badge ${transportClass}">${escapeHtml(transportLabel(s.transport))}</span>
           ${
             originLabel(s.origin)
               ? `<span class="badge origin">${escapeHtml(originLabel(s.origin) as string)}</span>`
@@ -1446,8 +1564,9 @@ function renderList(): void {
                 )}</span>`
               : ""
           }
-          <span>${s.status ?? "—"}</span>
+          <span>${s.status != null ? `HTTP ${s.status}` : "—"}</span>
           <span>${escapeHtml(t("eventsCount", String(s.events.length)))}</span>
+          <span class="stream-status ${s.streamStatus}"><i></i>${escapeHtml(streamStatusShort(s.streamStatus))}</span>
         </div>
       `;
     }
@@ -1475,18 +1594,24 @@ function renderDetail(appendFriendly = false): void {
   const record = selectedId ? streams.get(selectedId) : undefined;
   if (!record) {
     renderStreamMeta(undefined);
+    updateTabCounts(undefined);
     elPlaceholder.hidden = false;
     elPlaceholder.textContent = t("noStreamSelected");
     elTableWrap.hidden = true;
     elTbody.innerHTML = "";
     closeDrawer();
     elRaw.textContent = "";
+    if (elEventsFilterHint) {
+      elEventsFilterHint.hidden = true;
+      elEventsFilterHint.textContent = "";
+    }
     renderTimeline(undefined);
     renderRequest(undefined);
     return;
   }
 
   renderStreamMeta(record);
+  updateTabCounts(record);
   elRaw.textContent = record.raw || "";
 
   renderEvents(record, appendFriendly);
@@ -1504,6 +1629,10 @@ function renderEvents(record: StreamRecord, appendFriendly: boolean): void {
     elPlaceholder.textContent = t("noEventsYet");
     elTableWrap.hidden = true;
     elTbody.innerHTML = "";
+    if (elEventsFilterHint) {
+      elEventsFilterHint.hidden = true;
+      elEventsFilterHint.textContent = "";
+    }
     closeDrawer();
     return;
   }
@@ -1555,6 +1684,19 @@ function applyEventsFilter(): void {
     if (show) visible += 1;
   });
 
+  if (elEventsFilterHint) {
+    if (record.events.length > 0) {
+      elEventsFilterHint.hidden = false;
+      elEventsFilterHint.textContent = t("eventsFilterHint", [
+        String(visible),
+        String(record.events.length),
+      ]);
+    } else {
+      elEventsFilterHint.hidden = true;
+      elEventsFilterHint.textContent = "";
+    }
+  }
+
   if (record.events.length > 0 && visible === 0 && eventsSearchQuery.trim()) {
     elPlaceholder.hidden = false;
     elPlaceholder.textContent = t("noEventsMatch");
@@ -1604,7 +1746,7 @@ function createEventRow(ev: SseEvent): HTMLTableRowElement {
   return tr;
 }
 
-async function copyText(text: string): Promise<void> {
+async function copyText(text: string, notify = false): Promise<void> {
   try {
     await navigator.clipboard.writeText(text);
   } catch {
@@ -1617,6 +1759,7 @@ async function copyText(text: string): Promise<void> {
     document.execCommand("copy");
     ta.remove();
   }
+  if (notify) showToast(t("toastCopied"));
 }
 
 function showContextMenu(x: number, y: number, data: string): void {
@@ -2418,6 +2561,24 @@ function setupActions(): void {
     renderDetail();
   });
 
+  elExportMenuBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleMenu(elExportMenuPanel, elExportMenuBtn);
+  });
+
+  elMoreMenuBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleMenu(elMoreMenuPanel, elMoreMenuBtn);
+  });
+
+  elExportMenuPanel?.addEventListener("click", () => {
+    closeAllMenus();
+  });
+
+  elMoreMenuPanel?.addEventListener("click", () => {
+    closeAllMenus();
+  });
+
   elExportJson.addEventListener("click", () => {
     exportSelectedStreamJson();
   });
@@ -2487,7 +2648,7 @@ function setupActions(): void {
   document.getElementById("btn-copy-raw")?.addEventListener("click", async () => {
     const record = selectedId ? streams.get(selectedId) : undefined;
     if (!record) return;
-    await copyText(record.raw);
+    await copyText(record.raw, true);
   });
 
   document.getElementById("btn-settings")?.addEventListener("click", () => {
@@ -2508,7 +2669,7 @@ function setupActions(): void {
 
   elDrawerCopy.addEventListener("click", async () => {
     if (drawerEventData == null) return;
-    await copyText(drawerEventData);
+    await copyText(drawerEventData, true);
   });
 
   elEventsSearch.addEventListener("input", () => {
@@ -2539,21 +2700,32 @@ function setupActions(): void {
     if (!btn) return;
     const action = btn.getAttribute("data-action");
     if (action === "copy-data" && contextMenuData?.kind === "event-data") {
-      await copyText(contextMenuData.data);
+      await copyText(contextMenuData.data, true);
     } else if (action === "copy-json-value" && contextMenuData?.kind === "json-node") {
       if (contextMenuData.value != null) {
-        await copyText(contextMenuData.value);
+        await copyText(contextMenuData.value, true);
       }
     } else if (action === "copy-json-path" && contextMenuData?.kind === "json-node") {
-      await copyText(contextMenuData.path);
+      await copyText(contextMenuData.path, true);
     }
     hideContextMenu();
   });
 
-  document.addEventListener("click", () => hideContextMenu());
+  document.addEventListener("click", (e) => {
+    hideContextMenu();
+    const target = e.target as Node | null;
+    if (
+      (elExportMenu && target && elExportMenu.contains(target)) ||
+      (elMoreMenu && target && elMoreMenu.contains(target))
+    ) {
+      return;
+    }
+    closeAllMenus();
+  });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       hideContextMenu();
+      closeAllMenus();
       return;
     }
     if (elDrawer.hidden) return;
@@ -2572,7 +2744,10 @@ function setupActions(): void {
       navigateDrawer(1);
     }
   });
-  window.addEventListener("blur", () => hideContextMenu());
+  window.addEventListener("blur", () => {
+    hideContextMenu();
+    closeAllMenus();
+  });
   elTableWrap.addEventListener("scroll", () => hideContextMenu());
 }
 
@@ -2609,6 +2784,14 @@ function refreshLocaleUi(): void {
   document.title = t("panelTitle");
   applyDomI18n();
   setUiPaused(uiPaused);
+  if (elStatusbarLocale) {
+    const version = chrome.runtime.getManifest?.().version ?? "0.1.0";
+    elStatusbarLocale.textContent =
+      getActiveLocale() === "zh_CN" ? `中文 · ${version}` : `EN · ${version}`;
+  }
+  if (elStatusbarCapture && !uiPaused) {
+    elStatusbarCapture.textContent = t("statusbarCaptureActive");
+  }
   renderList();
   renderDetail();
 }
