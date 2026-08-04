@@ -1,4 +1,5 @@
 import "./panel.css";
+import { applyIcons } from "./icons";
 import type {
   RelayMessage,
   SseEvent,
@@ -2760,6 +2761,7 @@ setupTabs();
 setupActions();
 setupResizer();
 initEventsColumnResizers(document.getElementById("events-table") as HTMLTableElement);
+applyIcons();
 
 function refreshLocaleUi(): void {
   document.documentElement.lang = uiLanguage();

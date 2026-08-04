@@ -181,6 +181,14 @@ button.is-paused {
   stroke-width: 1.65;
 }
 
+/* Solid glyphs (pause dots, etc.) opt in via fill="currentColor" */
+.tool-btn svg [fill="currentColor"],
+.icon-btn svg [fill="currentColor"],
+.input-wrap svg [fill="currentColor"] {
+  fill: currentColor;
+  stroke: none;
+}
+
 .tool-btn:hover,
 .icon-btn:hover {
   color: var(--text);

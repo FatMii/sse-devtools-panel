@@ -20,9 +20,7 @@
             id="btn-import-json"
             data-i18n-title="importJsonTitle"
           >
-            <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
-              <path d="M10 3v9M7 9l3 3 3-3M4 15h12" />
-            </svg>
+            <span class="tool-icon" data-icon="import"></span>
             <span class="tool-label" data-i18n="importJson">Import JSON</span>
           </button>
 
@@ -36,13 +34,9 @@
               aria-expanded="false"
               aria-controls="export-menu-panel"
             >
-              <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
-                <path d="M10 12V3M7 6l3-3 3 3M4 15h12" />
-              </svg>
+              <span class="tool-icon" data-icon="export"></span>
               <span class="tool-label" data-i18n="exportMenu">Export</span>
-              <svg class="tool-caret" viewBox="0 0 12 12" aria-hidden="true">
-                <path d="M3 4.5 6 8l3-3.5" />
-              </svg>
+              <span class="tool-caret" data-icon="caret"></span>
             </button>
             <div class="menu-panel" id="export-menu-panel" role="menu" hidden>
               <button type="button" role="menuitem" id="btn-export-json" data-i18n="exportJson" data-i18n-title="exportJsonTitle">
@@ -66,44 +60,30 @@
           <span class="toolbar-separator" aria-hidden="true"></span>
 
           <button type="button" class="tool-btn" id="btn-save-archive" data-i18n-title="saveArchiveTitle">
-            <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
-              <path d="M4 3h10l2 2v12H4zM7 3v5h6V3m-7 13h8" />
-            </svg>
+            <span class="tool-icon" data-icon="save"></span>
             <span class="tool-label" data-i18n="saveArchive">Save</span>
           </button>
           <button type="button" class="tool-btn" id="btn-archives" data-i18n-title="archivesTitle">
-            <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
-              <path d="M4 4h12v12H4zM7 7h6m-6 3h6m-6 3h4" />
-            </svg>
+            <span class="tool-icon" data-icon="archives"></span>
             <span class="tool-label" data-i18n="archives">Archives</span>
           </button>
           <button type="button" class="tool-btn" id="btn-stats" data-i18n-title="statsTitle">
-            <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
-              <path d="M4 16V9m4 7V4m4 12v-6m4 6V7" />
-            </svg>
+            <span class="tool-icon" data-icon="stats"></span>
             <span class="tool-label" data-i18n="stats">Stats</span>
           </button>
         </div>
 
         <div class="toolbar-group">
           <button type="button" class="tool-btn" id="btn-pause-ui" data-i18n-title="pauseUiTitle">
-            <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
-              <path d="M6 4h3v12H6zm5 0h3v12h-3z" />
-            </svg>
+            <span class="tool-icon" data-icon="pause"></span>
             <span class="tool-label" data-i18n="pauseUi">Pause UI</span>
           </button>
           <button type="button" class="tool-btn danger tool-btn-danger" id="btn-clear" data-i18n-title="clearTitle">
-            <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
-              <path d="M4 5h12m-8 3v5m4-5v5M6 5l1-2h6l1 2m-8 0 1 12h6l1-12" />
-            </svg>
+            <span class="tool-icon" data-icon="clear"></span>
             <span class="tool-label" data-i18n="clear">Clear</span>
           </button>
           <button type="button" class="tool-btn tool-btn-icon" id="btn-settings" data-i18n-title="openSettingsTitle">
-            <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
-              <path
-                d="M10 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm0-4 1 2 2 .7 2-1 .9.9-1 2 .7 2 2 1v1.3l-2 1-.7 2 1 2-.9.9-2-1-2 .7-1 2H8.7l-1-2-2-.7-2 1-.9-.9 1-2-.7-2-2-1V9.7l2-1 .7-2-1-2 .9-.9 2 1 2-.7 1-2Z"
-              />
-            </svg>
+            <span class="tool-icon" data-icon="settings"></span>
             <span class="visually-hidden" data-i18n="openSettings">Settings</span>
           </button>
           <div class="menu" id="more-menu">
@@ -116,9 +96,7 @@
               aria-expanded="false"
               aria-controls="more-menu-panel"
             >
-              <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
-                <path d="M4 10h.01M10 10h.01M16 10h.01" stroke-linecap="round" stroke-width="2.5" />
-              </svg>
+              <span class="tool-icon" data-icon="more"></span>
               <span class="tool-label" data-i18n="moreMenu">More</span>
             </button>
             <div class="menu-panel menu-panel-end" id="more-menu-panel" role="menu" hidden>
@@ -152,10 +130,7 @@
           </div>
           <div class="filter-box">
             <div class="input-wrap">
-              <svg class="input-icon" viewBox="0 0 20 20" aria-hidden="true">
-                <circle cx="8.5" cy="8.5" r="4.5" />
-                <path d="m12 12 4 4" />
-              </svg>
+              <span class="input-icon" data-icon="search"></span>
               <input
                 id="streams-url-filter"
                 type="search"
@@ -213,10 +188,7 @@
               <div class="events-list-pane">
                 <div class="pane-search searchbar">
                   <div class="input-wrap">
-                    <svg class="input-icon" viewBox="0 0 20 20" aria-hidden="true">
-                      <circle cx="8.5" cy="8.5" r="4.5" />
-                      <path d="m12 12 4 4" />
-                    </svg>
+                    <span class="input-icon" data-icon="search"></span>
                     <input
                       id="events-search"
                       type="search"
@@ -268,7 +240,7 @@
                       id="drawer-prev"
                       data-i18n-title="drawerPrevTitle"
                     >
-                      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m12 4-6 6 6 6" /></svg>
+                      <span data-icon="prev"></span>
                       <span class="visually-hidden" data-i18n="drawerPrev">Prev</span>
                     </button>
                     <button
@@ -277,7 +249,7 @@
                       id="drawer-next"
                       data-i18n-title="drawerNextTitle"
                     >
-                      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m8 4 6 6-6 6" /></svg>
+                      <span data-icon="next"></span>
                       <span class="visually-hidden" data-i18n="drawerNext">Next</span>
                     </button>
                     <button
@@ -286,21 +258,18 @@
                       id="drawer-copy"
                       data-i18n-title="copyDataTitle"
                     >
-                      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 6h9v10H7zM4 13H3V3h10v1" /></svg>
+                      <span data-icon="copy"></span>
                       <span class="visually-hidden" data-i18n="copyData">Copy Data</span>
                     </button>
                     <button type="button" class="icon-btn" id="drawer-close" data-i18n-title="close">
-                      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" /></svg>
+                      <span data-icon="close"></span>
                       <span class="visually-hidden" data-i18n="close">Close</span>
                     </button>
                   </div>
                 </header>
                 <div class="pane-search drawer-search">
                   <div class="input-wrap">
-                    <svg class="input-icon" viewBox="0 0 20 20" aria-hidden="true">
-                      <circle cx="8.5" cy="8.5" r="4.5" />
-                      <path d="m12 12 4 4" />
-                    </svg>
+                    <span class="input-icon" data-icon="search"></span>
                     <input
                       id="drawer-search"
                       type="search"
@@ -329,9 +298,7 @@
             <div id="view-raw" class="view raw-view">
               <div class="raw-toolbar">
                 <button type="button" class="tool-btn" id="btn-copy-raw" data-i18n-title="copyRawTitle">
-                  <svg class="tool-icon" viewBox="0 0 20 20" aria-hidden="true">
-                    <path d="M7 6h9v10H7zM4 13H3V3h10v1" />
-                  </svg>
+                  <span class="tool-icon" data-icon="copy"></span>
                   <span class="tool-label" data-i18n="copyRaw">Copy Raw</span>
                 </button>
               </div>
