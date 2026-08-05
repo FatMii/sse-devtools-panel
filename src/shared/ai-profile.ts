@@ -6,6 +6,7 @@ export type AiProfile =
   | "deepseek-web"
   | "doubao-web"
   | "kimi-web"
+  | "qianwen-web"
   | "anthropic"
   | "generic";
 
@@ -50,6 +51,8 @@ const VENDOR_HOST_RULES: Array<{ hint: AiVendorHint; test: (host: string) => boo
     test: (h) =>
       h.includes("dashscope.aliyuncs.com") ||
       h.includes("tongyi") ||
+      h.includes("qianwen.com") ||
+      h.includes("quark.cn") ||
       (h.includes("aliyuncs.com") && h.includes("dashscope")),
   },
   {
@@ -158,6 +161,31 @@ export function isDoubaoWebChunk(value: unknown, eventName?: string): boolean {
   return false;
 }
 
+const QIANWEN_WEB_MIME_TYPES = new Set([
+  "plan_cot/post",
+  "multi_load/iframe",
+  "bar/progress",
+  "bar/iframe",
+  "signal/post",
+  "paa/iframe",
+]);
+
+/** Qianwen / Tongyi web AgentProxy SSE (data.messages[].mime_type). */
+export function isQianwenWebChunk(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  const data = isRecord(value.data) ? value.data : null;
+  if (!data) return false;
+  const extra = isRecord(data.extra_info) ? data.extra_info : null;
+  if (extra && extra.agent_name === "AgentProxy") return true;
+  const messages = Array.isArray(data.messages) ? data.messages : [];
+  for (const msg of messages) {
+    if (!isRecord(msg)) continue;
+    const mime = typeof msg.mime_type === "string" ? msg.mime_type : "";
+    if (QIANWEN_WEB_MIME_TYPES.has(mime)) return true;
+  }
+  return false;
+}
+
 /** Kimi.com Connect+JSON chat frame (mask / op / delta / block). */
 export function isKimiWebChunk(value: unknown, eventName?: string): boolean {
   // Trust Connect mask-as-event only when not colliding with SSE defaults.
@@ -248,6 +276,7 @@ export function detectAiProfile(
   let deepseekHits = 0;
   let doubaoHits = 0;
   let kimiHits = 0;
+  let qianwenHits = 0;
   let anthropicHits = 0;
   const sampleLimit = Math.min(events.length, 80);
 
@@ -280,6 +309,11 @@ export function detectAiProfile(
         reasoningFields.add("STAGE_NAME_THINKING");
       }
     }
+    if (isQianwenWebChunk(parsed)) {
+      qianwenHits++;
+      reasoningFields.add("plan_cot/post");
+      reasoningFields.add("deep_think");
+    }
     if (isAnthropicChunk(parsed) || ev.event.startsWith("content_block") || ev.event === "message_delta") {
       anthropicHits++;
     }
@@ -290,6 +324,7 @@ export function detectAiProfile(
     { profile: "deepseek-web", score: deepseekHits },
     { profile: "doubao-web", score: doubaoHits },
     { profile: "kimi-web", score: kimiHits },
+    { profile: "qianwen-web", score: qianwenHits },
     { profile: "anthropic", score: anthropicHits },
   ];
   scores.sort((a, b) => b.score - a.score);
@@ -302,10 +337,16 @@ export function detectAiProfile(
     profile = "kimi-web";
   }
 
+  // Prefer qianwen-web on qwen hosts when AgentProxy frames are present.
+  if (vendorHint === "qwen" && qianwenHits >= 2 && qianwenHits >= openaiHits) {
+    profile = "qianwen-web";
+  }
+
   let resolvedVendor = vendorHint;
   if (profile === "deepseek-web") resolvedVendor = "deepseek";
   else if (profile === "doubao-web") resolvedVendor = "doubao-web";
   else if (profile === "kimi-web") resolvedVendor = "moonshot";
+  else if (profile === "qianwen-web") resolvedVendor = "qwen";
   else if (
     profile === "openai-compatible" &&
     vendorHint === "unknown" &&

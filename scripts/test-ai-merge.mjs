@@ -480,12 +480,166 @@ function ev(data, event = "message") {
   assert(transcriptHasContent(t), "kimi has content");
 }
 
+{
+  const qianwenEnvelope = (messages, extra = {}) =>
+    JSON.stringify({
+      error_msg: "",
+      error_code: 0,
+      data: {
+        extra_info: { agent_name: "AgentProxy", scene: "deep_think_r1lite", ...extra },
+        messages,
+      },
+    });
+
+  const events = [
+    ev(
+      qianwenEnvelope([
+        {
+          mime_type: "plan_cot/post",
+          content: "用户询问深圳天气，准备搜索相关信息。",
+          status: "processing",
+        },
+      ]),
+    ),
+    ev(
+      qianwenEnvelope([
+        {
+          mime_type: "plan_cot/post",
+          content:
+            "用户询问深圳天气，准备搜索相关信息。\n我准备通过这些步骤来收集信息。\n- 查询深圳今日天气 ",
+          status: "processing",
+        },
+      ]),
+    ),
+    ev(
+      qianwenEnvelope([
+        {
+          mime_type: "bar/progress",
+          meta_data: {
+            type: "cot",
+            content: { list: [{ query: "深圳天气" }] },
+          },
+          status: "processing",
+        },
+      ]),
+    ),
+    ev(
+      qianwenEnvelope([
+        {
+          mime_type: "bar/progress",
+          meta_data: {
+            match_num: 2,
+            list: [
+              {
+                title: "深圳天气预报",
+                url: "https://weather.sz.gov.cn/",
+                summary: "多云间晴天",
+              },
+            ],
+          },
+          status: "processing",
+        },
+      ]),
+    ),
+    ev(
+      qianwenEnvelope([
+        {
+          mime_type: "multi_load/iframe",
+          meta_data: {
+            multi_load: [
+              {
+                type: "deep_think",
+                content: { think_content: "我需要回答深圳天气", status: "processing" },
+              },
+            ],
+          },
+          content: "[(deep_think)]",
+          status: "processing",
+        },
+      ]),
+    ),
+    ev(
+      qianwenEnvelope([
+        {
+          mime_type: "multi_load/iframe",
+          meta_data: {
+            multi_load: [
+              {
+                type: "deep_think",
+                content: {
+                  think_content: "我需要回答深圳天气，根据检索结果整理答案。",
+                  status: "complete",
+                },
+              },
+            ],
+          },
+          content: "[(deep_think)]\n\n今日深圳多云间晴天",
+          status: "processing",
+        },
+      ]),
+    ),
+    ev(
+      qianwenEnvelope(
+        [
+          {
+            mime_type: "multi_load/iframe",
+            meta_data: { multi_load: [] },
+            content: "[(deep_think)]\n\n今日深圳多云间晴天，气温26~33℃。",
+            status: "complete",
+          },
+        ],
+        { sse_end: "1" },
+      ),
+    ),
+  ];
+
+  const det = detectAiProfile(events, "https://www.qianwen.com/chat");
+  assert(det.profile === "qianwen-web", `qianwen profile got ${det.profile}`);
+  assert(det.vendorHint === "qwen", "qianwen vendor");
+  const t = mergeAiTranscript(events, "https://www.qianwen.com/chat");
+  assert(t.profile === "qianwen-web", "qianwen merge profile");
+  assert(t.channels.reasoning.includes("用户询问深圳天气"), `qianwen plan_cot: ${t.channels.reasoning}`);
+  assert(t.channels.reasoning.includes("根据检索结果"), `qianwen deep_think: ${t.channels.reasoning}`);
+  assert(t.channels.content.includes("今日深圳多云间晴天"), `qianwen content: ${t.channels.content}`);
+  assert(!t.channels.content.includes("我需要回答深圳天气"), "thinking must not leak");
+  assert(t.channels.tools.length === 1, `qianwen tools ${t.channels.tools.length}`);
+  assert(t.channels.tools[0].name === "web_search", "qianwen web_search");
+  const args = JSON.parse(t.channels.tools[0].arguments);
+  assert(Array.isArray(args.queries) && args.queries.some((q) => String(q).includes("深圳")), "qianwen queries");
+  assert(Array.isArray(args.results) && args.results.length >= 1, "qianwen results");
+  assert(t.endMeta.finishReason === "stop", "qianwen finish");
+  assert(transcriptHasContent(t), "qianwen has content");
+}
+
+{
+  const qianwenEnvelope = (messages) =>
+    JSON.stringify({
+      error_code: 0,
+      data: { extra_info: { agent_name: "AgentProxy" }, messages },
+    });
+
+  const stackedPlanCot =
+    "这是一个\n" +
+    "这是一个关于合肥市当日天气\n" +
+    "这是一个关于合肥市当日天气情况的查询问题。需要提供合肥市今天的温度范围、天气现象、风力风向、湿度等实时天气数据，以及相关的天气预警信息和生活指数建议。\n";
+
+  const events = [ev(qianwenEnvelope([{ mime_type: "plan_cot/post", content: stackedPlanCot }]))];
+  const t = mergeAiTranscript(events, "https://www.qianwen.com/chat");
+  assert(
+    t.channels.reasoning ===
+      "这是一个关于合肥市当日天气情况的查询问题。需要提供合肥市今天的温度范围、天气现象、风力风向、湿度等实时天气数据，以及相关的天气预警信息和生活指数建议。",
+    `qianwen stacked collapse: ${JSON.stringify(t.channels.reasoning)}`,
+  );
+  assert(!t.channels.reasoning.includes("这是一个\n这是一个"), "stacked lines must collapse");
+}
+
 // Real captures under data/ (optional locally; skip if missing)
 {
   const { readFileSync, existsSync } = await import("node:fs");
   const deepseekPath = resolve(root, "data/deepseek.txt");
   const doubaoPath = resolve(root, "data/doubao.txt");
   const kimiPath = resolve(root, "data/kimi.txt");
+  const qianwenPath = resolve(root, "data/qianwen.txt");
 
   function loadKimiJsonStream(filePath) {
     const text = readFileSync(filePath, "utf8");
@@ -605,6 +759,31 @@ function ev(data, event = "message") {
     const args = JSON.parse(t.channels.tools[0].arguments);
     assert(Array.isArray(args.queries) && args.queries.some((q) => String(q).includes("广州")), "kimi queries");
     assert(Array.isArray(args.results) && args.results.length >= 1, "kimi results");
+  }
+
+  if (existsSync(qianwenPath)) {
+    const events = loadSse(qianwenPath);
+    assert(events.length > 50, `qianwen events parsed: ${events.length}`);
+    const t = mergeAiTranscript(events, "https://www.qianwen.com/chat");
+    assert(t.profile === "qianwen-web", `qianwen profile got ${t.profile}`);
+    assert(t.vendorHint === "qwen", "qianwen vendor");
+    assert(
+      t.channels.reasoning.includes("深圳") && t.channels.reasoning.includes("天气"),
+      `qianwen reasoning snip: ${t.channels.reasoning.slice(0, 80)}`,
+    );
+    assert(
+      !t.channels.content.includes("我需要回答今天"),
+      "think must not leak into content",
+    );
+    assert(
+      t.channels.content.includes("今日深圳市") || t.channels.content.includes("多云间晴天"),
+      `qianwen content snip: ${t.channels.content.slice(0, 80)}`,
+    );
+    assert(t.channels.tools.length >= 1, `qianwen tools ${t.channels.tools.length}`);
+    assert(t.channels.tools[0].name === "web_search", "qianwen web_search");
+    const args = JSON.parse(t.channels.tools[0].arguments);
+    assert(Array.isArray(args.queries) && args.queries.some((q) => String(q).includes("深圳")), "qianwen queries");
+    assert(Array.isArray(args.results) && args.results.length >= 1, "qianwen results");
   }
 }
 
