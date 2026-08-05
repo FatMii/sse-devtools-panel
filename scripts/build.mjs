@@ -94,6 +94,14 @@ function copyStatic() {
   copyFileSync(resolve(root, "src/panel/panel.html"), resolve(outDir, "panel/panel.html"));
   copyFileSync(resolve(root, "src/options/options.html"), resolve(outDir, "options/options.html"));
   cpSync(resolve(root, "_locales"), resolve(outDir, "_locales"), { recursive: true });
+  // Extension + DevTools icons (generated from assets/icons)
+  mkdirSync(resolve(outDir, "icons"), { recursive: true });
+  for (const size of [16, 32, 48, 128]) {
+    copyFileSync(
+      resolve(root, `assets/icons/icon-${size}.png`),
+      resolve(outDir, `icons/icon-${size}.png`),
+    );
+  }
 }
 
 async function buildAll() {

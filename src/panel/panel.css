@@ -113,34 +113,24 @@ button.is-paused {
   letter-spacing: 0.1px;
 }
 
-.pulse-mark {
-  position: relative;
+.brand-mark,
+.brand svg.brand-mark {
   width: 18px;
   height: 18px;
-  border: 1px solid var(--accent);
-  border-radius: 50%;
+  color: var(--accent);
   flex-shrink: 0;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
 }
 
-.pulse-mark::before,
-.pulse-mark::after {
-  content: "";
-  position: absolute;
-  background: var(--accent);
+.brand svg.brand-mark [fill="currentColor"] {
+  fill: currentColor;
+  stroke: none;
 }
 
-.pulse-mark::before {
-  left: 3px;
-  right: 3px;
-  top: 8px;
-  height: 1px;
-}
-
-.pulse-mark::after {
-  width: 3px;
-  height: 6px;
-  left: 7px;
-  top: 5px;
+.brand svg.brand-mark [fill="var(--surface-1)"] {
+  fill: var(--surface-1);
 }
 
 .toolbar-title {
