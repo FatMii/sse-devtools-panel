@@ -523,11 +523,9 @@ function patchFetch(
   postChunk: PostChunk,
   postEnd: PostEnd,
   postError: PostError,
-  postDiscard: PostDiscard,
+  _postDiscard: PostDiscard,
 ): void {
   const originalFetch = window.fetch.bind(window);
-  /** Show a provisional row if headers are slow (common for long SSE). */
-  const PROVISIONAL_MS = 40;
 
   window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const requestId = nextId();
@@ -563,43 +561,27 @@ function patchFetch(
       announced = true;
     };
 
-    // POST chat completions are usually long-lived; announce immediately.
-    // Other methods: only announce if headers are delayed.
-    let pendingTimer: number | undefined;
-    const provisionalKind: StreamKind =
-      looksLikeKimiConnectUrl(url) || requestLooksLikeConnectJson(reqMeta.headers)
-        ? "connect-json"
-        : "sse";
-    if (method === "POST" || method === "PUT" || method === "PATCH") {
-      announce({ streamKind: provisionalKind });
-    } else {
-      pendingTimer = window.setTimeout(() => {
-        if (!announced) {
-          announce({ streamKind: provisionalKind });
-        }
-      }, PROVISIONAL_MS);
-    }
-
-    try {
-      const response = await originalFetch(input, init);
-      if (pendingTimer !== undefined) {
-        window.clearTimeout(pendingTimer);
-      }
-
-      const contentType = response.headers.get("content-type");
+    const resolveFetchStreamKind = (contentType: string | null): StreamKind | null => {
       let streamKind = detectStreamKind(contentType);
-      // Some gateways omit/mislabel CT; fall back to request Accept/Content-Type.
+      // Some gateways omit/mislabel CT; fall back to request Accept/Content-Type or host.
       if (!streamKind && requestLooksLikeConnectJson(reqMeta.headers)) {
         streamKind = "connect-json";
       }
+      if (!streamKind && looksLikeKimiConnectUrl(url)) {
+        streamKind = "connect-json";
+      }
+      return streamKind;
+    };
+
+    try {
+      const response = await originalFetch(input, init);
+
+      const contentType = response.headers.get("content-type");
+      const streamKind = resolveFetchStreamKind(contentType);
       if (!streamKind) {
-        if (announced) {
-          postDiscard(requestId);
-        }
         return response;
       }
 
-      // Refresh metadata once headers are known (panel merges in-place).
       announce({
         status: response.status,
         statusText: response.statusText || undefined,
@@ -615,9 +597,6 @@ function patchFetch(
           : createFetchTextSink(requestId, postChunk, postEnd, postError);
       return captureFetchResponseBody(response, sink);
     } catch (err) {
-      if (pendingTimer !== undefined) {
-        window.clearTimeout(pendingTimer);
-      }
       if (announced) {
         const classified = classifyThrownError(err);
         postError({
