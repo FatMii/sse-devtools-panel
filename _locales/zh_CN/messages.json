@@ -146,6 +146,12 @@
   "transcriptToolsWebSearch": {
     "message": "网页搜索"
   },
+  "transcriptToolsExpand": {
+    "message": "展开工具详情"
+  },
+  "transcriptToolsCollapse": {
+    "message": "收起工具详情"
+  },
   "eventsSearchPlaceholder": {
     "message": "过滤 Event / Data（支持正则，如 /delta|message/i）"
   },

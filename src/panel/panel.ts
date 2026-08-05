@@ -94,6 +94,9 @@ let activeTab: "events" | "raw" | "timeline" | "request" | "transcript" = "event
 let transcriptChannel: "content" | "reasoning" | "tools" | "meta" = "content";
 let transcriptFingerprint = "";
 let lastTranscript: AiTranscript | null = null;
+/** Which tool cards stay expanded across Tools pane re-renders (per stream). */
+let toolsExpandStreamId: string | null = null;
+let toolsExpandedIndexes = new Set<number>();
 let requestPane: "headers" | "payload" = "headers";
 let requestPayloadView: "parsed" | "source" = "parsed";
 /** Skip Request tab DOM rebuild while streaming if request meta did not change. */
@@ -2590,7 +2593,16 @@ function isWebSearchPayload(value: unknown): value is {
   return o.type === "SEARCH" || Array.isArray(o.queries) || Array.isArray(o.results);
 }
 
-function createToolsPane(merged: AiTranscript): HTMLElement {
+function toolsExpandedForStream(streamId: string, toolCount: number): Set<number> {
+  if (toolsExpandStreamId !== streamId) {
+    toolsExpandStreamId = streamId;
+    // Default: only the first tool's body/list is expanded.
+    toolsExpandedIndexes = new Set(toolCount > 0 ? [0] : []);
+  }
+  return toolsExpandedIndexes;
+}
+
+function createToolsPane(merged: AiTranscript, streamId: string): HTMLElement {
   const pane = document.createElement("div");
   pane.className = "transcript-pane transcript-tools-pane";
 
@@ -2603,27 +2615,58 @@ function createToolsPane(merged: AiTranscript): HTMLElement {
     return pane;
   }
 
-  for (const tc of merged.channels.tools) {
+  const expanded = toolsExpandedForStream(streamId, merged.channels.tools.length);
+
+  merged.channels.tools.forEach((tc, index) => {
     const card = document.createElement("article");
-    card.className = "tool-card";
+    const isOpen = expanded.has(index);
+    card.className = "tool-card" + (isOpen ? " is-expanded" : " is-collapsed");
+    card.dataset.toolIndex = String(index);
     const parsed = tryParseToolArgs(tc.arguments);
     const isSearch = tc.name === "web_search" || isWebSearchPayload(parsed);
 
-    const head = document.createElement("header");
+    const head = document.createElement("button");
+    head.type = "button";
     head.className = "tool-card-head";
+    head.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    head.title = isOpen ? t("transcriptToolsCollapse") : t("transcriptToolsExpand");
+
+    const caret = document.createElement("span");
+    caret.className = "tool-card-caret";
+    caret.innerHTML = renderIcon("caret", "tool-card-caret-icon");
+    caret.setAttribute("aria-hidden", "true");
+
     const badge = document.createElement("span");
     badge.className = "tool-card-badge";
     badge.textContent = isSearch
       ? t("transcriptToolsWebSearch")
       : tc.name || t("transcriptToolsFunction");
-    head.appendChild(badge);
+    head.append(caret, badge);
+
     if (tc.id) {
       const idEl = document.createElement("span");
       idEl.className = "tool-card-id";
       idEl.textContent = tc.id;
       head.appendChild(idEl);
     }
-    card.appendChild(head);
+
+    let summaryText = "";
+    if (isSearch && isWebSearchPayload(parsed)) {
+      const results = Array.isArray(parsed.results) ? parsed.results : [];
+      summaryText = t("transcriptToolsResults", String(results.length));
+    } else if (tc.name) {
+      summaryText = tc.name;
+    }
+    if (summaryText) {
+      const summary = document.createElement("span");
+      summary.className = "tool-card-summary";
+      summary.textContent = summaryText;
+      head.appendChild(summary);
+    }
+
+    const body = document.createElement("div");
+    body.className = "tool-card-body";
+    body.hidden = !isOpen;
 
     if (isSearch && isWebSearchPayload(parsed)) {
       const queries = Array.isArray(parsed.queries) ? parsed.queries.filter((q) => typeof q === "string") : [];
@@ -2642,7 +2685,7 @@ function createToolsPane(merged: AiTranscript): HTMLElement {
           qList.appendChild(chip);
         }
         qSection.append(qLabel, qList);
-        card.appendChild(qSection);
+        body.appendChild(qSection);
       }
 
       const results = Array.isArray(parsed.results) ? parsed.results : [];
@@ -2707,7 +2750,7 @@ function createToolsPane(merged: AiTranscript): HTMLElement {
         list.appendChild(item);
       }
       rSection.appendChild(list);
-      card.appendChild(rSection);
+      body.appendChild(rSection);
     } else {
       if (tc.name && !isSearch) {
         const nameRow = document.createElement("div");
@@ -2719,7 +2762,7 @@ function createToolsPane(merged: AiTranscript): HTMLElement {
         nameVal.className = "tool-fn-name";
         nameVal.textContent = tc.name;
         nameRow.append(nameLabel, nameVal);
-        card.appendChild(nameRow);
+        body.appendChild(nameRow);
       }
       const argsSection = document.createElement("div");
       argsSection.className = "tool-card-section";
@@ -2738,11 +2781,23 @@ function createToolsPane(merged: AiTranscript): HTMLElement {
         argsPre.textContent = tc.arguments || "{}";
       }
       argsSection.append(argsLabel, argsPre);
-      card.appendChild(argsSection);
+      body.appendChild(argsSection);
     }
 
+    head.addEventListener("click", () => {
+      const nextOpen = !expanded.has(index);
+      if (nextOpen) expanded.add(index);
+      else expanded.delete(index);
+      card.classList.toggle("is-expanded", nextOpen);
+      card.classList.toggle("is-collapsed", !nextOpen);
+      body.hidden = !nextOpen;
+      head.setAttribute("aria-expanded", nextOpen ? "true" : "false");
+      head.title = nextOpen ? t("transcriptToolsCollapse") : t("transcriptToolsExpand");
+    });
+
+    card.append(head, body);
     pane.appendChild(card);
-  }
+  });
 
   return pane;
 }
@@ -2755,6 +2810,8 @@ function renderTranscript(record: StreamRecord | undefined): void {
     elTranscriptBody.innerHTML = "";
     transcriptFingerprint = "";
     lastTranscript = null;
+    toolsExpandStreamId = null;
+    toolsExpandedIndexes = new Set();
     return;
   }
 
@@ -2852,7 +2909,7 @@ function renderTranscript(record: StreamRecord | undefined): void {
   const text = transcriptChannelText(merged, transcriptChannel);
   let pane: HTMLElement;
   if (transcriptChannel === "tools") {
-    pane = createToolsPane(merged);
+    pane = createToolsPane(merged, record.requestId);
   } else {
     pane = document.createElement("pre");
     pane.className = "transcript-pane code";

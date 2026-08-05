@@ -146,6 +146,12 @@
   "transcriptToolsWebSearch": {
     "message": "Web search"
   },
+  "transcriptToolsExpand": {
+    "message": "Expand tool details"
+  },
+  "transcriptToolsCollapse": {
+    "message": "Collapse tool details"
+  },
   "eventsSearchPlaceholder": {
     "message": "Filter Event / Data (regex supported, e.g. /delta|message/i)"
   },

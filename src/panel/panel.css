@@ -802,9 +802,14 @@ select {
   background: var(--surface-1);
   border: 1px solid var(--stroke);
   border-radius: var(--r-md);
-  padding: 10px 12px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
+  gap: 0;
+}
+
+.tool-card.is-expanded {
+  padding-bottom: 10px;
   gap: 10px;
 }
 
@@ -813,6 +818,64 @@ select {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  width: 100%;
+  margin: 0;
+  padding: 2px 2px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tool-card-head:hover {
+  background: var(--surface-2);
+}
+
+.tool-card-head:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.tool-card-caret {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+}
+
+.tool-card-caret-icon {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.12s ease;
+}
+
+.tool-card.is-collapsed .tool-card-caret-icon {
+  transform: rotate(-90deg);
+}
+
+.tool-card-summary {
+  margin-left: auto;
+  color: var(--text-faint);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.tool-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 0 2px;
+}
+
+.tool-card-body[hidden] {
+  display: none;
 }
 
 .tool-card-badge {
