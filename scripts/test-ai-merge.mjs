@@ -334,11 +334,192 @@ function ev(data, event = "message") {
   assert(t.channels.tools[0].id === "search-live", "keep live search id");
 }
 
+{
+  assert(vendorHintFromUrl("https://www.kimi.com/chat") === "moonshot", "kimi host");
+  const events = [
+    ev(
+      JSON.stringify({
+        op: "set",
+        mask: "chat.lastRequest",
+        chat: { id: "c1", lastRequest: { options: { thinking: true } } },
+      }),
+      "chat.lastRequest",
+    ),
+    ev(
+      JSON.stringify({
+        op: "set",
+        mask: "message",
+        message: { id: "u1", role: "user", blocks: [{ text: { content: "天气" } }] },
+      }),
+      "message",
+    ),
+    ev(
+      JSON.stringify({
+        op: "set",
+        mask: "block.multiStage",
+        block: {
+          id: "1",
+          multiStage: {
+            stages: [{ name: "STAGE_NAME_THINKING", status: "STAGE_STATUS_START" }],
+          },
+        },
+      }),
+      "block.multiStage",
+    ),
+    ev(
+      JSON.stringify({
+        op: "set",
+        mask: "block.stage",
+        block: {
+          id: "2",
+          parentId: "1",
+          stage: { name: "STAGE_NAME_THINKING", status: "STAGE_STATUS_START" },
+        },
+      }),
+      "block.stage",
+    ),
+    ev(
+      JSON.stringify({
+        op: "set",
+        mask: "block.think",
+        block: { id: "3", parentId: "2", think: { content: "用户" } },
+      }),
+      "block.think",
+    ),
+    ev(
+      JSON.stringify({
+        op: "append",
+        mask: "block.think.content",
+        block: { id: "3", parentId: "2", think: { content: "询问广州天气" } },
+      }),
+      "block.think.content",
+    ),
+    ev(
+      JSON.stringify({
+        op: "set",
+        mask: "block.stage",
+        block: {
+          id: "2",
+          parentId: "1",
+          stage: { name: "STAGE_NAME_THINKING", status: "STAGE_STATUS_END" },
+        },
+      }),
+      "block.stage",
+    ),
+    ev(
+      JSON.stringify({
+        op: "set",
+        block: {
+          id: "5",
+          tool: {
+            toolCallId: "web_search:7",
+            name: "web_search",
+            args: '{"queries": ["广州天气预报 未来三天"]}',
+            status: "STATUS_RUNNING",
+          },
+        },
+      }),
+      "block.tool",
+    ),
+    ev(
+      JSON.stringify({
+        op: "set",
+        mask: "block.tool.contents,block.tool.status",
+        block: {
+          id: "5",
+          tool: {
+            contents: [
+              {
+                searchResult: {
+                  id: "1",
+                  base: {
+                    title: "中国天气网",
+                    url: "https://www.weather.com.cn/",
+                    siteName: "中国天气网",
+                    snippet: "多云转晴",
+                  },
+                  refIndex: "web_search:7#0",
+                },
+              },
+            ],
+            status: "STATUS_DONE",
+          },
+        },
+      }),
+      "block.tool.contents,block.tool.status",
+    ),
+    ev(
+      JSON.stringify({
+        op: "append",
+        mask: "block.text.content",
+        block: { id: "4", parentId: "", text: { content: "正文增量" } },
+      }),
+      "block.text.content",
+    ),
+    ev(
+      JSON.stringify({
+        op: "set",
+        mask: "message",
+        message: { id: "a1", role: "assistant", status: "MESSAGE_STATUS_COMPLETED" },
+      }),
+      "message",
+    ),
+  ];
+  const det = detectAiProfile(events, "https://www.kimi.com/chat/...");
+  assert(det.profile === "kimi-web", `kimi profile got ${det.profile}`);
+  assert(det.vendorHint === "moonshot", "kimi vendor");
+  const t = mergeAiTranscript(events, "https://www.kimi.com/chat");
+  assert(t.profile === "kimi-web", "kimi merge profile");
+  assert(t.channels.reasoning.includes("用户"), `kimi reasoning: ${t.channels.reasoning}`);
+  assert(t.channels.reasoning.includes("询问广州天气"), `kimi think.content: ${t.channels.reasoning}`);
+  assert(t.channels.content.includes("正文增量"), `kimi content: ${t.channels.content}`);
+  assert(!t.channels.content.includes("询问广州天气"), "thinking must not leak");
+  assert(t.channels.tools.length === 1, `kimi tools ${t.channels.tools.length}`);
+  assert(t.channels.tools[0].name === "web_search", "kimi web_search");
+  assert(t.endMeta.finishReason === "stop", "kimi finish");
+  assert(transcriptHasContent(t), "kimi has content");
+}
+
 // Real captures under data/ (optional locally; skip if missing)
 {
   const { readFileSync, existsSync } = await import("node:fs");
   const deepseekPath = resolve(root, "data/deepseek.txt");
   const doubaoPath = resolve(root, "data/doubao.txt");
+  const kimiPath = resolve(root, "data/kimi.txt");
+
+  function loadKimiJsonStream(filePath) {
+    const text = readFileSync(filePath, "utf8");
+    const events = [];
+    let depth = 0;
+    let start = 0;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (ch === "{") {
+        if (depth === 0) start = i;
+        depth++;
+      } else if (ch === "}") {
+        depth--;
+        if (depth === 0) {
+          const json = text.slice(start, i + 1);
+          try {
+            const parsed = JSON.parse(json);
+            let eventName = "message";
+            if (typeof parsed.mask === "string") {
+              eventName = parsed.mask.split(",")[0].trim();
+            } else if (parsed.heartbeat != null) {
+              eventName = "heartbeat";
+            } else if (parsed.done != null) {
+              eventName = "done";
+            }
+            events.push({ data: json, event: eventName });
+          } catch {
+            // skip malformed chunk
+          }
+        }
+      }
+    }
+    return events;
+  }
 
   await buildEntry("src/shared/sse-parser.ts", "sse-parser");
   const { SseParser } = await import(
@@ -399,6 +580,31 @@ function ev(data, event = "message") {
     const args = JSON.parse(t.channels.tools[0].arguments);
     assert(Array.isArray(args.queries) && args.queries.some((q) => String(q).includes("合肥")), "doubao queries");
     assert(Array.isArray(args.results) && args.results.length >= 2, "doubao results");
+  }
+
+  if (existsSync(kimiPath)) {
+    const events = loadKimiJsonStream(kimiPath);
+    assert(events.length > 50, `kimi events parsed: ${events.length}`);
+    const t = mergeAiTranscript(events, "https://www.kimi.com/chat");
+    assert(t.profile === "kimi-web", `kimi profile got ${t.profile}`);
+    assert(t.vendorHint === "moonshot", "kimi vendor");
+    assert(
+      t.channels.reasoning.includes("未来三天") && t.channels.reasoning.includes("广州"),
+      `kimi reasoning snip: ${t.channels.reasoning.slice(0, 80)}`,
+    );
+    assert(
+      !t.channels.content.includes("我需要搜索广州"),
+      "think must not leak into content",
+    );
+    assert(
+      t.channels.content.includes("广州未来三天") || t.channels.content.includes("天气预报"),
+      `kimi content snip: ${t.channels.content.slice(0, 80)}`,
+    );
+    assert(t.channels.tools.length >= 1, `kimi tools ${t.channels.tools.length}`);
+    assert(t.channels.tools[0].name === "web_search", "kimi web_search");
+    const args = JSON.parse(t.channels.tools[0].arguments);
+    assert(Array.isArray(args.queries) && args.queries.some((q) => String(q).includes("广州")), "kimi queries");
+    assert(Array.isArray(args.results) && args.results.length >= 1, "kimi results");
   }
 }
 

@@ -18,6 +18,7 @@ import { applyDomI18n, getActiveLocale, initI18n, onLocaleChange, t, uiLanguage 
 import { latestEventIdFromEvents } from "../shared/stream-close";
 import { SseParser, type ParsedSseEvent } from "../shared/sse-parser";
 import { NdjsonParser } from "../shared/ndjson-parser";
+import { ConnectJsonParser } from "../shared/connect-json-parser";
 import { compileTextFilter } from "../shared/text-filter";
 import {
   deleteStreamArchive,
@@ -228,7 +229,9 @@ function stampEvents(events: ParsedSseEvent[]): SseEvent[] {
 }
 
 function createParser(kind: StreamKind): StreamParser {
-  return kind === "ndjson" ? new NdjsonParser() : new SseParser();
+  if (kind === "ndjson") return new NdjsonParser();
+  if (kind === "connect-json") return new ConnectJsonParser();
+  return new SseParser();
 }
 
 function onStart(payload: StreamStartPayload): void {
@@ -246,10 +249,19 @@ function onStart(payload: StreamStartPayload): void {
     existing.requestPayloadTruncated =
       payload.requestPayloadTruncated ?? existing.requestPayloadTruncated;
     existing.transport = payload.transport;
+    const prevKind = existing.streamKind;
     existing.streamKind = payload.streamKind;
     existing.startedAt = payload.startedAt;
-    if (!parsers.has(payload.requestId)) {
-      parsers.set(payload.requestId, createParser(payload.streamKind));
+    // Provisional announce may guess wrong (sse vs connect-json); swap parser when kind changes.
+    if (!parsers.has(payload.requestId) || prevKind !== payload.streamKind) {
+      const parser = createParser(payload.streamKind);
+      parsers.set(payload.requestId, parser);
+      // Chunks may have arrived under the wrong parser (postMessage race). Rebuild events from raw.
+      if (prevKind !== payload.streamKind && existing.raw) {
+        existing.events = [];
+        const rebuilt = stampEvents([...parser.push(existing.raw), ...parser.flush()]);
+        existing.events.push(...rebuilt);
+      }
     }
     if (uiPaused) {
       pendingListRefreshWhilePaused = true;

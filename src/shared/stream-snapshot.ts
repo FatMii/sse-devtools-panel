@@ -103,7 +103,7 @@ function isTransport(value: unknown): value is StreamTransport {
 }
 
 function isStreamKind(value: unknown): value is StreamKind {
-  return value === "sse" || value === "ndjson";
+  return value === "sse" || value === "ndjson" || value === "connect-json";
 }
 
 function isStreamStatus(value: unknown): value is StreamStatus {

@@ -72,7 +72,39 @@ function detectStreamKind(contentType: string | null | undefined): StreamKind | 
   ) {
     return "ndjson";
   }
+  // Connect RPC (Kimi web chat, etc.): binary length-prefixed JSON frames.
+  if (ct.includes("application/connect+json") || ct.includes("application/connect-json")) {
+    return "connect-json";
+  }
   return null;
+}
+
+/** Kimi.com web uses Connect+JSON (not api.moonshot OpenAI SSE). */
+function looksLikeKimiConnectUrl(url: string): boolean {
+  try {
+    const host = new URL(url, "https://dummy.local").hostname.toLowerCase();
+    if (host.includes("api.moonshot.")) return false;
+    return (
+      host.includes("kimi.com") ||
+      host.includes("kimi.ai") ||
+      host === "kimi.moonshot.cn" ||
+      host.endsWith(".moonshot.cn")
+    );
+  } catch {
+    return /kimi\.com|kimi\.ai/i.test(url);
+  }
+}
+
+function requestLooksLikeConnectJson(headers?: Record<string, string>): boolean {
+  if (!headers) return false;
+  const accept = (headers.accept ?? "").toLowerCase();
+  const contentType = (headers["content-type"] ?? "").toLowerCase();
+  return (
+    accept.includes("application/connect+json") ||
+    accept.includes("application/connect-json") ||
+    contentType.includes("application/connect+json") ||
+    contentType.includes("application/connect-json")
+  );
 }
 
 function resolveUrl(input: RequestInfo | URL): string {
@@ -303,6 +335,77 @@ function createFetchTextSink(
 }
 
 /**
+ * Connect+JSON: split binary frames in the page world, post each JSON payload as text.
+ * (Panel ConnectJsonParser then turns each object into an event.)
+ */
+function createConnectJsonSink(
+  requestId: string,
+  postChunk: PostChunk,
+  postEnd: PostEnd,
+  postError: PostError,
+): {
+  onBytes: (chunk: Uint8Array) => void;
+  onComplete: () => void;
+  onError: (message: string, closeReason?: Extract<StreamCloseReason, "abort" | "error">) => void;
+} {
+  // Inline framer — inject bundle must stay self-contained (no shared import tree).
+  const MAX_FRAME = 16 * 1024 * 1024;
+  let buffer = new Uint8Array(0);
+  let closed = false;
+  const decoder = new TextDecoder("utf-8", { fatal: false });
+
+  const emitFrames = (chunk: Uint8Array): void => {
+    if (chunk.byteLength === 0) return;
+    const merged = new Uint8Array(buffer.length + chunk.byteLength);
+    merged.set(buffer, 0);
+    merged.set(chunk, buffer.length);
+    buffer = merged;
+
+    let offset = 0;
+    while (buffer.length - offset >= 5) {
+      const flags = buffer[offset]!;
+      const length =
+        ((buffer[offset + 1]! << 24) |
+          (buffer[offset + 2]! << 16) |
+          (buffer[offset + 3]! << 8) |
+          buffer[offset + 4]!) >>>
+        0;
+      if (length > MAX_FRAME) {
+        offset += 1;
+        continue;
+      }
+      if (buffer.length - offset < 5 + length) break;
+      const payload = buffer.subarray(offset + 5, offset + 5 + length);
+      offset += 5 + length;
+      // flag & 0x02 = end-stream / trailer; flag & 0x01 = compressed
+      if ((flags & 0x02) !== 0 || (flags & 0x01) !== 0) continue;
+      const jsonText = decoder.decode(payload).trim();
+      if (jsonText) postChunk({ requestId, text: jsonText });
+    }
+    buffer = buffer.subarray(offset);
+  };
+
+  return {
+    onBytes: (chunk) => {
+      if (closed) return;
+      emitFrames(chunk);
+    },
+    onComplete: () => {
+      if (closed) return;
+      closed = true;
+      buffer = new Uint8Array(0);
+      postEnd({ requestId, endedAt: Date.now(), closeReason: "complete" });
+    },
+    onError: (message, closeReason = "error") => {
+      if (closed) return;
+      closed = true;
+      buffer = new Uint8Array(0);
+      postError({ requestId, message, endedAt: Date.now(), closeReason });
+    },
+  };
+}
+
+/**
  * Observe bytes as the page consumes the body (instance-level reader wrap only).
  * Avoids tee()/new Response(), which can disturb some app stream consumers.
  */
@@ -463,12 +566,16 @@ function patchFetch(
     // POST chat completions are usually long-lived; announce immediately.
     // Other methods: only announce if headers are delayed.
     let pendingTimer: number | undefined;
+    const provisionalKind: StreamKind =
+      looksLikeKimiConnectUrl(url) || requestLooksLikeConnectJson(reqMeta.headers)
+        ? "connect-json"
+        : "sse";
     if (method === "POST" || method === "PUT" || method === "PATCH") {
-      announce({ streamKind: "sse" });
+      announce({ streamKind: provisionalKind });
     } else {
       pendingTimer = window.setTimeout(() => {
         if (!announced) {
-          announce({ streamKind: "sse" });
+          announce({ streamKind: provisionalKind });
         }
       }, PROVISIONAL_MS);
     }
@@ -480,7 +587,11 @@ function patchFetch(
       }
 
       const contentType = response.headers.get("content-type");
-      const streamKind = detectStreamKind(contentType);
+      let streamKind = detectStreamKind(contentType);
+      // Some gateways omit/mislabel CT; fall back to request Accept/Content-Type.
+      if (!streamKind && requestLooksLikeConnectJson(reqMeta.headers)) {
+        streamKind = "connect-json";
+      }
       if (!streamKind) {
         if (announced) {
           postDiscard(requestId);
@@ -498,7 +609,10 @@ function patchFetch(
         responseHeaders: normalizeResponseHeaders(response.headers),
       });
 
-      const sink = createFetchTextSink(requestId, postChunk, postEnd, postError);
+      const sink =
+        streamKind === "connect-json"
+          ? createConnectJsonSink(requestId, postChunk, postEnd, postError)
+          : createFetchTextSink(requestId, postChunk, postEnd, postError);
       return captureFetchResponseBody(response, sink);
     } catch (err) {
       if (pendingTimer !== undefined) {
@@ -741,7 +855,8 @@ function patchXhr(
       }
 
       const kind = detectStreamKind(contentType);
-      if (!kind) return;
+      // Connect+JSON is binary length-prefixed — XHR responseText corrupts frames.
+      if (!kind || kind === "connect-json") return;
 
       captured = true;
       requestId = nextId();

@@ -749,10 +749,11 @@ select {
 
 .transcript-toolbar {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
   flex-shrink: 0;
+  min-width: 0;
   padding: 6px 10px;
   border-bottom: 1px solid var(--stroke);
   background: var(--surface-1);
@@ -760,9 +761,15 @@ select {
 
 .transcript-chips {
   display: flex;
+  flex: 1 1 auto;
   flex-wrap: wrap;
   gap: 6px;
   min-width: 0;
+}
+
+.transcript-toolbar > .tool-btn {
+  flex: 0 0 auto;
+  align-self: center;
 }
 
 .transcript-subtabs {

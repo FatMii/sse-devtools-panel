@@ -5,6 +5,7 @@ export type AiProfile =
   | "openai-compatible"
   | "deepseek-web"
   | "doubao-web"
+  | "kimi-web"
   | "anthropic"
   | "generic";
 
@@ -57,7 +58,12 @@ const VENDOR_HOST_RULES: Array<{ hint: AiVendorHint; test: (host: string) => boo
   },
   {
     hint: "moonshot",
-    test: (h) => h.includes("moonshot.cn") || h.includes("moonshot.ai") || h.includes("kimi"),
+    test: (h) =>
+      h.includes("moonshot.cn") ||
+      h.includes("moonshot.ai") ||
+      h.includes("kimi.com") ||
+      h.includes("kimi.ai") ||
+      h.includes("kimi"),
   },
   { hint: "baichuan", test: (h) => h.includes("baichuan-ai.com") || h.includes("baichuan") },
   { hint: "openai", test: (h) => h.includes("openai.com") || h.includes("api.openai") },
@@ -75,6 +81,20 @@ const DOUBAO_WEB_EVENTS = new Set([
 ]);
 
 const DEEPSEEK_WEB_EVENTS = new Set(["ready", "update_session", "close"]);
+
+const KIMI_WEB_MASKS = new Set([
+  "chat.lastRequest",
+  "block.multiStage",
+  "block.stage",
+  "block.think",
+  "block.text",
+  "block.tool",
+  "block.delta",
+  "block.search",
+]);
+
+/** Masks that are too generic as SSE event names (OpenAI uses event=message). */
+const KIMI_GENERIC_EVENT_NAMES = new Set(["message", "delta"]);
 
 export function vendorHintFromUrl(url: string | undefined): AiVendorHint {
   if (!url) return "unknown";
@@ -138,6 +158,48 @@ export function isDoubaoWebChunk(value: unknown, eventName?: string): boolean {
   return false;
 }
 
+/** Kimi.com Connect+JSON chat frame (mask / op / delta / block). */
+export function isKimiWebChunk(value: unknown, eventName?: string): boolean {
+  // Trust Connect mask-as-event only when not colliding with SSE defaults.
+  if (eventName === "heartbeat") return true;
+  if (
+    eventName &&
+    !KIMI_GENERIC_EVENT_NAMES.has(eventName) &&
+    (KIMI_WEB_MASKS.has(eventName) || eventName.startsWith("block."))
+  ) {
+    return true;
+  }
+  if (!isRecord(value)) return false;
+  if (value.heartbeat != null) return true;
+  // Payload `mask` is authoritative (Connect JSON body).
+  if (
+    typeof value.mask === "string" &&
+    (value.mask === "message" ||
+      value.mask === "delta" ||
+      KIMI_WEB_MASKS.has(value.mask) ||
+      value.mask.startsWith("block."))
+  ) {
+    return true;
+  }
+  if (
+    typeof value.op === "string" &&
+    (isRecord(value.chat) || isRecord(value.message) || isRecord(value.block))
+  ) {
+    return true;
+  }
+  // Top-level delta without choices[] (Bridge / Kimi stream tokens).
+  if (isRecord(value.delta) && typeof value.delta.content === "string" && !Array.isArray(value.choices)) {
+    return true;
+  }
+  if (isRecord(value.block)) {
+    const b = value.block;
+    if (isRecord(b.text) || isRecord(b.multiStage) || isRecord(b.stage) || isRecord(b.search)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function isAnthropicChunk(value: unknown): boolean {
   if (!isRecord(value)) return false;
   const typ = value.type;
@@ -185,6 +247,7 @@ export function detectAiProfile(
   let openaiHits = 0;
   let deepseekHits = 0;
   let doubaoHits = 0;
+  let kimiHits = 0;
   let anthropicHits = 0;
   const sampleLimit = Math.min(events.length, 80);
 
@@ -192,6 +255,13 @@ export function detectAiProfile(
     const ev = events[i];
     if (DEEPSEEK_WEB_EVENTS.has(ev.event)) deepseekHits += 2;
     if (DOUBAO_WEB_EVENTS.has(ev.event)) doubaoHits += 2;
+    if (
+      ev.event === "heartbeat" ||
+      (!KIMI_GENERIC_EVENT_NAMES.has(ev.event) &&
+        (KIMI_WEB_MASKS.has(ev.event) || ev.event.startsWith("block.")))
+    ) {
+      kimiHits += 2;
+    }
 
     const parsed = tryParseJson(ev.data);
     if (parsed == null) continue;
@@ -204,6 +274,12 @@ export function detectAiProfile(
       collectReasoningFields(parsed, reasoningFields);
     }
     if (isDoubaoWebChunk(parsed, ev.event)) doubaoHits++;
+    if (isKimiWebChunk(parsed, ev.event)) {
+      kimiHits++;
+      if (isRecord(parsed) && isRecord(parsed.block) && isRecord(parsed.block.multiStage)) {
+        reasoningFields.add("STAGE_NAME_THINKING");
+      }
+    }
     if (isAnthropicChunk(parsed) || ev.event.startsWith("content_block") || ev.event === "message_delta") {
       anthropicHits++;
     }
@@ -213,6 +289,7 @@ export function detectAiProfile(
     { profile: "openai-compatible", score: openaiHits },
     { profile: "deepseek-web", score: deepseekHits },
     { profile: "doubao-web", score: doubaoHits },
+    { profile: "kimi-web", score: kimiHits },
     { profile: "anthropic", score: anthropicHits },
   ];
   scores.sort((a, b) => b.score - a.score);
@@ -220,9 +297,15 @@ export function detectAiProfile(
   let profile: AiProfile = "generic";
   if (scores[0].score >= 1) profile = scores[0].profile;
 
+  // Prefer kimi-web on moonshot/kimi hosts when Connect frames are present.
+  if (vendorHint === "moonshot" && kimiHits >= 2 && kimiHits >= openaiHits) {
+    profile = "kimi-web";
+  }
+
   let resolvedVendor = vendorHint;
   if (profile === "deepseek-web") resolvedVendor = "deepseek";
   else if (profile === "doubao-web") resolvedVendor = "doubao-web";
+  else if (profile === "kimi-web") resolvedVendor = "moonshot";
   else if (
     profile === "openai-compatible" &&
     vendorHint === "unknown" &&

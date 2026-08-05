@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
-  "description": "Chrome DevTools panel for inspecting EventStream (SSE / NDJSON) responses",
+  "description": "Chrome DevTools panel for inspecting EventStream (SSE / NDJSON / Connect+JSON) responses",
   "type": "module",
   "packageManager": "pnpm@10.13.1",
   "scripts": {
@@ -11,13 +11,14 @@
     "build": "tsc --noEmit && node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
     "test:parser": "node scripts/test-parser.mjs",
+    "test:connect": "node scripts/test-connect.mjs",
     "test:export": "node scripts/test-export.mjs",
     "test:spec": "node scripts/test-spec.mjs",
     "test:timing": "node scripts/test-timing.mjs",
     "test:request-view": "node scripts/test-request-view.mjs",
     "test:close": "node scripts/test-close.mjs",
     "test:ai-merge": "node scripts/test-ai-merge.mjs",
-    "test-only": "pnpm test:parser && pnpm test:export && pnpm test:spec && pnpm test:timing && pnpm test:request-view && pnpm test:close && pnpm test:ai-merge",
+    "test-only": "pnpm test:parser && pnpm test:connect && pnpm test:export && pnpm test:spec && pnpm test:timing && pnpm test:request-view && pnpm test:close && pnpm test:ai-merge",
     "demo": "node demo/server.mjs"
   },
   "devDependencies": {

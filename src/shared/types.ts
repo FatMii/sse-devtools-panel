@@ -6,7 +6,7 @@ export type StreamStatus = "streaming" | "done" | "error";
 export type StreamTransport = "fetch" | "eventsource" | "xhr";
 
 /** Wire format of the response body. */
-export type StreamKind = "sse" | "ndjson";
+export type StreamKind = "sse" | "ndjson" | "connect-json";
 
 /** Why a stream stopped (or completed). */
 export type StreamCloseReason = "complete" | "abort" | "error" | "http_error";
