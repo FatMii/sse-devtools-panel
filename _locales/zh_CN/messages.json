@@ -71,8 +71,80 @@
   "tabRequest": {
     "message": "请求"
   },
+  "tabTranscript": {
+    "message": "Transcript"
+  },
   "tabRaw": {
     "message": "Raw"
+  },
+  "transcriptChannelContent": {
+    "message": "正文"
+  },
+  "transcriptChannelReasoning": {
+    "message": "思考"
+  },
+  "transcriptChannelTools": {
+    "message": "工具"
+  },
+  "transcriptChannelMeta": {
+    "message": "元数据"
+  },
+  "transcriptCopy": {
+    "message": "复制"
+  },
+  "transcriptCopyTitle": {
+    "message": "复制当前通道文本"
+  },
+  "transcriptCopied": {
+    "message": "已复制 Transcript"
+  },
+  "transcriptEmpty": {
+    "message": "未检测到可合并的 AI 对话流"
+  },
+  "transcriptProfileLabel": {
+    "message": "协议"
+  },
+  "transcriptVendorLabel": {
+    "message": "厂商"
+  },
+  "transcriptChunksLabel": {
+    "message": "块数"
+  },
+  "transcriptFinishLabel": {
+    "message": "结束"
+  },
+  "transcriptModelLabel": {
+    "message": "模型"
+  },
+  "transcriptUsageLabel": {
+    "message": "用量"
+  },
+  "transcriptToolsEmpty": {
+    "message": "本条流未出现 tool_calls / SEARCH"
+  },
+  "transcriptToolsUnsupported": {
+    "message": "当前协议暂未解析工具调用。可到 Events 里搜 tool / function / plugin 自行确认。"
+  },
+  "transcriptToolsQueries": {
+    "message": "搜索词"
+  },
+  "transcriptToolsResults": {
+    "message": "$COUNT$ 个网页",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1",
+        "example": "8"
+      }
+    }
+  },
+  "transcriptToolsArgs": {
+    "message": "参数"
+  },
+  "transcriptToolsFunction": {
+    "message": "函数"
+  },
+  "transcriptToolsWebSearch": {
+    "message": "网页搜索"
   },
   "eventsSearchPlaceholder": {
     "message": "过滤 Event / Data（支持正则，如 /delta|message/i）"

@@ -112,26 +112,28 @@ flowchart LR
 3. [x] **异常扫描**：空 data、`JSON.parse` 失败、重复 `id`、超长包（≥16KB）；列表 `!N` + Dialog 跳转。实现位于 `panel.ts`（未拆 `shared/anomaly.ts`）。
 4. [x] **跨 Stream 全局搜索**：`compileTextFilter`；结果含 stream + event index，点击打开抽屉。
 
-### Phase 2 — AI 语义 ★ 暂缓
+### Phase 2 — AI 语义 ★ 回做中（Wave 1）
 
-> **状态：暂缓（2026-07-28 回退）。** 代码库无 `ai-profile.ts` / `ai-merge.ts` / Transcript Tab；勿与其它阶段并行硬塞。
+> **状态：Wave 1 已落地（2026-08-05）。** `ai-profile` / `ai-merge` + Transcript Tab；国产 OpenAI 兼容优先。网页原生豆包为 Wave 2。
 
-目标（回做时）：「看得懂 AI 流」。
+目标：「看得懂 AI 流」。
 
-1. [ ] **`ai-profile.ts`**：`openai-compatible` | `anthropic` | `deepseek` | `doubao` | `generic`
-2. [ ] **`ai-merge.ts` + Transcript Tab**
-3. [ ] **通道拆分**：Content / Reasoning / Tools / Meta
-4. [ ] **结束元数据**：`finish_reason` / `usage` → meta chips
+1. [x] **`ai-profile.ts`**：`openai-compatible` | `doubao-web` | `anthropic` | `generic` + 国内 host → vendorHint
+2. [x] **`ai-merge.ts` + Transcript Tab**：Content / Reasoning / Tools / Meta + Copy
+3. [x] **通道拆分**：Content / Reasoning / Tools / Meta（面板子 Tab）
+4. [x] **结束元数据**：`finish_reason` / `usage` → Meta 通道
+5. [x] **Wave 2 起步**：DeepSeek 网页 JSON Patch + 豆包网页 STREAM_*/CHUNK_DELTA（`data/*.txt` 真包回归）
+6. [ ] Anthropic 完整 merge；导出 transcript 字段
 
 #### TODO：Transcript 回做清单
 
-- [ ] 新建 `shared/ai-profile.ts` + `shared/ai-merge.ts`
-- [ ] OpenAI Compatible：`choices[].delta.content` / `reasoning_content` / `tool_calls`
-- [ ] Anthropic：`content_block_delta` / thinking / `input_json_delta` / `stop_reason`
-- [ ] DeepSeek：`message` / `update_session` / JSON Patch
-- [ ] Doubao：OpenAI 网关 + 原生 `content_type`/`block_type`/`patch_value`
-- [ ] Panel：Transcript Tab + 通道子 Tab + Copy
-- [ ] Meta chips：`finish_reason` / `usage`
+- [x] 新建 `shared/ai-profile.ts` + `shared/ai-merge.ts`
+- [x] OpenAI Compatible：`choices[].delta.content` / `reasoning_content` / `tool_calls`
+- [ ] Anthropic：完整 merge（检测已有，merge 待补）
+- [ ] DeepSeek 网页 `message` / `update_session`（若有真实包）
+- [x] Doubao：OpenAI 网关（host）；原生 `content_type`/`block_type` 脚手架（待真包精调）
+- [x] Panel：Transcript Tab + 通道子 Tab + Copy
+- [x] Meta：`finish_reason` / `usage` / profile / vendor
 - [ ] 导出可选：`aiProfile`、`transcript`、`transcriptChannels`、`endMeta`
 - [ ] 用真实网页抓包精调边界
 

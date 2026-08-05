@@ -71,8 +71,80 @@
   "tabRequest": {
     "message": "Request"
   },
+  "tabTranscript": {
+    "message": "Transcript"
+  },
   "tabRaw": {
     "message": "Raw"
+  },
+  "transcriptChannelContent": {
+    "message": "Content"
+  },
+  "transcriptChannelReasoning": {
+    "message": "Reasoning"
+  },
+  "transcriptChannelTools": {
+    "message": "Tools"
+  },
+  "transcriptChannelMeta": {
+    "message": "Meta"
+  },
+  "transcriptCopy": {
+    "message": "Copy"
+  },
+  "transcriptCopyTitle": {
+    "message": "Copy current channel text"
+  },
+  "transcriptCopied": {
+    "message": "Transcript copied"
+  },
+  "transcriptEmpty": {
+    "message": "No AI chat chunks detected in this stream"
+  },
+  "transcriptProfileLabel": {
+    "message": "Profile"
+  },
+  "transcriptVendorLabel": {
+    "message": "Vendor"
+  },
+  "transcriptChunksLabel": {
+    "message": "Chunks"
+  },
+  "transcriptFinishLabel": {
+    "message": "Finish"
+  },
+  "transcriptModelLabel": {
+    "message": "Model"
+  },
+  "transcriptUsageLabel": {
+    "message": "Usage"
+  },
+  "transcriptToolsEmpty": {
+    "message": "No tool_calls / SEARCH in this stream"
+  },
+  "transcriptToolsUnsupported": {
+    "message": "This profile does not parse tool calls yet. Switch to Events and search for tool / function / plugin."
+  },
+  "transcriptToolsQueries": {
+    "message": "Queries"
+  },
+  "transcriptToolsResults": {
+    "message": "$COUNT$ sources",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1",
+        "example": "8"
+      }
+    }
+  },
+  "transcriptToolsArgs": {
+    "message": "Arguments"
+  },
+  "transcriptToolsFunction": {
+    "message": "Function"
+  },
+  "transcriptToolsWebSearch": {
+    "message": "Web search"
   },
   "eventsSearchPlaceholder": {
     "message": "Filter Event / Data (regex supported, e.g. /delta|message/i)"
