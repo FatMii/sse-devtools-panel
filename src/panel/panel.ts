@@ -2609,7 +2609,7 @@ function createToolsPane(merged: AiTranscript, streamId: string): HTMLElement {
   if (merged.channels.tools.length === 0) {
     const empty = document.createElement("div");
     empty.className = "transcript-tools-empty";
-    const unsupported = merged.profile === "doubao-web" || merged.profile === "generic";
+    const unsupported = merged.profile === "generic";
     empty.textContent = unsupported ? t("transcriptToolsUnsupported") : t("transcriptToolsEmpty");
     pane.appendChild(empty);
     return pane;

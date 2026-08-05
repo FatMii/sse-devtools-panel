@@ -193,7 +193,13 @@ function ev(data, event = "message") {
       ev(
         JSON.stringify({
           content: {
-            content_block: [{ block_type: 10000, content: { text_block: { text: "你" } } }],
+            content_block: [
+              {
+                block_type: 10040,
+                block_id: "think-1",
+                content: { thinking_block: { streaming_title: "正在思考" } },
+              },
+            ],
           },
           meta: { user_type: 2 },
         }),
@@ -205,19 +211,127 @@ function ev(data, event = "message") {
             {
               patch_object: 1,
               patch_value: {
-                content_block: [{ block_type: 10000, content: { text_block: { text: "好" } } }],
+                content_block: [
+                  {
+                    block_type: 10000,
+                    block_id: "think-text",
+                    parent_id: "think-1",
+                    content: {
+                      text_block: {
+                        text: "先想",
+                        icon_url: "https://cdn.example/Deep_Think.png",
+                      },
+                    },
+                  },
+                ],
               },
             },
           ],
         }),
         "STREAM_CHUNK",
       ),
-      ev(JSON.stringify({ text: "呀" }), "CHUNK_DELTA"),
-      ev(JSON.stringify({ text: "！" }), "CHUNK_DELTA"),
+      ev(JSON.stringify({ text: "一下" }), "CHUNK_DELTA"),
+      ev(
+        JSON.stringify({
+          patch_op: [
+            {
+              patch_object: 1,
+              patch_value: {
+                content_block: [
+                  {
+                    block_type: 10000,
+                    block_id: "answer-1",
+                    content: { text_block: { text: "你好" } },
+                  },
+                ],
+              },
+            },
+          ],
+        }),
+        "STREAM_CHUNK",
+      ),
+      ev(JSON.stringify({ text: "呀！" }), "CHUNK_DELTA"),
     ],
     "https://www.doubao.com/chat",
   );
+  assert(t.channels.reasoning === "先想一下", `doubao reasoning got: ${t.channels.reasoning}`);
   assert(t.channels.content === "你好呀！", `doubao merge got: ${t.channels.content}`);
+}
+
+{
+  // Doubao replays the same search as scene=2 citation block with a new block_id.
+  const searchPayload = {
+    summary: "搜索 1 个关键词，参考 2 篇资料",
+    queries: ["北京今日天气"],
+    results: [
+      { text_card: { title: "A", url: "https://a.example", summary: "a", index: 1 } },
+      { text_card: { title: "B", url: "https://b.example", summary: "b", index: 2 } },
+    ],
+    scene: 1,
+  };
+  const t = mergeAiTranscript(
+    [
+      ev(
+        JSON.stringify({
+          content: {
+            content_block: [
+              {
+                block_type: 10040,
+                block_id: "think-1",
+                content: { thinking_block: { streaming_title: "正在思考" } },
+              },
+            ],
+          },
+          meta: { user_type: 2 },
+        }),
+        "STREAM_MSG_NOTIFY",
+      ),
+      ev(
+        JSON.stringify({
+          patch_op: [
+            {
+              patch_object: 1,
+              patch_value: {
+                content_block: [
+                  {
+                    block_type: 10025,
+                    block_id: "search-live",
+                    parent_id: "think-1",
+                    content: { search_query_result_block: searchPayload },
+                  },
+                ],
+              },
+            },
+          ],
+        }),
+        "STREAM_CHUNK",
+      ),
+      ev(
+        JSON.stringify({
+          patch_op: [
+            {
+              patch_object: 1,
+              patch_value: {
+                content_block: [
+                  {
+                    block_type: 10025,
+                    block_id: "search-replay",
+                    content: {
+                      search_query_result_block: { ...searchPayload, scene: 2 },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        }),
+        "STREAM_CHUNK",
+      ),
+    ],
+    "https://www.doubao.com/chat",
+  );
+  assert(t.channels.tools.length === 1, `doubao search dedupe got ${t.channels.tools.length}`);
+  assert(t.channels.tools[0].id === "search-live", "keep live search id");
 }
 
 // Real captures under data/ (optional locally; skip if missing)
@@ -268,9 +382,23 @@ function ev(data, event = "message") {
     assert(t.profile === "doubao-web", `doubao profile got ${t.profile}`);
     assert(t.vendorHint === "doubao-web", "doubao vendor");
     assert(
-      t.channels.content === "你好呀😊，有什么我可以帮你的吗？",
-      `doubao content got: ${JSON.stringify(t.channels.content)}`,
+      t.channels.reasoning.includes("今天是2026年8月5日") &&
+        t.channels.reasoning.includes("调用搜索工具"),
+      `doubao reasoning snip: ${t.channels.reasoning.slice(0, 80)}`,
     );
+    assert(
+      !t.channels.content.includes("调用搜索工具"),
+      "thinking must not leak into content",
+    );
+    assert(
+      t.channels.content.includes("合肥今日") && t.channels.content.includes("35℃"),
+      `doubao content snip: ${t.channels.content.slice(0, 80)}`,
+    );
+    assert(t.channels.tools.length === 1, `doubao search tool count ${t.channels.tools.length}`);
+    assert(t.channels.tools[0].name === "web_search", "doubao web_search name");
+    const args = JSON.parse(t.channels.tools[0].arguments);
+    assert(Array.isArray(args.queries) && args.queries.some((q) => String(q).includes("合肥")), "doubao queries");
+    assert(Array.isArray(args.results) && args.results.length >= 2, "doubao results");
   }
 }
 
