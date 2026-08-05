@@ -2577,7 +2577,9 @@ function transcriptChannelText(merged: AiTranscript, channel: typeof transcriptC
         lines.push(`${t("transcriptUsageLabel")}: ${JSON.stringify(merged.endMeta.usage)}`);
       }
       if (merged.detection.reasoningFields.length) {
-        lines.push(`reasoning fields: ${merged.detection.reasoningFields.join(", ")}`);
+        lines.push(
+          `${t("transcriptReasoningFieldsLabel")}: ${merged.detection.reasoningFields.join(", ")}`,
+        );
       }
       return lines.join("\n");
     }

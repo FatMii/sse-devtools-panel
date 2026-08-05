@@ -15,7 +15,7 @@
     "message": "EventStream Panel"
   },
   "copyRaw": {
-    "message": "复制 Raw"
+    "message": "复制原始流"
   },
   "copyRawTitle": {
     "message": "复制原始文本"
@@ -63,7 +63,7 @@
     "message": "加载本扩展后请刷新页面。"
   },
   "tabEvents": {
-    "message": "Events"
+    "message": "事件"
   },
   "tabTimeline": {
     "message": "时间线"
@@ -72,10 +72,10 @@
     "message": "请求"
   },
   "tabTranscript": {
-    "message": "Transcript"
+    "message": "对话摘要"
   },
   "tabRaw": {
-    "message": "Raw"
+    "message": "原始流"
   },
   "transcriptChannelContent": {
     "message": "正文"
@@ -96,7 +96,7 @@
     "message": "复制当前通道文本"
   },
   "transcriptCopied": {
-    "message": "已复制 Transcript"
+    "message": "已复制对话摘要"
   },
   "transcriptEmpty": {
     "message": "未检测到可合并的 AI 对话流"
@@ -123,7 +123,10 @@
     "message": "本条流未出现 tool_calls / SEARCH"
   },
   "transcriptToolsUnsupported": {
-    "message": "当前协议暂未解析工具调用。可到 Events 里搜 tool / function / plugin 自行确认。"
+    "message": "当前协议暂未解析工具调用。可到「事件」里搜 tool / function / plugin 自行确认。"
+  },
+  "transcriptReasoningFieldsLabel": {
+    "message": "思考字段"
   },
   "transcriptToolsQueries": {
     "message": "搜索词"
@@ -153,25 +156,25 @@
     "message": "收起工具详情"
   },
   "eventsSearchPlaceholder": {
-    "message": "过滤 Event / Data（支持正则，如 /delta|message/i）"
+    "message": "过滤事件类型 / 数据（支持正则，如 /delta|message/i）"
   },
   "eventsSearchTitle": {
-    "message": "匹配 Event 类型与 Data。支持正则：pattern 或 /pattern/flags"
+    "message": "匹配事件类型与数据。支持正则：pattern 或 /pattern/flags"
   },
   "colTime": {
     "message": "时间"
   },
   "colEvent": {
-    "message": "Event"
+    "message": "事件类型"
   },
   "colData": {
-    "message": "Data"
+    "message": "数据"
   },
   "copyData": {
-    "message": "复制 Data"
+    "message": "复制数据"
   },
   "copyDataTitle": {
-    "message": "复制该事件的 Data"
+    "message": "复制该事件的数据"
   },
   "drawerPrev": {
     "message": "上一条"
@@ -195,10 +198,10 @@
     "message": "导出 CSV"
   },
   "exportCsvTitle": {
-    "message": "将当前选中数据流中可见事件导出为 CSV（遵循 Events 搜索过滤）"
+    "message": "将当前选中数据流中可见事件导出为 CSV（遵循「事件」搜索过滤）"
   },
   "exportCsvEmpty": {
-    "message": "没有可导出的事件（请检查 Events 搜索过滤条件）。"
+    "message": "没有可导出的事件（请检查「事件」搜索过滤条件）。"
   },
   "exportFixture": {
     "message": "导出 Fixture"
@@ -303,7 +306,7 @@
     "message": "扫描并查看各数据流中的可疑事件"
   },
   "specWarnings": {
-    "message": "Spec"
+    "message": "规范"
   },
   "specWarningsTitle": {
     "message": "查看 SSE 线格式 Spec 警告"
@@ -366,7 +369,7 @@
     "message": "全局搜索"
   },
   "searchAllTitle": {
-    "message": "跨所有 Stream 搜索 Event/Data"
+    "message": "跨所有数据流搜索事件/数据"
   },
   "pauseUi": {
     "message": "暂停 UI"
@@ -435,13 +438,13 @@
     }
   },
   "searchAllDialogTitle": {
-    "message": "跨 Stream 全局搜索"
+    "message": "跨数据流全局搜索"
   },
   "searchAllPlaceholder": {
     "message": "输入关键字或正则（如 /delta|tool/i）"
   },
   "searchAllHint": {
-    "message": "输入搜索条件后，将在所有 Stream 的 Event/Data 中匹配。"
+    "message": "输入搜索条件后，将在所有数据流的事件/数据中匹配。"
   },
   "searchAllNoResults": {
     "message": "没有命中结果。"
@@ -483,7 +486,7 @@
     "message": "P95 间隔"
   },
   "statsSelectedEventsPerSec": {
-    "message": "events/s"
+    "message": "事件/秒"
   },
   "timelineMeta": {
     "message": "$COUNT$ 个事件 · 跨度 $SPAN$ · p95 间隔 $P95$",
@@ -624,7 +627,7 @@
     "message": "HTTP 错误"
   },
   "badgeAbort": {
-    "message": "abort"
+    "message": "中止"
   },
   "metaReconnects": {
     "message": "重连：$COUNT$",
@@ -636,7 +639,7 @@
     }
   },
   "metaLastEventId": {
-    "message": "Last-Event-ID：$ID$",
+    "message": "最近事件 ID：$ID$",
     "placeholders": {
       "id": {
         "content": "$1",
@@ -707,7 +710,7 @@
     "message": "无"
   },
   "metaPayloadLabel": {
-    "message": "Payload"
+    "message": "请求体"
   },
   "metaDetailsSummary": {
     "message": "请求详情"
@@ -716,19 +719,19 @@
     "message": "有请求体"
   },
   "requestPaneHeaders": {
-    "message": "Headers"
+    "message": "请求头"
   },
   "requestPanePayload": {
-    "message": "Payload"
+    "message": "请求体"
   },
   "requestGeneralTitle": {
-    "message": "General"
+    "message": "常规"
   },
   "requestMethod": {
-    "message": "Request Method"
+    "message": "请求方法"
   },
   "requestUrl": {
-    "message": "Request URL"
+    "message": "请求 URL"
   },
   "requestTransport": {
     "message": "传输方式"
@@ -737,7 +740,7 @@
     "message": "流类型"
   },
   "requestStatus": {
-    "message": "Status Code"
+    "message": "状态码"
   },
   "requestContentType": {
     "message": "Content-Type"
@@ -749,19 +752,19 @@
     "message": "错误信息"
   },
   "requestLastEventId": {
-    "message": "Last-Event-ID"
+    "message": "最近事件 ID"
   },
   "requestReconnectCount": {
     "message": "重连次数"
   },
   "requestResponseHeadersTitle": {
-    "message": "Response Headers"
+    "message": "响应头"
   },
   "requestResponseHeadersEmpty": {
     "message": "未捕获到响应头（EventSource / 临时建连阶段）。"
   },
   "requestHeadersTitle": {
-    "message": "Request Headers"
+    "message": "请求头"
   },
   "requestHeadersHint": {
     "message": "来自页面 JS（fetch/XHR）尽力采集；浏览器自动附加的头可能缺失。敏感值显示为 [REDACTED]。"
@@ -770,28 +773,28 @@
     "message": "未捕获到该流的请求头。"
   },
   "requestHeaderName": {
-    "message": "Name"
+    "message": "名称"
   },
   "requestHeaderValue": {
-    "message": "Value"
+    "message": "值"
   },
   "requestQueryTitle": {
-    "message": "Query String Parameters"
+    "message": "查询参数"
   },
   "requestQueryEmpty": {
     "message": "无查询参数。"
   },
   "requestFormDataTitle": {
-    "message": "Form Data"
+    "message": "表单数据"
   },
   "requestBodyTitle": {
-    "message": "Request Payload"
+    "message": "请求体内容"
   },
   "requestPayloadParsed": {
-    "message": "Parsed"
+    "message": "解析视图"
   },
   "requestPayloadSource": {
-    "message": "Source"
+    "message": "原始文本"
   },
   "requestBodyHint": {
     "message": "从页面请求体尽力采集的预览（上限 256KB）。"
@@ -860,7 +863,7 @@
     "message": "已保存到存档"
   },
   "connectionSummary": {
-    "message": "$LIVE$ live · $STREAMS$ streams · $EVENTS$ events",
+    "message": "$LIVE$ 进行中 · $STREAMS$ 条流 · $EVENTS$ 个事件",
     "placeholders": {
       "live": { "content": "$1", "example": "1" },
       "streams": { "content": "$2", "example": "3" },
@@ -888,13 +891,13 @@
     }
   },
   "statusLive": {
-    "message": "LIVE"
+    "message": "实时"
   },
   "statusDoneShort": {
-    "message": "DONE"
+    "message": "完成"
   },
   "statusErrorShort": {
-    "message": "ERROR"
+    "message": "错误"
   },
   "optionsTitle": {
     "message": "EventStream Panel 选项"

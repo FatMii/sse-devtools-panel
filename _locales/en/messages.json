@@ -125,6 +125,9 @@
   "transcriptToolsUnsupported": {
     "message": "This profile does not parse tool calls yet. Switch to Events and search for tool / function / plugin."
   },
+  "transcriptReasoningFieldsLabel": {
+    "message": "reasoning fields"
+  },
   "transcriptToolsQueries": {
     "message": "Queries"
   },
