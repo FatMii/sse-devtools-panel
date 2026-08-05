@@ -59,9 +59,6 @@
   "emptyWaitingAfter": {
     "message": "…"
   },
-  "emptyRefresh": {
-    "message": "Refresh the page after loading this extension."
-  },
   "tabEvents": {
     "message": "Events"
   },
@@ -831,6 +828,9 @@
   },
   "sidebarFooter": {
     "message": "Captures Fetch · EventSource · XHR · NDJSON"
+  },
+  "sidebarResizeTitle": {
+    "message": "Drag to resize sidebar"
   },
   "statusbarTransports": {
     "message": "Fetch / EventSource / XHR"

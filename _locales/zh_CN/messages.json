@@ -59,9 +59,6 @@
   "emptyWaitingAfter": {
     "message": "…"
   },
-  "emptyRefresh": {
-    "message": "加载本扩展后请刷新页面。"
-  },
   "tabEvents": {
     "message": "事件"
   },
@@ -831,6 +828,9 @@
   },
   "sidebarFooter": {
     "message": "捕获 Fetch · EventSource · XHR · NDJSON"
+  },
+  "sidebarResizeTitle": {
+    "message": "拖动调整侧边栏宽度"
   },
   "statusbarTransports": {
     "message": "Fetch / EventSource / XHR"

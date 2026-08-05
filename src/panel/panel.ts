@@ -125,6 +125,7 @@ const elTableWrap = document.getElementById("events-table-wrap") as HTMLDivEleme
 const elTbody = document.getElementById("events-tbody") as HTMLTableSectionElement;
 const elEventsSearch = document.getElementById("events-search") as HTMLInputElement;
 const elResizer = document.getElementById("events-resizer") as HTMLDivElement;
+const elSidebarResizer = document.getElementById("sidebar-resizer") as HTMLDivElement;
 const elDrawer = document.getElementById("events-drawer") as HTMLElement;
 const elDrawerTitle = document.getElementById("drawer-title") as HTMLSpanElement;
 const elDrawerBody = document.getElementById("drawer-body") as HTMLDivElement;
@@ -1539,8 +1540,6 @@ function renderList(): void {
     elEmpty.innerHTML = `
       <span>${escapeHtml(t("emptyWaitingBefore"))}</span>
       <code>text/event-stream</code><span>${escapeHtml(t("emptyWaitingAfter"))}</span>
-      <br />
-      <span>${escapeHtml(t("emptyRefresh"))}</span>
     `;
   }
 
@@ -3190,6 +3189,41 @@ function setupActions(): void {
   elTableWrap.addEventListener("scroll", () => hideContextMenu());
 }
 
+function setupSidebarResizer(): void {
+  const SIDEBAR_MIN = 180;
+  const SIDEBAR_MAX = 640;
+
+  const readSidebarWidth = (): number => {
+    const raw = getComputedStyle(document.documentElement).getPropertyValue("--sidebar").trim();
+    const n = parseFloat(raw);
+    return Number.isFinite(n) ? n : 286;
+  };
+
+  elSidebarResizer.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    const startX = e.pageX;
+    const startWidth = readSidebarWidth();
+
+    elSidebarResizer.classList.add("resizing");
+
+    const onMove = (ev: MouseEvent) => {
+      const next = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, startWidth + (ev.pageX - startX)));
+      document.documentElement.style.setProperty("--sidebar", `${next}px`);
+    };
+
+    const onUp = () => {
+      elSidebarResizer.classList.remove("resizing");
+      document.body.classList.remove("is-resizing");
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+
+    document.body.classList.add("is-resizing");
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  });
+}
+
 function setupResizer(): void {
   applyDrawerWidth();
 
@@ -3215,6 +3249,7 @@ function setupResizer(): void {
 
 setupTabs();
 setupActions();
+setupSidebarResizer();
 setupResizer();
 initEventsColumnResizers(document.getElementById("events-table") as HTMLTableElement);
 applyIcons();

@@ -262,7 +262,7 @@ button.is-paused {
 .workbench {
   min-height: 0;
   display: grid;
-  grid-template-columns: var(--sidebar) 1fr;
+  grid-template-columns: var(--sidebar) 5px 1fr;
 }
 
 .sidebar {
@@ -271,7 +271,22 @@ button.is-paused {
   min-width: 0;
   min-height: 0;
   background: var(--surface-1);
-  border-right: 1px solid var(--stroke);
+}
+
+.sidebar-resizer {
+  position: relative;
+  z-index: 3;
+  width: 5px;
+  min-width: 5px;
+  margin: 0 -2px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.sidebar-resizer:hover,
+.sidebar-resizer.resizing,
+body.is-resizing .sidebar-resizer {
+  background: var(--accent);
 }
 
 .panel-heading,
