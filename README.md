@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="icons/icon-128.png" alt="EventStream Panel" width="96" height="96">
+  <img src="assets/icons/icon-128.png" alt="EventStream Panel" width="96" height="96">
 </p>
 
 <h1 align="center">EventStream Panel</h1>

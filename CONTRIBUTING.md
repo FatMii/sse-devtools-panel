@@ -50,8 +50,8 @@ Use the Feature request template. Describe the problem first, then the proposed 
 
 ## Scope notes
 
-- Current tests cover shared parsers / export / spec / timing / request-view / close helpers. They do **not** fully cover the DevTools panel UI or every inject edge case.
-- Deeper ReadableStream hooks and AI Transcript views are intentionally deferred; see README limitations.
+- Current tests cover shared parsers / export / spec / timing / request-view / close / AI merge helpers. They do **not** fully cover the DevTools panel UI or every inject edge case.
+- AI Transcript is implemented for several domestic Web profiles (see README vendor matrix). Deeper ReadableStream hooks (`pipeThrough` / `pipeTo`) remain out of scope until we have a confirmed miss-capture case.
 
 ## Maintainers: publish & branch protection
 

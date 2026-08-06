@@ -2,6 +2,7 @@ node_modules/
 dist/
 .tmp-test/
 .tmp-test-*/
+.tmp-debug/
 *.local
 .DS_Store
 
