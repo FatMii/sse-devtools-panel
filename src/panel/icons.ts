@@ -25,7 +25,7 @@ const ICONS = {
 export type IconName = keyof typeof ICONS;
 
 export function isIconName(name: string): name is IconName {
-  return Object.prototype.hasOwnProperty.call(ICONS, name);
+  return Object.hasOwn(ICONS, name);
 }
 
 export function renderIcon(name: IconName, className = "tool-icon"): string {
@@ -41,7 +41,7 @@ export function renderIcon(name: IconName, className = "tool-icon"): string {
 /** Replace `[data-icon]` placeholders with SVG; keeps the element's class. */
 export function applyIcons(root: ParentNode = document): void {
   root.querySelectorAll<HTMLElement>("[data-icon]").forEach((el) => {
-    const name = el.getAttribute("data-icon");
+    const name = el.dataset.icon;
     if (!name || !isIconName(name)) {
       console.warn(`[icons] unknown data-icon="${name ?? ""}"`);
       return;
