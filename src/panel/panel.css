@@ -42,7 +42,7 @@
   --toolbar-h: 42px;
   --tab-h: 38px;
   --statusbar-h: 24px;
-  --sidebar: 286px;
+  --sidebar: 312px;
   --drawer: 358px;
   --events-list-min: 350px;
 
@@ -371,36 +371,14 @@ body.is-resizing .sidebar-resizer {
   background: var(--accent);
 }
 
-.panel-heading,
-.sidebar-header {
-  height: var(--tab-h);
-  padding: 0 var(--space-4);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--stroke);
-}
-
-.eyebrow {
-  color: var(--text-muted);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-bold);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.count {
-  color: var(--text-faint);
-  font: var(--text-sm) var(--mono);
-  font-variant-numeric: tabular-nums;
-}
-
 .filter-box,
 .sidebar-filters {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 86px;
+  align-items: center;
   gap: 5px;
-  padding: 7px var(--space-4);
+  height: var(--tab-h);
+  padding: 5px var(--space-4);
   border-bottom: 1px solid var(--stroke);
 }
 

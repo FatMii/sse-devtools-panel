@@ -62,7 +62,6 @@ export const elDialog = document.getElementById("app-dialog") as HTMLDialogEleme
 export const elDialogTitle = document.getElementById("app-dialog-title") as HTMLSpanElement;
 export const elDialogBody = document.getElementById("app-dialog-body") as HTMLDivElement;
 export const elDialogClose = document.getElementById("app-dialog-close") as HTMLButtonElement;
-export const elStreamsCount = document.getElementById("streams-count") as HTMLSpanElement | null;
 export const elStatusbarCapture = document.getElementById(
   "statusbar-capture",
 ) as HTMLSpanElement | null;

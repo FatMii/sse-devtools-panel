@@ -1,6 +1,6 @@
 import { t } from "../../shared/i18n";
 import type { StreamRecord } from "../../shared/types";
-import { elEmpty, elList, elStreamsCount } from "../core/dom";
+import { elEmpty, elList } from "../core/dom";
 import {
   closeReasonLabel,
   escapeHtml,
@@ -53,12 +53,6 @@ export function renderList(): void {
     })
     .sort((a, b) => a.startedAt - b.startedAt);
   elEmpty.classList.toggle("hidden", items.length > 0);
-  if (elStreamsCount) {
-    const filtered = Boolean(urlFilter) || state.streamsTransportFilter !== "all";
-    elStreamsCount.textContent = filtered
-      ? t("streamsCountFiltered", [String(items.length), String(state.streams.size)])
-      : t("streamsCount", String(state.streams.size));
-  }
   if (
     items.length === 0 &&
     state.streams.size > 0 &&
