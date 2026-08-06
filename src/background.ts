@@ -1,6 +1,9 @@
-import type { PageToExtensionMessage, RelayMessage } from "./shared/types";
-
-const PANEL_PORT = "sse-devtools-panel";
+import {
+  MESSAGE_SOURCE,
+  PANEL_PORT,
+  type PageToExtensionMessage,
+  type RelayMessage,
+} from "./shared/types";
 
 /** tabId → set of DevTools panel ports */
 const panelPorts = new Map<number, Set<chrome.runtime.Port>>();
@@ -8,7 +11,7 @@ const panelPorts = new Map<number, Set<chrome.runtime.Port>>();
 function isPageMessage(msg: unknown): msg is PageToExtensionMessage {
   if (!msg || typeof msg !== "object") return false;
   const m = msg as PageToExtensionMessage;
-  return m.source === "sse-devtools" && typeof m.type === "string";
+  return m.source === MESSAGE_SOURCE && typeof m.type === "string";
 }
 
 chrome.runtime.onConnect.addListener((port) => {

@@ -20,13 +20,13 @@ const entries = [
     entry: "src/content/bridge.ts",
     outFile: "bridge.js",
     format: "iife",
-    globalName: "SseDevtoolsBridge",
+    globalName: "EventStreamBridge",
   },
   {
     entry: "src/content/inject-main.ts",
     outFile: "inject-main.js",
     format: "iife",
-    globalName: "SseDevtoolsInject",
+    globalName: "EventStreamInject",
   },
   {
     entry: "src/devtools/devtools.ts",

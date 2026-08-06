@@ -1,15 +1,16 @@
 import "./panel.css";
 import { applyIcons } from "./core/icons";
-import type {
-  RelayMessage,
-  SseEvent,
-  StreamRecord,
-  StreamKind,
-  StreamStartPayload,
-  StreamChunkPayload,
-  StreamEndPayload,
-  StreamErrorPayload,
-  StreamReconnectPayload,
+import {
+  PANEL_PORT,
+  type RelayMessage,
+  type SseEvent,
+  type StreamChunkPayload,
+  type StreamEndPayload,
+  type StreamErrorPayload,
+  type StreamKind,
+  type StreamRecord,
+  type StreamReconnectPayload,
+  type StreamStartPayload,
 } from "../shared/types";
 import {
   applyDomI18n,
@@ -124,8 +125,6 @@ import {
   bindJsonTreeContextMenu,
 } from "./views/events-view";
 import { renderList, scheduleRenderList } from "./views/stream-list";
-
-const PANEL_PORT = "sse-devtools-panel";
 
 const pauseHooks = {
   renderList,

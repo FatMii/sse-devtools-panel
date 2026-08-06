@@ -1,4 +1,7 @@
-export const MESSAGE_SOURCE = "sse-devtools" as const;
+export const MESSAGE_SOURCE = "eventstream" as const;
+
+/** chrome.runtime Port name between DevTools panel and service worker. */
+export const PANEL_PORT = "eventstream-panel" as const;
 
 export type StreamStatus = "streaming" | "done" | "error";
 

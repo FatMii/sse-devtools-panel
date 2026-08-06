@@ -3,7 +3,7 @@ export type NameValuePair = { name: string; value: string };
 /** Parse URL query string into Network-style name/value pairs (keeps duplicates). */
 export function parseQueryStringParams(url: string): NameValuePair[] {
   try {
-    const u = new URL(url, "https://sse-devtools.local");
+    const u = new URL(url, "https://eventstream.local");
     const out: NameValuePair[] = [];
     u.searchParams.forEach((value, name) => {
       out.push({ name, value });

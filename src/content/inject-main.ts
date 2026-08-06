@@ -11,7 +11,7 @@ import type {
   PostStart,
 } from "./inject/types";
 
-const STATE_KEY = "__SSE_DEVTOOLS_INSTALLED__";
+const STATE_KEY = "__EVENTSTREAM_PANEL_INSTALLED__";
 
 declare global {
   interface Window {

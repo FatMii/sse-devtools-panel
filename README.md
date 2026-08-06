@@ -242,7 +242,7 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 
 ## 💾 导入 / 导出 / 归档
 
-- **导出** — JSON（`sse-devtools-stream-v1`）· CSV · `.sse` Fixture（方便 Mock / 单测）
+- **导出** — JSON（`eventstream-stream-v1`）· CSV · `.sse` Fixture（方便 Mock / 单测）
 - **导入** — 回放本地 JSON，无需再打一次线上接口
 - **Save / Archives** — IndexedDB 本地归档，之后再打开翻看
 

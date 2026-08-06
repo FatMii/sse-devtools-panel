@@ -14,7 +14,9 @@ import { isStreamCloseReason, normalizeReconnectMarks } from "./stream-close";
 
 export { buildSseFixture };
 
-export const STREAM_EXPORT_FORMAT = "sse-devtools-stream-v1" as const;
+export const STREAM_EXPORT_FORMAT = "eventstream-stream-v1" as const;
+/** Older exports still accepted on import. */
+const LEGACY_STREAM_EXPORT_FORMATS = new Set(["sse-devtools-stream-v1"]);
 
 export type { StreamOrigin };
 
@@ -226,7 +228,12 @@ export function parseStreamExportJson(text: string): StreamExportBody {
   }
   const root = parsed as Record<string, unknown>;
 
-  if (root.format === STREAM_EXPORT_FORMAT && root.stream && typeof root.stream === "object") {
+  if (
+    (root.format === STREAM_EXPORT_FORMAT ||
+      (typeof root.format === "string" && LEGACY_STREAM_EXPORT_FORMATS.has(root.format))) &&
+    root.stream &&
+    typeof root.stream === "object"
+  ) {
     return normalizeStreamBody(root.stream as Record<string, unknown>);
   }
 

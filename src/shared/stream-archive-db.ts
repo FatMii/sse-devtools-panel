@@ -1,7 +1,7 @@
 import type { StreamRecord } from "./types";
 import { cloneStreamRecord } from "./stream-snapshot";
 
-const DB_NAME = "sse-devtools-archives";
+const DB_NAME = "eventstream-archives";
 const DB_VERSION = 1;
 const STORE_NAME = "archives";
 
