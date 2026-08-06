@@ -234,7 +234,7 @@ button.is-paused {
   height: 14px;
   stroke: currentColor;
   fill: none;
-  stroke-width: 2.0;
+  stroke-width: 2;
 }
 
 /* Icons that need solid fill set fill="currentColor" */
