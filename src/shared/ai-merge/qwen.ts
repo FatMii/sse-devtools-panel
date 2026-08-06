@@ -3,7 +3,7 @@ import type { AiEndMeta, AiToolCall, MergeChannelsResult } from "./types";
 import { asString, isRecord, parseEventData } from "./helpers";
 
 /**
- * Qianwen plan_cot often ships newline-separated cumulative lines where each line
+ * Qwen plan_cot often ships newline-separated cumulative lines where each line
  * restates the full thought so far. Collapse those runs to the last line only.
  */
 export function collapseCumulativeLines(text: string): string {
@@ -38,14 +38,14 @@ export function collapseCumulativeLines(text: string): string {
 }
 
 /**
- * Qianwen / Tongyi web AgentProxy SSE:
+ * Qwen / Tongyi web AgentProxy SSE:
  * - plan_cot/post → reasoning (latest snapshot; collapse stacked lines)
  * - multi_load/iframe deep_think.think_content → reasoning (latest snapshot)
  * - multi_load/iframe msg.content (after [(deep_think)] prefix) → content
  * - bar/progress cot query + result list → tools web_search
  * - bar/iframe sources + source_group_web → tools web_search
  */
-export function mergeQianwenWeb(
+export function mergeQwenWeb(
   events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,
 ): MergeChannelsResult {
   let content = "";

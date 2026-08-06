@@ -5,8 +5,8 @@ import { mergeOpenAiCompatible } from "./openai";
 import { mergeDeepseekWeb } from "./deepseek";
 import { mergeDoubaoWeb } from "./doubao";
 import { mergeKimiWeb } from "./kimi";
-import { mergeQianwenWeb } from "./qianwen";
-import { mergeZhipuWeb } from "./zhipu";
+import { mergeQwenWeb } from "./qwen";
+import { mergeChatglmWeb } from "./chatglm";
 import { mergeYuanbaoWeb } from "./yuanbao";
 
 export type {
@@ -49,13 +49,13 @@ export function mergeAiTranscript(
     channels = merged.channels;
     endMeta = merged.endMeta;
     chunkCount = merged.chunkCount;
-  } else if (detection.profile === "qianwen-web") {
-    const merged = mergeQianwenWeb(events);
+  } else if (detection.profile === "qwen-web") {
+    const merged = mergeQwenWeb(events);
     channels = merged.channels;
     endMeta = merged.endMeta;
     chunkCount = merged.chunkCount;
-  } else if (detection.profile === "zhipu-web") {
-    const merged = mergeZhipuWeb(events);
+  } else if (detection.profile === "chatglm-web") {
+    const merged = mergeChatglmWeb(events);
     channels = merged.channels;
     endMeta = merged.endMeta;
     chunkCount = merged.chunkCount;

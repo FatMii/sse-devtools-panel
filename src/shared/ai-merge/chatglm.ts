@@ -3,13 +3,13 @@ import type { AiEndMeta, AiToolCall, MergeChannelsResult } from "./types";
 import { asString, isRecord, parseEventData } from "./helpers";
 
 /**
- * ChatGLM / Zhipu Qingyan web SSE:
- * - parts[].content[] type=think → reasoning (cumulative snapshot)
- * - parts[].content[] type=text → content (cumulative snapshot)
- * - parts[].content[] type=tool_calls → tools (skip finish)
- * - top-level / part status finish → endMeta
+ * ChatGLM / Qingyan web SSE:
+ * - parts[].content[] type=think —reasoning (cumulative snapshot)
+ * - parts[].content[] type=text —content (cumulative snapshot)
+ * - parts[].content[] type=tool_calls —tools (skip finish)
+ * - top-level / part status finish —endMeta
  */
-export function mergeZhipuWeb(
+export function mergeChatglmWeb(
   events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,
 ): MergeChannelsResult {
   let thinkLatest = "";
@@ -141,7 +141,7 @@ export function mergeZhipuWeb(
       push(item.q);
       push(item.query);
       push(item.keyword);
-      // Do not use item.text here — Zhipu search_results reuse "text" for HTML snippets.
+      // Do not use item.text here —ChatGLM search_results reuse "text" for HTML snippets.
     };
 
     const pushQueryList = (list: unknown): void => {
@@ -163,7 +163,7 @@ export function mergeZhipuWeb(
     push(parsed.query);
     push(parsed.keyword);
     pushQueryList(parsed.queries);
-    pushQueryList(parsed.search_query); // Zhipu: {"search_query":[{"q":"..."}]}
+    pushQueryList(parsed.search_query); // ChatGLM: {"search_query":[{"q":"..."}]}
     pushQueryList(parsed.search_queries);
     return [...new Set(out)];
   };
@@ -354,7 +354,7 @@ export function mergeZhipuWeb(
           continue;
         }
 
-        // Zhipu echoes the search call again under tool_result; results live in meta.
+        // ChatGLM echoes the search call again under tool_result; results live in meta.
         if (typ === "tool_result") {
           if (item.tool_calls != null) ingestToolCalls(item.tool_calls);
           ingestSearchishValue(item);

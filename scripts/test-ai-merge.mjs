@@ -496,7 +496,7 @@ function ev(data, event = "message") {
 }
 
 {
-  const qianwenEnvelope = (messages, extra = {}) =>
+  const qwenEnvelope = (messages, extra = {}) =>
     JSON.stringify({
       error_msg: "",
       error_code: 0,
@@ -508,7 +508,7 @@ function ev(data, event = "message") {
 
   const events = [
     ev(
-      qianwenEnvelope([
+      qwenEnvelope([
         {
           mime_type: "plan_cot/post",
           content: "用户询问深圳天气，准备搜索相关信息。",
@@ -517,7 +517,7 @@ function ev(data, event = "message") {
       ]),
     ),
     ev(
-      qianwenEnvelope([
+      qwenEnvelope([
         {
           mime_type: "plan_cot/post",
           content:
@@ -527,7 +527,7 @@ function ev(data, event = "message") {
       ]),
     ),
     ev(
-      qianwenEnvelope([
+      qwenEnvelope([
         {
           mime_type: "bar/progress",
           meta_data: {
@@ -539,7 +539,7 @@ function ev(data, event = "message") {
       ]),
     ),
     ev(
-      qianwenEnvelope([
+      qwenEnvelope([
         {
           mime_type: "bar/progress",
           meta_data: {
@@ -557,7 +557,7 @@ function ev(data, event = "message") {
       ]),
     ),
     ev(
-      qianwenEnvelope([
+      qwenEnvelope([
         {
           mime_type: "multi_load/iframe",
           meta_data: {
@@ -574,7 +574,7 @@ function ev(data, event = "message") {
       ]),
     ),
     ev(
-      qianwenEnvelope([
+      qwenEnvelope([
         {
           mime_type: "multi_load/iframe",
           meta_data: {
@@ -594,7 +594,7 @@ function ev(data, event = "message") {
       ]),
     ),
     ev(
-      qianwenEnvelope(
+      qwenEnvelope(
         [
           {
             mime_type: "multi_load/iframe",
@@ -609,37 +609,31 @@ function ev(data, event = "message") {
   ];
 
   const det = detectAiProfile(events, "https://www.qianwen.com/chat");
-  assert(det.profile === "qianwen-web", `qianwen profile got ${det.profile}`);
-  assert(det.vendorHint === "qwen", "qianwen vendor");
+  assert(det.profile === "qwen-web", `qwen profile got ${det.profile}`);
+  assert(det.vendorHint === "qwen", "qwen vendor");
   const t = mergeAiTranscript(events, "https://www.qianwen.com/chat");
-  assert(t.profile === "qianwen-web", "qianwen merge profile");
+  assert(t.profile === "qwen-web", "qwen merge profile");
   assert(
     t.channels.reasoning.includes("用户询问深圳天气"),
-    `qianwen plan_cot: ${t.channels.reasoning}`,
+    `qwen plan_cot: ${t.channels.reasoning}`,
   );
-  assert(
-    t.channels.reasoning.includes("根据检索结果"),
-    `qianwen deep_think: ${t.channels.reasoning}`,
-  );
-  assert(
-    t.channels.content.includes("今日深圳多云间晴天"),
-    `qianwen content: ${t.channels.content}`,
-  );
+  assert(t.channels.reasoning.includes("根据检索结果"), `qwen deep_think: ${t.channels.reasoning}`);
+  assert(t.channels.content.includes("今日深圳多云间晴天"), `qwen content: ${t.channels.content}`);
   assert(!t.channels.content.includes("我需要回答深圳天气"), "thinking must not leak");
-  assert(t.channels.tools.length === 1, `qianwen tools ${t.channels.tools.length}`);
-  assert(t.channels.tools[0].name === "web_search", "qianwen web_search");
+  assert(t.channels.tools.length === 1, `qwen tools ${t.channels.tools.length}`);
+  assert(t.channels.tools[0].name === "web_search", "qwen web_search");
   const args = JSON.parse(t.channels.tools[0].arguments);
   assert(
     Array.isArray(args.queries) && args.queries.some((q) => String(q).includes("深圳")),
-    "qianwen queries",
+    "qwen queries",
   );
-  assert(Array.isArray(args.results) && args.results.length >= 1, "qianwen results");
-  assert(t.endMeta.finishReason === "stop", "qianwen finish");
-  assert(transcriptHasContent(t), "qianwen has content");
+  assert(Array.isArray(args.results) && args.results.length >= 1, "qwen results");
+  assert(t.endMeta.finishReason === "stop", "qwen finish");
+  assert(transcriptHasContent(t), "qwen has content");
 }
 
 {
-  const qianwenEnvelope = (messages) =>
+  const qwenEnvelope = (messages) =>
     JSON.stringify({
       error_code: 0,
       data: { extra_info: { agent_name: "AgentProxy" }, messages },
@@ -650,18 +644,18 @@ function ev(data, event = "message") {
     "这是一个关于合肥市当日天气\n" +
     "这是一个关于合肥市当日天气情况的查询问题。需要提供合肥市今天的温度范围、天气现象、风力风向、湿度等实时天气数据，以及相关的天气预警信息和生活指数建议。\n";
 
-  const events = [ev(qianwenEnvelope([{ mime_type: "plan_cot/post", content: stackedPlanCot }]))];
+  const events = [ev(qwenEnvelope([{ mime_type: "plan_cot/post", content: stackedPlanCot }]))];
   const t = mergeAiTranscript(events, "https://www.qianwen.com/chat");
   assert(
     t.channels.reasoning ===
       "这是一个关于合肥市当日天气情况的查询问题。需要提供合肥市今天的温度范围、天气现象、风力风向、湿度等实时天气数据，以及相关的天气预警信息和生活指数建议。",
-    `qianwen stacked collapse: ${JSON.stringify(t.channels.reasoning)}`,
+    `qwen stacked collapse: ${JSON.stringify(t.channels.reasoning)}`,
   );
   assert(!t.channels.reasoning.includes("这是一个\n这是一个"), "stacked lines must collapse");
 }
 
 {
-  const zhipuEnvelope = (parts, status = "init") =>
+  const chatglmEnvelope = (parts, status = "init") =>
     JSON.stringify({
       id: "msg1",
       conversation_id: "conv1",
@@ -672,9 +666,9 @@ function ev(data, event = "message") {
     });
 
   const events = [
-    ev(zhipuEnvelope([])),
+    ev(chatglmEnvelope([])),
     ev(
-      zhipuEnvelope([
+      chatglmEnvelope([
         {
           role: "assistant",
           status: "init",
@@ -683,7 +677,7 @@ function ev(data, event = "message") {
       ]),
     ),
     ev(
-      zhipuEnvelope([
+      chatglmEnvelope([
         {
           role: "assistant",
           status: "init",
@@ -692,7 +686,7 @@ function ev(data, event = "message") {
       ]),
     ),
     ev(
-      zhipuEnvelope([
+      chatglmEnvelope([
         {
           role: "assistant",
           status: "init",
@@ -718,7 +712,7 @@ function ev(data, event = "message") {
       ]),
     ),
     ev(
-      zhipuEnvelope([
+      chatglmEnvelope([
         {
           role: "assistant",
           status: "finish",
@@ -764,7 +758,7 @@ function ev(data, event = "message") {
       ]),
     ),
     ev(
-      zhipuEnvelope([
+      chatglmEnvelope([
         {
           role: "assistant",
           status: "init",
@@ -773,7 +767,7 @@ function ev(data, event = "message") {
       ]),
     ),
     ev(
-      zhipuEnvelope(
+      chatglmEnvelope(
         [
           {
             role: "assistant",
@@ -788,37 +782,37 @@ function ev(data, event = "message") {
   ];
 
   const det = detectAiProfile(events, "https://chatglm.cn/main/chat");
-  assert(det.profile === "zhipu-web", `zhipu profile got ${det.profile}`);
-  assert(det.vendorHint === "zhipu", "zhipu vendor");
+  assert(det.profile === "chatglm-web", `chatglm profile got ${det.profile}`);
+  assert(det.vendorHint === "chatglm", "chatglm vendor");
   const t = mergeAiTranscript(events, "https://chatglm.cn/main/chat");
-  assert(t.profile === "zhipu-web", "zhipu merge profile");
-  assert(t.channels.reasoning.includes("拆解用户请求"), `zhipu think: ${t.channels.reasoning}`);
-  assert(t.channels.reasoning.includes("今天深圳天气"), "zhipu think snapshot");
-  assert(t.channels.content.includes("多云间晴天"), `zhipu content: ${t.channels.content}`);
+  assert(t.profile === "chatglm-web", "chatglm merge profile");
+  assert(t.channels.reasoning.includes("拆解用户请求"), `chatglm think: ${t.channels.reasoning}`);
+  assert(t.channels.reasoning.includes("今天深圳天气"), "chatglm think snapshot");
+  assert(t.channels.content.includes("多云间晴天"), `chatglm content: ${t.channels.content}`);
   assert(!t.channels.content.includes("拆解用户请求"), "think must not leak");
-  assert(t.channels.tools.length === 1, `zhipu tools ${t.channels.tools.length}`);
-  assert(t.channels.tools[0].name === "web_search", "zhipu search normalized to web_search");
-  assert(t.channels.tools[0].id === "tool-abc", "zhipu tool id");
-  const zhipuArgs = JSON.parse(t.channels.tools[0].arguments);
-  assert(zhipuArgs.type === "SEARCH", "zhipu SEARCH payload");
+  assert(t.channels.tools.length === 1, `chatglm tools ${t.channels.tools.length}`);
+  assert(t.channels.tools[0].name === "web_search", "chatglm search normalized to web_search");
+  assert(t.channels.tools[0].id === "tool-abc", "chatglm tool id");
+  const chatglmArgs = JSON.parse(t.channels.tools[0].arguments);
+  assert(chatglmArgs.type === "SEARCH", "chatglm SEARCH payload");
   assert(
-    Array.isArray(zhipuArgs.queries) && zhipuArgs.queries.length === 4,
-    `zhipu queries ${JSON.stringify(zhipuArgs.queries)}`,
+    Array.isArray(chatglmArgs.queries) && chatglmArgs.queries.length === 4,
+    `chatglm queries ${JSON.stringify(chatglmArgs.queries)}`,
   );
-  assert(zhipuArgs.queries[0].includes("江苏"), "zhipu query text");
+  assert(chatglmArgs.queries[0].includes("江苏"), "chatglm query text");
   assert(
-    Array.isArray(zhipuArgs.results) && zhipuArgs.results.length === 2,
-    `zhipu results ${zhipuArgs.results?.length}`,
+    Array.isArray(chatglmArgs.results) && chatglmArgs.results.length === 2,
+    `chatglm results ${chatglmArgs.results?.length}`,
   );
-  assert(zhipuArgs.results[0].url === "https://example.com/nj", "zhipu result url");
-  assert(zhipuArgs.results[0].site_name === "so.html5.qq.com", "zhipu host_name");
+  assert(chatglmArgs.results[0].url === "https://example.com/nj", "chatglm result url");
+  assert(chatglmArgs.results[0].site_name === "so.html5.qq.com", "chatglm host_name");
   assert(
-    String(zhipuArgs.results[0].snippet || "").includes("南京") &&
-      !String(zhipuArgs.results[0].snippet || "").includes("<p>"),
-    "zhipu snippet stripped",
+    String(chatglmArgs.results[0].snippet || "").includes("南京") &&
+      !String(chatglmArgs.results[0].snippet || "").includes("<p>"),
+    "chatglm snippet stripped",
   );
-  assert(t.endMeta.finishReason === "stop", "zhipu finish");
-  assert(transcriptHasContent(t), "zhipu has content");
+  assert(t.endMeta.finishReason === "stop", "chatglm finish");
+  assert(transcriptHasContent(t), "chatglm has content");
 }
 
 {
@@ -930,8 +924,8 @@ function ev(data, event = "message") {
   const deepseekPath = resolve(root, "data/deepseek.txt");
   const doubaoPath = resolve(root, "data/doubao.txt");
   const kimiPath = resolve(root, "data/kimi.txt");
-  const qianwenPath = resolve(root, "data/qianwen.txt");
-  const zhipuPath = resolve(root, "data/zhipu.txt");
+  const qwenPath = resolve(root, "data/qwen.txt");
+  const chatglmPath = resolve(root, "data/chatglm.txt");
   const yuanbaoPath = resolve(root, "data/yuanbao.txt");
 
   function loadKimiJsonStream(filePath) {
@@ -1063,64 +1057,64 @@ function ev(data, event = "message") {
     assert(Array.isArray(args.results) && args.results.length >= 1, "kimi results");
   }
 
-  if (existsSync(qianwenPath)) {
-    const events = loadSse(qianwenPath);
-    assert(events.length > 50, `qianwen events parsed: ${events.length}`);
+  if (existsSync(qwenPath)) {
+    const events = loadSse(qwenPath);
+    assert(events.length > 50, `qwen events parsed: ${events.length}`);
     const t = mergeAiTranscript(events, "https://www.qianwen.com/chat");
-    assert(t.profile === "qianwen-web", `qianwen profile got ${t.profile}`);
-    assert(t.vendorHint === "qwen", "qianwen vendor");
+    assert(t.profile === "qwen-web", `qwen profile got ${t.profile}`);
+    assert(t.vendorHint === "qwen", "qwen vendor");
     assert(
       t.channels.reasoning.includes("深圳") && t.channels.reasoning.includes("天气"),
-      `qianwen reasoning snip: ${t.channels.reasoning.slice(0, 80)}`,
+      `qwen reasoning snip: ${t.channels.reasoning.slice(0, 80)}`,
     );
     assert(!t.channels.content.includes("我需要回答今天"), "think must not leak into content");
     assert(
       t.channels.content.includes("今日深圳市") || t.channels.content.includes("多云间晴天"),
-      `qianwen content snip: ${t.channels.content.slice(0, 80)}`,
+      `qwen content snip: ${t.channels.content.slice(0, 80)}`,
     );
-    assert(t.channels.tools.length >= 1, `qianwen tools ${t.channels.tools.length}`);
-    assert(t.channels.tools[0].name === "web_search", "qianwen web_search");
+    assert(t.channels.tools.length >= 1, `qwen tools ${t.channels.tools.length}`);
+    assert(t.channels.tools[0].name === "web_search", "qwen web_search");
     const args = JSON.parse(t.channels.tools[0].arguments);
     assert(
       Array.isArray(args.queries) && args.queries.some((q) => String(q).includes("深圳")),
-      "qianwen queries",
+      "qwen queries",
     );
-    assert(Array.isArray(args.results) && args.results.length >= 1, "qianwen results");
+    assert(Array.isArray(args.results) && args.results.length >= 1, "qwen results");
   }
 
-  if (existsSync(zhipuPath)) {
-    const events = loadSse(zhipuPath);
-    assert(events.length > 30, `zhipu events parsed: ${events.length}`);
+  if (existsSync(chatglmPath)) {
+    const events = loadSse(chatglmPath);
+    assert(events.length > 30, `chatglm events parsed: ${events.length}`);
     const t = mergeAiTranscript(events, "https://chatglm.cn/main/chat");
-    assert(t.profile === "zhipu-web", `zhipu profile got ${t.profile}`);
-    assert(t.vendorHint === "zhipu", "zhipu vendor");
+    assert(t.profile === "chatglm-web", `chatglm profile got ${t.profile}`);
+    assert(t.vendorHint === "chatglm", "chatglm vendor");
     assert(
       t.channels.reasoning.includes("拆解用户请求") ||
         t.channels.reasoning.includes("江苏") ||
         t.channels.reasoning.includes("深圳"),
-      `zhipu reasoning snip: ${t.channels.reasoning.slice(0, 80)}`,
+      `chatglm reasoning snip: ${t.channels.reasoning.slice(0, 80)}`,
     );
     assert(!t.channels.content.includes("拆解用户请求"), "think must not leak into content");
     assert(
       (t.channels.content.includes("江苏") || t.channels.content.includes("深圳")) &&
         (t.channels.content.includes("天气") || t.channels.content.length > 20),
-      `zhipu content snip: ${t.channels.content.slice(0, 80)}`,
+      `chatglm content snip: ${t.channels.content.slice(0, 80)}`,
     );
-    assert(t.endMeta.finishReason === "stop", "zhipu finish");
-    assert(t.channels.tools.length === 1, `zhipu fixture tools ${t.channels.tools.length}`);
-    assert(t.channels.tools[0].name === "web_search", "zhipu fixture web_search");
-    const zArgs = JSON.parse(t.channels.tools[0].arguments);
+    assert(t.endMeta.finishReason === "stop", "chatglm finish");
+    assert(t.channels.tools.length === 1, `chatglm fixture tools ${t.channels.tools.length}`);
+    assert(t.channels.tools[0].name === "web_search", "chatglm fixture web_search");
+    const chatglmFixtureArgs = JSON.parse(t.channels.tools[0].arguments);
     assert(
-      Array.isArray(zArgs.queries) && zArgs.queries.length >= 3,
-      `zhipu fixture queries ${zArgs.queries?.length}`,
-    );
-    assert(
-      Array.isArray(zArgs.results) && zArgs.results.length === 20,
-      `zhipu fixture results ${zArgs.results?.length}`,
+      Array.isArray(chatglmFixtureArgs.queries) && chatglmFixtureArgs.queries.length >= 3,
+      `chatglm fixture queries ${chatglmFixtureArgs.queries?.length}`,
     );
     assert(
-      zArgs.results.some((r) => String(r.url || "").includes("http")),
-      "zhipu fixture result urls",
+      Array.isArray(chatglmFixtureArgs.results) && chatglmFixtureArgs.results.length === 20,
+      `chatglm fixture results ${chatglmFixtureArgs.results?.length}`,
+    );
+    assert(
+      chatglmFixtureArgs.results.some((r) => String(r.url || "").includes("http")),
+      "chatglm fixture result urls",
     );
   }
 

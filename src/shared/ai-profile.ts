@@ -6,8 +6,8 @@ export type AiProfile =
   | "deepseek-web"
   | "doubao-web"
   | "kimi-web"
-  | "qianwen-web"
-  | "zhipu-web"
+  | "qwen-web"
+  | "chatglm-web"
   | "yuanbao-web"
   | "anthropic"
   | "generic";
@@ -18,7 +18,7 @@ export type AiVendorHint =
   | "doubao-ark"
   | "doubao-web"
   | "qwen"
-  | "zhipu"
+  | "chatglm"
   | "moonshot"
   | "yuanbao"
   | "baichuan"
@@ -59,7 +59,7 @@ const VENDOR_HOST_RULES: Array<{ hint: AiVendorHint; test: (host: string) => boo
       (h.includes("aliyuncs.com") && h.includes("dashscope")),
   },
   {
-    hint: "zhipu",
+    hint: "chatglm",
     test: (h) =>
       h.includes("bigmodel.cn") ||
       h.includes("zhipuai") ||
@@ -178,7 +178,7 @@ export function isDoubaoWebChunk(value: unknown, eventName?: string): boolean {
   return false;
 }
 
-const QIANWEN_WEB_MIME_TYPES = new Set([
+const QWEN_WEB_MIME_TYPES = new Set([
   "plan_cot/post",
   "multi_load/iframe",
   "bar/progress",
@@ -187,8 +187,8 @@ const QIANWEN_WEB_MIME_TYPES = new Set([
   "paa/iframe",
 ]);
 
-/** Qianwen / Tongyi web AgentProxy SSE (data.messages[].mime_type). */
-export function isQianwenWebChunk(value: unknown): boolean {
+/** Qwen / Tongyi web AgentProxy SSE (data.messages[].mime_type). */
+export function isQwenWebChunk(value: unknown): boolean {
   if (!isRecord(value)) return false;
   const data = isRecord(value.data) ? value.data : null;
   if (!data) return false;
@@ -198,17 +198,17 @@ export function isQianwenWebChunk(value: unknown): boolean {
   for (const msg of messages) {
     if (!isRecord(msg)) continue;
     const mime = typeof msg.mime_type === "string" ? msg.mime_type : "";
-    if (QIANWEN_WEB_MIME_TYPES.has(mime)) return true;
+    if (QWEN_WEB_MIME_TYPES.has(mime)) return true;
   }
   return false;
 }
 
-/** ChatGLM / Zhipu Qingyan web SSE (conversation_id + parts[].content[]). */
-export function isZhipuWebChunk(value: unknown): boolean {
+/** ChatGLM / Qingyan web SSE (conversation_id + parts[].content[]). */
+export function isChatglmWebChunk(value: unknown): boolean {
   if (!isRecord(value)) return false;
   if (typeof value.conversation_id !== "string") return false;
   if (!Array.isArray(value.parts)) return false;
-  // OpenAI chunks also have id/status-ish fields; require Zhipu part content types.
+  // OpenAI chunks also have id/status-ish fields; require ChatGLM part content types.
   if (Array.isArray(value.choices)) return false;
   if (value.parts.length === 0) {
     return typeof value.assistant_id === "string" || typeof value.status === "string";
@@ -354,8 +354,8 @@ export function detectAiProfile(
   let deepseekHits = 0;
   let doubaoHits = 0;
   let kimiHits = 0;
-  let qianwenHits = 0;
-  let zhipuHits = 0;
+  let qwenHits = 0;
+  let chatglmHits = 0;
   let yuanbaoHits = 0;
   let anthropicHits = 0;
   const sampleLimit = Math.min(events.length, 80);
@@ -390,13 +390,13 @@ export function detectAiProfile(
         reasoningFields.add("STAGE_NAME_THINKING");
       }
     }
-    if (isQianwenWebChunk(parsed)) {
-      qianwenHits++;
+    if (isQwenWebChunk(parsed)) {
+      qwenHits++;
       reasoningFields.add("plan_cot/post");
       reasoningFields.add("deep_think");
     }
-    if (isZhipuWebChunk(parsed)) {
-      zhipuHits++;
+    if (isChatglmWebChunk(parsed)) {
+      chatglmHits++;
       reasoningFields.add("think");
     }
     if (isYuanbaoWebChunk(parsed, ev.event)) {
@@ -417,8 +417,8 @@ export function detectAiProfile(
     { profile: "deepseek-web", score: deepseekHits },
     { profile: "doubao-web", score: doubaoHits },
     { profile: "kimi-web", score: kimiHits },
-    { profile: "qianwen-web", score: qianwenHits },
-    { profile: "zhipu-web", score: zhipuHits },
+    { profile: "qwen-web", score: qwenHits },
+    { profile: "chatglm-web", score: chatglmHits },
     { profile: "yuanbao-web", score: yuanbaoHits },
     { profile: "anthropic", score: anthropicHits },
   ];
@@ -432,14 +432,14 @@ export function detectAiProfile(
     profile = "kimi-web";
   }
 
-  // Prefer qianwen-web on qwen hosts when AgentProxy frames are present.
-  if (vendorHint === "qwen" && qianwenHits >= 2 && qianwenHits >= openaiHits) {
-    profile = "qianwen-web";
+  // Prefer qwen-web on qwen hosts when AgentProxy frames are present.
+  if (vendorHint === "qwen" && qwenHits >= 2 && qwenHits >= openaiHits) {
+    profile = "qwen-web";
   }
 
-  // Prefer zhipu-web on chatglm hosts when Qingyan frames are present.
-  if (vendorHint === "zhipu" && zhipuHits >= 2 && zhipuHits >= openaiHits) {
-    profile = "zhipu-web";
+  // Prefer chatglm-web on chatglm hosts when Qingyan frames are present.
+  if (vendorHint === "chatglm" && chatglmHits >= 2 && chatglmHits >= openaiHits) {
+    profile = "chatglm-web";
   }
 
   // Prefer yuanbao-web on Yuanbao/Hunyuan hosts when deepSearch frames are present.
@@ -451,8 +451,8 @@ export function detectAiProfile(
   if (profile === "deepseek-web") resolvedVendor = "deepseek";
   else if (profile === "doubao-web") resolvedVendor = "doubao-web";
   else if (profile === "kimi-web") resolvedVendor = "moonshot";
-  else if (profile === "qianwen-web") resolvedVendor = "qwen";
-  else if (profile === "zhipu-web") resolvedVendor = "zhipu";
+  else if (profile === "qwen-web") resolvedVendor = "qwen";
+  else if (profile === "chatglm-web") resolvedVendor = "chatglm";
   else if (profile === "yuanbao-web") resolvedVendor = "yuanbao";
   else if (
     profile === "openai-compatible" &&

@@ -303,8 +303,8 @@ Transcript 按协议 Profile 合并。下列为当前已接线的 Web / 兼容�
 | `deepseek-web`      | DeepSeek 网页        | JSON-patch 风格思考 + 正文；支持搜索工具             |
 | `doubao-web`        | 豆包网页             | 思考与正文拆分；搜索结果去重                         |
 | `kimi-web`          | Kimi（Connect+JSON） | think / text / search block                          |
-| `qianwen-web`       | 通义千问网页         | AgentProxy：`plan_cot` / `deep_think` / 搜索 bar     |
-| `zhipu-web`         | 智谱清言 / ChatGLM   | `think` / `text` / `search` + `search_results`       |
+| `qwen-web`          | 通义千问网页         | AgentProxy：`plan_cot` / `deep_think` / 搜索 bar     |
+| `chatglm-web`       | 智谱清言 / ChatGLM   | `think` / `text` / `search` + `search_results`       |
 | `yuanbao-web`       | 腾讯元宝             | `deepSearch` 思考增量 + `searchGuid` 来源            |
 | `anthropic`         | Anthropic 风格 SSE   | content_block 等（基础识别）                         |
 | `generic`           | 未识别               | 仍可看 Events / Timeline / Raw                       |
