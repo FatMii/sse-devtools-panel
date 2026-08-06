@@ -7,6 +7,7 @@ export type AiProfile =
   | "doubao-web"
   | "kimi-web"
   | "qianwen-web"
+  | "zhipu-web"
   | "anthropic"
   | "generic";
 
@@ -57,7 +58,11 @@ const VENDOR_HOST_RULES: Array<{ hint: AiVendorHint; test: (host: string) => boo
   },
   {
     hint: "zhipu",
-    test: (h) => h.includes("bigmodel.cn") || h.includes("zhipuai") || h.includes("chatglm"),
+    test: (h) =>
+      h.includes("bigmodel.cn") ||
+      h.includes("zhipuai") ||
+      h.includes("chatglm") ||
+      h.includes("zhipu"),
   },
   {
     hint: "moonshot",
@@ -186,6 +191,30 @@ export function isQianwenWebChunk(value: unknown): boolean {
   return false;
 }
 
+/** ChatGLM / Zhipu Qingyan web SSE (conversation_id + parts[].content[]). */
+export function isZhipuWebChunk(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  if (typeof value.conversation_id !== "string") return false;
+  if (!Array.isArray(value.parts)) return false;
+  // OpenAI chunks also have id/status-ish fields; require Zhipu part content types.
+  if (Array.isArray(value.choices)) return false;
+  if (value.parts.length === 0) {
+    return typeof value.assistant_id === "string" || typeof value.status === "string";
+  }
+  for (const part of value.parts) {
+    if (!isRecord(part)) continue;
+    const content = Array.isArray(part.content) ? part.content : [];
+    for (const item of content) {
+      if (!isRecord(item) || typeof item.type !== "string") continue;
+      if (item.type === "think" || item.type === "text" || item.type === "tool_calls") return true;
+    }
+    if (typeof part.role === "string" && (part.role === "assistant" || part.role === "user")) {
+      return true;
+    }
+  }
+  return typeof value.assistant_id === "string";
+}
+
 /** Kimi.com Connect+JSON chat frame (mask / op / delta / block). */
 export function isKimiWebChunk(value: unknown, eventName?: string): boolean {
   // Trust Connect mask-as-event only when not colliding with SSE defaults.
@@ -277,6 +306,7 @@ export function detectAiProfile(
   let doubaoHits = 0;
   let kimiHits = 0;
   let qianwenHits = 0;
+  let zhipuHits = 0;
   let anthropicHits = 0;
   const sampleLimit = Math.min(events.length, 80);
 
@@ -314,6 +344,10 @@ export function detectAiProfile(
       reasoningFields.add("plan_cot/post");
       reasoningFields.add("deep_think");
     }
+    if (isZhipuWebChunk(parsed)) {
+      zhipuHits++;
+      reasoningFields.add("think");
+    }
     if (isAnthropicChunk(parsed) || ev.event.startsWith("content_block") || ev.event === "message_delta") {
       anthropicHits++;
     }
@@ -325,6 +359,7 @@ export function detectAiProfile(
     { profile: "doubao-web", score: doubaoHits },
     { profile: "kimi-web", score: kimiHits },
     { profile: "qianwen-web", score: qianwenHits },
+    { profile: "zhipu-web", score: zhipuHits },
     { profile: "anthropic", score: anthropicHits },
   ];
   scores.sort((a, b) => b.score - a.score);
@@ -342,11 +377,17 @@ export function detectAiProfile(
     profile = "qianwen-web";
   }
 
+  // Prefer zhipu-web on chatglm hosts when Qingyan frames are present.
+  if (vendorHint === "zhipu" && zhipuHits >= 2 && zhipuHits >= openaiHits) {
+    profile = "zhipu-web";
+  }
+
   let resolvedVendor = vendorHint;
   if (profile === "deepseek-web") resolvedVendor = "deepseek";
   else if (profile === "doubao-web") resolvedVendor = "doubao-web";
   else if (profile === "kimi-web") resolvedVendor = "moonshot";
   else if (profile === "qianwen-web") resolvedVendor = "qwen";
+  else if (profile === "zhipu-web") resolvedVendor = "zhipu";
   else if (
     profile === "openai-compatible" &&
     vendorHint === "unknown" &&

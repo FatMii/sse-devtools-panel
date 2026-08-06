@@ -633,6 +633,167 @@ function ev(data, event = "message") {
   assert(!t.channels.reasoning.includes("这是一个\n这是一个"), "stacked lines must collapse");
 }
 
+{
+  const zhipuEnvelope = (parts, status = "init") =>
+    JSON.stringify({
+      id: "msg1",
+      conversation_id: "conv1",
+      assistant_id: "65940acff94777010aa6b796",
+      status,
+      parts,
+      meta_data: {},
+    });
+
+  const events = [
+    ev(zhipuEnvelope([])),
+    ev(
+      zhipuEnvelope([
+        {
+          role: "assistant",
+          status: "init",
+          content: [{ type: "think", think: "拆解用户请求", tool_calls: {} }],
+        },
+      ]),
+    ),
+    ev(
+      zhipuEnvelope([
+        {
+          role: "assistant",
+          status: "init",
+          content: [{ type: "think", think: "拆解用户请求：今天深圳天气", tool_calls: {} }],
+        },
+      ]),
+    ),
+    ev(
+      zhipuEnvelope([
+        {
+          role: "assistant",
+          status: "init",
+          content: [
+            {
+              type: "tool_calls",
+              tool_calls: {
+                id: "tool-abc",
+                name: "search",
+                arguments: JSON.stringify({
+                  search_query: [
+                    { q: "江苏 今天 天气 预报 实时", recency: 1 },
+                    { q: "江苏 各市 天气 今天 南京 苏州 无锡", recency: 1 },
+                    { q: "江苏 气象局 天气 预警 今天", recency: 1 },
+                    { q: "江苏 空气质量 今天", recency: 1 },
+                  ],
+                }),
+              },
+            },
+          ],
+          meta_data: { show_type: "mc_tool_call2" },
+        },
+      ]),
+    ),
+    ev(
+      zhipuEnvelope([
+        {
+          role: "assistant",
+          status: "finish",
+          content: [
+            {
+              type: "tool_result",
+              tool_calls: {
+                id: "tool-abc",
+                name: "search",
+                arguments: JSON.stringify({
+                  search_query: [
+                    { q: "江苏 今天 天气 预报 实时", recency: 1 },
+                    { q: "江苏 各市 天气 今天 南京 苏州 无锡", recency: 1 },
+                    { q: "江苏 气象局 天气 预警 今天", recency: 1 },
+                    { q: "江苏 空气质量 今天", recency: 1 },
+                  ],
+                }),
+              },
+            },
+          ],
+          meta_data: {
+            show_type: "mc_tool_result2",
+            tool_result_extra: {
+              search_duration: 6.7,
+              search_results: [
+                {
+                  title: "江苏省气象台变更发布高温黄色预警",
+                  url: "https://example.com/nj",
+                  host_name: "so.html5.qq.com",
+                  index: 1,
+                  snippet: "<p>预计南京最高气温可达35℃</p>",
+                },
+                {
+                  title: "苏州天气",
+                  url: "https://example.com/sz",
+                  host_name: "weather.com.cn",
+                  index: 2,
+                },
+              ],
+            },
+          },
+        },
+      ]),
+    ),
+    ev(
+      zhipuEnvelope([
+        {
+          role: "assistant",
+          status: "init",
+          content: [{ type: "text", text: "好的，深圳今天" }],
+        },
+      ]),
+    ),
+    ev(
+      zhipuEnvelope(
+        [
+          {
+            role: "assistant",
+            status: "finish",
+            model: "glm-4",
+            content: [{ type: "text", text: "好的，深圳今天多云间晴天，气温26~33℃。" }],
+          },
+        ],
+        "finish",
+      ),
+    ),
+  ];
+
+  const det = detectAiProfile(events, "https://chatglm.cn/main/chat");
+  assert(det.profile === "zhipu-web", `zhipu profile got ${det.profile}`);
+  assert(det.vendorHint === "zhipu", "zhipu vendor");
+  const t = mergeAiTranscript(events, "https://chatglm.cn/main/chat");
+  assert(t.profile === "zhipu-web", "zhipu merge profile");
+  assert(t.channels.reasoning.includes("拆解用户请求"), `zhipu think: ${t.channels.reasoning}`);
+  assert(t.channels.reasoning.includes("今天深圳天气"), "zhipu think snapshot");
+  assert(t.channels.content.includes("多云间晴天"), `zhipu content: ${t.channels.content}`);
+  assert(!t.channels.content.includes("拆解用户请求"), "think must not leak");
+  assert(t.channels.tools.length === 1, `zhipu tools ${t.channels.tools.length}`);
+  assert(t.channels.tools[0].name === "web_search", "zhipu search normalized to web_search");
+  assert(t.channels.tools[0].id === "tool-abc", "zhipu tool id");
+  const zhipuArgs = JSON.parse(t.channels.tools[0].arguments);
+  assert(zhipuArgs.type === "SEARCH", "zhipu SEARCH payload");
+  assert(
+    Array.isArray(zhipuArgs.queries) && zhipuArgs.queries.length === 4,
+    `zhipu queries ${JSON.stringify(zhipuArgs.queries)}`,
+  );
+  assert(zhipuArgs.queries[0].includes("江苏"), "zhipu query text");
+  assert(
+    Array.isArray(zhipuArgs.results) && zhipuArgs.results.length === 2,
+    `zhipu results ${zhipuArgs.results?.length}`,
+  );
+  assert(zhipuArgs.results[0].url === "https://example.com/nj", "zhipu result url");
+  assert(zhipuArgs.results[0].site_name === "so.html5.qq.com", "zhipu host_name");
+  assert(
+    String(zhipuArgs.results[0].snippet || "").includes("南京") &&
+      !String(zhipuArgs.results[0].snippet || "").includes("<p>"),
+    "zhipu snippet stripped",
+  );
+  assert(t.endMeta.finishReason === "stop", "zhipu finish");
+  assert(transcriptHasContent(t), "zhipu has content");
+}
+
 // Real captures under data/ (optional locally; skip if missing)
 {
   const { readFileSync, existsSync } = await import("node:fs");
@@ -640,6 +801,7 @@ function ev(data, event = "message") {
   const doubaoPath = resolve(root, "data/doubao.txt");
   const kimiPath = resolve(root, "data/kimi.txt");
   const qianwenPath = resolve(root, "data/qianwen.txt");
+  const zhipuPath = resolve(root, "data/zhipu.txt");
 
   function loadKimiJsonStream(filePath) {
     const text = readFileSync(filePath, "utf8");
@@ -784,6 +946,36 @@ function ev(data, event = "message") {
     const args = JSON.parse(t.channels.tools[0].arguments);
     assert(Array.isArray(args.queries) && args.queries.some((q) => String(q).includes("深圳")), "qianwen queries");
     assert(Array.isArray(args.results) && args.results.length >= 1, "qianwen results");
+  }
+
+  if (existsSync(zhipuPath)) {
+    const events = loadSse(zhipuPath);
+    assert(events.length > 30, `zhipu events parsed: ${events.length}`);
+    const t = mergeAiTranscript(events, "https://chatglm.cn/main/chat");
+    assert(t.profile === "zhipu-web", `zhipu profile got ${t.profile}`);
+    assert(t.vendorHint === "zhipu", "zhipu vendor");
+    assert(
+      t.channels.reasoning.includes("拆解用户请求") ||
+        t.channels.reasoning.includes("江苏") ||
+        t.channels.reasoning.includes("深圳"),
+      `zhipu reasoning snip: ${t.channels.reasoning.slice(0, 80)}`,
+    );
+    assert(
+      !t.channels.content.includes("拆解用户请求"),
+      "think must not leak into content",
+    );
+    assert(
+      (t.channels.content.includes("江苏") || t.channels.content.includes("深圳")) &&
+        (t.channels.content.includes("天气") || t.channels.content.length > 20),
+      `zhipu content snip: ${t.channels.content.slice(0, 80)}`,
+    );
+    assert(t.endMeta.finishReason === "stop", "zhipu finish");
+    assert(t.channels.tools.length === 1, `zhipu fixture tools ${t.channels.tools.length}`);
+    assert(t.channels.tools[0].name === "web_search", "zhipu fixture web_search");
+    const zArgs = JSON.parse(t.channels.tools[0].arguments);
+    assert(Array.isArray(zArgs.queries) && zArgs.queries.length >= 3, `zhipu fixture queries ${zArgs.queries?.length}`);
+    assert(Array.isArray(zArgs.results) && zArgs.results.length === 20, `zhipu fixture results ${zArgs.results?.length}`);
+    assert(zArgs.results.some((r) => String(r.url || "").includes("http")), "zhipu fixture result urls");
   }
 }
 
