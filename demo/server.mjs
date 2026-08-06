@@ -38,17 +38,50 @@ const server = http.createServer((req, res) => {
       Connection: "keep-alive",
     });
 
+    const chunks = [
+      "你好",
+      "，欢迎来到",
+      " EventStream Panel。",
+      "这是一个",
+      "用于调试",
+      "SSE / NDJSON / Connect+JSON",
+      "流式响应的",
+      "Chrome DevTools",
+      "扩展演示。",
+      "很高兴见到你！",
+    ];
+
     let i = 0;
     const timer = setInterval(() => {
+      const content = chunks[i];
       i += 1;
-      const payload = JSON.stringify({ index: i, token: `word-${i}` });
+      const payload = JSON.stringify({
+        id: "chatcmpl-demo",
+        object: "chat.completion.chunk",
+        model: "demo-assistant-v1",
+        choices: [{ index: 0, delta: { content } }],
+      });
       res.write(`data: ${payload}\n\n`);
-      if (i >= 5) {
-        res.write("data: [DONE]\n\n");
+      if (i >= chunks.length) {
+        const donePayload = JSON.stringify({
+          id: "chatcmpl-demo",
+          object: "chat.completion.chunk",
+          model: "demo-assistant-v1",
+          choices: [{ index: 0, delta: {}, finish_reason: "stop" }],
+          usage: { prompt_tokens: 18, completion_tokens: 42, total_tokens: 60 },
+        });
+        res.write(`data: ${donePayload}\n\n`);
+        const endPayload = JSON.stringify({
+          id: "chatcmpl-demo",
+          object: "chat.completion.chunk",
+          model: "demo-assistant-v1",
+          done: true,
+        });
+        res.write(`data: ${endPayload}\n\n`);
         clearInterval(timer);
         res.end();
       }
-    }, 200);
+    }, 220);
 
     req.on("close", () => clearInterval(timer));
     return;
