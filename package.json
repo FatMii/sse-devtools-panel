@@ -1,6 +1,6 @@
 {
   "name": "eventstream-panel",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "license": "MIT",
   "description": "Chrome DevTools panel for inspecting EventStream (SSE / NDJSON / Connect+JSON) responses",
