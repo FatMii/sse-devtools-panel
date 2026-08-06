@@ -297,7 +297,7 @@ export function openDrawer(ev: SseEvent): void {
   applyDrawerWidth();
   state.drawerEventData = ev.data;
   state.drawerEventIndex = ev.index;
-  elDrawerTitle.textContent = `#${ev.index} · ${ev.event}`;
+  elDrawerTitle.textContent = t("drawerEventTitle", [String(ev.index), ev.event]);
   updateDrawerNavButtons();
 
   // Avoid wiping drawer search / rebuild when streaming updates the same open event

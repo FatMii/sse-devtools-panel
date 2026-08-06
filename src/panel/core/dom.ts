@@ -66,6 +66,9 @@ export const elStreamsCount = document.getElementById("streams-count") as HTMLSp
 export const elStatusbarCapture = document.getElementById(
   "statusbar-capture",
 ) as HTMLSpanElement | null;
+export const elStatusbarSummary = document.getElementById(
+  "statusbar-summary",
+) as HTMLSpanElement | null;
 export const elStatusbarLocale = document.getElementById(
   "statusbar-locale",
 ) as HTMLSpanElement | null;

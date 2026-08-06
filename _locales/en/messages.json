@@ -30,7 +30,7 @@
     "message": "Streams"
   },
   "streamsUrlFilterPlaceholder": {
-    "message": "Filter streams by URL substring"
+    "message": "Filter URL…"
   },
   "streamsUrlFilterTitle": {
     "message": "Filter stream list by URL text"
@@ -156,7 +156,7 @@
     "message": "Collapse tool details"
   },
   "eventsSearchPlaceholder": {
-    "message": "Filter Event / Data (regex supported, e.g. /delta|message/i)"
+    "message": "Filter event or data…"
   },
   "eventsSearchTitle": {
     "message": "Matches Event type and Data. Supports RegExp: pattern or /pattern/flags"
@@ -177,7 +177,7 @@
     "message": "Copy this event data"
   },
   "drawerPrev": {
-    "message": "Prev"
+    "message": "Previous"
   },
   "drawerPrevTitle": {
     "message": "Previous event (←)"
@@ -509,7 +509,7 @@
     "message": "Event arrival timeline"
   },
   "timelineTrackHint": {
-    "message": "Each tick is one event on the time axis. Red ticks had a wait ≥250ms before them. Click a tick to open that event."
+    "message": "Each tick marks one event. Red ticks had ≥250ms wait before arrival; blue is selected. Click to open."
   },
   "timelineGapHistogram": {
     "message": "Wait-time distribution between events"
@@ -567,10 +567,26 @@
     "message": "Close"
   },
   "drawerSearchPlaceholder": {
-    "message": "Search in JSON (regex supported)"
+    "message": "Search JSON…"
   },
   "drawerSearchTitle": {
     "message": "Supports RegExp: pattern or /pattern/flags"
+  },
+  "drawerResizeTitle": {
+    "message": "Drag to resize detail drawer"
+  },
+  "drawerEventTitle": {
+    "message": "Event #$INDEX$ · $EVENT$",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "40"
+      },
+      "event": {
+        "content": "$2",
+        "example": "message"
+      }
+    }
   },
   "selectStream": {
     "message": "Select a stream"
@@ -812,10 +828,10 @@
     "message": "show less"
   },
   "jsonCopyValue": {
-    "message": "copy value"
+    "message": "Copy value"
   },
   "jsonCopyPath": {
-    "message": "copy path"
+    "message": "Copy path"
   },
   "exportMenu": {
     "message": "Export"

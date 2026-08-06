@@ -208,7 +208,6 @@
           role="separator"
           aria-orientation="vertical"
           data-i18n-title="sidebarResizeTitle"
-          title="Drag to resize sidebar"
         ></div>
 
         <section class="detail">
@@ -291,7 +290,7 @@
                 id="events-resizer"
                 class="events-resizer drag-rail"
                 hidden
-                title="Resize drawer"
+                data-i18n-title="drawerResizeTitle"
               ></div>
               <aside id="events-drawer" class="events-drawer drawer" hidden>
                 <header class="drawer-header drawer-head">
@@ -389,9 +388,7 @@
 
       <footer class="statusbar">
         <span class="statusbar-capture" id="statusbar-capture">● Capturing</span>
-        <span class="statusbar-transports" data-i18n="statusbarTransports"
-          >Fetch / EventSource / XHR</span
-        >
+        <span class="statusbar-summary" id="statusbar-summary"></span>
         <span class="statusbar-right" id="statusbar-locale"></span>
       </footer>
     </div>
@@ -404,9 +401,9 @@
     <div id="row-context-menu" class="context-menu" hidden>
       <button type="button" data-action="copy-data" data-i18n="copyData">Copy Data</button>
       <button type="button" data-action="copy-json-value" data-i18n="jsonCopyValue">
-        copy value
+        Copy value
       </button>
-      <button type="button" data-action="copy-json-path" data-i18n="jsonCopyPath">copy path</button>
+      <button type="button" data-action="copy-json-path" data-i18n="jsonCopyPath">Copy path</button>
     </div>
 
     <dialog id="app-dialog" class="app-dialog">

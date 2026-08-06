@@ -87,6 +87,7 @@ import {
   closeAllMenus,
   closeAppDialog,
   copyText,
+  refreshStatusbarSummary,
   setUiPaused,
   showToast,
   toggleMenu,
@@ -899,6 +900,7 @@ function refreshLocaleUi(): void {
   if (elStatusbarCapture && !state.uiPaused) {
     elStatusbarCapture.textContent = t("statusbarCaptureActive");
   }
+  refreshStatusbarSummary();
   renderList();
   renderDetail();
 }

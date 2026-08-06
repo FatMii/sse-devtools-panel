@@ -11,6 +11,7 @@ import {
 } from "../core/format";
 import { getStreamSpecWarnings, scanStreamAnomalies } from "../features/stream-anomalies";
 import { state } from "../core/state";
+import { refreshStatusbarSummary } from "../core/ui-chrome";
 
 let listRenderScheduled = false;
 
@@ -146,4 +147,6 @@ export function renderList(): void {
       elList.insertBefore(li, elList.children[i] ?? null);
     }
   }
+
+  refreshStatusbarSummary();
 }

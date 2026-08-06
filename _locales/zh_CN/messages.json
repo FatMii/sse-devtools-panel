@@ -30,7 +30,7 @@
     "message": "数据流"
   },
   "streamsUrlFilterPlaceholder": {
-    "message": "按 URL 关键字过滤数据流"
+    "message": "搜索 URL…"
   },
   "streamsUrlFilterTitle": {
     "message": "按 URL 文本过滤左侧数据流列表"
@@ -156,7 +156,7 @@
     "message": "收起工具详情"
   },
   "eventsSearchPlaceholder": {
-    "message": "过滤事件类型 / 数据（支持正则，如 /delta|message/i）"
+    "message": "过滤事件或数据…"
   },
   "eventsSearchTitle": {
     "message": "匹配事件类型与数据。支持正则：pattern 或 /pattern/flags"
@@ -509,7 +509,7 @@
     "message": "事件到达时间线"
   },
   "timelineTrackHint": {
-    "message": "每个刻度是一个事件。红色表示到达前等待 ≥250ms。点击刻度可打开该事件。"
+    "message": "每个刻度对应一个事件。红色表示到达前等待 ≥250ms；蓝色为当前选中。点击可打开。"
   },
   "timelineGapHistogram": {
     "message": "相邻事件等待时长分布"
@@ -567,10 +567,26 @@
     "message": "关闭"
   },
   "drawerSearchPlaceholder": {
-    "message": "在 JSON 中搜索（支持正则）"
+    "message": "搜索 JSON…"
   },
   "drawerSearchTitle": {
     "message": "支持正则：pattern 或 /pattern/flags"
+  },
+  "drawerResizeTitle": {
+    "message": "拖动调整详情抽屉宽度"
+  },
+  "drawerEventTitle": {
+    "message": "事件 #$INDEX$ · $EVENT$",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "40"
+      },
+      "event": {
+        "content": "$2",
+        "example": "message"
+      }
+    }
   },
   "selectStream": {
     "message": "请选择一条数据流"

@@ -9,6 +9,7 @@ import {
   elMoreMenuPanel,
   elPauseUi,
   elStatusbarCapture,
+  elStatusbarSummary,
   elToast,
   elToastText,
 } from "./dom";
@@ -61,6 +62,19 @@ export function openAppDialog(title: string, body: HTMLElement): void {
   elDialogBody.innerHTML = "";
   elDialogBody.appendChild(body);
   if (!elDialog.open) elDialog.showModal();
+}
+
+export function refreshStatusbarSummary(): void {
+  if (!elStatusbarSummary) return;
+  const items = Array.from(state.streams.values());
+  const live = items.filter((s) => s.streamStatus === "streaming").length;
+  const streams = items.length;
+  const events = items.reduce((n, s) => n + s.events.length, 0);
+  elStatusbarSummary.textContent = t("connectionSummary", [
+    String(live),
+    String(streams),
+    String(events),
+  ]);
 }
 
 export function setUiPaused(next: boolean, hooks: UiPauseResumeHooks): void {
