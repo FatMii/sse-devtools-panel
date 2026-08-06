@@ -352,15 +352,15 @@ export function renderTranscript(
   const chips = document.createElement("div");
   chips.className = "transcript-chips";
   const chipProfile = document.createElement("span");
-  chipProfile.className = "meta-chip";
+  chipProfile.className = "meta-chip transcript-chip";
   chipProfile.textContent = `${t("transcriptProfileLabel")}: ${merged.profile}`;
   const chipVendor = document.createElement("span");
-  chipVendor.className = "meta-chip";
+  chipVendor.className = "meta-chip transcript-chip";
   chipVendor.textContent = `${t("transcriptVendorLabel")}: ${merged.vendorHint}`;
   chips.append(chipProfile, chipVendor);
   if (merged.endMeta.finishReason) {
     const chipFinish = document.createElement("span");
-    chipFinish.className = "meta-chip";
+    chipFinish.className = "meta-chip transcript-chip";
     chipFinish.textContent = `${t("transcriptFinishLabel")}: ${merged.endMeta.finishReason}`;
     chips.appendChild(chipFinish);
   }
