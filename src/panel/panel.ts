@@ -1006,6 +1006,10 @@ function setUiPaused(next: boolean): void {
   if (label) {
     label.textContent = uiPaused ? t("resumeUi") : t("pauseUi");
   }
+  const icon = elPauseUi.querySelector("svg.tool-icon");
+  if (icon) {
+    icon.outerHTML = renderIcon(uiPaused ? "play" : "pause", "tool-icon");
+  }
   elPauseUi.title = uiPaused ? t("resumeUiTitle") : t("pauseUiTitle");
   if (elStatusbarCapture) {
     elStatusbarCapture.textContent = uiPaused ? t("statusbarCapturePaused") : t("statusbarCaptureActive");
