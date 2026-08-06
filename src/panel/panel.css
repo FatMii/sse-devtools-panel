@@ -333,7 +333,7 @@ button.is-paused {
 .workbench {
   min-height: 0;
   display: grid;
-  grid-template-columns: var(--sidebar) 5px 1fr;
+  grid-template-columns: var(--sidebar) 1px 1fr;
 }
 
 .sidebar {
@@ -347,11 +347,21 @@ button.is-paused {
 .sidebar-resizer {
   position: relative;
   z-index: 3;
-  width: 5px;
-  min-width: 5px;
-  margin: 0 -2px;
+  width: 1px;
+  min-width: 1px;
   cursor: col-resize;
   touch-action: none;
+  background: transparent;
+}
+
+.sidebar-resizer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 8px;
+  transform: translateX(-50%);
 }
 
 .sidebar-resizer:hover,
@@ -1404,7 +1414,7 @@ body.is-col-resizing {
 }
 
 .events-resizer,
-.drag-rail {
+.drag-rail:not(.sidebar-resizer) {
   background: var(--stroke);
   cursor: col-resize;
 }
