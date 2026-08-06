@@ -19,7 +19,7 @@ Until this is Public, strangers cannot browse the code or open normal community 
 3. **Add branch protection rule** (or a Ruleset) for `main`:
    - Require a pull request before merging
    - Require status checks to pass before merging
-   - Status check to require: **`test / typecheck / build`**
+   - Status check to require: **`lint / test / typecheck / build`**
 4. Save.
 
 After this, a red CI blocks merge (unless an admin bypasses the rule).

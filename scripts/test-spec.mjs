@@ -30,12 +30,8 @@ await build({
   logLevel: "error",
 });
 
-const {
-  lintSseEventBlock,
-  lintSseStreamRaw,
-  scanStreamSpecWarnings,
-  buildSseFixture,
-} = await import(`file:///${resolve(outDir, "sse-spec.js").replace(/\\/g, "/")}`);
+const { lintSseEventBlock, lintSseStreamRaw, scanStreamSpecWarnings, buildSseFixture } =
+  await import(`file:///${resolve(outDir, "sse-spec.js").replace(/\\/g, "/")}`);
 
 function assert(cond, msg) {
   if (!cond) throw new Error(msg);
@@ -54,7 +50,10 @@ function assert(cond, msg) {
 
 {
   const w = lintSseEventBlock("retry: 1.5\ndata: x", 0);
-  assert(w.some((x) => x.kind === "invalid-retry"), "invalid retry");
+  assert(
+    w.some((x) => x.kind === "invalid-retry"),
+    "invalid retry",
+  );
 }
 
 {
@@ -64,12 +63,18 @@ function assert(cond, msg) {
 
 {
   const w = lintSseEventBlock("id: a\u0000b\ndata: x", 1);
-  assert(w.some((x) => x.kind === "null-in-id"), "null in id");
+  assert(
+    w.some((x) => x.kind === "null-in-id"),
+    "null in id",
+  );
 }
 
 {
   const w = lintSseEventBlock("\uFEFFdata: x", 0);
-  assert(w.some((x) => x.kind === "bom"), "bom on block");
+  assert(
+    w.some((x) => x.kind === "bom"),
+    "bom on block",
+  );
 }
 
 {
@@ -100,7 +105,7 @@ function assert(cond, msg) {
     { event: "message", data: '{"a":1}' },
     { event: "delta", id: "2", data: "hello\nworld", retry: 3000 },
   ]);
-  assert(text.includes("data: {\"a\":1}"), "fixture data");
+  assert(text.includes('data: {"a":1}'), "fixture data");
   assert(text.includes("event: delta"), "fixture event");
   assert(text.includes("id: 2"), "fixture id");
   assert(text.includes("retry: 3000"), "fixture retry");

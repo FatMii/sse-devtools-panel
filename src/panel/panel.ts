@@ -1,189 +1,147 @@
 import "./panel.css";
-import { applyIcons, renderIcon } from "./icons";
+import { applyIcons } from "./icons";
 import type {
   RelayMessage,
   SseEvent,
-  StreamMetrics,
   StreamRecord,
   StreamKind,
   StreamStartPayload,
-  StreamTransport,
   StreamChunkPayload,
   StreamEndPayload,
   StreamErrorPayload,
   StreamReconnectPayload,
-  StreamCloseReason,
 } from "../shared/types";
-import { applyDomI18n, getActiveLocale, initI18n, onLocaleChange, t, uiLanguage } from "../shared/i18n";
+import {
+  applyDomI18n,
+  getActiveLocale,
+  initI18n,
+  onLocaleChange,
+  t,
+  uiLanguage,
+} from "../shared/i18n";
 import { latestEventIdFromEvents } from "../shared/stream-close";
 import { SseParser, type ParsedSseEvent } from "../shared/sse-parser";
 import { NdjsonParser } from "../shared/ndjson-parser";
 import { ConnectJsonParser } from "../shared/connect-json-parser";
-import { compileTextFilter } from "../shared/text-filter";
-import {
-  deleteStreamArchive,
-  getStreamArchive,
-  listStreamArchives,
-  saveStreamArchive,
-  type StreamArchiveEntry,
-} from "../shared/stream-archive-db";
-import {
-  buildSseFixture,
-  buildStreamExportCsv,
-  buildStreamExportPayload,
-  createRequestId,
-  parseStreamExportJson,
-  streamRecordFromExport,
-} from "../shared/stream-snapshot";
-import { mergeAiTranscript, transcriptHasContent, type AiTranscript } from "../shared/ai-merge";
-import {
-  scanStreamSpecWarnings,
-  type SseSpecWarning,
-  type SseSpecWarningKind,
-} from "../shared/sse-spec";
-import {
-  buildGapHistogram,
-  buildTimelineMarks,
-  collectEventGaps,
-  largestGaps,
-  timelineSpanMs,
-  type HistogramBin,
-} from "../shared/stream-timing";
-import {
-  looksLikeUrlEncoded,
-  parseQueryStringParams,
-  parseUrlEncodedPairs,
-  requestContentType,
-  type NameValuePair,
-} from "../shared/request-view";
-import { applyTreeSearch, createJsonTree, tryParseJsonValue } from "./json-tree";
+import { mergeAiTranscript, transcriptHasContent } from "../shared/ai-merge";
 import { initEventsColumnResizers } from "./column-resizer";
+import {
+  elList,
+  elMeta,
+  elMetaMethod,
+  elMetaUrl,
+  elMetaTags,
+  elRaw,
+  elStreamsUrlFilter,
+  elStreamsTransportFilter,
+  elExportJson,
+  elExportCsv,
+  elExportFixture,
+  elImportJson,
+  elPauseUi,
+  elImportFile,
+  elSaveArchive,
+  elArchives,
+  elStats,
+  elAnomalies,
+  elSpecWarnings,
+  elSearchAll,
+  elDialog,
+  elDialogClose,
+  elStatusbarCapture,
+  elStatusbarLocale,
+  elTabCountEvents,
+  elTabCountRaw,
+  elTabCountTranscript,
+  elExportMenu,
+  elExportMenuBtn,
+  elExportMenuPanel,
+  elMoreMenu,
+  elMoreMenuBtn,
+  elMoreMenuPanel,
+  elDrawer,
+  elDrawerClose,
+  elDrawerPrev,
+  elDrawerNext,
+  elDrawerCopy,
+  elContextMenu,
+  elEventsSearch,
+  elDrawerSearch,
+  elTableWrap,
+  elSidebarResizer,
+  elResizer,
+  elEvents,
+} from "./dom";
+import { escapeHtml, formatDuration, closeReasonLabel } from "./format";
+import { computeStreamMetrics } from "./stream-metrics";
+import { clearStreamAnomalyCaches, invalidateStreamAnomalyCache } from "./stream-anomalies";
+import { renderTimeline } from "./timeline-view";
+import { renderRequest, resetRequestViewState } from "./request-view-ui";
+import { renderTranscript, resetTranscriptView } from "./transcript-view";
+import { state, type ActiveTab, type StreamParser } from "./state";
+import {
+  closeAllMenus,
+  closeAppDialog,
+  copyText,
+  setUiPaused,
+  showToast,
+  toggleMenu,
+} from "./ui-chrome";
+import {
+  addStaticStream,
+  exportSelectedStreamCsv,
+  exportSelectedStreamFixture,
+  exportSelectedStreamJson,
+  importStreamFromFile,
+  saveSelectedStreamArchive,
+  type ExportImportHooks,
+} from "./export-import";
+import {
+  showAnomaliesDialog,
+  showArchivesDialog,
+  showGlobalSearchDialog,
+  showSpecWarningsDialog,
+  showStatsDialog,
+  type DialogHooks,
+} from "./dialogs";
+import {
+  applyDrawerWidth,
+  applyDrawerSearch,
+  applyEventsFilter,
+  clearEventsView,
+  closeDrawer,
+  DRAWER_WIDTH_MAX,
+  DRAWER_WIDTH_MIN,
+  getBrowsableEvents,
+  hideContextMenu,
+  navigateDrawer,
+  renderEvents,
+  selectEventByIndex,
+  updateDrawerNavButtons,
+  bindJsonTreeContextMenu,
+} from "./events-view";
+import { renderList, scheduleRenderList } from "./stream-list";
 
 const PANEL_PORT = "sse-devtools-panel";
-const DATA_PREVIEW_LEN = 80;
-const DRAWER_WIDTH_MIN = 20;
-const DRAWER_WIDTH_MAX = 75;
-const DRAWER_WIDTH_DEFAULT = 42;
 
-type StreamParser = {
-  push(chunk: string): ParsedSseEvent[];
-  flush(): ParsedSseEvent[];
+const pauseHooks = {
+  renderList,
+  renderDetail,
 };
 
-type StreamAnomalyKind = "empty-data" | "json-parse-failed" | "duplicate-id" | "oversized-packet";
-
-type StreamAnomaly = {
-  kind: StreamAnomalyKind;
-  eventIndex: number;
-  message: string;
+const exportHooks: ExportImportHooks = {
+  getBrowsableEvents,
+  renderList,
+  renderDetail,
 };
 
-const streams = new Map<string, StreamRecord>();
-const parsers = new Map<string, StreamParser>();
-let selectedId: string | null = null;
-let selectedEventIndex: number | null = null;
-/** Data of the event currently shown in the drawer (for Copy). */
-let drawerEventData: string | null = null;
-/** Index of the event currently shown in the drawer. */
-let drawerEventIndex: number | null = null;
-type ContextMenuData =
-  | { kind: "event-data"; data: string }
-  | { kind: "json-node"; path: string; value?: string };
-/** Data targeted by the row / json-tree context menu. */
-let contextMenuData: ContextMenuData | null = null;
-let activeTab: "events" | "raw" | "timeline" | "request" | "transcript" = "events";
-let transcriptChannel: "content" | "reasoning" | "tools" | "meta" = "content";
-let transcriptFingerprint = "";
-let lastTranscript: AiTranscript | null = null;
-/** Which tool cards stay expanded across Tools pane re-renders (per stream). */
-let toolsExpandStreamId: string | null = null;
-let toolsExpandedIndexes = new Set<number>();
-let requestPane: "headers" | "payload" = "headers";
-let requestPayloadView: "parsed" | "source" = "parsed";
-/** Skip Request tab DOM rebuild while streaming if request meta did not change. */
-let requestViewFingerprint = "";
-let drawerWidthPercent = DRAWER_WIDTH_DEFAULT;
-let eventsSearchQuery = "";
-let drawerSearchQuery = "";
-let streamsUrlFilterQuery = "";
-let streamsTransportFilter: StreamTransport | "all" = "all";
-let uiPaused = false;
-let pendingListRefreshWhilePaused = false;
-let pendingDetailRefreshWhilePaused = false;
-const anomalyCache = new Map<string, { eventCount: number; anomalies: StreamAnomaly[] }>();
-const specWarningCache = new Map<string, { eventCount: number; rawLen: number; warnings: SseSpecWarning[] }>();
-
-const elList = document.getElementById("stream-list") as HTMLUListElement;
-const elEmpty = document.getElementById("empty-hint") as HTMLDivElement;
-const elMeta = document.getElementById("meta") as HTMLDivElement;
-const elMetaMethod = document.getElementById("meta-method") as HTMLSpanElement;
-const elMetaUrl = document.getElementById("meta-url") as HTMLSpanElement;
-const elMetaTags = document.getElementById("meta-tags") as HTMLDivElement;
-const elEvents = document.getElementById("view-events") as HTMLDivElement;
-const elPlaceholder = document.getElementById("events-placeholder") as HTMLDivElement;
-const elTableWrap = document.getElementById("events-table-wrap") as HTMLDivElement;
-const elTbody = document.getElementById("events-tbody") as HTMLTableSectionElement;
-const elEventsSearch = document.getElementById("events-search") as HTMLInputElement;
-const elResizer = document.getElementById("events-resizer") as HTMLDivElement;
-const elSidebarResizer = document.getElementById("sidebar-resizer") as HTMLDivElement;
-const elDrawer = document.getElementById("events-drawer") as HTMLElement;
-const elDrawerTitle = document.getElementById("drawer-title") as HTMLSpanElement;
-const elDrawerBody = document.getElementById("drawer-body") as HTMLDivElement;
-const elDrawerSearch = document.getElementById("drawer-search") as HTMLInputElement;
-const elDrawerClose = document.getElementById("drawer-close") as HTMLButtonElement;
-const elDrawerPrev = document.getElementById("drawer-prev") as HTMLButtonElement;
-const elDrawerNext = document.getElementById("drawer-next") as HTMLButtonElement;
-const elDrawerCopy = document.getElementById("drawer-copy") as HTMLButtonElement;
-const elContextMenu = document.getElementById("row-context-menu") as HTMLDivElement;
-const elMenuCopyData = elContextMenu.querySelector<HTMLButtonElement>('button[data-action="copy-data"]');
-const elMenuCopyJsonValue = elContextMenu.querySelector<HTMLButtonElement>(
-  'button[data-action="copy-json-value"]',
-);
-const elMenuCopyJsonPath = elContextMenu.querySelector<HTMLButtonElement>(
-  'button[data-action="copy-json-path"]',
-);
-const elRaw = document.getElementById("raw-body") as HTMLPreElement;
-const elTimelinePlaceholder = document.getElementById("timeline-placeholder") as HTMLDivElement;
-const elTimelineBody = document.getElementById("timeline-body") as HTMLDivElement;
-const elRequestPlaceholder = document.getElementById("request-placeholder") as HTMLDivElement;
-const elRequestBody = document.getElementById("request-body") as HTMLDivElement;
-const elTranscriptPlaceholder = document.getElementById("transcript-placeholder") as HTMLDivElement;
-const elTranscriptBody = document.getElementById("transcript-body") as HTMLDivElement;
-const elStreamsUrlFilter = document.getElementById("streams-url-filter") as HTMLInputElement;
-const elStreamsTransportFilter = document.getElementById("streams-transport-filter") as HTMLSelectElement;
-const elExportJson = document.getElementById("btn-export-json") as HTMLButtonElement;
-const elExportCsv = document.getElementById("btn-export-csv") as HTMLButtonElement;
-const elExportFixture = document.getElementById("btn-export-fixture") as HTMLButtonElement;
-const elImportJson = document.getElementById("btn-import-json") as HTMLButtonElement;
-const elPauseUi = document.getElementById("btn-pause-ui") as HTMLButtonElement;
-const elImportFile = document.getElementById("import-file") as HTMLInputElement;
-const elSaveArchive = document.getElementById("btn-save-archive") as HTMLButtonElement;
-const elArchives = document.getElementById("btn-archives") as HTMLButtonElement;
-const elStats = document.getElementById("btn-stats") as HTMLButtonElement;
-const elAnomalies = document.getElementById("btn-anomalies") as HTMLButtonElement;
-const elSpecWarnings = document.getElementById("btn-spec-warnings") as HTMLButtonElement;
-const elSearchAll = document.getElementById("btn-search-all") as HTMLButtonElement;
-const elDialog = document.getElementById("app-dialog") as HTMLDialogElement;
-const elDialogTitle = document.getElementById("app-dialog-title") as HTMLSpanElement;
-const elDialogBody = document.getElementById("app-dialog-body") as HTMLDivElement;
-const elDialogClose = document.getElementById("app-dialog-close") as HTMLButtonElement;
-const elStreamsCount = document.getElementById("streams-count") as HTMLSpanElement | null;
-const elStatusbarCapture = document.getElementById("statusbar-capture") as HTMLSpanElement | null;
-const elStatusbarLocale = document.getElementById("statusbar-locale") as HTMLSpanElement | null;
-const elEventsFilterHint = document.getElementById("events-filter-hint") as HTMLSpanElement | null;
-const elTabCountEvents = document.getElementById("tab-count-events") as HTMLSpanElement | null;
-const elTabCountRaw = document.getElementById("tab-count-raw") as HTMLSpanElement | null;
-const elTabCountTranscript = document.getElementById("tab-count-transcript") as HTMLSpanElement | null;
-const elToast = document.getElementById("toast") as HTMLDivElement | null;
-const elToastText = document.getElementById("toast-text") as HTMLSpanElement | null;
-const elExportMenu = document.getElementById("export-menu") as HTMLDivElement | null;
-const elExportMenuBtn = document.getElementById("btn-export-menu") as HTMLButtonElement | null;
-const elExportMenuPanel = document.getElementById("export-menu-panel") as HTMLDivElement | null;
-const elMoreMenu = document.getElementById("more-menu") as HTMLDivElement | null;
-const elMoreMenuBtn = document.getElementById("btn-more-menu") as HTMLButtonElement | null;
-const elMoreMenuPanel = document.getElementById("more-menu-panel") as HTMLDivElement | null;
-
-let toastTimer: ReturnType<typeof setTimeout> | null = null;
+const dialogHooks: DialogHooks = {
+  renderList,
+  renderDetail,
+  activateTab: (tab) => activateTab(tab),
+  selectEventByIndex,
+  addStaticStream: (record) => addStaticStream(record, exportHooks),
+};
 
 function connect(): void {
   const port = chrome.runtime.connect({ name: PANEL_PORT });
@@ -236,7 +194,7 @@ function createParser(kind: StreamKind): StreamParser {
 }
 
 function onStart(payload: StreamStartPayload): void {
-  const existing = streams.get(payload.requestId);
+  const existing = state.streams.get(payload.requestId);
   if (existing) {
     // Merge header metadata into a provisional row without wiping chunks already received.
     existing.url = payload.url;
@@ -246,7 +204,8 @@ function onStart(payload: StreamStartPayload): void {
     existing.contentType = payload.contentType ?? existing.contentType;
     existing.requestHeaders = payload.requestHeaders ?? existing.requestHeaders;
     existing.responseHeaders = payload.responseHeaders ?? existing.responseHeaders;
-    existing.requestPayloadPreview = payload.requestPayloadPreview ?? existing.requestPayloadPreview;
+    existing.requestPayloadPreview =
+      payload.requestPayloadPreview ?? existing.requestPayloadPreview;
     existing.requestPayloadTruncated =
       payload.requestPayloadTruncated ?? existing.requestPayloadTruncated;
     existing.transport = payload.transport;
@@ -254,9 +213,9 @@ function onStart(payload: StreamStartPayload): void {
     existing.streamKind = payload.streamKind;
     existing.startedAt = payload.startedAt;
     // Provisional announce may guess wrong (sse vs connect-json); swap parser when kind changes.
-    if (!parsers.has(payload.requestId) || prevKind !== payload.streamKind) {
+    if (!state.parsers.has(payload.requestId) || prevKind !== payload.streamKind) {
       const parser = createParser(payload.streamKind);
-      parsers.set(payload.requestId, parser);
+      state.parsers.set(payload.requestId, parser);
       // Chunks may have arrived under the wrong parser (postMessage race). Rebuild events from raw.
       if (prevKind !== payload.streamKind && existing.raw) {
         existing.events = [];
@@ -264,12 +223,12 @@ function onStart(payload: StreamStartPayload): void {
         existing.events.push(...rebuilt);
       }
     }
-    if (uiPaused) {
-      pendingListRefreshWhilePaused = true;
-      if (selectedId === payload.requestId) pendingDetailRefreshWhilePaused = true;
+    if (state.uiPaused) {
+      state.pendingListRefreshWhilePaused = true;
+      if (state.selectedId === payload.requestId) state.pendingDetailRefreshWhilePaused = true;
     } else {
       renderList();
-      if (selectedId === payload.requestId) {
+      if (state.selectedId === payload.requestId) {
         renderDetail(true);
       }
     }
@@ -295,39 +254,38 @@ function onStart(payload: StreamStartPayload): void {
     events: [],
     origin: "live",
   };
-  streams.set(payload.requestId, record);
-  parsers.set(payload.requestId, createParser(payload.streamKind));
+  state.streams.set(payload.requestId, record);
+  state.parsers.set(payload.requestId, createParser(payload.streamKind));
 
-  if (!selectedId) {
-    selectedId = payload.requestId;
+  if (!state.selectedId) {
+    state.selectedId = payload.requestId;
   }
 
-  if (uiPaused) {
-    pendingListRefreshWhilePaused = true;
-    if (selectedId === payload.requestId) pendingDetailRefreshWhilePaused = true;
+  if (state.uiPaused) {
+    state.pendingListRefreshWhilePaused = true;
+    if (state.selectedId === payload.requestId) state.pendingDetailRefreshWhilePaused = true;
   } else {
     renderList();
-    if (selectedId === payload.requestId) {
-      selectedEventIndex = null;
+    if (state.selectedId === payload.requestId) {
+      state.selectedEventIndex = null;
       renderDetail();
     }
   }
 }
 
 function onDiscard(requestId: string): void {
-  streams.delete(requestId);
-  parsers.delete(requestId);
-  anomalyCache.delete(requestId);
-  specWarningCache.delete(requestId);
-  if (selectedId === requestId) {
-    selectedId = null;
-    selectedEventIndex = null;
-    const next = Array.from(streams.keys())[0] ?? null;
-    selectedId = next;
+  state.streams.delete(requestId);
+  state.parsers.delete(requestId);
+  invalidateStreamAnomalyCache(requestId);
+  if (state.selectedId === requestId) {
+    state.selectedId = null;
+    state.selectedEventIndex = null;
+    const next = Array.from(state.streams.keys())[0] ?? null;
+    state.selectedId = next;
   }
-  if (uiPaused) {
-    pendingListRefreshWhilePaused = true;
-    pendingDetailRefreshWhilePaused = true;
+  if (state.uiPaused) {
+    state.pendingListRefreshWhilePaused = true;
+    state.pendingDetailRefreshWhilePaused = true;
     return;
   }
   renderList();
@@ -335,8 +293,8 @@ function onDiscard(requestId: string): void {
 }
 
 function onChunk(payload: StreamChunkPayload): void {
-  const record = streams.get(payload.requestId);
-  const parser = parsers.get(payload.requestId);
+  const record = state.streams.get(payload.requestId);
+  const parser = state.parsers.get(payload.requestId);
   if (!record || !parser) return;
 
   record.raw += payload.text;
@@ -347,51 +305,21 @@ function onChunk(payload: StreamChunkPayload): void {
     if (latestId) record.lastEventId = latestId;
   }
 
-  if (uiPaused) {
-    pendingListRefreshWhilePaused = true;
-    if (selectedId === payload.requestId) pendingDetailRefreshWhilePaused = true;
+  if (state.uiPaused) {
+    state.pendingListRefreshWhilePaused = true;
+    if (state.selectedId === payload.requestId) state.pendingDetailRefreshWhilePaused = true;
     return;
   }
   // XHR can emit very frequent tiny deltas; avoid nuking the list DOM on every chunk.
   scheduleRenderList();
-  if (selectedId === payload.requestId) {
+  if (state.selectedId === payload.requestId) {
     scheduleRenderDetail(true);
   }
 }
 
-function computeStreamMetrics(record: StreamRecord): StreamMetrics {
-  const events = record.events;
-  const firstTs = events[0]?.receivedAt;
-  const endedAt = record.endedAt;
-  const durationMs =
-    typeof endedAt === "number" && endedAt >= record.startedAt ? endedAt - record.startedAt : undefined;
-  const ttftMs = typeof firstTs === "number" ? Math.max(0, firstTs - record.startedAt) : undefined;
-  const gaps: number[] = [];
-  for (let i = 1; i < events.length; i += 1) {
-    const gap = events[i].receivedAt - events[i - 1].receivedAt;
-    if (Number.isFinite(gap) && gap >= 0) gaps.push(gap);
-  }
-  const avgGapMs =
-    gaps.length > 0 ? gaps.reduce((sum, ms) => sum + ms, 0) / gaps.length : undefined;
-  const p95GapMs =
-    gaps.length > 0
-      ? [...gaps].sort((a, b) => a - b)[Math.max(0, Math.ceil(gaps.length * 0.95) - 1)]
-      : undefined;
-  const eventsPerSec =
-    durationMs && durationMs > 0 ? Number((events.length / (durationMs / 1000)).toFixed(2)) : undefined;
-  return { ttftMs, durationMs, avgGapMs, p95GapMs, eventsPerSec };
-}
-
-function ensureStreamMetrics(record: StreamRecord): StreamMetrics {
-  if (record.metrics) return record.metrics;
-  const next = computeStreamMetrics(record);
-  record.metrics = next;
-  return next;
-}
-
 function onEnd(payload: StreamEndPayload): void {
-  const record = streams.get(payload.requestId);
-  const parser = parsers.get(payload.requestId);
+  const record = state.streams.get(payload.requestId);
+  const parser = state.parsers.get(payload.requestId);
   if (!record) return;
 
   if (parser) {
@@ -407,38 +335,38 @@ function onEnd(payload: StreamEndPayload): void {
   record.endedAt = payload.endedAt;
   record.closeReason = payload.closeReason ?? "complete";
   record.metrics = computeStreamMetrics(record);
-  if (uiPaused) {
-    pendingListRefreshWhilePaused = true;
-    if (selectedId === payload.requestId) pendingDetailRefreshWhilePaused = true;
+  if (state.uiPaused) {
+    state.pendingListRefreshWhilePaused = true;
+    if (state.selectedId === payload.requestId) state.pendingDetailRefreshWhilePaused = true;
     return;
   }
   renderList();
-  if (selectedId === payload.requestId) {
+  if (state.selectedId === payload.requestId) {
     renderDetail(true);
   }
 }
 
 function onError(payload: StreamErrorPayload): void {
-  const record = streams.get(payload.requestId);
+  const record = state.streams.get(payload.requestId);
   if (!record) return;
   record.streamStatus = "error";
   record.errorMessage = payload.message;
   record.closeReason = payload.closeReason ?? "error";
   record.endedAt = payload.endedAt;
   record.metrics = computeStreamMetrics(record);
-  if (uiPaused) {
-    pendingListRefreshWhilePaused = true;
-    if (selectedId === payload.requestId) pendingDetailRefreshWhilePaused = true;
+  if (state.uiPaused) {
+    state.pendingListRefreshWhilePaused = true;
+    if (state.selectedId === payload.requestId) state.pendingDetailRefreshWhilePaused = true;
     return;
   }
   renderList();
-  if (selectedId === payload.requestId) {
+  if (state.selectedId === payload.requestId) {
     renderDetail();
   }
 }
 
 function onReconnect(payload: StreamReconnectPayload): void {
-  const record = streams.get(payload.requestId);
+  const record = state.streams.get(payload.requestId);
   if (!record) return;
   record.reconnectCount = payload.reconnectCount;
   if (payload.lastEventId) {
@@ -452,36 +380,15 @@ function onReconnect(payload: StreamReconnectPayload): void {
   if (!record.reconnects) record.reconnects = [mark];
   else record.reconnects.push(mark);
 
-  if (uiPaused) {
-    pendingListRefreshWhilePaused = true;
-    if (selectedId === payload.requestId) pendingDetailRefreshWhilePaused = true;
+  if (state.uiPaused) {
+    state.pendingListRefreshWhilePaused = true;
+    if (state.selectedId === payload.requestId) state.pendingDetailRefreshWhilePaused = true;
     return;
   }
   renderList();
-  if (selectedId === payload.requestId) {
+  if (state.selectedId === payload.requestId) {
     renderDetail(true);
   }
-}
-
-function shortPath(url: string): string {
-  try {
-    const u = new URL(url, "https://example.com");
-    return u.pathname + u.search;
-  } catch {
-    return url;
-  }
-}
-
-function formatTime(ts: number): string {
-  const d = new Date(ts);
-  const pad = (n: number, len = 2) => String(n).padStart(len, "0");
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`;
-}
-
-function previewData(data: string): string {
-  const oneLine = data.replace(/\s+/g, " ").trim();
-  if (oneLine.length <= DATA_PREVIEW_LEN) return oneLine;
-  return oneLine.slice(0, DATA_PREVIEW_LEN) + "…";
 }
 
 function renderStreamMeta(record: StreamRecord | undefined): void {
@@ -547,510 +454,6 @@ function renderStreamMeta(record: StreamRecord | undefined): void {
   elMetaTags.innerHTML = bits.join("");
 }
 
-const OVERSIZED_PACKET_THRESHOLD = 16_000;
-
-function anomalyKindLabel(kind: StreamAnomalyKind): string {
-  switch (kind) {
-    case "empty-data":
-      return t("anomalyEmptyData");
-    case "json-parse-failed":
-      return t("anomalyJsonParseFailed");
-    case "duplicate-id":
-      return t("anomalyDuplicateId");
-    case "oversized-packet":
-      return t("anomalyOversizedPacket");
-    default:
-      return kind;
-  }
-}
-
-function scanStreamAnomalies(record: StreamRecord): StreamAnomaly[] {
-  const cached = anomalyCache.get(record.requestId);
-  if (cached && cached.eventCount === record.events.length) {
-    return cached.anomalies;
-  }
-  const seenIds = new Set<string>();
-  const anomalies: StreamAnomaly[] = [];
-  for (const ev of record.events) {
-    const data = ev.data ?? "";
-    if (!data.trim()) {
-      anomalies.push({
-        kind: "empty-data",
-        eventIndex: ev.index,
-        message: t("anomalyEmptyDataDesc"),
-      });
-    }
-    const trimmed = data.trimStart();
-    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
-      try {
-        JSON.parse(data);
-      } catch {
-        anomalies.push({
-          kind: "json-parse-failed",
-          eventIndex: ev.index,
-          message: t("anomalyJsonParseFailedDesc"),
-        });
-      }
-    }
-    if (ev.id) {
-      if (seenIds.has(ev.id)) {
-        anomalies.push({
-          kind: "duplicate-id",
-          eventIndex: ev.index,
-          message: t("anomalyDuplicateIdDesc", ev.id),
-        });
-      } else {
-        seenIds.add(ev.id);
-      }
-    }
-    if (data.length >= OVERSIZED_PACKET_THRESHOLD) {
-      anomalies.push({
-        kind: "oversized-packet",
-        eventIndex: ev.index,
-        message: t("anomalyOversizedPacketDesc", String(data.length)),
-      });
-    }
-  }
-  anomalyCache.set(record.requestId, { eventCount: record.events.length, anomalies });
-  return anomalies;
-}
-
-function getStreamSpecWarnings(record: StreamRecord): SseSpecWarning[] {
-  const cached = specWarningCache.get(record.requestId);
-  if (
-    cached &&
-    cached.eventCount === record.events.length &&
-    cached.rawLen === record.raw.length
-  ) {
-    return cached.warnings;
-  }
-  const warnings = scanStreamSpecWarnings(record);
-  specWarningCache.set(record.requestId, {
-    eventCount: record.events.length,
-    rawLen: record.raw.length,
-    warnings,
-  });
-  return warnings;
-}
-
-function specWarningKindLabel(kind: SseSpecWarningKind): string {
-  switch (kind) {
-    case "unknown-field":
-      return t("specUnknownField");
-    case "invalid-retry":
-      return t("specInvalidRetry");
-    case "null-in-id":
-      return t("specNullInId");
-    case "bom":
-      return t("specBom");
-    default:
-      return kind;
-  }
-}
-
-function specWarningMessage(warning: SseSpecWarning): string {
-  switch (warning.kind) {
-    case "unknown-field":
-      return t("specUnknownFieldDesc", warning.detail ?? "");
-    case "invalid-retry":
-      return t("specInvalidRetryDesc", warning.detail ?? "");
-    case "null-in-id":
-      return t("specNullInIdDesc");
-    case "bom":
-      return t("specBomDesc");
-    default:
-      return warning.kind;
-  }
-}
-
-function eventMatchesSearch(ev: SseEvent, query: string): boolean {
-  // Align with Chrome Network EventStream: filter on event type + data payload
-  const filter = compileTextFilter(query);
-  if (filter.isEmpty) return true;
-  return filter.test(ev.event) || filter.test(ev.data);
-}
-
-/** Events currently visible under the Events search filter (ordered). */
-function getBrowsableEvents(record: StreamRecord): SseEvent[] {
-  return record.events.filter((ev) => eventMatchesSearch(ev, eventsSearchQuery));
-}
-
-function scrollEventRowIntoView(
-  row: HTMLTableRowElement,
-  mode: "nearest" | "start",
-): void {
-  const wrap = elTableWrap;
-  const wrapRect = wrap.getBoundingClientRect();
-  const rowRect = row.getBoundingClientRect();
-  const thead = wrap.querySelector("thead");
-  const headerHeight = thead ? thead.getBoundingClientRect().height : 0;
-  const pad = 4;
-
-  if (mode === "start") {
-    const targetTop = Math.max(0, row.offsetTop - headerHeight - pad);
-    wrap.scrollTop = targetTop;
-    return;
-  }
-
-  const visibleTop = wrapRect.top + headerHeight;
-  const visibleBottom = wrapRect.bottom;
-  if (rowRect.top < visibleTop) {
-    wrap.scrollTop -= visibleTop - rowRect.top + pad;
-    return;
-  }
-  if (rowRect.bottom > visibleBottom) {
-    wrap.scrollTop += rowRect.bottom - visibleBottom + pad;
-  }
-}
-
-function selectEventByIndex(
-  record: StreamRecord,
-  index: number,
-  options?: { scrollMode?: "nearest" | "start" },
-): void {
-  const ev = record.events.find((e) => e.index === index);
-  if (!ev) return;
-  selectedEventIndex = index;
-  syncRowSelection();
-  openDrawer(ev);
-  const row = elTbody.querySelector<HTMLTableRowElement>(`tr[data-index="${index}"]`);
-  if (row) {
-    scrollEventRowIntoView(row, options?.scrollMode ?? "nearest");
-  }
-}
-
-function navigateDrawer(offset: -1 | 1): void {
-  const record = selectedId ? streams.get(selectedId) : undefined;
-  if (!record || selectedEventIndex == null) return;
-
-  const browsable = getBrowsableEvents(record);
-  if (browsable.length === 0) return;
-
-  const pos = browsable.findIndex((ev) => ev.index === selectedEventIndex);
-  if (pos === -1) return;
-
-  const nextPos = pos + offset;
-  if (nextPos < 0 || nextPos >= browsable.length) return;
-  selectEventByIndex(record, browsable[nextPos].index);
-}
-
-function updateDrawerNavButtons(): void {
-  const record = selectedId ? streams.get(selectedId) : undefined;
-  if (!record || selectedEventIndex == null || elDrawer.hidden) {
-    elDrawerPrev.disabled = true;
-    elDrawerNext.disabled = true;
-    return;
-  }
-
-  const browsable = getBrowsableEvents(record);
-  const pos = browsable.findIndex((ev) => ev.index === selectedEventIndex);
-  elDrawerPrev.disabled = pos <= 0;
-  elDrawerNext.disabled = pos === -1 || pos >= browsable.length - 1;
-}
-
-function sanitizeFilenamePart(value: string): string {
-  return value.replace(/[<>:"/\\|?*\u0000-\u001f]/g, "_").slice(0, 80) || "stream";
-}
-
-function buildExportFilename(record: StreamRecord, ext: "json" | "csv" | "sse"): string {
-  const path = shortPath(record.url).replace(/^\//, "") || "stream";
-  const stamp = new Date(record.startedAt).toISOString().replace(/[:.]/g, "-");
-  return `sse-stream-${sanitizeFilenamePart(path)}-${stamp}.${ext}`;
-}
-
-function downloadTextFile(filename: string, text: string, mime: string): void {
-  const blob = new Blob([text], { type: mime });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.rel = "noopener";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-/** Export selected stream for sharing / repro. */
-function exportSelectedStreamJson(): void {
-  const record = selectedId ? streams.get(selectedId) : undefined;
-  if (!record) {
-    window.alert(t("needSelectedStream"));
-    return;
-  }
-  const payload = buildStreamExportPayload(record);
-  downloadTextFile(
-    buildExportFilename(record, "json"),
-    `${JSON.stringify(payload, null, 2)}\n`,
-    "application/json;charset=utf-8",
-  );
-  showToast(t("toastExportedJson"));
-}
-
-/** CSV export; respects current Events search filter. */
-function exportSelectedStreamCsv(): void {
-  const record = selectedId ? streams.get(selectedId) : undefined;
-  if (!record) {
-    window.alert(t("needSelectedStream"));
-    return;
-  }
-  const visible = getBrowsableEvents(record);
-  if (visible.length === 0) {
-    window.alert(t("exportCsvEmpty"));
-    return;
-  }
-  downloadTextFile(
-    buildExportFilename(record, "csv"),
-    buildStreamExportCsv(record, visible),
-    "text/csv;charset=utf-8",
-  );
-  showToast(t("toastExportedCsv", String(visible.length)));
-}
-
-/** Rebuild text/event-stream fixture from parsed events. */
-function exportSelectedStreamFixture(): void {
-  const record = selectedId ? streams.get(selectedId) : undefined;
-  if (!record) {
-    window.alert(t("needSelectedStream"));
-    return;
-  }
-  if (record.events.length === 0) {
-    window.alert(t("exportFixtureEmpty"));
-    return;
-  }
-  downloadTextFile(
-    buildExportFilename(record, "sse"),
-    buildSseFixture(record.events),
-    "text/event-stream;charset=utf-8",
-  );
-  showToast(t("toastExportedFixture"));
-}
-
-function addStaticStream(record: StreamRecord): void {
-  streams.set(record.requestId, record);
-  parsers.delete(record.requestId);
-  selectedId = record.requestId;
-  selectedEventIndex = null;
-  renderList();
-  renderDetail();
-}
-
-async function importStreamFromFile(file: File): Promise<void> {
-  const text = await file.text();
-  const body = parseStreamExportJson(text);
-  const record = streamRecordFromExport(body, {
-    requestId: createRequestId("imp"),
-    origin: "imported",
-  });
-  addStaticStream(record);
-}
-
-async function saveSelectedStreamArchive(): Promise<void> {
-  const record = selectedId ? streams.get(selectedId) : undefined;
-  if (!record) {
-    window.alert(t("needSelectedStream"));
-    return;
-  }
-  const defaultName = `${shortPath(record.url)} @ ${new Date(record.startedAt).toLocaleString()}`;
-  const name = window.prompt(t("archiveNamePrompt"), defaultName);
-  if (name == null) return;
-  if (!name.trim()) {
-    window.alert(t("archiveNameRequired"));
-    return;
-  }
-  await saveStreamArchive(name, record);
-  showToast(t("toastArchiveSaved"));
-}
-
-function closeAppDialog(): void {
-  if (elDialog.open) elDialog.close();
-  elDialogBody.innerHTML = "";
-  elDialogTitle.textContent = "";
-}
-
-function openAppDialog(title: string, body: HTMLElement): void {
-  elDialogTitle.textContent = title;
-  elDialogBody.innerHTML = "";
-  elDialogBody.appendChild(body);
-  if (!elDialog.open) elDialog.showModal();
-}
-
-function formatDuration(ms: number): string {
-  if (ms < 1000) return `${Math.round(ms)} ms`;
-  if (ms < 60_000) return `${(ms / 1000).toFixed(1)} s`;
-  const minutes = Math.floor(ms / 60_000);
-  const seconds = ((ms % 60_000) / 1000).toFixed(1);
-  return `${minutes}m ${seconds}s`;
-}
-
-function formatMetricMs(ms?: number): string {
-  if (typeof ms !== "number" || !Number.isFinite(ms)) return "—";
-  return `${Math.round(ms)} ms`;
-}
-
-function formatGapBinLabel(bin: HistogramBin): string {
-  if (!Number.isFinite(bin.toMs)) {
-    return bin.fromMs >= 1000 ? `≥${bin.fromMs / 1000}s` : `≥${bin.fromMs}ms`;
-  }
-  return `${bin.fromMs}–${bin.toMs}ms`;
-}
-
-function createGapHistogramSvg(bins: HistogramBin[]): SVGSVGElement {
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("class", "gap-histogram");
-  svg.setAttribute("viewBox", "0 0 440 170");
-  svg.setAttribute("role", "img");
-  svg.setAttribute("aria-label", t("timelineGapHistogram"));
-
-  const maxCount = Math.max(1, ...bins.map((b) => b.count));
-  const padL = 42;
-  const padR = 12;
-  const padT = 22;
-  const padB = 48;
-  const plotW = 440 - padL - padR;
-  const plotH = 170 - padT - padB;
-  const gap = 4;
-  const barW = Math.max(8, (plotW - gap * (bins.length - 1)) / bins.length);
-  const hotThreshold = 500;
-
-  // Y-axis baseline + value ticks
-  const axis = document.createElementNS("http://www.w3.org/2000/svg", "line");
-  axis.setAttribute("class", "plot-axis");
-  axis.setAttribute("x1", String(padL));
-  axis.setAttribute("y1", String(padT));
-  axis.setAttribute("x2", String(padL));
-  axis.setAttribute("y2", String(padT + plotH));
-  svg.appendChild(axis);
-
-  const base = document.createElementNS("http://www.w3.org/2000/svg", "line");
-  base.setAttribute("class", "plot-axis");
-  base.setAttribute("x1", String(padL));
-  base.setAttribute("y1", String(padT + plotH));
-  base.setAttribute("x2", String(padL + plotW));
-  base.setAttribute("y2", String(padT + plotH));
-  svg.appendChild(base);
-
-  for (const ratio of [0, 0.5, 1]) {
-    const value = Math.round(maxCount * ratio);
-    const y = padT + plotH - ratio * plotH;
-    const tick = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    tick.setAttribute("class", "axis-label");
-    tick.setAttribute("x", String(padL - 6));
-    tick.setAttribute("y", String(y + 3));
-    tick.setAttribute("text-anchor", "end");
-    tick.textContent = String(value);
-    svg.appendChild(tick);
-  }
-
-  const yTitle = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  yTitle.setAttribute("class", "axis-title");
-  yTitle.setAttribute("x", "10");
-  yTitle.setAttribute("y", String(padT + plotH / 2));
-  yTitle.setAttribute("text-anchor", "middle");
-  yTitle.setAttribute("transform", `rotate(-90 10 ${padT + plotH / 2})`);
-  yTitle.textContent = t("timelineGapHistogramY");
-  svg.appendChild(yTitle);
-
-  for (let i = 0; i < bins.length; i += 1) {
-    const bin = bins[i];
-    const h = (bin.count / maxCount) * plotH;
-    const x = padL + i * (barW + gap);
-    const y = padT + plotH - h;
-    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    rect.setAttribute("class", `bar${bin.fromMs >= hotThreshold ? " is-hot" : ""}`);
-    rect.setAttribute("x", String(x));
-    rect.setAttribute("y", String(y));
-    rect.setAttribute("width", String(barW));
-    rect.setAttribute("height", String(Math.max(bin.count > 0 ? 2 : 0, h)));
-    rect.setAttribute("rx", "2");
-    rect.setAttribute(
-      "title",
-      t("timelineGapBinTitle", [formatGapBinLabel(bin), String(bin.count)]),
-    );
-    svg.appendChild(rect);
-
-    if (bin.count > 0) {
-      const countText = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      countText.setAttribute("class", "count-label");
-      countText.setAttribute("x", String(x + barW / 2));
-      countText.setAttribute("y", String(Math.max(14, y - 4)));
-      countText.setAttribute("text-anchor", "middle");
-      countText.textContent = String(bin.count);
-      svg.appendChild(countText);
-    }
-
-    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    label.setAttribute("class", "axis-label bin-label");
-    label.setAttribute("x", String(x + barW / 2));
-    label.setAttribute("y", String(padT + plotH + 14));
-    label.setAttribute("text-anchor", "middle");
-    label.textContent = formatGapBinLabel(bin);
-    svg.appendChild(label);
-  }
-
-  const xTitle = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  xTitle.setAttribute("class", "axis-title");
-  xTitle.setAttribute("x", String(padL + plotW / 2));
-  xTitle.setAttribute("y", "164");
-  xTitle.setAttribute("text-anchor", "middle");
-  xTitle.textContent = t("timelineGapHistogramX");
-  svg.appendChild(xTitle);
-
-  return svg;
-}
-
-function setUiPaused(next: boolean): void {
-  uiPaused = next;
-  elPauseUi.classList.toggle("is-paused", uiPaused);
-  const label = elPauseUi.querySelector(".tool-label");
-  if (label) {
-    label.textContent = uiPaused ? t("resumeUi") : t("pauseUi");
-  }
-  const icon = elPauseUi.querySelector("svg.tool-icon");
-  if (icon) {
-    icon.outerHTML = renderIcon(uiPaused ? "play" : "pause", "tool-icon");
-  }
-  elPauseUi.title = uiPaused ? t("resumeUiTitle") : t("pauseUiTitle");
-  if (elStatusbarCapture) {
-    elStatusbarCapture.textContent = uiPaused ? t("statusbarCapturePaused") : t("statusbarCaptureActive");
-    elStatusbarCapture.classList.toggle("is-paused", uiPaused);
-  }
-  if (!uiPaused) {
-    if (pendingListRefreshWhilePaused) renderList();
-    if (pendingDetailRefreshWhilePaused) renderDetail(true);
-    pendingListRefreshWhilePaused = false;
-    pendingDetailRefreshWhilePaused = false;
-  }
-}
-
-function showToast(message: string): void {
-  if (!elToast || !elToastText) return;
-  elToastText.textContent = message;
-  elToast.hidden = false;
-  if (toastTimer != null) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    if (elToast) elToast.hidden = true;
-    toastTimer = null;
-  }, 2200);
-}
-
-function closeAllMenus(): void {
-  if (elExportMenuPanel) elExportMenuPanel.hidden = true;
-  if (elMoreMenuPanel) elMoreMenuPanel.hidden = true;
-  elExportMenuBtn?.setAttribute("aria-expanded", "false");
-  elMoreMenuBtn?.setAttribute("aria-expanded", "false");
-}
-
-function toggleMenu(panel: HTMLDivElement | null, btn: HTMLButtonElement | null): void {
-  if (!panel || !btn) return;
-  const willOpen = panel.hidden;
-  closeAllMenus();
-  if (willOpen) {
-    panel.hidden = false;
-    btn.setAttribute("aria-expanded", "true");
-  }
-}
-
 function updateTabCounts(record: StreamRecord | undefined): void {
   if (elTabCountEvents) {
     if (record && record.events.length > 0) {
@@ -1092,409 +495,8 @@ function updateTabCounts(record: StreamRecord | undefined): void {
   }
 }
 
-function streamStatusShort(status: StreamRecord["streamStatus"]): string {
-  switch (status) {
-    case "streaming":
-      return t("statusLive");
-    case "done":
-      return t("statusDoneShort");
-    case "error":
-      return t("statusErrorShort");
-    default:
-      return statusLabel(status);
-  }
-}
-
-function showStatsDialog(): void {
-  const items = Array.from(streams.values());
-  const eventCount = items.reduce((sum, s) => sum + s.events.length, 0);
-  const streaming = items.filter((s) => s.streamStatus === "streaming").length;
-  const done = items.filter((s) => s.streamStatus === "done").length;
-  const error = items.filter((s) => s.streamStatus === "error").length;
-  const durations = items
-    .filter((s) => typeof s.endedAt === "number")
-    .map((s) => (s.endedAt as number) - s.startedAt)
-    .filter((ms) => Number.isFinite(ms) && ms >= 0);
-  const avgMs =
-    durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : null;
-  const selected = selectedId ? streams.get(selectedId) : undefined;
-
-  const body = document.createElement("div");
-  body.className = "stats-grid";
-  body.innerHTML = `
-    <div class="stats-row"><span>${escapeHtml(t("statsStreamCount"))}</span><strong>${items.length}</strong></div>
-    <div class="stats-row"><span>${escapeHtml(t("statsEventCount"))}</span><strong>${eventCount}</strong></div>
-    <div class="stats-row"><span>${escapeHtml(t("statsStreamingCount"))}</span><strong>${streaming}</strong></div>
-    <div class="stats-row"><span>${escapeHtml(t("statsDoneCount"))}</span><strong>${done}</strong></div>
-    <div class="stats-row"><span>${escapeHtml(t("statsErrorCount"))}</span><strong>${error}</strong></div>
-    <div class="stats-row"><span>${escapeHtml(t("statsAvgDuration"))}</span><strong>${
-      avgMs == null ? "—" : escapeHtml(formatDuration(avgMs))
-    }</strong></div>
-  `;
-
-  if (selected) {
-    const selectedMetrics = ensureStreamMetrics(selected);
-    const selectedDuration =
-      typeof selected.endedAt === "number" ? selected.endedAt - selected.startedAt : null;
-    const selectedBlock = document.createElement("div");
-    selectedBlock.className = "stats-selected";
-    selectedBlock.innerHTML = `
-      <div class="stats-subtitle">${escapeHtml(t("statsSelectedStream"))}</div>
-      <div class="stats-row"><span>${escapeHtml(t("statsSelectedEvents"))}</span><strong>${selected.events.length}</strong></div>
-      <div class="stats-row"><span>${escapeHtml(t("statsSelectedDuration"))}</span><strong>${
-        selectedDuration == null ? "—" : escapeHtml(formatDuration(selectedDuration))
-      }</strong></div>
-      <div class="stats-row"><span>${escapeHtml(t("statsSelectedTtft"))}</span><strong>${escapeHtml(formatMetricMs(selectedMetrics.ttftMs))}</strong></div>
-      <div class="stats-row"><span>${escapeHtml(t("statsSelectedAvgGap"))}</span><strong>${escapeHtml(formatMetricMs(selectedMetrics.avgGapMs))}</strong></div>
-      <div class="stats-row"><span>${escapeHtml(t("statsSelectedP95Gap"))}</span><strong>${escapeHtml(formatMetricMs(selectedMetrics.p95GapMs))}</strong></div>
-      <div class="stats-row"><span>${escapeHtml(t("statsSelectedEventsPerSec"))}</span><strong>${
-        selectedMetrics.eventsPerSec == null ? "—" : escapeHtml(String(selectedMetrics.eventsPerSec))
-      }</strong></div>
-    `;
-    body.appendChild(selectedBlock);
-  }
-
-  openAppDialog(t("statsDialogTitle"), body);
-}
-
-function jumpToStreamEvent(requestId: string, eventIndex: number): void {
-  const record = streams.get(requestId);
-  if (!record) return;
-  selectedId = requestId;
-  selectedEventIndex = null;
-  renderList();
-  renderDetail();
-  // Keep global-search jump behavior stable even when user is on Timeline/Raw/Request.
-  activateTab("events");
-  selectEventByIndex(record, eventIndex, { scrollMode: "start" });
-}
-
-function showAnomaliesDialog(): void {
-  const all = Array.from(streams.values())
-    .map((record) => ({ record, anomalies: scanStreamAnomalies(record) }))
-    .filter((item) => item.anomalies.length > 0)
-    .sort((a, b) => b.record.startedAt - a.record.startedAt);
-
-  const body = document.createElement("div");
-  body.className = "archives-panel";
-
-  if (all.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = "search-all-empty";
-    empty.textContent = t("anomaliesEmpty");
-    body.appendChild(empty);
-    openAppDialog(t("anomaliesDialogTitle"), body);
-    return;
-  }
-
-  const list = document.createElement("ul");
-  list.className = "archives-list";
-  for (const item of all) {
-    const li = document.createElement("li");
-    li.className = "archives-item";
-
-    const meta = document.createElement("div");
-    meta.className = "archives-meta";
-    meta.innerHTML = `
-      <div class="archives-name">${escapeHtml(shortPath(item.record.url))}</div>
-      <div class="archives-sub">${escapeHtml(
-        t("anomaliesCount", String(item.anomalies.length)),
-      )}</div>
-    `;
-
-    const actions = document.createElement("div");
-    actions.className = "archives-actions";
-    for (const anomaly of item.anomalies.slice(0, 8)) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "search-all-item";
-      btn.innerHTML = `
-        <span class="search-all-item-main">#${anomaly.eventIndex} · ${escapeHtml(
-          anomalyKindLabel(anomaly.kind),
-        )}</span>
-        <span class="search-all-item-sub">${escapeHtml(anomaly.message)}</span>
-      `;
-      btn.addEventListener("click", () => {
-        closeAppDialog();
-        jumpToStreamEvent(item.record.requestId, anomaly.eventIndex);
-      });
-      actions.appendChild(btn);
-    }
-    li.append(meta, actions);
-    list.appendChild(li);
-  }
-  body.appendChild(list);
-  openAppDialog(t("anomaliesDialogTitle"), body);
-}
-
-function showSpecWarningsDialog(): void {
-  const all = Array.from(streams.values())
-    .map((record) => ({ record, warnings: getStreamSpecWarnings(record) }))
-    .filter((item) => item.warnings.length > 0)
-    .sort((a, b) => b.record.startedAt - a.record.startedAt);
-
-  const body = document.createElement("div");
-  body.className = "archives-panel";
-
-  if (all.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = "search-all-empty";
-    empty.textContent = t("specWarningsEmpty");
-    body.appendChild(empty);
-    openAppDialog(t("specWarningsDialogTitle"), body);
-    return;
-  }
-
-  const list = document.createElement("ul");
-  list.className = "archives-list";
-  for (const item of all) {
-    const li = document.createElement("li");
-    li.className = "archives-item";
-
-    const meta = document.createElement("div");
-    meta.className = "archives-meta";
-    meta.innerHTML = `
-      <div class="archives-name">${escapeHtml(shortPath(item.record.url))}</div>
-      <div class="archives-sub">${escapeHtml(
-        t("specWarningsCount", String(item.warnings.length)),
-      )}</div>
-    `;
-
-    const actions = document.createElement("div");
-    actions.className = "archives-actions";
-    for (const warning of item.warnings.slice(0, 12)) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "search-all-item";
-      const indexLabel =
-        typeof warning.eventIndex === "number" ? `#${warning.eventIndex}` : t("specStreamLevel");
-      btn.innerHTML = `
-        <span class="search-all-item-main">${escapeHtml(indexLabel)} · ${escapeHtml(
-          specWarningKindLabel(warning.kind),
-        )}</span>
-        <span class="search-all-item-sub">${escapeHtml(specWarningMessage(warning))}</span>
-      `;
-      btn.addEventListener("click", () => {
-        closeAppDialog();
-        if (typeof warning.eventIndex === "number") {
-          jumpToStreamEvent(item.record.requestId, warning.eventIndex);
-        } else {
-          selectedId = item.record.requestId;
-          selectedEventIndex = null;
-          renderList();
-          renderDetail();
-        }
-      });
-      actions.appendChild(btn);
-    }
-    li.append(meta, actions);
-    list.appendChild(li);
-  }
-  body.appendChild(list);
-  openAppDialog(t("specWarningsDialogTitle"), body);
-}
-
-function showGlobalSearchDialog(): void {
-  const body = document.createElement("div");
-  body.className = "search-all-panel";
-
-  const input = document.createElement("input");
-  input.className = "action-input";
-  input.type = "search";
-  input.placeholder = t("searchAllPlaceholder");
-  input.autocomplete = "off";
-  input.spellcheck = false;
-
-  const results = document.createElement("div");
-  results.className = "search-all-results";
-
-  const renderResults = (query: string): void => {
-    results.innerHTML = "";
-    const filter = compileTextFilter(query);
-    if (filter.isEmpty) {
-      const empty = document.createElement("div");
-      empty.className = "search-all-empty";
-      empty.textContent = t("searchAllHint");
-      results.appendChild(empty);
-      return;
-    }
-    const matches: Array<{ requestId: string; url: string; event: SseEvent }> = [];
-    for (const record of Array.from(streams.values()).sort((a, b) => b.startedAt - a.startedAt)) {
-      for (const ev of record.events) {
-        if (filter.test(ev.event) || filter.test(ev.data)) {
-          matches.push({ requestId: record.requestId, url: record.url, event: ev });
-          if (matches.length >= 200) break;
-        }
-      }
-      if (matches.length >= 200) break;
-    }
-    if (matches.length === 0) {
-      const empty = document.createElement("div");
-      empty.className = "search-all-empty";
-      empty.textContent = t("searchAllNoResults");
-      results.appendChild(empty);
-      return;
-    }
-    for (const match of matches) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "search-all-item";
-      btn.innerHTML = `
-        <span class="search-all-item-main">${escapeHtml(shortPath(match.url))} · #${
-          match.event.index
-        } · ${escapeHtml(match.event.event)}</span>
-        <span class="search-all-item-sub">${escapeHtml(previewData(match.event.data))}</span>
-      `;
-      btn.addEventListener("click", () => {
-        closeAppDialog();
-        jumpToStreamEvent(match.requestId, match.event.index);
-      });
-      results.appendChild(btn);
-    }
-  };
-
-  input.addEventListener("input", () => {
-    renderResults(input.value);
-  });
-
-  body.append(input, results);
-  openAppDialog(t("searchAllDialogTitle"), body);
-  input.focus();
-  renderResults("");
-}
-
-async function showArchivesDialog(): Promise<void> {
-  const entries = await listStreamArchives();
-  const body = document.createElement("div");
-  body.className = "archives-panel";
-
-  if (entries.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = "archives-empty";
-    empty.textContent = t("archivesEmpty");
-    body.appendChild(empty);
-  } else {
-    const list = document.createElement("ul");
-    list.className = "archives-list";
-    for (const entry of entries) {
-      list.appendChild(createArchiveListItem(entry));
-    }
-    body.appendChild(list);
-  }
-
-  openAppDialog(t("archivesDialogTitle"), body);
-}
-
-function createArchiveListItem(entry: StreamArchiveEntry): HTMLLIElement {
-  const li = document.createElement("li");
-  li.className = "archives-item";
-  const meta = document.createElement("div");
-  meta.className = "archives-meta";
-  meta.innerHTML = `
-    <div class="archives-name">${escapeHtml(entry.name)}</div>
-    <div class="archives-sub">
-      ${escapeHtml(new Date(entry.savedAt).toLocaleString())}
-      · ${escapeHtml(t("eventsCount", String(entry.stream.events.length)))}
-      · ${escapeHtml(shortPath(entry.stream.url))}
-    </div>
-  `;
-  const actions = document.createElement("div");
-  actions.className = "archives-actions";
-
-  const loadBtn = document.createElement("button");
-  loadBtn.type = "button";
-  loadBtn.textContent = t("archiveLoad");
-  loadBtn.addEventListener("click", async () => {
-    const latest = await getStreamArchive(entry.id);
-    if (!latest) {
-      window.alert(t("archiveMissing"));
-      await showArchivesDialog();
-      return;
-    }
-    const record = {
-      ...latest.stream,
-      events: latest.stream.events.map((ev) => ({ ...ev })),
-      requestId: createRequestId("arc"),
-      origin: "archive" as const,
-      streamStatus: latest.stream.streamStatus === "streaming" ? ("done" as const) : latest.stream.streamStatus,
-    };
-    addStaticStream(record);
-    closeAppDialog();
-  });
-
-  const deleteBtn = document.createElement("button");
-  deleteBtn.type = "button";
-  deleteBtn.textContent = t("archiveDelete");
-  deleteBtn.addEventListener("click", async () => {
-    if (!window.confirm(t("archiveDeleteConfirm", entry.name))) return;
-    await deleteStreamArchive(entry.id);
-    await showArchivesDialog();
-  });
-
-  actions.append(loadBtn, deleteBtn);
-  li.append(meta, actions);
-  return li;
-}
-
-function originLabel(origin: StreamRecord["origin"]): string | null {
-  if (origin === "imported") return t("originImported");
-  if (origin === "archive") return t("originArchive");
-  return null;
-}
-
-function statusLabel(status: StreamRecord["streamStatus"]): string {
-  switch (status) {
-    case "streaming":
-      return t("statusStreaming");
-    case "done":
-      return t("statusDone");
-    case "error":
-      return t("statusError");
-    default:
-      return status;
-  }
-}
-
-function closeReasonLabel(reason: StreamCloseReason): string {
-  switch (reason) {
-    case "complete":
-      return t("closeReasonComplete");
-    case "abort":
-      return t("closeReasonAbort");
-    case "error":
-      return t("closeReasonError");
-    case "http_error":
-      return t("closeReasonHttpError");
-    default:
-      return reason;
-  }
-}
-
-function transportLabel(transport: StreamTransport): string {
-  switch (transport) {
-    case "fetch":
-      return t("transportFetch");
-    case "eventsource":
-      return t("transportEventSource");
-    case "xhr":
-      return t("transportXhr");
-    default:
-      return transport;
-  }
-}
-
-let listRenderScheduled = false;
 let detailRenderScheduled = false;
 let detailRenderAppendFriendly = false;
-
-function scheduleRenderList(): void {
-  if (listRenderScheduled) return;
-  listRenderScheduled = true;
-  requestAnimationFrame(() => {
-    listRenderScheduled = false;
-    renderList();
-  });
-}
 
 function scheduleRenderDetail(appendFriendly = false): void {
   detailRenderAppendFriendly = detailRenderAppendFriendly || appendFriendly;
@@ -1508,136 +510,16 @@ function scheduleRenderDetail(appendFriendly = false): void {
   });
 }
 
-function streamItemFingerprint(s: StreamRecord): string {
-  return [
-    s.requestId === selectedId ? "1" : "0",
-    s.streamStatus,
-    s.transport,
-    s.origin ?? "",
-    String(s.status ?? ""),
-    String(s.events.length),
-    s.method,
-    s.url,
-    s.closeReason ?? "",
-    String(s.reconnectCount ?? 0),
-    s.lastEventId ?? "",
-    s.errorMessage ?? "",
-  ].join("|");
-}
-
-function renderList(): void {
-  const urlFilter = streamsUrlFilterQuery.trim().toLowerCase();
-  const items = Array.from(streams.values())
-    .filter((s) => {
-      if (streamsTransportFilter !== "all" && s.transport !== streamsTransportFilter) return false;
-      if (!urlFilter) return true;
-      return s.url.toLowerCase().includes(urlFilter);
-    })
-    .sort((a, b) => a.startedAt - b.startedAt);
-  elEmpty.classList.toggle("hidden", items.length > 0);
-  if (elStreamsCount) {
-    const filtered = Boolean(urlFilter) || streamsTransportFilter !== "all";
-    elStreamsCount.textContent = filtered
-      ? t("streamsCountFiltered", [String(items.length), String(streams.size)])
-      : t("streamsCount", String(streams.size));
-  }
-  if (items.length === 0 && streams.size > 0 && (urlFilter || streamsTransportFilter !== "all")) {
-    elEmpty.textContent = t("noStreamsMatchFilter");
-  } else {
-    elEmpty.innerHTML = `
-      <span>${escapeHtml(t("emptyWaitingBefore"))}</span>
-      <code>text/event-stream</code><span>${escapeHtml(t("emptyWaitingAfter"))}</span>
-    `;
-  }
-
-  const seen = new Set<string>();
-  for (const s of items) {
-    seen.add(s.requestId);
-    const fingerprint = streamItemFingerprint(s);
-    const anomalyCount = scanStreamAnomalies(s).length;
-    const specCount = getStreamSpecWarnings(s).length;
-    let li = elList.querySelector<HTMLLIElement>(`li[data-id="${CSS.escape(s.requestId)}"]`);
-    if (!li) {
-      li = document.createElement("li");
-      li.dataset.id = s.requestId;
-      elList.appendChild(li);
-    }
-    li.className = "stream" + (s.requestId === selectedId ? " active" : "");
-    if (li.dataset.fingerprint !== fingerprint) {
-      li.dataset.fingerprint = fingerprint;
-      const transportClass =
-        s.transport === "fetch" || s.transport === "xhr" || s.transport === "eventsource"
-          ? s.transport
-          : "";
-      li.innerHTML = `
-        <div class="stream-path"><span class="method">${escapeHtml(s.method)}</span>${escapeHtml(shortPath(s.url))}</div>
-        <div class="stream-meta">
-          <span class="badge ${transportClass}">${escapeHtml(transportLabel(s.transport))}</span>
-          ${
-            originLabel(s.origin)
-              ? `<span class="badge origin">${escapeHtml(originLabel(s.origin) as string)}</span>`
-              : ""
-          }
-          ${anomalyCount > 0 ? `<span class="badge warn" title="${escapeHtml(t("anomaliesTitle"))}">!${anomalyCount}</span>` : ""}
-          ${specCount > 0 ? `<span class="badge spec" title="${escapeHtml(t("specWarningsTitle"))}">S${specCount}</span>` : ""}
-          ${
-            (s.reconnectCount ?? 0) > 0
-              ? `<span class="badge reconnect" title="${escapeHtml(
-                  t("reconnectBadgeTitle", String(s.reconnectCount)),
-                )}">R${s.reconnectCount}</span>`
-              : ""
-          }
-          ${
-            s.closeReason === "abort"
-              ? `<span class="badge abort" title="${escapeHtml(closeReasonLabel("abort"))}">${escapeHtml(
-                  t("badgeAbort"),
-                )}</span>`
-              : ""
-          }
-          <span>${s.status != null ? `HTTP ${s.status}` : "—"}</span>
-          <span>${escapeHtml(t("eventsCount", String(s.events.length)))}</span>
-          <span class="status ${s.streamStatus}"><i></i>${escapeHtml(streamStatusShort(s.streamStatus))}</span>
-        </div>
-      `;
-    }
-  }
-
-  for (const node of Array.from(elList.children)) {
-    const li = node as HTMLLIElement;
-    const id = li.dataset.id;
-    if (!id || !seen.has(id)) {
-      li.remove();
-    }
-  }
-
-  // Keep DOM order aligned with sorted items without full rebuild.
-  for (let i = 0; i < items.length; i++) {
-    const li = elList.querySelector<HTMLLIElement>(`li[data-id="${CSS.escape(items[i].requestId)}"]`);
-    if (!li) continue;
-    if (elList.children[i] !== li) {
-      elList.insertBefore(li, elList.children[i] ?? null);
-    }
-  }
-}
-
 function renderDetail(appendFriendly = false): void {
-  const record = selectedId ? streams.get(selectedId) : undefined;
+  const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
   if (!record) {
     renderStreamMeta(undefined);
     updateTabCounts(undefined);
-    elPlaceholder.hidden = false;
-    elPlaceholder.textContent = t("noStreamSelected");
-    elTableWrap.hidden = true;
-    elTbody.innerHTML = "";
-    closeDrawer();
+    clearEventsView();
     elRaw.textContent = "";
-    if (elEventsFilterHint) {
-      elEventsFilterHint.hidden = true;
-      elEventsFilterHint.textContent = "";
-    }
-    renderTimeline(undefined);
-    renderRequest(undefined);
-    renderTranscript(undefined);
+    renderTimelineForSelection(undefined);
+    renderRequestForSelection(undefined);
+    renderTranscriptForSelection(undefined);
     return;
   }
 
@@ -1646,329 +528,17 @@ function renderDetail(appendFriendly = false): void {
   elRaw.textContent = record.raw || "";
 
   renderEvents(record, appendFriendly);
-  renderTimeline(record);
-  renderRequest(record);
-  renderTranscript(record);
+  renderTimelineForSelection(record);
+  renderRequestForSelection(record);
+  renderTranscriptForSelection(record);
 
-  if (activeTab === "raw") {
+  if (state.activeTab === "raw") {
     elRaw.scrollTop = elRaw.scrollHeight;
   }
 }
 
-function renderEvents(record: StreamRecord, appendFriendly: boolean): void {
-  if (record.events.length === 0) {
-    elPlaceholder.hidden = false;
-    elPlaceholder.textContent = t("noEventsYet");
-    elTableWrap.hidden = true;
-    elTbody.innerHTML = "";
-    if (elEventsFilterHint) {
-      elEventsFilterHint.hidden = true;
-      elEventsFilterHint.textContent = "";
-    }
-    closeDrawer();
-    return;
-  }
-
-  elPlaceholder.hidden = true;
-  elTableWrap.hidden = false;
-
-  const existing = elTbody.querySelectorAll("tr").length;
-  if (!appendFriendly || existing === 0) {
-    elTbody.innerHTML = "";
-    for (const ev of record.events) {
-      elTbody.appendChild(createEventRow(ev));
-    }
-  } else {
-    for (let i = existing; i < record.events.length; i++) {
-      elTbody.appendChild(createEventRow(record.events[i]));
-    }
-  }
-
-  applyEventsFilter();
-  syncRowSelection();
-
-  if (selectedEventIndex != null) {
-    const ev = record.events.find((e) => e.index === selectedEventIndex);
-    if (ev) {
-      openDrawer(ev);
-    } else {
-      closeDrawer();
-    }
-  } else {
-    closeDrawer();
-  }
-
-  if (activeTab === "events" && appendFriendly && !eventsSearchQuery.trim()) {
-    elTableWrap.scrollTop = elTableWrap.scrollHeight;
-  }
-}
-
-function applyEventsFilter(): void {
-  const record = selectedId ? streams.get(selectedId) : undefined;
-  if (!record) return;
-
-  let visible = 0;
-  elTbody.querySelectorAll("tr").forEach((tr) => {
-    const idx = Number(tr.getAttribute("data-index"));
-    const ev = record.events.find((e) => e.index === idx);
-    const show = ev ? eventMatchesSearch(ev, eventsSearchQuery) : false;
-    tr.hidden = !show;
-    if (show) visible += 1;
-  });
-
-  if (elEventsFilterHint) {
-    if (record.events.length > 0) {
-      elEventsFilterHint.hidden = false;
-      elEventsFilterHint.textContent = t("eventsFilterHint", [
-        String(visible),
-        String(record.events.length),
-      ]);
-    } else {
-      elEventsFilterHint.hidden = true;
-      elEventsFilterHint.textContent = "";
-    }
-  }
-
-  if (record.events.length > 0 && visible === 0 && eventsSearchQuery.trim()) {
-    elPlaceholder.hidden = false;
-    elPlaceholder.textContent = t("noEventsMatch");
-    // keep table visible so clearing search restores rows without rebuild
-  } else if (record.events.length > 0) {
-    elPlaceholder.hidden = true;
-  }
-}
-
-function createEventRow(ev: SseEvent): HTMLTableRowElement {
-  const tr = document.createElement("tr");
-  tr.dataset.index = String(ev.index);
-  tr.hidden = !eventMatchesSearch(ev, eventsSearchQuery);
-  const record = selectedId ? streams.get(selectedId) : undefined;
-  const eventWarnings =
-    record && record.streamKind === "sse"
-      ? getStreamSpecWarnings(record).filter((w) => w.eventIndex === ev.index)
-      : [];
-  const warnMark =
-    eventWarnings.length > 0
-      ? `<span class="event-spec-mark" title="${escapeHtml(
-          eventWarnings.map((w) => specWarningKindLabel(w.kind)).join(", "),
-        )}">S</span>`
-      : "";
-  tr.innerHTML = `
-    <td class="col-index col-n">${ev.index}${warnMark}</td>
-    <td class="col-time">${escapeHtml(formatTime(ev.receivedAt))}</td>
-    <td class="col-event">${escapeHtml(ev.event)}</td>
-    <td class="col-data data-cell" title="${escapeHtml(ev.data)}">${escapeHtml(previewData(ev.data))}</td>
-  `;
-  tr.addEventListener("click", () => {
-    hideContextMenu();
-    if (selectedEventIndex === ev.index) {
-      selectedEventIndex = null;
-      closeDrawer();
-      syncRowSelection();
-      return;
-    }
-    selectedEventIndex = ev.index;
-    syncRowSelection();
-    openDrawer(ev);
-  });
-  tr.addEventListener("contextmenu", (e) => {
-    e.preventDefault();
-    showContextMenu(e.clientX, e.clientY, ev.data);
-  });
-  return tr;
-}
-
-async function copyText(text: string, notify = false): Promise<void> {
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch {
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.style.position = "fixed";
-    ta.style.left = "-9999px";
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand("copy");
-    ta.remove();
-  }
-  if (notify) showToast(t("toastCopied"));
-}
-
-function showContextMenu(x: number, y: number, data: string): void {
-  contextMenuData = { kind: "event-data", data };
-  if (elMenuCopyData) elMenuCopyData.hidden = false;
-  if (elMenuCopyJsonValue) elMenuCopyJsonValue.hidden = true;
-  if (elMenuCopyJsonPath) elMenuCopyJsonPath.hidden = true;
-  elContextMenu.hidden = false;
-  const pad = 4;
-  const menuW = elContextMenu.offsetWidth || 140;
-  const menuH = elContextMenu.offsetHeight || 36;
-  const left = Math.min(x, window.innerWidth - menuW - pad);
-  const top = Math.min(y, window.innerHeight - menuH - pad);
-  elContextMenu.style.left = `${Math.max(pad, left)}px`;
-  elContextMenu.style.top = `${Math.max(pad, top)}px`;
-}
-
-function showJsonTreeContextMenu(x: number, y: number, path: string, value?: string): void {
-  contextMenuData = { kind: "json-node", path, value };
-  if (elMenuCopyData) elMenuCopyData.hidden = true;
-  if (elMenuCopyJsonValue) elMenuCopyJsonValue.hidden = value == null;
-  if (elMenuCopyJsonPath) elMenuCopyJsonPath.hidden = false;
-  elContextMenu.hidden = false;
-  const pad = 4;
-  const menuW = elContextMenu.offsetWidth || 180;
-  const menuH = elContextMenu.offsetHeight || 72;
-  const left = Math.min(x, window.innerWidth - menuW - pad);
-  const top = Math.min(y, window.innerHeight - menuH - pad);
-  elContextMenu.style.left = `${Math.max(pad, left)}px`;
-  elContextMenu.style.top = `${Math.max(pad, top)}px`;
-}
-
-function hideContextMenu(): void {
-  elContextMenu.hidden = true;
-  contextMenuData = null;
-}
-
-function bindJsonTreeContextMenu(tree: HTMLElement): void {
-  tree.addEventListener("json-tree-contextmenu", (event) => {
-    const e = event as CustomEvent<{ x: number; y: number; path: string; copyValue?: string }>;
-    showJsonTreeContextMenu(e.detail.x, e.detail.y, e.detail.path, e.detail.copyValue);
-  });
-}
-
-function syncRowSelection(): void {
-  elTbody.querySelectorAll("tr").forEach((tr) => {
-    const idx = Number(tr.getAttribute("data-index"));
-    tr.classList.toggle("selected", idx === selectedEventIndex);
-  });
-}
-
-function applyDrawerWidth(): void {
-  elEvents.style.setProperty("--events-drawer-width", `${drawerWidthPercent}%`);
-}
-
-function openDrawer(ev: SseEvent): void {
-  const sameEvent = drawerEventIndex === ev.index && !elDrawer.hidden;
-  elDrawer.hidden = false;
-  elResizer.hidden = false;
-  elEvents.classList.add("drawer-open");
-  applyDrawerWidth();
-  drawerEventData = ev.data;
-  drawerEventIndex = ev.index;
-  elDrawerTitle.textContent = `#${ev.index} · ${ev.event}`;
-  updateDrawerNavButtons();
-
-  // Avoid wiping drawer search / rebuild when streaming updates the same open event
-  if (sameEvent && elDrawerBody.querySelector(".json-tree, .event-body-text")) {
-    applyDrawerSearch();
-    return;
-  }
-
-  elDrawerBody.innerHTML = "";
-
-  const record = selectedId ? streams.get(selectedId) : undefined;
-  const eventWarnings =
-    record && record.streamKind === "sse"
-      ? getStreamSpecWarnings(record).filter((w) => w.eventIndex === ev.index)
-      : [];
-  if (eventWarnings.length > 0) {
-    const box = document.createElement("div");
-    box.className = "drawer-spec-warnings";
-    const title = document.createElement("div");
-    title.className = "drawer-spec-title";
-    title.textContent = t("specWarningsCount", String(eventWarnings.length));
-    box.appendChild(title);
-    const ul = document.createElement("ul");
-    for (const warning of eventWarnings) {
-      const li = document.createElement("li");
-      li.innerHTML = `<strong>${escapeHtml(specWarningKindLabel(warning.kind))}</strong> — ${escapeHtml(
-        specWarningMessage(warning),
-      )}`;
-      ul.appendChild(li);
-    }
-    box.appendChild(ul);
-    elDrawerBody.appendChild(box);
-  }
-
-  const parsed = tryParseJsonValue(ev.data);
-  if (parsed.ok) {
-    const tree = createJsonTree(parsed.value, { defaultExpandDepth: 2 });
-    bindJsonTreeContextMenu(tree);
-    elDrawerBody.appendChild(tree);
-  } else {
-    const pre = document.createElement("pre");
-    pre.className = "event-body-text";
-    pre.textContent = ev.data;
-    elDrawerBody.appendChild(pre);
-  }
-  applyDrawerSearch();
-}
-
-function applyDrawerSearch(): void {
-  const tree = elDrawerBody.querySelector<HTMLElement>(".json-tree");
-  if (tree) {
-    applyTreeSearch(tree, drawerSearchQuery);
-    return;
-  }
-
-  const pre = elDrawerBody.querySelector<HTMLPreElement>(".event-body-text");
-  if (!pre || drawerEventData == null) return;
-
-  const filter = compileTextFilter(drawerSearchQuery);
-  if (filter.isEmpty) {
-    pre.textContent = drawerEventData;
-    pre.classList.remove("search-no-match");
-    return;
-  }
-
-  if (!filter.test(drawerEventData)) {
-    pre.textContent = t("noMatches");
-    pre.classList.add("search-no-match");
-    return;
-  }
-
-  pre.classList.remove("search-no-match");
-  pre.textContent = "";
-  const ranges = filter.matchRanges(drawerEventData);
-  let cursor = 0;
-  for (const range of ranges) {
-    if (range.start > cursor) {
-      pre.appendChild(document.createTextNode(drawerEventData.slice(cursor, range.start)));
-    }
-    const mark = document.createElement("mark");
-    mark.className = "search-mark";
-    mark.textContent = drawerEventData.slice(range.start, range.end);
-    pre.appendChild(mark);
-    cursor = range.end;
-  }
-  if (cursor < drawerEventData.length) {
-    pre.appendChild(document.createTextNode(drawerEventData.slice(cursor)));
-  }
-}
-
-function closeDrawer(): void {
-  selectedEventIndex = null;
-  drawerEventData = null;
-  drawerEventIndex = null;
-  elDrawer.hidden = true;
-  elResizer.hidden = true;
-  elEvents.classList.remove("drawer-open");
-  elDrawerBody.innerHTML = "";
-  elDrawerTitle.textContent = "";
-  updateDrawerNavButtons();
-  syncRowSelection();
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-function activateTab(tab: "events" | "raw" | "timeline" | "request" | "transcript"): void {
-  activeTab = tab;
+function activateTab(tab: ActiveTab): void {
+  state.activeTab = tab;
   document.querySelectorAll(".tab").forEach((node) => {
     const btn = node as HTMLButtonElement;
     btn.classList.toggle("active", btn.dataset.tab === tab);
@@ -1978,976 +548,31 @@ function activateTab(tab: "events" | "raw" | "timeline" | "request" | "transcrip
 }
 
 function jumpToSelectedEventFromTimeline(eventIndex: number): void {
-  const record = selectedId ? streams.get(selectedId) : undefined;
+  const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
   if (!record) return;
   activateTab("events");
   selectEventByIndex(record, eventIndex, { scrollMode: "start" });
 }
 
-const TIMELINE_STALL_MS = 250;
-
-function renderTimeline(record: StreamRecord | undefined): void {
-  if (!record) {
-    elTimelinePlaceholder.hidden = false;
-    elTimelinePlaceholder.textContent = t("noStreamSelected");
-    elTimelineBody.hidden = true;
-    elTimelineBody.innerHTML = "";
-    return;
-  }
-
-  if (record.events.length === 0) {
-    elTimelinePlaceholder.hidden = false;
-    elTimelinePlaceholder.textContent = t("noEventsYet");
-    elTimelineBody.hidden = true;
-    elTimelineBody.innerHTML = "";
-    return;
-  }
-
-  elTimelinePlaceholder.hidden = true;
-  elTimelineBody.hidden = false;
-  elTimelineBody.innerHTML = "";
-
-  const origin = record.startedAt;
-  const marks = buildTimelineMarks(record.events, origin);
-  const reconnects = record.reconnects ?? [];
-  const reconnectMaxOffset = reconnects.reduce((max, item) => {
-    const offset = item.at - origin;
-    return Number.isFinite(offset) && offset > max ? offset : max;
-  }, 0);
-  const spanMs = Math.max(timelineSpanMs(marks), reconnectMaxOffset, 1);
-  const gaps = collectEventGaps(record.events);
-  const metrics = ensureStreamMetrics(record);
-
-  const meta = document.createElement("div");
-  meta.className = "timeline-meta";
-  meta.textContent = t("timelineMeta", [
-    String(record.events.length),
-    formatMetricMs(metrics.durationMs ?? spanMs),
-    formatMetricMs(metrics.p95GapMs),
-  ]);
-  elTimelineBody.appendChild(meta);
-
-  const trackSection = document.createElement("section");
-  trackSection.className = "timeline-section";
-  const trackTitle = document.createElement("div");
-  trackTitle.className = "timeline-section-title";
-  trackTitle.textContent = t("timelineTrackTitle");
-  const trackHint = document.createElement("div");
-  trackHint.className = "timeline-section-hint";
-  trackHint.textContent = t("timelineTrackHint");
-  trackSection.append(trackTitle, trackHint);
-
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("class", "timeline-track-svg");
-  svg.setAttribute("viewBox", "0 0 640 72");
-  svg.setAttribute("role", "img");
-  svg.setAttribute("aria-label", t("timelineTrackTitle"));
-
-  const padL = 16;
-  const padR = 16;
-  const trackY = 28;
-  const plotW = 640 - padL - padR;
-
-  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-  line.setAttribute("class", "track-line");
-  line.setAttribute("x1", String(padL));
-  line.setAttribute("y1", String(trackY));
-  line.setAttribute("x2", String(padL + plotW));
-  line.setAttribute("y2", String(trackY));
-  svg.appendChild(line);
-
-  for (const mark of marks) {
-    const x = padL + (mark.offsetMs / spanMs) * plotW;
-    const isStall = typeof mark.gapFromPrevMs === "number" && mark.gapFromPrevMs >= TIMELINE_STALL_MS;
-    const isSelected = selectedEventIndex === mark.index;
-    const tick = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    tick.setAttribute(
-      "class",
-      `tick${isSelected ? " is-selected" : ""}${isStall && !isSelected ? " is-stall" : ""}`,
-    );
-    tick.setAttribute("x", String(x - 2));
-    tick.setAttribute("y", String(trackY - 14));
-    tick.setAttribute("width", "4");
-    tick.setAttribute("height", "28");
-    tick.setAttribute("rx", "1");
-    tick.setAttribute("data-index", String(mark.index));
-    tick.setAttribute(
-      "title",
-      `#${mark.index} · ${mark.event} · +${Math.round(mark.offsetMs)}ms` +
-        (mark.gapFromPrevMs != null ? ` · gap ${Math.round(mark.gapFromPrevMs)}ms` : ""),
-    );
-    tick.addEventListener("click", () => {
-      jumpToSelectedEventFromTimeline(mark.index);
-    });
-    svg.appendChild(tick);
-  }
-
-  const label0 = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  label0.setAttribute("class", "axis-label");
-  label0.setAttribute("x", String(padL));
-  label0.setAttribute("y", "58");
-  label0.textContent = "0";
-  svg.appendChild(label0);
-
-  const labelMid = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  labelMid.setAttribute("class", "axis-label");
-  labelMid.setAttribute("x", String(padL + plotW / 2));
-  labelMid.setAttribute("y", "58");
-  labelMid.setAttribute("text-anchor", "middle");
-  labelMid.textContent = formatMetricMs(spanMs / 2);
-  svg.appendChild(labelMid);
-
-  const labelEnd = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  labelEnd.setAttribute("class", "axis-label");
-  labelEnd.setAttribute("x", String(padL + plotW));
-  labelEnd.setAttribute("y", "58");
-  labelEnd.setAttribute("text-anchor", "end");
-  labelEnd.textContent = formatMetricMs(spanMs);
-  svg.appendChild(labelEnd);
-
-  trackSection.appendChild(svg);
-  elTimelineBody.appendChild(trackSection);
-
-  if (reconnects.length > 0) {
-    for (const reconnect of reconnects) {
-      const offsetMs = Math.max(0, reconnect.at - origin);
-      const x = padL + (Math.min(offsetMs, spanMs) / spanMs) * plotW;
-      const marker = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-      marker.setAttribute("class", "reconnect-mark");
-      marker.setAttribute(
-        "points",
-        `${x},${trackY - 20} ${x + 5},${trackY - 10} ${x},${trackY} ${x - 5},${trackY - 10}`,
-      );
-      marker.setAttribute(
-        "title",
-        t("timelineReconnectMark", [
-          String(reconnect.reconnectCount),
-          reconnect.lastEventId ? reconnect.lastEventId : "—",
-          `+${Math.round(offsetMs)}ms`,
-        ]),
-      );
-      svg.appendChild(marker);
-    }
-
-    const reconnectSection = document.createElement("section");
-    reconnectSection.className = "timeline-section timeline-reconnects";
-    const reconnectTitle = document.createElement("div");
-    reconnectTitle.className = "timeline-section-title";
-    reconnectTitle.textContent = t("timelineReconnectsTitle");
-    const reconnectHint = document.createElement("div");
-    reconnectHint.className = "timeline-section-hint";
-    reconnectHint.textContent = t("timelineReconnectsHint");
-    reconnectSection.append(reconnectTitle, reconnectHint);
-
-    for (const reconnect of reconnects) {
-      const row = document.createElement("div");
-      row.className = "timeline-reconnect-item";
-      const offsetMs = Math.max(0, reconnect.at - origin);
-      row.innerHTML = `
-        <span>${escapeHtml(t("timelineReconnectItem", String(reconnect.reconnectCount)))}</span>
-        <span>${escapeHtml(`+${Math.round(offsetMs)}ms`)}</span>
-        <code>${escapeHtml(reconnect.lastEventId || "—")}</code>
-      `;
-      reconnectSection.appendChild(row);
-    }
-    elTimelineBody.appendChild(reconnectSection);
-  }
-
-  const histSection = document.createElement("section");
-  histSection.className = "timeline-section";
-  const histTitle = document.createElement("div");
-  histTitle.className = "timeline-section-title";
-  histTitle.textContent = t("timelineGapHistogram");
-  const histHint = document.createElement("div");
-  histHint.className = "timeline-section-hint";
-  histHint.textContent = t("timelineGapHistogramHint");
-  histSection.append(histTitle, histHint);
-  if (gaps.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = "timeline-meta";
-    empty.textContent = t("timelineGapHistogramEmpty");
-    histSection.appendChild(empty);
-  } else {
-    histSection.appendChild(createGapHistogramSvg(buildGapHistogram(gaps)));
-  }
-  elTimelineBody.appendChild(histSection);
-
-  const gapBox = document.createElement("section");
-  gapBox.className = "timeline-section timeline-gaps";
-  const gapTitle = document.createElement("div");
-  gapTitle.className = "timeline-section-title";
-  gapTitle.textContent = t("timelineLargestGaps");
-  const gapHint = document.createElement("div");
-  gapHint.className = "timeline-section-hint";
-  gapHint.textContent = t("timelineLargestGapsHint");
-  gapBox.append(gapTitle, gapHint);
-
-  const topGaps = largestGaps(gaps, 5);
-  if (topGaps.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = "timeline-meta";
-    empty.textContent = t("timelineNoGaps");
-    gapBox.appendChild(empty);
-  } else {
-    for (const gap of topGaps) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "timeline-gap-item";
-      btn.innerHTML = `
-        <span>${escapeHtml(t("timelineGapBeforeEvent", String(gap.afterIndex)))}</span>
-        <strong>${escapeHtml(formatMetricMs(gap.gapMs))}</strong>
-      `;
-      btn.addEventListener("click", () => {
-        jumpToSelectedEventFromTimeline(gap.afterIndex);
-      });
-      gapBox.appendChild(btn);
-    }
-  }
-  elTimelineBody.appendChild(gapBox);
-}
-
-function createNameValueTable(
-  pairs: NameValuePair[],
-  options?: { redactValues?: boolean },
-): HTMLTableElement {
-  const table = document.createElement("table");
-  table.className = "request-headers-table";
-  table.innerHTML = `
-    <thead>
-      <tr>
-        <th>${escapeHtml(t("requestHeaderName"))}</th>
-        <th>${escapeHtml(t("requestHeaderValue"))}</th>
-      </tr>
-    </thead>
-  `;
-  const tbody = document.createElement("tbody");
-  for (const pair of pairs) {
-    const tr = document.createElement("tr");
-    const isRedacted = options?.redactValues && pair.value === "[REDACTED]";
-    tr.innerHTML = `
-      <td class="request-header-name"><code>${escapeHtml(pair.name)}</code></td>
-      <td class="request-header-value${isRedacted ? " is-redacted" : ""}"><code>${escapeHtml(pair.value)}</code></td>
-    `;
-    tbody.appendChild(tr);
-  }
-  table.appendChild(tbody);
-  return table;
-}
-
-function headersToPairs(headers?: Record<string, string>): NameValuePair[] {
-  if (!headers) return [];
-  return Object.entries(headers)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([name, value]) => ({ name, value }));
-}
-
-function appendKvRow(parent: HTMLElement, label: string, value: string): void {
-  const row = document.createElement("div");
-  row.className = "request-kv-row";
-  row.innerHTML = `<span>${escapeHtml(label)}</span><code class="request-url">${escapeHtml(value)}</code>`;
-  parent.appendChild(row);
-}
-
-function buildRequestViewFingerprint(record: StreamRecord): string {
-  return [
-    uiLanguage(),
-    record.requestId,
-    record.url,
-    record.method,
-    String(record.status ?? ""),
-    record.statusText ?? "",
-    record.contentType ?? "",
-    record.transport,
-    record.streamKind,
-    String(record.requestPayloadTruncated ?? false),
-    record.requestPayloadPreview ?? "",
-    JSON.stringify(record.requestHeaders ?? null),
-    JSON.stringify(record.responseHeaders ?? null),
-  ].join("\n");
-}
-
-function switchRequestPane(pane: "headers" | "payload"): void {
-  requestPane = pane;
-  const headersTab = elRequestBody.querySelector<HTMLButtonElement>(
-    '.request-subtab[data-request-pane="headers"]',
-  );
-  const payloadTab = elRequestBody.querySelector<HTMLButtonElement>(
-    '.request-subtab[data-request-pane="payload"]',
-  );
-  const paneHeaders = elRequestBody.querySelector<HTMLElement>(".request-pane-headers");
-  const panePayload = elRequestBody.querySelector<HTMLElement>(".request-pane-payload");
-  if (!headersTab || !payloadTab || !paneHeaders || !panePayload) return;
-  headersTab.classList.toggle("active", pane === "headers");
-  payloadTab.classList.toggle("active", pane === "payload");
-  paneHeaders.hidden = pane !== "headers";
-  panePayload.hidden = pane !== "payload";
-}
-
-function renderRequest(record: StreamRecord | undefined): void {
-  if (!record) {
-    requestViewFingerprint = "";
-    elRequestPlaceholder.hidden = false;
-    elRequestPlaceholder.textContent = t("noStreamSelected");
-    elRequestBody.hidden = true;
-    elRequestBody.innerHTML = "";
-    return;
-  }
-
-  const fingerprint = buildRequestViewFingerprint(record);
-  if (
-    fingerprint === requestViewFingerprint &&
-    elRequestBody.querySelector(".request-subtabs") &&
-    !elRequestBody.hidden
-  ) {
-    // Keep current Headers/Payload selection while stream chunks keep refreshing detail.
-    return;
-  }
-  requestViewFingerprint = fingerprint;
-
-  elRequestPlaceholder.hidden = true;
-  elRequestBody.hidden = false;
-  elRequestBody.innerHTML = "";
-
-  const subtabs = document.createElement("div");
-  subtabs.className = "request-subtabs";
-  const headersTab = document.createElement("button");
-  headersTab.type = "button";
-  headersTab.dataset.requestPane = "headers";
-  headersTab.className = "request-subtab" + (requestPane === "headers" ? " active" : "");
-  headersTab.textContent = t("requestPaneHeaders");
-  const payloadTab = document.createElement("button");
-  payloadTab.type = "button";
-  payloadTab.dataset.requestPane = "payload";
-  payloadTab.className = "request-subtab" + (requestPane === "payload" ? " active" : "");
-  payloadTab.textContent = t("requestPanePayload");
-  subtabs.append(headersTab, payloadTab);
-  elRequestBody.appendChild(subtabs);
-
-  const paneHeaders = document.createElement("div");
-  paneHeaders.className = "request-pane request-pane-headers";
-  paneHeaders.hidden = requestPane !== "headers";
-
-  const panePayload = document.createElement("div");
-  panePayload.className = "request-pane request-pane-payload";
-  panePayload.hidden = requestPane !== "payload";
-
-  // ---- Headers ----
-  const general = document.createElement("section");
-  general.className = "request-section";
-  const generalTitle = document.createElement("div");
-  generalTitle.className = "request-section-title";
-  generalTitle.textContent = t("requestGeneralTitle");
-  general.appendChild(generalTitle);
-  const generalKv = document.createElement("div");
-  generalKv.className = "request-kv";
-  appendKvRow(generalKv, t("requestUrl"), record.url);
-  appendKvRow(generalKv, t("requestMethod"), record.method);
-  if (record.status != null) {
-    const statusLabel =
-      record.statusText && record.statusText.trim()
-        ? `${record.status} ${record.statusText}`
-        : String(record.status);
-    appendKvRow(generalKv, t("requestStatus"), statusLabel);
-  }
-  appendKvRow(generalKv, t("requestTransport"), transportLabel(record.transport));
-  appendKvRow(generalKv, t("requestStreamKind"), record.streamKind);
-  if (record.contentType) {
-    appendKvRow(generalKv, t("requestContentType"), record.contentType);
-  }
-  if (record.closeReason) {
-    appendKvRow(generalKv, t("requestCloseReason"), closeReasonLabel(record.closeReason));
-  }
-  if (record.errorMessage) {
-    appendKvRow(generalKv, t("requestErrorMessage"), record.errorMessage);
-  }
-  if (record.lastEventId) {
-    appendKvRow(generalKv, t("requestLastEventId"), record.lastEventId);
-  }
-  if ((record.reconnectCount ?? 0) > 0) {
-    appendKvRow(generalKv, t("requestReconnectCount"), String(record.reconnectCount));
-  }
-  general.appendChild(generalKv);
-  paneHeaders.appendChild(general);
-
-  const responseSection = document.createElement("section");
-  responseSection.className = "request-section";
-  const responseTitle = document.createElement("div");
-  responseTitle.className = "request-section-title";
-  responseTitle.textContent = t("requestResponseHeadersTitle");
-  responseSection.appendChild(responseTitle);
-  const responsePairs = headersToPairs(record.responseHeaders);
-  if (responsePairs.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = "request-empty";
-    empty.textContent = t("requestResponseHeadersEmpty");
-    responseSection.appendChild(empty);
-  } else {
-    responseSection.appendChild(createNameValueTable(responsePairs, { redactValues: true }));
-  }
-  paneHeaders.appendChild(responseSection);
-
-  const requestHeadersSection = document.createElement("section");
-  requestHeadersSection.className = "request-section";
-  const requestHeadersTitle = document.createElement("div");
-  requestHeadersTitle.className = "request-section-title";
-  requestHeadersTitle.textContent = t("requestHeadersTitle");
-  requestHeadersSection.appendChild(requestHeadersTitle);
-  const requestHeadersHint = document.createElement("div");
-  requestHeadersHint.className = "request-section-hint";
-  requestHeadersHint.textContent = t("requestHeadersHint");
-  requestHeadersSection.appendChild(requestHeadersHint);
-  const requestPairs = headersToPairs(record.requestHeaders);
-  if (requestPairs.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = "request-empty";
-    empty.textContent = t("requestHeadersEmpty");
-    requestHeadersSection.appendChild(empty);
-  } else {
-    requestHeadersSection.appendChild(createNameValueTable(requestPairs, { redactValues: true }));
-  }
-  paneHeaders.appendChild(requestHeadersSection);
-
-  // ---- Payload ----
-  const queryParams = parseQueryStringParams(record.url);
-  const querySection = document.createElement("section");
-  querySection.className = "request-section";
-  const queryTitle = document.createElement("div");
-  queryTitle.className = "request-section-title";
-  queryTitle.textContent = t("requestQueryTitle");
-  querySection.appendChild(queryTitle);
-  if (queryParams.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = "request-empty";
-    empty.textContent = t("requestQueryEmpty");
-    querySection.appendChild(empty);
-  } else {
-    querySection.appendChild(createNameValueTable(queryParams));
-  }
-  panePayload.appendChild(querySection);
-
-  const payload = record.requestPayloadPreview ?? "";
-  const reqCt = (requestContentType(record.requestHeaders) ?? "").toLowerCase();
-  const isForm =
-    reqCt.includes("application/x-www-form-urlencoded") ||
-    (!reqCt.includes("json") && looksLikeUrlEncoded(payload));
-  const formPairs = isForm && payload ? parseUrlEncodedPairs(payload) : [];
-
-  if (formPairs.length > 0) {
-    const formSection = document.createElement("section");
-    formSection.className = "request-section";
-    const formTitle = document.createElement("div");
-    formTitle.className = "request-section-title";
-    formTitle.textContent = t("requestFormDataTitle");
-    formSection.appendChild(formTitle);
-    formSection.appendChild(createNameValueTable(formPairs));
-    if (record.requestPayloadTruncated) {
-      const hint = document.createElement("div");
-      hint.className = "request-section-hint";
-      hint.textContent = t("requestBodyTruncatedHint");
-      formSection.appendChild(hint);
-    }
-    panePayload.appendChild(formSection);
-  }
-
-  const bodySection = document.createElement("section");
-  bodySection.className = "request-section";
-  const bodyTitleRow = document.createElement("div");
-  bodyTitleRow.className = "request-section-title-row";
-  const bodyTitle = document.createElement("div");
-  bodyTitle.className = "request-section-title";
-  bodyTitle.textContent = t("requestBodyTitle");
-  bodyTitleRow.appendChild(bodyTitle);
-
-  const viewToggle = document.createElement("div");
-  viewToggle.className = "request-view-toggle";
-  const parsedBtn = document.createElement("button");
-  parsedBtn.type = "button";
-  parsedBtn.className = "request-view-btn" + (requestPayloadView === "parsed" ? " active" : "");
-  parsedBtn.textContent = t("requestPayloadParsed");
-  const sourceBtn = document.createElement("button");
-  sourceBtn.type = "button";
-  sourceBtn.className = "request-view-btn" + (requestPayloadView === "source" ? " active" : "");
-  sourceBtn.textContent = t("requestPayloadSource");
-  viewToggle.append(parsedBtn, sourceBtn);
-  bodyTitleRow.appendChild(viewToggle);
-  bodySection.appendChild(bodyTitleRow);
-
-  const bodyHint = document.createElement("div");
-  bodyHint.className = "request-section-hint";
-  bodyHint.textContent = record.requestPayloadTruncated
-    ? t("requestBodyTruncatedHint")
-    : t("requestBodyHint");
-  bodySection.appendChild(bodyHint);
-
-  const bodyContent = document.createElement("div");
-  bodyContent.className = "request-payload-content";
-
-  const renderPayloadContent = (): void => {
-    bodyContent.innerHTML = "";
-    parsedBtn.classList.toggle("active", requestPayloadView === "parsed");
-    sourceBtn.classList.toggle("active", requestPayloadView === "source");
-    if (!payload) {
-      const empty = document.createElement("div");
-      empty.className = "request-empty";
-      empty.textContent = t("requestBodyEmpty");
-      bodyContent.appendChild(empty);
-      return;
-    }
-    if (requestPayloadView === "source") {
-      const pre = document.createElement("pre");
-      pre.className = "request-payload-text";
-      pre.textContent = payload;
-      bodyContent.appendChild(pre);
-      return;
-    }
-    const parsed = tryParseJsonValue(payload);
-    if (parsed.ok) {
-      const tree = createJsonTree(parsed.value, { defaultExpandDepth: 2 });
-      bindJsonTreeContextMenu(tree);
-      bodyContent.appendChild(tree);
-      return;
-    }
-    if (formPairs.length > 0) {
-      bodyContent.appendChild(createNameValueTable(formPairs));
-      return;
-    }
-    const pre = document.createElement("pre");
-    pre.className = "request-payload-text";
-    pre.textContent = payload;
-    bodyContent.appendChild(pre);
-  };
-
-  parsedBtn.addEventListener("click", () => {
-    requestPayloadView = "parsed";
-    renderPayloadContent();
-  });
-  sourceBtn.addEventListener("click", () => {
-    requestPayloadView = "source";
-    renderPayloadContent();
-  });
-  renderPayloadContent();
-  bodySection.appendChild(bodyContent);
-  panePayload.appendChild(bodySection);
-
-  elRequestBody.append(paneHeaders, panePayload);
-
-  // pointerdown: streaming detail refresh can destroy buttons between mousedown/mouseup.
-  headersTab.addEventListener("pointerdown", (e) => {
-    if (e.button !== 0) return;
-    e.preventDefault();
-    switchRequestPane("headers");
-  });
-  payloadTab.addEventListener("pointerdown", (e) => {
-    if (e.button !== 0) return;
-    e.preventDefault();
-    switchRequestPane("payload");
+function renderTimelineForSelection(record: StreamRecord | undefined): void {
+  renderTimeline(record, {
+    selectedEventIndex: state.selectedEventIndex,
+    onJumpToEvent: jumpToSelectedEventFromTimeline,
   });
 }
 
-function buildTranscriptFingerprint(record: StreamRecord, channel: typeof transcriptChannel): string {
-  return [
-    record.requestId,
-    record.events.length,
-    record.raw.length,
-    record.streamStatus,
-    channel,
-  ].join("|");
+function renderRequestForSelection(record: StreamRecord | undefined): void {
+  renderRequest(record, { onBindJsonTreeContextMenu: bindJsonTreeContextMenu });
 }
 
-function transcriptChannelText(merged: AiTranscript, channel: typeof transcriptChannel): string {
-  switch (channel) {
-    case "content":
-      return merged.channels.content;
-    case "reasoning":
-      return merged.channels.reasoning;
-    case "tools":
-      return merged.channels.tools.length
-        ? merged.channels.tools
-            .map((tc) => {
-              const head = `#${tc.index}${tc.name ? ` ${tc.name}` : ""}${tc.id ? ` (${tc.id})` : ""}`;
-              return `${head}\n${tc.arguments || "{}"}`;
-            })
-            .join("\n\n")
-        : "";
-    case "meta": {
-      const lines: string[] = [
-        `${t("transcriptProfileLabel")}: ${merged.profile}`,
-        `${t("transcriptVendorLabel")}: ${merged.vendorHint}`,
-        `${t("transcriptChunksLabel")}: ${merged.chunkCount}`,
-      ];
-      if (merged.endMeta.model) lines.push(`${t("transcriptModelLabel")}: ${merged.endMeta.model}`);
-      if (merged.endMeta.finishReason) {
-        lines.push(`${t("transcriptFinishLabel")}: ${merged.endMeta.finishReason}`);
-      }
-      if (merged.endMeta.usage) {
-        lines.push(`${t("transcriptUsageLabel")}: ${JSON.stringify(merged.endMeta.usage)}`);
-      }
-      if (merged.detection.reasoningFields.length) {
-        lines.push(
-          `${t("transcriptReasoningFieldsLabel")}: ${merged.detection.reasoningFields.join(", ")}`,
-        );
-      }
-      return lines.join("\n");
-    }
-    default:
-      return "";
-  }
-}
-
-function tryParseToolArgs(raw: string): unknown | null {
-  try {
-    return JSON.parse(raw || "{}") as unknown;
-  } catch {
-    return null;
-  }
-}
-
-function isWebSearchPayload(value: unknown): value is {
-  type?: string;
-  queries?: string[];
-  results?: Array<Record<string, unknown>>;
-  status?: unknown;
-} {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
-  const o = value as Record<string, unknown>;
-  return o.type === "SEARCH" || Array.isArray(o.queries) || Array.isArray(o.results);
-}
-
-function toolsExpandedForStream(streamId: string, toolCount: number): Set<number> {
-  if (toolsExpandStreamId !== streamId) {
-    toolsExpandStreamId = streamId;
-    // Default: only the first tool's body/list is expanded.
-    toolsExpandedIndexes = new Set(toolCount > 0 ? [0] : []);
-  }
-  return toolsExpandedIndexes;
-}
-
-function createToolsPane(merged: AiTranscript, streamId: string): HTMLElement {
-  const pane = document.createElement("div");
-  pane.className = "transcript-pane transcript-tools-pane";
-
-  if (merged.channels.tools.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = "transcript-tools-empty";
-    const unsupported = merged.profile === "generic";
-    empty.textContent = unsupported ? t("transcriptToolsUnsupported") : t("transcriptToolsEmpty");
-    pane.appendChild(empty);
-    return pane;
-  }
-
-  const expanded = toolsExpandedForStream(streamId, merged.channels.tools.length);
-
-  merged.channels.tools.forEach((tc, index) => {
-    const card = document.createElement("article");
-    const isOpen = expanded.has(index);
-    card.className = "tool-card" + (isOpen ? " is-expanded" : " is-collapsed");
-    card.dataset.toolIndex = String(index);
-    const parsed = tryParseToolArgs(tc.arguments);
-    const isSearch = tc.name === "web_search" || isWebSearchPayload(parsed);
-
-    const head = document.createElement("button");
-    head.type = "button";
-    head.className = "tool-card-head";
-    head.setAttribute("aria-expanded", isOpen ? "true" : "false");
-    head.title = isOpen ? t("transcriptToolsCollapse") : t("transcriptToolsExpand");
-
-    const caret = document.createElement("span");
-    caret.className = "tool-card-caret";
-    caret.innerHTML = renderIcon("caret", "tool-card-caret-icon");
-    caret.setAttribute("aria-hidden", "true");
-
-    const badge = document.createElement("span");
-    badge.className = "tool-card-badge";
-    badge.textContent = isSearch
-      ? t("transcriptToolsWebSearch")
-      : tc.name || t("transcriptToolsFunction");
-    head.append(caret, badge);
-
-    if (tc.id) {
-      const idEl = document.createElement("span");
-      idEl.className = "tool-card-id";
-      idEl.textContent = tc.id;
-      head.appendChild(idEl);
-    }
-
-    let summaryText = "";
-    if (isSearch && isWebSearchPayload(parsed)) {
-      const results = Array.isArray(parsed.results) ? parsed.results : [];
-      summaryText = t("transcriptToolsResults", String(results.length));
-    } else if (tc.name) {
-      summaryText = tc.name;
-    }
-    if (summaryText) {
-      const summary = document.createElement("span");
-      summary.className = "tool-card-summary";
-      summary.textContent = summaryText;
-      head.appendChild(summary);
-    }
-
-    const body = document.createElement("div");
-    body.className = "tool-card-body";
-    body.hidden = !isOpen;
-
-    if (isSearch && isWebSearchPayload(parsed)) {
-      const queries = Array.isArray(parsed.queries) ? parsed.queries.filter((q) => typeof q === "string") : [];
-      if (queries.length > 0) {
-        const qSection = document.createElement("div");
-        qSection.className = "tool-card-section";
-        const qLabel = document.createElement("div");
-        qLabel.className = "tool-card-label";
-        qLabel.textContent = t("transcriptToolsQueries");
-        const qList = document.createElement("div");
-        qList.className = "tool-query-list";
-        for (const q of queries) {
-          const chip = document.createElement("span");
-          chip.className = "tool-query-chip";
-          chip.textContent = q;
-          qList.appendChild(chip);
-        }
-        qSection.append(qLabel, qList);
-        body.appendChild(qSection);
-      }
-
-      const results = Array.isArray(parsed.results) ? parsed.results : [];
-      const rSection = document.createElement("div");
-      rSection.className = "tool-card-section";
-      const rLabel = document.createElement("div");
-      rLabel.className = "tool-card-label";
-      rLabel.textContent = t("transcriptToolsResults", String(results.length));
-      rSection.appendChild(rLabel);
-
-      const list = document.createElement("ol");
-      list.className = "tool-result-list";
-      for (const r of results) {
-        if (!r || typeof r !== "object") continue;
-        const item = document.createElement("li");
-        item.className = "tool-result-item";
-        const cite =
-          typeof r.cite_index === "number" || typeof r.cite_index === "string"
-            ? String(r.cite_index)
-            : "";
-        const title = typeof r.title === "string" ? r.title : "Untitled";
-        const url = typeof r.url === "string" ? r.url : "";
-        const site = typeof r.site_name === "string" ? r.site_name : "";
-        const snippet = typeof r.snippet === "string" ? r.snippet : "";
-
-        const titleRow = document.createElement("div");
-        titleRow.className = "tool-result-title-row";
-        if (cite) {
-          const citeEl = document.createElement("span");
-          citeEl.className = "tool-result-cite";
-          citeEl.textContent = cite;
-          titleRow.appendChild(citeEl);
-        }
-        if (url) {
-          const a = document.createElement("a");
-          a.className = "tool-result-title";
-          a.href = url;
-          a.target = "_blank";
-          a.rel = "noopener noreferrer";
-          a.textContent = title;
-          titleRow.appendChild(a);
-        } else {
-          const span = document.createElement("span");
-          span.className = "tool-result-title";
-          span.textContent = title;
-          titleRow.appendChild(span);
-        }
-        item.appendChild(titleRow);
-
-        if (site || url) {
-          const meta = document.createElement("div");
-          meta.className = "tool-result-meta";
-          meta.textContent = site || url;
-          item.appendChild(meta);
-        }
-        if (snippet) {
-          const sn = document.createElement("div");
-          sn.className = "tool-result-snippet";
-          sn.textContent = snippet;
-          item.appendChild(sn);
-        }
-        list.appendChild(item);
-      }
-      rSection.appendChild(list);
-      body.appendChild(rSection);
-    } else {
-      if (tc.name && !isSearch) {
-        const nameRow = document.createElement("div");
-        nameRow.className = "tool-card-section";
-        const nameLabel = document.createElement("div");
-        nameLabel.className = "tool-card-label";
-        nameLabel.textContent = t("transcriptToolsFunction");
-        const nameVal = document.createElement("code");
-        nameVal.className = "tool-fn-name";
-        nameVal.textContent = tc.name;
-        nameRow.append(nameLabel, nameVal);
-        body.appendChild(nameRow);
-      }
-      const argsSection = document.createElement("div");
-      argsSection.className = "tool-card-section";
-      const argsLabel = document.createElement("div");
-      argsLabel.className = "tool-card-label";
-      argsLabel.textContent = t("transcriptToolsArgs");
-      const argsPre = document.createElement("pre");
-      argsPre.className = "tool-args-pre";
-      if (parsed != null) {
-        try {
-          argsPre.textContent = JSON.stringify(parsed, null, 2);
-        } catch {
-          argsPre.textContent = tc.arguments || "{}";
-        }
-      } else {
-        argsPre.textContent = tc.arguments || "{}";
-      }
-      argsSection.append(argsLabel, argsPre);
-      body.appendChild(argsSection);
-    }
-
-    head.addEventListener("click", () => {
-      const nextOpen = !expanded.has(index);
-      if (nextOpen) expanded.add(index);
-      else expanded.delete(index);
-      card.classList.toggle("is-expanded", nextOpen);
-      card.classList.toggle("is-collapsed", !nextOpen);
-      body.hidden = !nextOpen;
-      head.setAttribute("aria-expanded", nextOpen ? "true" : "false");
-      head.title = nextOpen ? t("transcriptToolsCollapse") : t("transcriptToolsExpand");
-    });
-
-    card.append(head, body);
-    pane.appendChild(card);
-  });
-
-  return pane;
-}
-
-function renderTranscript(record: StreamRecord | undefined): void {
-  if (!record) {
-    elTranscriptPlaceholder.hidden = false;
-    elTranscriptPlaceholder.textContent = t("noStreamSelected");
-    elTranscriptBody.hidden = true;
-    elTranscriptBody.innerHTML = "";
-    transcriptFingerprint = "";
-    lastTranscript = null;
-    toolsExpandStreamId = null;
-    toolsExpandedIndexes = new Set();
-    return;
-  }
-
-  const fp = buildTranscriptFingerprint(record, transcriptChannel);
-  if (
-    fp === transcriptFingerprint &&
-    elTranscriptBody.querySelector(".transcript-shell") &&
-    !elTranscriptBody.hidden
-  ) {
-    return;
-  }
-  transcriptFingerprint = fp;
-
-  const merged = mergeAiTranscript(record.events, record.url);
-  lastTranscript = merged;
-
-  if (!transcriptHasContent(merged) && merged.profile === "generic") {
-    elTranscriptPlaceholder.hidden = false;
-    elTranscriptPlaceholder.textContent = t("transcriptEmpty");
-    elTranscriptBody.hidden = true;
-    elTranscriptBody.innerHTML = "";
-    return;
-  }
-
-  elTranscriptPlaceholder.hidden = true;
-  elTranscriptBody.hidden = false;
-  elTranscriptBody.innerHTML = "";
-
-  const shell = document.createElement("div");
-  shell.className = "transcript-shell";
-
-  const toolbar = document.createElement("div");
-  toolbar.className = "transcript-toolbar";
-
-  const chips = document.createElement("div");
-  chips.className = "transcript-chips";
-  const chipProfile = document.createElement("span");
-  chipProfile.className = "meta-chip";
-  chipProfile.textContent = `${t("transcriptProfileLabel")}: ${merged.profile}`;
-  const chipVendor = document.createElement("span");
-  chipVendor.className = "meta-chip";
-  chipVendor.textContent = `${t("transcriptVendorLabel")}: ${merged.vendorHint}`;
-  chips.append(chipProfile, chipVendor);
-  if (merged.endMeta.finishReason) {
-    const chipFinish = document.createElement("span");
-    chipFinish.className = "meta-chip";
-    chipFinish.textContent = `${t("transcriptFinishLabel")}: ${merged.endMeta.finishReason}`;
-    chips.appendChild(chipFinish);
-  }
-
-  const copyBtn = document.createElement("button");
-  copyBtn.type = "button";
-  copyBtn.className = "tool-btn tool-btn-icon";
-  copyBtn.title = t("transcriptCopyTitle");
-  copyBtn.setAttribute("aria-label", t("transcriptCopy"));
-  copyBtn.innerHTML =
-    renderIcon("copy", "tool-icon") +
-    `<span class="visually-hidden">${escapeHtml(t("transcriptCopy"))}</span>`;
-  copyBtn.addEventListener("click", () => {
-    const text = transcriptChannelText(merged, transcriptChannel) || "";
-    void copyText(text, false).then(() => showToast(t("transcriptCopied")));
-  });
-
-  toolbar.append(chips, copyBtn);
-
-  const subtabs = document.createElement("div");
-  subtabs.className = "transcript-subtabs request-subtabs";
-  const channels: Array<typeof transcriptChannel> = ["content", "reasoning", "tools", "meta"];
-  const labels: Record<typeof transcriptChannel, string> = {
-    content: t("transcriptChannelContent"),
-    reasoning: t("transcriptChannelReasoning"),
-    tools: t("transcriptChannelTools"),
-    meta: t("transcriptChannelMeta"),
-  };
-  for (const ch of channels) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "request-subtab" + (transcriptChannel === ch ? " active" : "");
-    let label = labels[ch];
-    if (ch === "reasoning" && merged.channels.reasoning) label += ` (${merged.channels.reasoning.length})`;
-    if (ch === "content" && merged.channels.content) label += ` (${merged.channels.content.length})`;
-    if (ch === "tools" && merged.channels.tools.length) label += ` (${merged.channels.tools.length})`;
-    btn.textContent = label;
-    btn.addEventListener("pointerdown", (e) => {
-      if (e.button !== 0) return;
-      e.preventDefault();
-      if (transcriptChannel === ch) return;
-      transcriptChannel = ch;
-      transcriptFingerprint = "";
-      renderTranscript(record);
-    });
-    subtabs.appendChild(btn);
-  }
-
-  const text = transcriptChannelText(merged, transcriptChannel);
-  let pane: HTMLElement;
-  if (transcriptChannel === "tools") {
-    pane = createToolsPane(merged, record.requestId);
-  } else {
-    pane = document.createElement("pre");
-    pane.className = "transcript-pane code";
-    if (!text && transcriptChannel !== "meta") {
-      pane.textContent = t("transcriptEmpty");
-    } else {
-      pane.textContent = text;
-    }
-  }
-
-  shell.append(toolbar, subtabs, pane);
-  elTranscriptBody.appendChild(shell);
+function renderTranscriptForSelection(record: StreamRecord | undefined): void {
+  renderTranscript(record, { copyText, showToast });
 }
 
 function setupTabs(): void {
   document.querySelectorAll<HTMLButtonElement>(".tab").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const tab = btn.dataset.tab as typeof activeTab;
+      const tab = btn.dataset.tab as ActiveTab;
       if (
         tab !== "events" &&
         tab !== "raw" &&
@@ -2959,14 +584,14 @@ function setupTabs(): void {
       }
       activateTab(tab);
       if (tab === "timeline") {
-        const record = selectedId ? streams.get(selectedId) : undefined;
-        renderTimeline(record);
+        const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
+        renderTimelineForSelection(record);
       } else if (tab === "request") {
-        const record = selectedId ? streams.get(selectedId) : undefined;
-        renderRequest(record);
+        const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
+        renderRequestForSelection(record);
       } else if (tab === "transcript") {
-        const record = selectedId ? streams.get(selectedId) : undefined;
-        renderTranscript(record);
+        const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
+        renderTranscriptForSelection(record);
       }
     });
   });
@@ -2979,27 +604,25 @@ function setupActions(): void {
     const li = (e.target as HTMLElement | null)?.closest("li.stream, li.stream-item");
     if (!(li instanceof HTMLLIElement) || !elList.contains(li)) return;
     const id = li.dataset.id;
-    if (!id || !streams.has(id) || id === selectedId) return;
-    selectedId = id;
-    selectedEventIndex = null;
+    if (!id || !state.streams.has(id) || id === state.selectedId) return;
+    state.selectedId = id;
+    state.selectedEventIndex = null;
     renderList();
     renderDetail();
   });
 
   document.getElementById("btn-clear")?.addEventListener("click", () => {
-    streams.clear();
-    parsers.clear();
-    anomalyCache.clear();
-    specWarningCache.clear();
-    requestViewFingerprint = "";
-    transcriptFingerprint = "";
-    lastTranscript = null;
-    selectedId = null;
-    selectedEventIndex = null;
-    streamsUrlFilterQuery = "";
-    streamsTransportFilter = "all";
-    pendingListRefreshWhilePaused = false;
-    pendingDetailRefreshWhilePaused = false;
+    state.streams.clear();
+    state.parsers.clear();
+    clearStreamAnomalyCaches();
+    resetRequestViewState();
+    resetTranscriptView();
+    state.selectedId = null;
+    state.selectedEventIndex = null;
+    state.streamsUrlFilterQuery = "";
+    state.streamsTransportFilter = "all";
+    state.pendingListRefreshWhilePaused = false;
+    state.pendingDetailRefreshWhilePaused = false;
     elStreamsUrlFilter.value = "";
     elStreamsTransportFilter.value = "all";
     renderList();
@@ -3029,7 +652,7 @@ function setupActions(): void {
   });
 
   elExportCsv.addEventListener("click", () => {
-    exportSelectedStreamCsv();
+    exportSelectedStreamCsv(exportHooks);
   });
 
   elExportFixture.addEventListener("click", () => {
@@ -3044,7 +667,7 @@ function setupActions(): void {
   elImportFile.addEventListener("change", () => {
     const file = elImportFile.files?.[0];
     if (!file) return;
-    void importStreamFromFile(file).catch((err) => {
+    void importStreamFromFile(file, exportHooks).catch((err) => {
       window.alert(t("importFailed", err instanceof Error ? err.message : String(err)));
     });
   });
@@ -3056,7 +679,7 @@ function setupActions(): void {
   });
 
   elArchives.addEventListener("click", () => {
-    void showArchivesDialog().catch((err) => {
+    void showArchivesDialog(dialogHooks).catch((err) => {
       window.alert(t("archivesOpenFailed", err instanceof Error ? err.message : String(err)));
     });
   });
@@ -3066,19 +689,19 @@ function setupActions(): void {
   });
 
   elAnomalies.addEventListener("click", () => {
-    showAnomaliesDialog();
+    showAnomaliesDialog(dialogHooks);
   });
 
   elSpecWarnings.addEventListener("click", () => {
-    showSpecWarningsDialog();
+    showSpecWarningsDialog(dialogHooks);
   });
 
   elSearchAll.addEventListener("click", () => {
-    showGlobalSearchDialog();
+    showGlobalSearchDialog(dialogHooks);
   });
 
   elPauseUi.addEventListener("click", () => {
-    setUiPaused(!uiPaused);
+    setUiPaused(!state.uiPaused, pauseHooks);
   });
 
   elDialogClose.addEventListener("click", () => {
@@ -3091,7 +714,7 @@ function setupActions(): void {
   });
 
   document.getElementById("btn-copy-raw")?.addEventListener("click", async () => {
-    const record = selectedId ? streams.get(selectedId) : undefined;
+    const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
     if (!record) return;
     await copyText(record.raw, true);
   });
@@ -3113,30 +736,30 @@ function setupActions(): void {
   });
 
   elDrawerCopy.addEventListener("click", async () => {
-    if (drawerEventData == null) return;
-    await copyText(drawerEventData, true);
+    if (state.drawerEventData == null) return;
+    await copyText(state.drawerEventData, true);
   });
 
   elEventsSearch.addEventListener("input", () => {
-    eventsSearchQuery = elEventsSearch.value;
+    state.eventsSearchQuery = elEventsSearch.value;
     applyEventsFilter();
     updateDrawerNavButtons();
   });
 
   elStreamsUrlFilter.addEventListener("input", () => {
-    streamsUrlFilterQuery = elStreamsUrlFilter.value;
+    state.streamsUrlFilterQuery = elStreamsUrlFilter.value;
     renderList();
   });
 
   elStreamsTransportFilter.addEventListener("change", () => {
     const value = elStreamsTransportFilter.value;
-    streamsTransportFilter =
+    state.streamsTransportFilter =
       value === "fetch" || value === "eventsource" || value === "xhr" ? value : "all";
     renderList();
   });
 
   elDrawerSearch.addEventListener("input", () => {
-    drawerSearchQuery = elDrawerSearch.value;
+    state.drawerSearchQuery = elDrawerSearch.value;
     applyDrawerSearch();
   });
 
@@ -3144,14 +767,14 @@ function setupActions(): void {
     const btn = (e.target as HTMLElement).closest("button[data-action]");
     if (!btn) return;
     const action = btn.getAttribute("data-action");
-    if (action === "copy-data" && contextMenuData?.kind === "event-data") {
-      await copyText(contextMenuData.data, true);
-    } else if (action === "copy-json-value" && contextMenuData?.kind === "json-node") {
-      if (contextMenuData.value != null) {
-        await copyText(contextMenuData.value, true);
+    if (action === "copy-data" && state.contextMenuData?.kind === "event-data") {
+      await copyText(state.contextMenuData.data, true);
+    } else if (action === "copy-json-value" && state.contextMenuData?.kind === "json-node") {
+      if (state.contextMenuData.value != null) {
+        await copyText(state.contextMenuData.value, true);
       }
-    } else if (action === "copy-json-path" && contextMenuData?.kind === "json-node") {
-      await copyText(contextMenuData.path, true);
+    } else if (action === "copy-json-path" && state.contextMenuData?.kind === "json-node") {
+      await copyText(state.contextMenuData.path, true);
     }
     hideContextMenu();
   });
@@ -3240,7 +863,7 @@ function setupResizer(): void {
       const rect = elEvents.getBoundingClientRect();
       if (rect.width <= 0) return;
       const fromRight = ((rect.right - ev.clientX) / rect.width) * 100;
-      drawerWidthPercent = Math.min(DRAWER_WIDTH_MAX, Math.max(DRAWER_WIDTH_MIN, fromRight));
+      state.drawerWidthPercent = Math.min(DRAWER_WIDTH_MAX, Math.max(DRAWER_WIDTH_MIN, fromRight));
       applyDrawerWidth();
     };
     const onUp = () => {
@@ -3265,13 +888,13 @@ function refreshLocaleUi(): void {
   document.documentElement.lang = uiLanguage();
   document.title = t("panelTitle");
   applyDomI18n();
-  setUiPaused(uiPaused);
+  setUiPaused(state.uiPaused, pauseHooks);
   if (elStatusbarLocale) {
     const version = chrome.runtime.getManifest?.().version ?? "0.1.0";
     elStatusbarLocale.textContent =
       getActiveLocale() === "zh_CN" ? `中文 · ${version}` : `EN · ${version}`;
   }
-  if (elStatusbarCapture && !uiPaused) {
+  if (elStatusbarCapture && !state.uiPaused) {
     elStatusbarCapture.textContent = t("statusbarCaptureActive");
   }
   renderList();

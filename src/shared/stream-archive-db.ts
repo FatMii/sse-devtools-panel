@@ -62,7 +62,10 @@ export async function getStreamArchive(id: string): Promise<StreamArchiveEntry |
   });
 }
 
-export async function saveStreamArchive(name: string, stream: StreamRecord): Promise<StreamArchiveEntry> {
+export async function saveStreamArchive(
+  name: string,
+  stream: StreamRecord,
+): Promise<StreamArchiveEntry> {
   const trimmed = name.trim();
   if (!trimmed) throw new Error("Archive name is required");
 

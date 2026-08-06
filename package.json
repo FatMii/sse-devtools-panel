@@ -19,14 +19,27 @@
     "test:close": "node scripts/test-close.mjs",
     "test:ai-merge": "node scripts/test-ai-merge.mjs",
     "test-only": "pnpm test:parser && pnpm test:connect && pnpm test:export && pnpm test:spec && pnpm test:timing && pnpm test:request-view && pnpm test:close && pnpm test:ai-merge",
+    "lint": "eslint src --max-warnings=0",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "demo": "node demo/server.mjs"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/chrome": "^0.0.287",
+    "eslint": "^10.8.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.6",
+    "globals": "^17.9.0",
+    "prettier": "^3.9.6",
     "typescript": "^5.7.3",
+    "typescript-eslint": "^8.66.0",
     "vite": "^6.0.7"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"]
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }

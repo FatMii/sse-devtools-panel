@@ -15,7 +15,10 @@ export function tryParseJsonValue(text: string): { ok: true; value: unknown } | 
   }
 
   // NDJSON: parse each line and wrap as an array
-  const lines = trimmed.split("\n").map((l) => l.trim()).filter(Boolean);
+  const lines = trimmed
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
   if (lines.length > 1) {
     try {
       return { ok: true, value: lines.map((l) => JSON.parse(l)) };
@@ -27,7 +30,10 @@ export function tryParseJsonValue(text: string): { ok: true; value: unknown } | 
   return { ok: false };
 }
 
-export function createJsonTree(value: unknown, options?: { defaultExpandDepth?: number }): HTMLElement {
+export function createJsonTree(
+  value: unknown,
+  options?: { defaultExpandDepth?: number },
+): HTMLElement {
   const depth = options?.defaultExpandDepth ?? 1;
   const root = document.createElement("div");
   root.className = "json-tree";
@@ -133,7 +139,16 @@ function renderNode(
   const type = valueType(value);
 
   if (type === "object" || type === "array") {
-    return renderCollection(key, value as object | unknown[], depth, expandDepth, isRoot, type, isLast, path);
+    return renderCollection(
+      key,
+      value as object | unknown[],
+      depth,
+      expandDepth,
+      isRoot,
+      type,
+      isLast,
+      path,
+    );
   }
 
   return renderLeaf(key, value, type, path);
@@ -157,7 +172,9 @@ function renderCollection(
   const expanded = depth < expandDepth;
   const row = document.createElement("div");
   row.className = "json-node json-collection" + (expanded ? " expanded" : "");
-  row.dataset.searchText = [path, key ?? (type === "array" ? "array" : "object")].filter(Boolean).join(" ");
+  row.dataset.searchText = [path, key ?? (type === "array" ? "array" : "object")]
+    .filter(Boolean)
+    .join(" ");
   row.dataset.path = path;
 
   const head = document.createElement("div");
@@ -220,7 +237,15 @@ function renderCollection(
   for (let i = 0; i < entries.length; i += 1) {
     const [k, v] = entries[i];
     children.appendChild(
-      renderNode(k, v, depth + 1, expandDepth, false, i === entries.length - 1, buildChildPath(path, k, type)),
+      renderNode(
+        k,
+        v,
+        depth + 1,
+        expandDepth,
+        false,
+        i === entries.length - 1,
+        buildChildPath(path, k, type),
+      ),
     );
   }
 
@@ -289,12 +314,7 @@ function renderCollection(
   return row;
 }
 
-function renderLeaf(
-  key: string | null,
-  value: unknown,
-  type: string,
-  path: string,
-): HTMLElement {
+function renderLeaf(key: string | null, value: unknown, type: string, path: string): HTMLElement {
   const row = document.createElement("div");
   row.className = "json-node json-leaf";
   row.dataset.path = path;
@@ -420,7 +440,9 @@ function handleTreeNavigationKey(
 function focusSibling(current: HTMLElement, delta: 1 | -1): void {
   const root = current.closest<HTMLElement>(".json-tree");
   if (!root) return;
-  const focusables = Array.from(root.querySelectorAll<HTMLElement>(".json-focusable")).filter(isElementVisible);
+  const focusables = Array.from(root.querySelectorAll<HTMLElement>(".json-focusable")).filter(
+    isElementVisible,
+  );
   const idx = focusables.indexOf(current);
   if (idx < 0) return;
   const next = focusables[idx + delta];

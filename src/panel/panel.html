@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -39,10 +39,22 @@
               <span class="tool-caret" data-icon="caret"></span>
             </button>
             <div class="menu-panel" id="export-menu-panel" role="menu" hidden>
-              <button type="button" role="menuitem" id="btn-export-json" data-i18n="exportJson" data-i18n-title="exportJsonTitle">
+              <button
+                type="button"
+                role="menuitem"
+                id="btn-export-json"
+                data-i18n="exportJson"
+                data-i18n-title="exportJsonTitle"
+              >
                 Export JSON
               </button>
-              <button type="button" role="menuitem" id="btn-export-csv" data-i18n="exportCsv" data-i18n-title="exportCsvTitle">
+              <button
+                type="button"
+                role="menuitem"
+                id="btn-export-csv"
+                data-i18n="exportCsv"
+                data-i18n-title="exportCsvTitle"
+              >
                 Export CSV
               </button>
               <button
@@ -59,7 +71,12 @@
 
           <span class="toolbar-separator" aria-hidden="true"></span>
 
-          <button type="button" class="tool-btn" id="btn-save-archive" data-i18n-title="saveArchiveTitle">
+          <button
+            type="button"
+            class="tool-btn"
+            id="btn-save-archive"
+            data-i18n-title="saveArchiveTitle"
+          >
             <span class="tool-icon" data-icon="save"></span>
             <span class="tool-label" data-i18n="saveArchive">Save</span>
           </button>
@@ -78,7 +95,12 @@
             <span class="tool-icon" data-icon="pause"></span>
             <span class="tool-label" data-i18n="pauseUi">Pause UI</span>
           </button>
-          <button type="button" class="tool-btn danger tool-btn-danger" id="btn-clear" data-i18n-title="clearTitle">
+          <button
+            type="button"
+            class="tool-btn danger tool-btn-danger"
+            id="btn-clear"
+            data-i18n-title="clearTitle"
+          >
             <span class="tool-icon" data-icon="clear"></span>
             <span class="tool-label" data-i18n="clear">Clear</span>
           </button>
@@ -96,7 +118,13 @@
               <span class="tool-label" data-i18n="moreMenu">More</span>
             </button>
             <div class="menu-panel menu-panel-end" id="more-menu-panel" role="menu" hidden>
-              <button type="button" role="menuitem" id="btn-anomalies" data-i18n="anomalies" data-i18n-title="anomaliesTitle">
+              <button
+                type="button"
+                role="menuitem"
+                id="btn-anomalies"
+                data-i18n="anomalies"
+                data-i18n-title="anomaliesTitle"
+              >
                 Anomalies
               </button>
               <button
@@ -108,7 +136,13 @@
               >
                 Spec
               </button>
-              <button type="button" role="menuitem" id="btn-search-all" data-i18n="searchAll" data-i18n-title="searchAllTitle">
+              <button
+                type="button"
+                role="menuitem"
+                id="btn-search-all"
+                data-i18n="searchAll"
+                data-i18n-title="searchAllTitle"
+              >
                 Search All
               </button>
               <div class="menu-separator" role="separator" aria-hidden="true"></div>
@@ -158,7 +192,9 @@
             <span data-i18n="emptyWaitingBefore">Waiting for</span>
             <code>text/event-stream</code><span data-i18n="emptyWaitingAfter">…</span>
           </div>
-          <div class="sidebar-footer" data-i18n="sidebarFooter">Captures Fetch · EventSource · XHR · NDJSON</div>
+          <div class="sidebar-footer" data-i18n="sidebarFooter">
+            Captures Fetch · EventSource · XHR · NDJSON
+          </div>
         </aside>
 
         <div
@@ -246,7 +282,12 @@
                   </table>
                 </div>
               </div>
-              <div id="events-resizer" class="events-resizer drag-rail" hidden title="Resize drawer"></div>
+              <div
+                id="events-resizer"
+                class="events-resizer drag-rail"
+                hidden
+                title="Resize drawer"
+              ></div>
               <aside id="events-drawer" class="events-drawer drawer" hidden>
                 <header class="drawer-header drawer-head">
                   <span id="drawer-title" class="drawer-title"></span>
@@ -278,7 +319,12 @@
                       <span data-icon="copy"></span>
                       <span class="visually-hidden" data-i18n="copyData">Copy Data</span>
                     </button>
-                    <button type="button" class="icon-btn" id="drawer-close" data-i18n-title="close">
+                    <button
+                      type="button"
+                      class="icon-btn"
+                      id="drawer-close"
+                      data-i18n-title="close"
+                    >
                       <span data-icon="close"></span>
                       <span class="visually-hidden" data-i18n="close">Close</span>
                     </button>
@@ -320,7 +366,12 @@
             </div>
             <div id="view-raw" class="view raw-view">
               <div class="raw-toolbar">
-                <button type="button" class="tool-btn" id="btn-copy-raw" data-i18n-title="copyRawTitle">
+                <button
+                  type="button"
+                  class="tool-btn"
+                  id="btn-copy-raw"
+                  data-i18n-title="copyRawTitle"
+                >
                   <span class="tool-icon" data-icon="copy"></span>
                   <span class="tool-label" data-i18n="copyRaw">Copy Raw</span>
                 </button>
@@ -333,7 +384,9 @@
 
       <footer class="statusbar">
         <span class="statusbar-capture" id="statusbar-capture">● CAPTURE ACTIVE</span>
-        <span class="statusbar-transports" data-i18n="statusbarTransports">Fetch / EventSource / XHR</span>
+        <span class="statusbar-transports" data-i18n="statusbarTransports"
+          >Fetch / EventSource / XHR</span
+        >
         <span class="statusbar-right" id="statusbar-locale"></span>
       </footer>
     </div>
@@ -345,7 +398,9 @@
 
     <div id="row-context-menu" class="context-menu" hidden>
       <button type="button" data-action="copy-data" data-i18n="copyData">Copy Data</button>
-      <button type="button" data-action="copy-json-value" data-i18n="jsonCopyValue">copy value</button>
+      <button type="button" data-action="copy-json-value" data-i18n="jsonCopyValue">
+        copy value
+      </button>
       <button type="button" data-action="copy-json-path" data-i18n="jsonCopyPath">copy path</button>
     </div>
 

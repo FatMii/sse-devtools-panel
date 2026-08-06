@@ -30,11 +30,9 @@ await build({
   logLevel: "error",
 });
 
-const {
-  parseQueryStringParams,
-  parseUrlEncodedPairs,
-  looksLikeUrlEncoded,
-} = await import(`file:///${resolve(outDir, "request-view.js").replace(/\\/g, "/")}`);
+const { parseQueryStringParams, parseUrlEncodedPairs, looksLikeUrlEncoded } = await import(
+  `file:///${resolve(outDir, "request-view.js").replace(/\\/g, "/")}`
+);
 
 function assert(cond, msg) {
   if (!cond) throw new Error(msg);

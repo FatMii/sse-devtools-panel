@@ -30,13 +30,8 @@ await build({
   logLevel: "error",
 });
 
-const {
-  collectEventGaps,
-  buildGapHistogram,
-  buildTimelineMarks,
-  timelineSpanMs,
-  largestGaps,
-} = await import(`file:///${resolve(outDir, "stream-timing.js").replace(/\\/g, "/")}`);
+const { collectEventGaps, buildGapHistogram, buildTimelineMarks, timelineSpanMs, largestGaps } =
+  await import(`file:///${resolve(outDir, "stream-timing.js").replace(/\\/g, "/")}`);
 
 function assert(cond, msg) {
   if (!cond) throw new Error(msg);
@@ -55,9 +50,18 @@ assert(gaps[0].gapMs === 15 && gaps[0].afterIndex === 1, "first gap");
 assert(gaps[2].gapMs === 1000 && gaps[2].afterIndex === 3, "stall gap");
 
 const hist = buildGapHistogram(gaps);
-assert(hist.some((b) => b.label === "10–25" && b.count === 1), "bin 10-25");
-assert(hist.some((b) => b.label === "50–100" && b.count === 1), "bin 50-100");
-assert(hist.some((b) => b.label === "1000+" && b.count === 1), "bin 1000+");
+assert(
+  hist.some((b) => b.label === "10–25" && b.count === 1),
+  "bin 10-25",
+);
+assert(
+  hist.some((b) => b.label === "50–100" && b.count === 1),
+  "bin 50-100",
+);
+assert(
+  hist.some((b) => b.label === "1000+" && b.count === 1),
+  "bin 1000+",
+);
 
 const marks = buildTimelineMarks(events, 1000);
 assert(marks.length === 4, "marks");

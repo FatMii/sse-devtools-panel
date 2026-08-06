@@ -17,6 +17,8 @@ Useful scripts:
 ```bash
 pnpm dev           # watch rebuild
 pnpm typecheck
+pnpm lint          # eslint
+pnpm format        # prettier write
 pnpm test-only     # unit-style checks for shared logic
 pnpm build
 ```
@@ -26,7 +28,7 @@ pnpm build
 1. Run locally:
 
    ```bash
-   pnpm test-only && pnpm typecheck && pnpm build
+   pnpm format:check && pnpm lint && pnpm test-only && pnpm typecheck && pnpm build
    ```
 
 2. If you change UI or capture behavior, smoke-test with `pnpm demo` (or a real SSE page).
@@ -60,7 +62,7 @@ Step-by-step checklist: [docs/GITHUB_SETUP.md](./docs/GITHUB_SETUP.md).
 Summary:
 
 1. **Make the repo public** (when ready) — Settings → Danger Zone → Change visibility → Public.
-2. **Protect `main`** — require PRs + status check **`test / typecheck / build`** from `.github/workflows/ci.yml`.
+2. Protect `main` — require PRs + status check **`lint / test / typecheck / build`** from `.github/workflows/ci.yml`.
 3. Confirm About description / topics.
 
 After CI has run at least once on `main`, the status check name will appear in the branch protection picker.

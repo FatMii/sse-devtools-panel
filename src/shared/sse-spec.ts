@@ -64,7 +64,9 @@ export function lintSseStreamRaw(raw: string): SseSpecWarning[] {
  * Collect Spec warnings for an SSE stream. NDJSON / other kinds return [].
  * Prefers each event's `raw` block; falls back to stream-level BOM only.
  */
-export function scanStreamSpecWarnings(record: Pick<StreamRecord, "streamKind" | "raw" | "events">): SseSpecWarning[] {
+export function scanStreamSpecWarnings(
+  record: Pick<StreamRecord, "streamKind" | "raw" | "events">,
+): SseSpecWarning[] {
   if (record.streamKind !== "sse") return [];
 
   const warnings: SseSpecWarning[] = [];

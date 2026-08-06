@@ -63,6 +63,7 @@
 ---
 
 <a name="为什么需要它"></a>
+
 # 为什么需要它
 
 Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://developer.chrome.com/docs/devtools/network/reference#analyze-events-in-a-stream) Tab（与 Headers / Response 同级），可以边流边看事件列表。
@@ -73,19 +74,20 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 - **看不到流内节奏**（TTFT、chunk gap、卡顿分布、重连标记）
 - **AI 对话难读**：思考 / 正文 / 工具调用 / 搜索来源混在原始帧里，需要人工拼
 
-| 场景 | Chrome Network | EventStream Panel |
-| --- | --- | --- |
-| 标准 SSE（EventSource / 部分 fetch） | 请求详情有 EventStream Tab | 同样可看，并带过滤、JSON 树、导出 |
-| AI / 私有协议（NDJSON、Connect+JSON、厂商帧） | 多半是原文碎片，难拼成对话 | Profile 识别 + **Transcript** 分通道合并 |
-| 流内时序与卡顿 | 基本只有整请求耗时 | Timeline + Stats（TTFT / gap / events·s） |
-| 规范与异常 | 无针对性扫描 | SSE Spec 告警 · Anomalies |
-| 网页搜索等工具结果 | 埋在 raw 里 | 归一成 `web_search` 卡片（查询 + 来源） |
+| 场景                                          | Chrome Network             | EventStream Panel                         |
+| --------------------------------------------- | -------------------------- | ----------------------------------------- |
+| 标准 SSE（EventSource / 部分 fetch）          | 请求详情有 EventStream Tab | 同样可看，并带过滤、JSON 树、导出         |
+| AI / 私有协议（NDJSON、Connect+JSON、厂商帧） | 多半是原文碎片，难拼成对话 | Profile 识别 + **Transcript** 分通道合并  |
+| 流内时序与卡顿                                | 基本只有整请求耗时         | Timeline + Stats（TTFT / gap / events·s） |
+| 规范与异常                                    | 无针对性扫描               | SSE Spec 告警 · Anomalies                 |
+| 网页搜索等工具结果                            | 埋在 raw 里                | 归一成 `web_search` 卡片（查询 + 来源）   |
 
 适合：**AI 对话流**、通知推送、进度上报，以及任何 `text/event-stream` / NDJSON / Connect+JSON 长连接。
 
 ---
 
 <a name="它是什么--不是什么"></a>
+
 # 它是什么 / 不是什么
 
 **EventStream Panel 是**
@@ -103,9 +105,11 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 ---
 
 <a name="功能特性"></a>
+
 # 功能特性
 
 <a name="捕获与旁路"></a>
+
 ## 🎣 捕获与旁路
 
 - **传输** — `fetch` · `EventSource` · `XHR`
@@ -115,6 +119,7 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 - **延迟 announce** — 仅在响应 `Content-Type` 确认为流式后再登记，减少埋点 / 普通 JSON 误入列表
 
 <a name="streams-侧栏"></a>
+
 ## 📚 Streams 侧栏
 
 - 实时列出本页捕获到的流，显示方法、URL、状态、事件数
@@ -129,6 +134,7 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 > 📌 占位：`docs/assets/screenshots/streams-sidebar.png`
 
 <a name="events"></a>
+
 ## 📋 Events
 
 流事件表：序号 · 到达时间 · event 名 · data 摘要。
@@ -145,6 +151,7 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 > 📌 占位：`docs/assets/screenshots/tab-events.png`
 
 <a name="request"></a>
+
 ## 📨 Request
 
 仿 Network 的请求侧视图：
@@ -160,16 +167,17 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 > 📌 占位：`docs/assets/screenshots/tab-request.png`
 
 <a name="transcriptai-合并视图"></a>
+
 ## 🧠 Transcript（AI 合并视图）
 
 把「一坨 SSE」收成可读对话稿，按通道拆分：
 
-| 通道 | 含义 |
-| --- | --- |
-| **正文** | 最终回答 |
-| **思考** | reasoning / think / deepSearch 等 |
-| **工具** | 函数调用；网页搜索归一为 `web_search`（查询 + 来源卡片） |
-| **元数据** | finishReason、usage、model、profile / vendor |
+| 通道       | 含义                                                     |
+| ---------- | -------------------------------------------------------- |
+| **正文**   | 最终回答                                                 |
+| **思考**   | reasoning / think / deepSearch 等                        |
+| **工具**   | 函数调用；网页搜索归一为 `web_search`（查询 + 来源卡片） |
+| **元数据** | finishReason、usage、model、profile / vendor             |
 
 - 自动 **Profile 识别**（按 payload 形状 + 主机提示）
 - 工具卡：查询芯片 · 结果列表（标题 / URL / 摘要）；可折叠
@@ -189,6 +197,7 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 > 建议：展开后的「网页搜索」卡片（queries + 多条来源）
 
 <a name="timeline"></a>
+
 ## ⏱ Timeline
 
 - **到达瀑布**：每个 event 相对时间轴的位置
@@ -203,23 +212,25 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 > 📌 占位：`docs/assets/screenshots/tab-timeline.png`
 
 <a name="raw"></a>
+
 ## 📄 Raw
 
 - 流原文（按解析后的事件拼回）
 - **一键复制**，方便贴 Issue / 做 fixture
 
 <a name="分析与工具栏"></a>
+
 ## 🛠 分析与工具栏
 
-| 能力 | 说明 |
-| --- | --- |
+| 能力               | 说明                                                               |
+| ------------------ | ------------------------------------------------------------------ |
 | **暂停 / 继续 UI** | 停界面刷新，**不停捕获**；暂停时用 play 图标，继续后补刷列表与详情 |
-| **Stats** | TTFT、时长、平均 / 最大 gap、events·s 等 |
-| **Anomalies** | 异常扫描（空 data、异常间隔等启发式） |
-| **Spec** | SSE 规范告警（字段 / 换行 / BOM 等） |
-| **Search All** | 跨 Stream 全局搜索 |
-| **Clear** | 清空当前会话捕获 |
-| **Settings** | 选项页入口（语言等） |
+| **Stats**          | TTFT、时长、平均 / 最大 gap、events·s 等                           |
+| **Anomalies**      | 异常扫描（空 data、异常间隔等启发式）                              |
+| **Spec**           | SSE 规范告警（字段 / 换行 / BOM 等）                               |
+| **Search All**     | 跨 Stream 全局搜索                                                 |
+| **Clear**          | 清空当前会话捕获                                                   |
+| **Settings**       | 选项页入口（语言等）                                               |
 
 <p align="center">
   <img width="1200" alt="Stats / Anomalies（待补图）" src="docs/assets/screenshots/dialog-stats.png">
@@ -228,6 +239,7 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 > 📌 占位：`docs/assets/screenshots/dialog-stats.png`
 
 <a name="导入--导出--归档"></a>
+
 ## 💾 导入 / 导出 / 归档
 
 - **导出** — JSON（`sse-devtools-stream-v1`）· CSV · `.sse` Fixture（方便 Mock / 单测）
@@ -235,6 +247,7 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 - **Save / Archives** — IndexedDB 本地归档，之后再打开翻看
 
 <a name="国际化与设置"></a>
+
 ## 🌐 国际化与设置
 
 - 界面 **中文 / English**
@@ -243,6 +256,7 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 ---
 
 <a name="界面截图"></a>
+
 # 界面截图
 
 ## 主界面
@@ -278,21 +292,22 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 ---
 
 <a name="已支持的-ai-web-厂商"></a>
+
 # 已支持的 AI Web 厂商
 
 Transcript 按协议 Profile 合并。下列为当前已接线的 Web / 兼容形态（有抓包回归测试的优先保证）：
 
-| Profile | 典型站点 / 形态 | 说明 |
-| --- | --- | --- |
+| Profile             | 典型站点 / 形态      | 说明                                                 |
+| ------------------- | -------------------- | ---------------------------------------------------- |
 | `openai-compatible` | 各类 OpenAI 兼容 API | `delta.content` / `reasoning_content` / `tool_calls` |
-| `deepseek-web` | DeepSeek 网页 | JSON-patch 风格思考 + 正文；支持搜索工具 |
-| `doubao-web` | 豆包网页 | 思考与正文拆分；搜索结果去重 |
-| `kimi-web` | Kimi（Connect+JSON） | think / text / search block |
-| `qianwen-web` | 通义千问网页 | AgentProxy：`plan_cot` / `deep_think` / 搜索 bar |
-| `zhipu-web` | 智谱清言 / ChatGLM | `think` / `text` / `search` + `search_results` |
-| `yuanbao-web` | 腾讯元宝 | `deepSearch` 思考增量 + `searchGuid` 来源 |
-| `anthropic` | Anthropic 风格 SSE | content_block 等（基础识别） |
-| `generic` | 未识别 | 仍可看 Events / Timeline / Raw |
+| `deepseek-web`      | DeepSeek 网页        | JSON-patch 风格思考 + 正文；支持搜索工具             |
+| `doubao-web`        | 豆包网页             | 思考与正文拆分；搜索结果去重                         |
+| `kimi-web`          | Kimi（Connect+JSON） | think / text / search block                          |
+| `qianwen-web`       | 通义千问网页         | AgentProxy：`plan_cot` / `deep_think` / 搜索 bar     |
+| `zhipu-web`         | 智谱清言 / ChatGLM   | `think` / `text` / `search` + `search_results`       |
+| `yuanbao-web`       | 腾讯元宝             | `deepSearch` 思考增量 + `searchGuid` 来源            |
+| `anthropic`         | Anthropic 风格 SSE   | content_block 等（基础识别）                         |
+| `generic`           | 未识别               | 仍可看 Events / Timeline / Raw                       |
 
 > 厂商协议常变。若某站 Transcript 为空或工具卡对不上，请导出 **Raw / JSON** 开 Issue，并注明 URL。  
 > 未列出的站点：有真实抓包再适配，不主动扫库。
@@ -300,6 +315,7 @@ Transcript 按协议 Profile 合并。下列为当前已接线的 Web / 兼容�
 ---
 
 <a name="快速开始"></a>
+
 # 快速开始
 
 ### 前置
@@ -329,6 +345,7 @@ pnpm build
 ---
 
 <a name="30-秒-demo"></a>
+
 # 30 秒 Demo
 
 ```bash
@@ -343,35 +360,39 @@ pnpm build && pnpm demo
 ---
 
 <a name="开发"></a>
+
 # 开发
 
 ```bash
 pnpm build        # tsc --noEmit + 打包到 dist/
 pnpm dev          # watch 构建
 pnpm typecheck
+pnpm lint
+pnpm format
 pnpm test-only    # parser / connect / export / spec / timing / request-view / close / ai-merge
 ```
 
-| 路径 | 职责 |
-| --- | --- |
-| `src/content/inject-main.ts` | MAIN world：劫持 fetch / EventSource / XHR |
-| `src/content/` + `bridge` | ISOLATED：转发到扩展 |
-| `src/background.ts` | Service Worker 消息中继 |
-| `src/panel/` | DevTools 面板 UI |
-| `src/shared/` | 解析 · 时序 · Spec · 导出 · AI Profile / Merge |
-| `src/options/` | 选项页 |
-| `_locales/` | i18n（`en` / `zh_CN`） |
-| `demo/` | 本地 SSE Demo 服务 |
+| 路径                         | 职责                                           |
+| ---------------------------- | ---------------------------------------------- |
+| `src/content/inject-main.ts` | MAIN world：劫持 fetch / EventSource / XHR     |
+| `src/content/` + `bridge`    | ISOLATED：转发到扩展                           |
+| `src/background.ts`          | Service Worker 消息中继                        |
+| `src/panel/`                 | DevTools 面板 UI                               |
+| `src/shared/`                | 解析 · 时序 · Spec · 导出 · AI Profile / Merge |
+| `src/options/`               | 选项页                                         |
+| `_locales/`                  | i18n（`en` / `zh_CN`）                         |
+| `demo/`                      | 本地 SSE Demo 服务                             |
 
 发 PR 前请跑通：
 
 ```bash
-pnpm test-only && pnpm typecheck && pnpm build
+pnpm format:check && pnpm lint && pnpm test-only && pnpm typecheck && pnpm build
 ```
 
 ---
 
 <a name="怎么工作的"></a>
+
 # 怎么工作的
 
 ```text
@@ -389,6 +410,7 @@ patch fetch / ES / XHR
 ---
 
 <a name="限制"></a>
+
 # 限制
 
 - 只面向 **Chromium** DevTools（不做 Firefox / Safari 面板）
@@ -400,6 +422,7 @@ patch fetch / ES / XHR
 ---
 
 <a name="参与贡献"></a>
+
 # 参与贡献
 
 Issue / PR 都欢迎，请先读 [CONTRIBUTING.md](./CONTRIBUTING.md)。
@@ -411,6 +434,7 @@ Issue / PR 都欢迎，请先读 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 ---
 
 <a name="开源协议"></a>
+
 # 开源协议
 
 本项目采用 **[MIT](./LICENSE)** 协议开源。

@@ -2,7 +2,11 @@ import type { StreamCloseReason, StreamReconnectMark } from "./types";
 
 export function isAbortLikeError(err: unknown): boolean {
   if (err == null) return false;
-  if (typeof DOMException !== "undefined" && err instanceof DOMException && err.name === "AbortError") {
+  if (
+    typeof DOMException !== "undefined" &&
+    err instanceof DOMException &&
+    err.name === "AbortError"
+  ) {
     return true;
   }
   if (err instanceof Error) {
@@ -61,9 +65,7 @@ export function normalizeReconnectMarks(raw: unknown): StreamReconnectMark[] | u
 }
 
 /** Derive lastEventId from parsed SSE events (latest non-empty id). */
-export function latestEventIdFromEvents(
-  events: Array<{ id?: string }>,
-): string | undefined {
+export function latestEventIdFromEvents(events: Array<{ id?: string }>): string | undefined {
   for (let i = events.length - 1; i >= 0; i -= 1) {
     const id = events[i]?.id;
     if (typeof id === "string" && id) return id;

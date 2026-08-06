@@ -48,9 +48,7 @@ export function looksLikeUrlEncoded(text: string): boolean {
   return /^[^=&\s]+=/.test(trimmed) || trimmed.includes("&");
 }
 
-export function requestContentType(
-  headers?: Record<string, string>,
-): string | undefined {
+export function requestContentType(headers?: Record<string, string>): string | undefined {
   if (!headers) return undefined;
   return headers["content-type"] ?? headers["Content-Type"];
 }

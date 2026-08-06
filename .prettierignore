@@ -1,0 +1,8 @@
+dist
+node_modules
+.tmp-test
+.tmp-test-*
+.tmp-debug
+pnpm-lock.yaml
+*.png
+data

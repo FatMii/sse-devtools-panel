@@ -42,7 +42,9 @@ function assert(cond, msg) {
   if (!cond) throw new Error(msg);
 }
 
-const abortErr = classifyThrownError(Object.assign(new Error("The user aborted a request."), { name: "AbortError" }));
+const abortErr = classifyThrownError(
+  Object.assign(new Error("The user aborted a request."), { name: "AbortError" }),
+);
 assert(abortErr.closeReason === "abort", "abort reason");
 assert(/aborted/i.test(abortErr.message), "abort message");
 

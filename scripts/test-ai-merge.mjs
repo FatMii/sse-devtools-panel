@@ -38,7 +38,7 @@ const { detectAiProfile, vendorHintFromUrl } = await buildEntry(
   "ai-profile",
 );
 const { mergeAiTranscript, transcriptHasContent } = await buildEntry(
-  "src/shared/ai-merge.ts",
+  "src/shared/ai-merge/index.ts",
   "ai-merge",
 );
 
@@ -51,13 +51,17 @@ function ev(data, event = "message") {
 }
 
 {
-  assert(vendorHintFromUrl("https://api.deepseek.com/chat/completions") === "deepseek", "deepseek host");
+  assert(
+    vendorHintFromUrl("https://api.deepseek.com/chat/completions") === "deepseek",
+    "deepseek host",
+  );
   assert(
     vendorHintFromUrl("https://ark.cn-beijing.volces.com/api/v3/chat/completions") === "doubao-ark",
     "doubao ark host",
   );
   assert(
-    vendorHintFromUrl("https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions") === "qwen",
+    vendorHintFromUrl("https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions") ===
+      "qwen",
     "qwen host",
   );
 }
@@ -122,7 +126,9 @@ function ev(data, event = "message") {
           {
             index: 0,
             delta: {
-              tool_calls: [{ index: 0, id: "call_1", type: "function", function: { name: "get_" } }],
+              tool_calls: [
+                { index: 0, id: "call_1", type: "function", function: { name: "get_" } },
+              ],
             },
             finish_reason: null,
           },
@@ -175,8 +181,14 @@ function ev(data, event = "message") {
 
 {
   const events = [
-    ev(JSON.stringify({ block_type: 10000, content: { text_block: { text: "答" } } }), "STREAM_CHUNK"),
-    ev(JSON.stringify({ block_type: 10040, content: { text_block: { text: "想" } } }), "STREAM_CHUNK"),
+    ev(
+      JSON.stringify({ block_type: 10000, content: { text_block: { text: "答" } } }),
+      "STREAM_CHUNK",
+    ),
+    ev(
+      JSON.stringify({ block_type: 10040, content: { text_block: { text: "想" } } }),
+      "STREAM_CHUNK",
+    ),
   ];
   // Without STREAM_* event names, top-level block_type still detects doubao-web via payload.
   const det = detectAiProfile(
@@ -471,7 +483,10 @@ function ev(data, event = "message") {
   const t = mergeAiTranscript(events, "https://www.kimi.com/chat");
   assert(t.profile === "kimi-web", "kimi merge profile");
   assert(t.channels.reasoning.includes("用户"), `kimi reasoning: ${t.channels.reasoning}`);
-  assert(t.channels.reasoning.includes("询问广州天气"), `kimi think.content: ${t.channels.reasoning}`);
+  assert(
+    t.channels.reasoning.includes("询问广州天气"),
+    `kimi think.content: ${t.channels.reasoning}`,
+  );
   assert(t.channels.content.includes("正文增量"), `kimi content: ${t.channels.content}`);
   assert(!t.channels.content.includes("询问广州天气"), "thinking must not leak");
   assert(t.channels.tools.length === 1, `kimi tools ${t.channels.tools.length}`);
@@ -598,14 +613,26 @@ function ev(data, event = "message") {
   assert(det.vendorHint === "qwen", "qianwen vendor");
   const t = mergeAiTranscript(events, "https://www.qianwen.com/chat");
   assert(t.profile === "qianwen-web", "qianwen merge profile");
-  assert(t.channels.reasoning.includes("用户询问深圳天气"), `qianwen plan_cot: ${t.channels.reasoning}`);
-  assert(t.channels.reasoning.includes("根据检索结果"), `qianwen deep_think: ${t.channels.reasoning}`);
-  assert(t.channels.content.includes("今日深圳多云间晴天"), `qianwen content: ${t.channels.content}`);
+  assert(
+    t.channels.reasoning.includes("用户询问深圳天气"),
+    `qianwen plan_cot: ${t.channels.reasoning}`,
+  );
+  assert(
+    t.channels.reasoning.includes("根据检索结果"),
+    `qianwen deep_think: ${t.channels.reasoning}`,
+  );
+  assert(
+    t.channels.content.includes("今日深圳多云间晴天"),
+    `qianwen content: ${t.channels.content}`,
+  );
   assert(!t.channels.content.includes("我需要回答深圳天气"), "thinking must not leak");
   assert(t.channels.tools.length === 1, `qianwen tools ${t.channels.tools.length}`);
   assert(t.channels.tools[0].name === "web_search", "qianwen web_search");
   const args = JSON.parse(t.channels.tools[0].arguments);
-  assert(Array.isArray(args.queries) && args.queries.some((q) => String(q).includes("深圳")), "qianwen queries");
+  assert(
+    Array.isArray(args.queries) && args.queries.some((q) => String(q).includes("深圳")),
+    "qianwen queries",
+  );
   assert(Array.isArray(args.results) && args.results.length >= 1, "qianwen results");
   assert(t.endMeta.finishReason === "stop", "qianwen finish");
   assert(transcriptHasContent(t), "qianwen has content");
@@ -876,7 +903,10 @@ function ev(data, event = "message") {
   assert(det.vendorHint === "yuanbao", "yuanbao vendor");
   const t = mergeAiTranscript(events, "https://yuanbao.tencent.com/chat");
   assert(t.profile === "yuanbao-web", "yuanbao merge profile");
-  assert(t.channels.reasoning.includes("用户只说明天天气"), `yuanbao think: ${t.channels.reasoning}`);
+  assert(
+    t.channels.reasoning.includes("用户只说明天天气"),
+    `yuanbao think: ${t.channels.reasoning}`,
+  );
   assert(t.channels.reasoning.includes("按上下文延续为深圳"), "yuanbao think comps joined");
   assert(t.channels.content === "明天深圳晴热", `yuanbao content: ${t.channels.content}`);
   assert(!t.channels.content.includes("用户只说"), "think must not leak");
@@ -884,7 +914,10 @@ function ev(data, event = "message") {
   assert(t.channels.tools[0].name === "web_search", "yuanbao web_search");
   const yArgs = JSON.parse(t.channels.tools[0].arguments);
   assert(yArgs.type === "SEARCH", "yuanbao SEARCH");
-  assert(Array.isArray(yArgs.results) && yArgs.results.length === 2, `yuanbao results ${yArgs.results?.length}`);
+  assert(
+    Array.isArray(yArgs.results) && yArgs.results.length === 2,
+    `yuanbao results ${yArgs.results?.length}`,
+  );
   assert(yArgs.results[0].site_name === "深圳气象局", "yuanbao site from searchGuid");
   assert(String(yArgs.results[0].snippet || "").includes("36"), "yuanbao quote snippet");
   assert(t.endMeta.finishReason === "stop", "yuanbao finish");
@@ -952,10 +985,19 @@ function ev(data, event = "message") {
     const t = mergeAiTranscript(events, "https://chat.deepseek.com/api/v0/chat/completion");
     assert(t.profile === "deepseek-web", `deepseek profile got ${t.profile}`);
     assert(t.vendorHint === "deepseek", "deepseek vendor");
-    assert(t.channels.reasoning.includes("分析用户输入"), `reasoning snip: ${t.channels.reasoning.slice(0, 40)}`);
+    assert(
+      t.channels.reasoning.includes("分析用户输入"),
+      `reasoning snip: ${t.channels.reasoning.slice(0, 40)}`,
+    );
     assert(t.channels.content.includes("啊啊"), `content snip: ${t.channels.content.slice(0, 40)}`);
-    assert(t.channels.content.includes("破局三板斧") || t.channels.content.includes("三板斧"), "content axe");
-    assert(t.endMeta.finishReason === "FINISHED" || t.endMeta.finishReason === "close", "deepseek finish");
+    assert(
+      t.channels.content.includes("破局三板斧") || t.channels.content.includes("三板斧"),
+      "content axe",
+    );
+    assert(
+      t.endMeta.finishReason === "FINISHED" || t.endMeta.finishReason === "close",
+      "deepseek finish",
+    );
   }
 
   const deepseekSearchPath = resolve(root, "data/deepseek-search.txt");
@@ -981,10 +1023,7 @@ function ev(data, event = "message") {
         t.channels.reasoning.includes("调用搜索工具"),
       `doubao reasoning snip: ${t.channels.reasoning.slice(0, 80)}`,
     );
-    assert(
-      !t.channels.content.includes("调用搜索工具"),
-      "thinking must not leak into content",
-    );
+    assert(!t.channels.content.includes("调用搜索工具"), "thinking must not leak into content");
     assert(
       t.channels.content.includes("合肥今日") && t.channels.content.includes("35℃"),
       `doubao content snip: ${t.channels.content.slice(0, 80)}`,
@@ -992,7 +1031,10 @@ function ev(data, event = "message") {
     assert(t.channels.tools.length === 1, `doubao search tool count ${t.channels.tools.length}`);
     assert(t.channels.tools[0].name === "web_search", "doubao web_search name");
     const args = JSON.parse(t.channels.tools[0].arguments);
-    assert(Array.isArray(args.queries) && args.queries.some((q) => String(q).includes("合肥")), "doubao queries");
+    assert(
+      Array.isArray(args.queries) && args.queries.some((q) => String(q).includes("合肥")),
+      "doubao queries",
+    );
     assert(Array.isArray(args.results) && args.results.length >= 2, "doubao results");
   }
 
@@ -1006,10 +1048,7 @@ function ev(data, event = "message") {
       t.channels.reasoning.includes("未来三天") && t.channels.reasoning.includes("广州"),
       `kimi reasoning snip: ${t.channels.reasoning.slice(0, 80)}`,
     );
-    assert(
-      !t.channels.content.includes("我需要搜索广州"),
-      "think must not leak into content",
-    );
+    assert(!t.channels.content.includes("我需要搜索广州"), "think must not leak into content");
     assert(
       t.channels.content.includes("广州未来三天") || t.channels.content.includes("天气预报"),
       `kimi content snip: ${t.channels.content.slice(0, 80)}`,
@@ -1017,7 +1056,10 @@ function ev(data, event = "message") {
     assert(t.channels.tools.length >= 1, `kimi tools ${t.channels.tools.length}`);
     assert(t.channels.tools[0].name === "web_search", "kimi web_search");
     const args = JSON.parse(t.channels.tools[0].arguments);
-    assert(Array.isArray(args.queries) && args.queries.some((q) => String(q).includes("广州")), "kimi queries");
+    assert(
+      Array.isArray(args.queries) && args.queries.some((q) => String(q).includes("广州")),
+      "kimi queries",
+    );
     assert(Array.isArray(args.results) && args.results.length >= 1, "kimi results");
   }
 
@@ -1031,10 +1073,7 @@ function ev(data, event = "message") {
       t.channels.reasoning.includes("深圳") && t.channels.reasoning.includes("天气"),
       `qianwen reasoning snip: ${t.channels.reasoning.slice(0, 80)}`,
     );
-    assert(
-      !t.channels.content.includes("我需要回答今天"),
-      "think must not leak into content",
-    );
+    assert(!t.channels.content.includes("我需要回答今天"), "think must not leak into content");
     assert(
       t.channels.content.includes("今日深圳市") || t.channels.content.includes("多云间晴天"),
       `qianwen content snip: ${t.channels.content.slice(0, 80)}`,
@@ -1042,7 +1081,10 @@ function ev(data, event = "message") {
     assert(t.channels.tools.length >= 1, `qianwen tools ${t.channels.tools.length}`);
     assert(t.channels.tools[0].name === "web_search", "qianwen web_search");
     const args = JSON.parse(t.channels.tools[0].arguments);
-    assert(Array.isArray(args.queries) && args.queries.some((q) => String(q).includes("深圳")), "qianwen queries");
+    assert(
+      Array.isArray(args.queries) && args.queries.some((q) => String(q).includes("深圳")),
+      "qianwen queries",
+    );
     assert(Array.isArray(args.results) && args.results.length >= 1, "qianwen results");
   }
 
@@ -1058,10 +1100,7 @@ function ev(data, event = "message") {
         t.channels.reasoning.includes("深圳"),
       `zhipu reasoning snip: ${t.channels.reasoning.slice(0, 80)}`,
     );
-    assert(
-      !t.channels.content.includes("拆解用户请求"),
-      "think must not leak into content",
-    );
+    assert(!t.channels.content.includes("拆解用户请求"), "think must not leak into content");
     assert(
       (t.channels.content.includes("江苏") || t.channels.content.includes("深圳")) &&
         (t.channels.content.includes("天气") || t.channels.content.length > 20),
@@ -1071,9 +1110,18 @@ function ev(data, event = "message") {
     assert(t.channels.tools.length === 1, `zhipu fixture tools ${t.channels.tools.length}`);
     assert(t.channels.tools[0].name === "web_search", "zhipu fixture web_search");
     const zArgs = JSON.parse(t.channels.tools[0].arguments);
-    assert(Array.isArray(zArgs.queries) && zArgs.queries.length >= 3, `zhipu fixture queries ${zArgs.queries?.length}`);
-    assert(Array.isArray(zArgs.results) && zArgs.results.length === 20, `zhipu fixture results ${zArgs.results?.length}`);
-    assert(zArgs.results.some((r) => String(r.url || "").includes("http")), "zhipu fixture result urls");
+    assert(
+      Array.isArray(zArgs.queries) && zArgs.queries.length >= 3,
+      `zhipu fixture queries ${zArgs.queries?.length}`,
+    );
+    assert(
+      Array.isArray(zArgs.results) && zArgs.results.length === 20,
+      `zhipu fixture results ${zArgs.results?.length}`,
+    );
+    assert(
+      zArgs.results.some((r) => String(r.url || "").includes("http")),
+      "zhipu fixture result urls",
+    );
   }
 
   if (existsSync(yuanbaoPath)) {
@@ -1086,10 +1134,7 @@ function ev(data, event = "message") {
       t.channels.reasoning.includes("明天天气") || t.channels.reasoning.includes("深圳"),
       `yuanbao reasoning snip: ${t.channels.reasoning.slice(0, 80)}`,
     );
-    assert(
-      !t.channels.content.includes("用户只说"),
-      "think must not leak into content",
-    );
+    assert(!t.channels.content.includes("用户只说"), "think must not leak into content");
     assert(
       t.channels.content.includes("深圳") && t.channels.content.includes("天气"),
       `yuanbao content snip: ${t.channels.content.slice(0, 80)}`,
@@ -1098,9 +1143,14 @@ function ev(data, event = "message") {
     assert(t.channels.tools.length === 1, `yuanbao fixture tools ${t.channels.tools.length}`);
     assert(t.channels.tools[0].name === "web_search", "yuanbao fixture web_search");
     const yArgs = JSON.parse(t.channels.tools[0].arguments);
-    assert(Array.isArray(yArgs.results) && yArgs.results.length === 10, `yuanbao fixture results ${yArgs.results?.length}`);
     assert(
-      yArgs.results.some((r) => String(r.site_name || "").includes("气象") || String(r.url || "").includes("http")),
+      Array.isArray(yArgs.results) && yArgs.results.length === 10,
+      `yuanbao fixture results ${yArgs.results?.length}`,
+    );
+    assert(
+      yArgs.results.some(
+        (r) => String(r.site_name || "").includes("气象") || String(r.url || "").includes("http"),
+      ),
       "yuanbao fixture result meta",
     );
   }

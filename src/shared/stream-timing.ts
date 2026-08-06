@@ -27,7 +27,9 @@ export type TimelineMark = {
 /** Default gap histogram edges (ms). Last bin is open-ended. */
 export const DEFAULT_GAP_BIN_EDGES_MS = [0, 10, 25, 50, 100, 250, 500, 1000] as const;
 
-export function collectEventGaps(events: Array<Pick<SseEvent, "index" | "receivedAt">>): GapSample[] {
+export function collectEventGaps(
+  events: Array<Pick<SseEvent, "index" | "receivedAt">>,
+): GapSample[] {
   const gaps: GapSample[] = [];
   for (let i = 1; i < events.length; i += 1) {
     const gap = events[i].receivedAt - events[i - 1].receivedAt;

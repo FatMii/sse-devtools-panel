@@ -71,7 +71,8 @@ export function t(key: string, substitutions?: string | string[]): string {
   if (!entry) return key;
 
   let msg = entry.message;
-  const subs = substitutions == null ? [] : Array.isArray(substitutions) ? substitutions : [substitutions];
+  const subs =
+    substitutions == null ? [] : Array.isArray(substitutions) ? substitutions : [substitutions];
 
   if (entry.placeholders) {
     for (const [name, meta] of Object.entries(entry.placeholders)) {
@@ -120,10 +121,7 @@ export function isI18nReady(): boolean {
 
 /** Subscribe to locale preference changes. */
 export function onLocaleChange(handler: (locale: LocaleId) => void): () => void {
-  const listener = (
-    changes: { [key: string]: chrome.storage.StorageChange },
-    area: string,
-  ) => {
+  const listener = (changes: { [key: string]: chrome.storage.StorageChange }, area: string) => {
     if (area !== "sync" || !changes[STORAGE_KEY]) return;
     void initI18n().then(handler);
   };

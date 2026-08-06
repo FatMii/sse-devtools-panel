@@ -115,7 +115,7 @@ const KIMI_GENERIC_EVENT_NAMES = new Set(["message", "delta"]);
 
 export function vendorHintFromUrl(url: string | undefined): AiVendorHint {
   if (!url) return "unknown";
-  let host = "";
+  let host: string;
   try {
     host = new URL(url, "https://dummy.local").hostname.toLowerCase();
   } catch {
@@ -156,7 +156,10 @@ export function isDeepseekWebChunk(value: unknown): boolean {
   if (typeof value.p === "string" && ("v" in value || typeof value.o === "string")) return true;
   if (typeof value.v === "string") return true;
   if (isRecord(value.v) && isRecord(value.v.response)) return true;
-  if (typeof value.request_message_id === "number" && typeof value.response_message_id === "number") {
+  if (
+    typeof value.request_message_id === "number" &&
+    typeof value.response_message_id === "number"
+  ) {
     return true;
   }
   return false;
@@ -235,10 +238,16 @@ export function isYuanbaoWebChunk(value: unknown, eventName?: string): boolean {
   const typ = typeof value.type === "string" ? value.type : "";
   if (typ === "deepSearch" && Array.isArray(value.contents)) return true;
   if (typ === "searchGuid" && Array.isArray(value.docs)) return true;
-  if (typ === "step" && (typeof value.toolCallType === "string" || typeof value.scene === "string")) {
+  if (
+    typ === "step" &&
+    (typeof value.toolCallType === "string" || typeof value.scene === "string")
+  ) {
     return true;
   }
-  if (typ === "meta" && (typeof value.stopReason === "string" || typeof value.pluginID === "string")) {
+  if (
+    typ === "meta" &&
+    (typeof value.stopReason === "string" || typeof value.pluginID === "string")
+  ) {
     return true;
   }
   if (typ === "hint_v2_tip") return true;
@@ -277,7 +286,11 @@ export function isKimiWebChunk(value: unknown, eventName?: string): boolean {
     return true;
   }
   // Top-level delta without choices[] (Bridge / Kimi stream tokens).
-  if (isRecord(value.delta) && typeof value.delta.content === "string" && !Array.isArray(value.choices)) {
+  if (
+    isRecord(value.delta) &&
+    typeof value.delta.content === "string" &&
+    !Array.isArray(value.choices)
+  ) {
     return true;
   }
   if (isRecord(value.block)) {
@@ -315,7 +328,11 @@ function collectReasoningFields(value: unknown, into: Set<string>): void {
       }
     }
   }
-  if (isRecord(value.v) && isRecord(value.v.response) && Array.isArray(value.v.response.fragments)) {
+  if (
+    isRecord(value.v) &&
+    isRecord(value.v.response) &&
+    Array.isArray(value.v.response.fragments)
+  ) {
     for (const frag of value.v.response.fragments) {
       if (isRecord(frag) && frag.type === "THINK") into.add("THINK");
       if (isRecord(frag) && frag.type === "SEARCH") into.add("SEARCH");
@@ -386,7 +403,11 @@ export function detectAiProfile(
       yuanbaoHits++;
       reasoningFields.add("deepSearch");
     }
-    if (isAnthropicChunk(parsed) || ev.event.startsWith("content_block") || ev.event === "message_delta") {
+    if (
+      isAnthropicChunk(parsed) ||
+      ev.event.startsWith("content_block") ||
+      ev.event === "message_delta"
+    ) {
       anthropicHits++;
     }
   }
