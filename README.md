@@ -1,18 +1,18 @@
 <p align="center">
-  <img src="assets/icons/icon-128.png" alt="EventStream Panel" width="96" height="96">
+  <img src="assets/icons/icon-128.png" alt="SSE DevTools Panel" width="96" height="96">
 </p>
 
-<h1 align="center">EventStream Panel</h1>
+<h1 align="center">SSE DevTools Panel</h1>
 
 <p align="center"><a href="./README.en.md">English</a></p>
 
 <p align="center">
   <strong>Chrome 扩展：在 DevTools 里查看网页的 SSE / 流式接口。</strong><br/>
-  安装后打开 F12 → EventStream，逐条看推送数据，可导出 JSON，页面照常运行。
+  安装后打开 F12 → SSE DevTools，逐条看推送数据，可导出 JSON，页面照常运行。
 </p>
 
 <p align="center">
-  <a href="https://github.com/FatMii/eventstream-panel/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/FatMii/eventstream-panel/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/FatMii/sse-devtools-panel/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/FatMii/sse-devtools-panel/actions/workflows/ci.yml/badge.svg"></a>
   &nbsp;
   <a href="./LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
   &nbsp;
@@ -76,7 +76,7 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 - **看不到流内节奏**（TTFT、chunk gap、卡顿分布、重连标记）
 - **AI 对话难读**：思考 / 正文 / 工具调用 / 搜索来源混在原始帧里，需要人工拼
 
-| 场景                                          | Chrome Network             | EventStream Panel                         |
+| 场景                                          | Chrome Network             | SSE DevTools Panel                        |
 | --------------------------------------------- | -------------------------- | ----------------------------------------- |
 | 标准 SSE（EventSource / 部分 fetch）          | 请求详情有 EventStream Tab | 同样可看，并带过滤、JSON 树、导出         |
 | AI / 私有协议（NDJSON、Connect+JSON、厂商帧） | 多半是原文碎片，难拼成对话 | Profile 识别 + **Transcript** 分通道合并  |
@@ -92,13 +92,13 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 
 # 它是什么 / 不是什么
 
-**EventStream Panel 是**
+**SSE DevTools Panel 是**
 
-- 独立的 Chromium **DevTools 面板**（F12 → EventStream）
+- 独立的 Chromium **DevTools 面板**（F12 → SSE DevTools）
 - 页面最早阶段（`document_start`）注入脚本，hook `fetch` / `EventSource` / `XHR`
 - 面向开发者的流式调试工作台：列表 · 时序 · 请求 · AI Transcript · 导出回放
 
-**EventStream Panel 不是**
+**SSE DevTools Panel 不是**
 
 - Network 面板的替代品（Headers 全量审计仍以 Network 为准）
 - 通用抓包工具 / MITM 代理
@@ -328,15 +328,15 @@ Transcript 按协议 Profile 合并。下列为当前已接线的 Web / 兼容�
 ### 安装并加载
 
 ```bash
-git clone https://github.com/FatMii/eventstream-panel.git
-cd eventstream-panel
+git clone https://github.com/FatMii/sse-devtools-panel.git
+cd sse-devtools-panel
 pnpm i
 pnpm build
 ```
 
 1. 打开 `chrome://extensions`，开启「开发者模式」
 2. 「加载已解压的扩展程序」→ 选择仓库里的 **`dist/`**
-3. 打开目标站点 → <kbd>F12</kbd> → **EventStream**
+3. 打开目标站点 → <kbd>F12</kbd> → **SSE DevTools**
 4. **刷新页面**（注入发生在 `document_start`），再触发流式接口
 
 改代码时用 `pnpm dev` 监听构建，扩展管理页点「重新加载」即可。
@@ -354,7 +354,7 @@ pnpm build && pnpm demo
 ```
 
 1. 浏览器打开 <http://127.0.0.1:8765>
-2. 确认扩展已加载 → 打开 DevTools → **EventStream**
+2. 确认扩展已加载 → 打开 DevTools → **SSE DevTools**
 3. **刷新 Demo 页** → 点击 **Start stream**
 4. 侧栏应出现流；Events / Timeline / Raw 有数据
 
@@ -401,7 +401,7 @@ Page (MAIN)                    Extension                       DevTools
 ─────────────────────────      ─────────────────────           ──────────────
 patch fetch / ES / XHR
         │
-   clone() + pump  ──postMessage──► bridge ──► SW ──► EventStream Panel
+   clone() + pump  ──postMessage──► bridge ──► SW ──► SSE DevTools Panel
    (or observe getReader)               │
         │                               └─ 页面自己的 body 消费不受影响
         ▼
@@ -443,5 +443,5 @@ Issue / PR 都欢迎，请先读 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 ---
 
 <p align="center">
-  <a href="https://github.com/FatMii/eventstream-panel">github.com/FatMii/eventstream-panel</a>
+  <a href="https://github.com/FatMii/sse-devtools-panel">github.com/FatMii/sse-devtools-panel</a>
 </p>

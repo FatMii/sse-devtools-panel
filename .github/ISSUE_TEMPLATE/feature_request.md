@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an improvement for EventStream Panel
+about: Suggest an improvement for SSE DevTools Panel
 title: "feat: "
 labels: enhancement
 ---

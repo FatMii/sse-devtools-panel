@@ -1,18 +1,18 @@
 {
   "extName": {
-    "message": "EventStream Panel",
+    "message": "SSE DevTools Panel",
     "description": "Extension name"
   },
   "extDescription": {
-    "message": "Inspect EventStream (SSE / NDJSON) responses in a DevTools panel",
+    "message": "Debug SSE / NDJSON / Connect+JSON streaming responses in a DevTools panel",
     "description": "Extension description"
   },
   "devtoolsPanelName": {
-    "message": "EventStream",
+    "message": "SSE DevTools",
     "description": "DevTools panel tab title"
   },
   "panelTitle": {
-    "message": "EventStream Panel"
+    "message": "SSE DevTools Panel"
   },
   "copyRaw": {
     "message": "Copy Raw"
@@ -928,7 +928,7 @@
     "message": "ERROR"
   },
   "optionsTitle": {
-    "message": "EventStream Panel Options"
+    "message": "SSE DevTools Panel Options"
   },
   "optionsLanguage": {
     "message": "Language"
@@ -943,7 +943,7 @@
     "message": "中文（简体）"
   },
   "optionsLanguageHint": {
-    "message": "Panel UI language. Changes apply immediately in an open EventStream panel."
+    "message": "Panel UI language. Changes apply immediately in an open SSE DevTools panel."
   },
   "openSettings": {
     "message": "Settings"

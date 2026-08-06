@@ -41,7 +41,7 @@ const server = http.createServer((req, res) => {
     const chunks = [
       "你好",
       "，欢迎来到",
-      " EventStream Panel。",
+      " SSE DevTools Panel。",
       "这是一个",
       "用于调试",
       "SSE / NDJSON / Connect+JSON",

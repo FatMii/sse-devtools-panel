@@ -1,4 +1,4 @@
-# EventStream Panel
+# SSE DevTools Panel
 
 [中文文档](./README.md)
 

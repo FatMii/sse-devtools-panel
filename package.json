@@ -1,9 +1,9 @@
 {
-  "name": "eventstream-panel",
+  "name": "sse-devtools-panel",
   "version": "1.0.0",
   "private": true,
   "license": "MIT",
-  "description": "Chrome DevTools panel for inspecting EventStream (SSE / NDJSON / Connect+JSON) responses",
+  "description": "Chrome DevTools panel for debugging SSE / NDJSON / Connect+JSON streaming responses",
   "type": "module",
   "packageManager": "pnpm@10.13.1",
   "scripts": {

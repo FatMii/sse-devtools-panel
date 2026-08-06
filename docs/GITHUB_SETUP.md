@@ -6,7 +6,7 @@ Checklist after merging the OSS scaffolding (CI, LICENSE, templates).
 
 When you are ready for outside contributors:
 
-1. Open https://github.com/FatMii/eventstream-panel/settings
+1. Open https://github.com/FatMii/sse-devtools-panel/settings
 2. Scroll to **Danger Zone**
 3. **Change repository visibility** → **Public**
 
@@ -15,7 +15,7 @@ Until this is Public, strangers cannot browse the code or open normal community 
 ## 2. Require CI on `main`
 
 1. Push / merge so `.github/workflows/ci.yml` has run at least once on `main` (Actions tab should show a green **CI** run).
-2. Open https://github.com/FatMii/eventstream-panel/settings/branches
+2. Open https://github.com/FatMii/sse-devtools-panel/settings/branches
 3. **Add branch protection rule** (or a Ruleset) for `main`:
    - Require a pull request before merging
    - Require status checks to pass before merging
@@ -28,7 +28,7 @@ After this, a red CI blocks merge (unless an admin bypasses the rule).
 
 Confirm description and topics (already set via `gh` if that succeeded):
 
-- Description: Chrome DevTools panel for inspecting EventStream (SSE / NDJSON) responses
+- Description: Chrome DevTools panel for debugging SSE / NDJSON / Connect+JSON streaming responses
 - Topics: `chrome-extension`, `devtools`, `sse`, `eventsource`, `ndjson`
 
 ## 4. Optional next steps
