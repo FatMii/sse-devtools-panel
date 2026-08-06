@@ -794,6 +794,103 @@ function ev(data, event = "message") {
   assert(transcriptHasContent(t), "zhipu has content");
 }
 
+{
+  assert(vendorHintFromUrl("https://yuanbao.tencent.com/chat") === "yuanbao", "yuanbao host");
+
+  const events = [
+    ev(JSON.stringify({ type: "text" })),
+    ev("status", "speech_type"),
+    ev(
+      JSON.stringify({
+        type: "step",
+        msg: "正在搜索资料",
+        toolCallType: "web_search",
+        scene: "ai_search_deep_search",
+      }),
+    ),
+    ev(
+      JSON.stringify({
+        type: "deepSearch",
+        title: "思考中",
+        contents: [
+          {
+            type: "toolCall",
+            toolCallName: "hunyuan_web_search",
+            docs: [
+              { index: 1, title: "深圳气象局", url: "https://weather.sz.gov.cn/a" },
+              { index: 2, title: "腾讯网", url: "https://example.com/b" },
+            ],
+          },
+        ],
+      }),
+    ),
+    ev(
+      JSON.stringify({
+        type: "deepSearch",
+        title: "思考中",
+        contents: [{ type: "text", componentId: "0", msg: "用户只说" }],
+      }),
+    ),
+    ev(
+      JSON.stringify({
+        type: "deepSearch",
+        title: "思考中",
+        contents: [{ type: "text", componentId: "0", msg: "明天天气" }],
+      }),
+    ),
+    ev(
+      JSON.stringify({
+        type: "deepSearch",
+        title: "已深度思考",
+        contents: [{ type: "text", componentId: "2", msg: "按上下文延续为深圳" }],
+      }),
+    ),
+    ev(
+      JSON.stringify({
+        type: "searchGuid",
+        title: "引用 2 篇资料作为参考",
+        docs: [
+          {
+            index: 1,
+            title: "深圳气象局更新",
+            url: "https://weather.sz.gov.cn/a",
+            quote: "最高气温36℃",
+            web_site_name: "深圳气象局",
+          },
+          {
+            index: 2,
+            title: "腾讯网天气",
+            url: "https://example.com/b",
+            web_site_name: "腾讯网",
+          },
+        ],
+      }),
+    ),
+    ev(JSON.stringify({ type: "text", msg: "明天" })),
+    ev(JSON.stringify({ type: "text", msg: "深圳晴热" })),
+    ev(JSON.stringify({ type: "meta", stopReason: "stop", pluginID: "OneAgent" })),
+  ];
+
+  const det = detectAiProfile(events, "https://yuanbao.tencent.com/chat");
+  assert(det.profile === "yuanbao-web", `yuanbao profile got ${det.profile}`);
+  assert(det.vendorHint === "yuanbao", "yuanbao vendor");
+  const t = mergeAiTranscript(events, "https://yuanbao.tencent.com/chat");
+  assert(t.profile === "yuanbao-web", "yuanbao merge profile");
+  assert(t.channels.reasoning.includes("用户只说明天天气"), `yuanbao think: ${t.channels.reasoning}`);
+  assert(t.channels.reasoning.includes("按上下文延续为深圳"), "yuanbao think comps joined");
+  assert(t.channels.content === "明天深圳晴热", `yuanbao content: ${t.channels.content}`);
+  assert(!t.channels.content.includes("用户只说"), "think must not leak");
+  assert(t.channels.tools.length === 1, `yuanbao tools ${t.channels.tools.length}`);
+  assert(t.channels.tools[0].name === "web_search", "yuanbao web_search");
+  const yArgs = JSON.parse(t.channels.tools[0].arguments);
+  assert(yArgs.type === "SEARCH", "yuanbao SEARCH");
+  assert(Array.isArray(yArgs.results) && yArgs.results.length === 2, `yuanbao results ${yArgs.results?.length}`);
+  assert(yArgs.results[0].site_name === "深圳气象局", "yuanbao site from searchGuid");
+  assert(String(yArgs.results[0].snippet || "").includes("36"), "yuanbao quote snippet");
+  assert(t.endMeta.finishReason === "stop", "yuanbao finish");
+  assert(transcriptHasContent(t), "yuanbao has content");
+}
+
 // Real captures under data/ (optional locally; skip if missing)
 {
   const { readFileSync, existsSync } = await import("node:fs");
@@ -802,6 +899,7 @@ function ev(data, event = "message") {
   const kimiPath = resolve(root, "data/kimi.txt");
   const qianwenPath = resolve(root, "data/qianwen.txt");
   const zhipuPath = resolve(root, "data/zhipu.txt");
+  const yuanbaoPath = resolve(root, "data/yuanbao.txt");
 
   function loadKimiJsonStream(filePath) {
     const text = readFileSync(filePath, "utf8");
@@ -976,6 +1074,35 @@ function ev(data, event = "message") {
     assert(Array.isArray(zArgs.queries) && zArgs.queries.length >= 3, `zhipu fixture queries ${zArgs.queries?.length}`);
     assert(Array.isArray(zArgs.results) && zArgs.results.length === 20, `zhipu fixture results ${zArgs.results?.length}`);
     assert(zArgs.results.some((r) => String(r.url || "").includes("http")), "zhipu fixture result urls");
+  }
+
+  if (existsSync(yuanbaoPath)) {
+    const events = loadSse(yuanbaoPath);
+    assert(events.length > 50, `yuanbao events parsed: ${events.length}`);
+    const t = mergeAiTranscript(events, "https://yuanbao.tencent.com/chat");
+    assert(t.profile === "yuanbao-web", `yuanbao profile got ${t.profile}`);
+    assert(t.vendorHint === "yuanbao", "yuanbao vendor");
+    assert(
+      t.channels.reasoning.includes("明天天气") || t.channels.reasoning.includes("深圳"),
+      `yuanbao reasoning snip: ${t.channels.reasoning.slice(0, 80)}`,
+    );
+    assert(
+      !t.channels.content.includes("用户只说"),
+      "think must not leak into content",
+    );
+    assert(
+      t.channels.content.includes("深圳") && t.channels.content.includes("天气"),
+      `yuanbao content snip: ${t.channels.content.slice(0, 80)}`,
+    );
+    assert(t.endMeta.finishReason === "stop", "yuanbao finish");
+    assert(t.channels.tools.length === 1, `yuanbao fixture tools ${t.channels.tools.length}`);
+    assert(t.channels.tools[0].name === "web_search", "yuanbao fixture web_search");
+    const yArgs = JSON.parse(t.channels.tools[0].arguments);
+    assert(Array.isArray(yArgs.results) && yArgs.results.length === 10, `yuanbao fixture results ${yArgs.results?.length}`);
+    assert(
+      yArgs.results.some((r) => String(r.site_name || "").includes("气象") || String(r.url || "").includes("http")),
+      "yuanbao fixture result meta",
+    );
   }
 }
 

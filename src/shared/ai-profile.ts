@@ -8,6 +8,7 @@ export type AiProfile =
   | "kimi-web"
   | "qianwen-web"
   | "zhipu-web"
+  | "yuanbao-web"
   | "anthropic"
   | "generic";
 
@@ -19,6 +20,7 @@ export type AiVendorHint =
   | "qwen"
   | "zhipu"
   | "moonshot"
+  | "yuanbao"
   | "baichuan"
   | "openai"
   | "anthropic"
@@ -63,6 +65,13 @@ const VENDOR_HOST_RULES: Array<{ hint: AiVendorHint; test: (host: string) => boo
       h.includes("zhipuai") ||
       h.includes("chatglm") ||
       h.includes("zhipu"),
+  },
+  {
+    hint: "yuanbao",
+    test: (h) =>
+      h.includes("yuanbao.tencent.com") ||
+      h.includes("yuanbao") ||
+      h.includes("hunyuan.tencent.com"),
   },
   {
     hint: "moonshot",
@@ -215,6 +224,29 @@ export function isZhipuWebChunk(value: unknown): boolean {
   return typeof value.assistant_id === "string";
 }
 
+/**
+ * Tencent Yuanbao (元宝) / Hunyuan web SSE.
+ * Frames use top-level `type`: deepSearch | text | step | searchGuid | meta | …
+ */
+export function isYuanbaoWebChunk(value: unknown, eventName?: string): boolean {
+  if (eventName === "speech_type") return true;
+  if (!isRecord(value)) return false;
+  if (Array.isArray(value.choices)) return false;
+  const typ = typeof value.type === "string" ? value.type : "";
+  if (typ === "deepSearch" && Array.isArray(value.contents)) return true;
+  if (typ === "searchGuid" && Array.isArray(value.docs)) return true;
+  if (typ === "step" && (typeof value.toolCallType === "string" || typeof value.scene === "string")) {
+    return true;
+  }
+  if (typ === "meta" && (typeof value.stopReason === "string" || typeof value.pluginID === "string")) {
+    return true;
+  }
+  if (typ === "hint_v2_tip") return true;
+  // Answer deltas: {"type":"text","msg":"…"} — require msg to avoid colliding with bare shells.
+  if (typ === "text" && typeof value.msg === "string") return true;
+  return false;
+}
+
 /** Kimi.com Connect+JSON chat frame (mask / op / delta / block). */
 export function isKimiWebChunk(value: unknown, eventName?: string): boolean {
   // Trust Connect mask-as-event only when not colliding with SSE defaults.
@@ -307,6 +339,7 @@ export function detectAiProfile(
   let kimiHits = 0;
   let qianwenHits = 0;
   let zhipuHits = 0;
+  let yuanbaoHits = 0;
   let anthropicHits = 0;
   const sampleLimit = Math.min(events.length, 80);
 
@@ -321,6 +354,7 @@ export function detectAiProfile(
     ) {
       kimiHits += 2;
     }
+    if (ev.event === "speech_type") yuanbaoHits += 2;
 
     const parsed = tryParseJson(ev.data);
     if (parsed == null) continue;
@@ -348,6 +382,10 @@ export function detectAiProfile(
       zhipuHits++;
       reasoningFields.add("think");
     }
+    if (isYuanbaoWebChunk(parsed, ev.event)) {
+      yuanbaoHits++;
+      reasoningFields.add("deepSearch");
+    }
     if (isAnthropicChunk(parsed) || ev.event.startsWith("content_block") || ev.event === "message_delta") {
       anthropicHits++;
     }
@@ -360,6 +398,7 @@ export function detectAiProfile(
     { profile: "kimi-web", score: kimiHits },
     { profile: "qianwen-web", score: qianwenHits },
     { profile: "zhipu-web", score: zhipuHits },
+    { profile: "yuanbao-web", score: yuanbaoHits },
     { profile: "anthropic", score: anthropicHits },
   ];
   scores.sort((a, b) => b.score - a.score);
@@ -382,12 +421,18 @@ export function detectAiProfile(
     profile = "zhipu-web";
   }
 
+  // Prefer yuanbao-web on Yuanbao/Hunyuan hosts when deepSearch frames are present.
+  if (vendorHint === "yuanbao" && yuanbaoHits >= 2 && yuanbaoHits >= openaiHits) {
+    profile = "yuanbao-web";
+  }
+
   let resolvedVendor = vendorHint;
   if (profile === "deepseek-web") resolvedVendor = "deepseek";
   else if (profile === "doubao-web") resolvedVendor = "doubao-web";
   else if (profile === "kimi-web") resolvedVendor = "moonshot";
   else if (profile === "qianwen-web") resolvedVendor = "qwen";
   else if (profile === "zhipu-web") resolvedVendor = "zhipu";
+  else if (profile === "yuanbao-web") resolvedVendor = "yuanbao";
   else if (
     profile === "openai-compatible" &&
     vendorHint === "unknown" &&
