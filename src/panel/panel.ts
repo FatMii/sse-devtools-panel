@@ -771,7 +771,7 @@ function downloadTextFile(filename: string, text: string, mime: string): void {
   URL.revokeObjectURL(url);
 }
 
-/** Portable snapshot of the selected stream for sharing / issue repro. */
+/** Export selected stream for sharing / repro. */
 function exportSelectedStreamJson(): void {
   const record = selectedId ? streams.get(selectedId) : undefined;
   if (!record) {
@@ -787,7 +787,7 @@ function exportSelectedStreamJson(): void {
   showToast(t("toastExportedJson"));
 }
 
-/** Spreadsheet-friendly export; respects current Events search filter. */
+/** CSV export; respects current Events search filter. */
 function exportSelectedStreamCsv(): void {
   const record = selectedId ? streams.get(selectedId) : undefined;
   if (!record) {
@@ -807,7 +807,7 @@ function exportSelectedStreamCsv(): void {
   showToast(t("toastExportedCsv", String(visible.length)));
 }
 
-/** Local mock/replay file: rebuild standard text/event-stream from parsed events. */
+/** Rebuild text/event-stream fixture from parsed events. */
 function exportSelectedStreamFixture(): void {
   const record = selectedId ? streams.get(selectedId) : undefined;
   if (!record) {
@@ -2331,7 +2331,7 @@ function renderRequest(record: StreamRecord | undefined): void {
   panePayload.className = "request-pane request-pane-payload";
   panePayload.hidden = requestPane !== "payload";
 
-  // ---- Headers pane (Network-like) ----
+  // ---- Headers ----
   const general = document.createElement("section");
   general.className = "request-section";
   const generalTitle = document.createElement("div");
@@ -2407,7 +2407,7 @@ function renderRequest(record: StreamRecord | undefined): void {
   }
   paneHeaders.appendChild(requestHeadersSection);
 
-  // ---- Payload pane (Network-like) ----
+  // ---- Payload ----
   const queryParams = parseQueryStringParams(record.url);
   const querySection = document.createElement("section");
   querySection.className = "request-section";

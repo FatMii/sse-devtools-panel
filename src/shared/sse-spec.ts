@@ -83,7 +83,7 @@ export function scanStreamSpecWarnings(record: Pick<StreamRecord, "streamKind" |
   return warnings;
 }
 
-/** Rebuild a standards-friendly `text/event-stream` body from parsed events. */
+/** Rebuild a `text/event-stream` body from parsed events. */
 export function buildSseFixture(
   events: Array<Pick<SseEvent, "id" | "event" | "data" | "retry">>,
 ): string {

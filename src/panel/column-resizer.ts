@@ -1,4 +1,4 @@
-/** Events table column resize via header drag handles. Runtime only (not persisted). */
+/** Events table column resize (not persisted). */
 
 const MIN_COL_WIDTH = 40;
 

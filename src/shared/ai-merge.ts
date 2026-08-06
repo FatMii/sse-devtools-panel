@@ -205,7 +205,7 @@ function ingestFragment(
     return;
   }
   if (typ === "TIP") {
-    // Disclaimer tip — keep in meta via finish note only if needed; skip content.
+    // Skip tip/disclaimer fragments.
     return;
   }
   if (typ === "THINK" || typ === "RESPONSE") {
@@ -1872,7 +1872,7 @@ function mergeYuanbaoWeb(
 }
 
 /**
- * Merge stream events into a readable AI transcript.
+ * Merge stream events into an AI transcript.
  */
 export function mergeAiTranscript(
   events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,

@@ -1,6 +1,6 @@
 import type { SseEvent } from "./types";
 
-/** Wire-shape family used for transcript merge. */
+/** Transcript merge protocol family. */
 export type AiProfile =
   | "openai-compatible"
   | "deepseek-web"
@@ -12,7 +12,7 @@ export type AiProfile =
   | "anthropic"
   | "generic";
 
-/** Best-effort vendor label (host / payload hints). Domestic first. */
+/** Vendor guess from host / payload. */
 export type AiVendorHint =
   | "deepseek"
   | "doubao-ark"
@@ -29,9 +29,9 @@ export type AiVendorHint =
 export interface AiProfileResult {
   profile: AiProfile;
   vendorHint: AiVendorHint;
-  /** True when at least one event looked like an AI chat stream chunk. */
+  /** True when any event looked like an AI chat chunk. */
   matched: boolean;
-  /** Seen reasoning slot field names (e.g. reasoning_content, THINK). */
+  /** Reasoning field names seen (e.g. reasoning_content, THINK). */
   reasoningFields: string[];
 }
 
@@ -324,8 +324,8 @@ function collectReasoningFields(value: unknown, into: Set<string>): void {
 }
 
 /**
- * Detect AI stream profile from captured SSE/NDJSON events (+ optional URL).
- * Prefers payload / event-name shape; URL supplies vendorHint.
+ * Detect AI stream profile from events (+ optional URL).
+ * Payload / event-name shape wins; URL mainly supplies vendorHint.
  */
 export function detectAiProfile(
   events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,

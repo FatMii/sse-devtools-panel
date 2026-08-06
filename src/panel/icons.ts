@@ -1,15 +1,8 @@
-/** Shared panel icons: one viewBox, one stroke convention. */
-
 export const ICON_VIEWBOX = "0 0 24 24";
 export const ICON_STROKE_WIDTH = "2";
 
-/**
- * Inner SVG markup only (paths / circles).
- * Default rendering is outline (stroke=currentColor, fill=none).
- * Use fill="currentColor" stroke="none" on shapes that should be solid.
- */
+/** Path markup for icons. Outline by default; solid shapes set fill="currentColor" stroke="none". */
 const ICONS = {
-  /** Toolbar brand mark (Doubao version B, vectorized). */
   brand: `<path d="M2.5 12h2"/><path d="M5.5 12c1.2 0 1.6-4.8 3.4-4.8s2.2 9.6 4.1 9.6 2.2-8.2 4-8.2 2.2 5.2 3.5 3.4"/><circle cx="8.9" cy="7.2" r="1.35" fill="var(--surface-1)" stroke="currentColor"/><circle cx="13" cy="16.8" r="1.35" fill="var(--surface-1)" stroke="currentColor"/><circle cx="17.1" cy="7.8" r="1.35" fill="var(--surface-1)" stroke="currentColor"/><circle cx="6.2" cy="12" r="0.55" fill="currentColor" stroke="none"/><circle cx="11" cy="12" r="0.55" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="0.55" fill="currentColor" stroke="none"/><circle cx="19.8" cy="12" r="0.55" fill="currentColor" stroke="none"/>`,
   import: `<path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M8 5H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4"/>`,
   export: `<path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>`,
@@ -35,7 +28,6 @@ export function isIconName(name: string): name is IconName {
   return Object.prototype.hasOwnProperty.call(ICONS, name);
 }
 
-/** Build a complete SVG element string. */
 export function renderIcon(name: IconName, className = "tool-icon"): string {
   const classes = className.trim() || "tool-icon";
   return (
@@ -46,10 +38,7 @@ export function renderIcon(name: IconName, className = "tool-icon"): string {
   );
 }
 
-/**
- * Replace `[data-icon="name"]` placeholders with shared SVG markup.
- * Keeps the placeholder's `class` on the generated `<svg>`.
- */
+/** Replace `[data-icon]` placeholders with SVG; keeps the element's class. */
 export function applyIcons(root: ParentNode = document): void {
   root.querySelectorAll<HTMLElement>("[data-icon]").forEach((el) => {
     const name = el.getAttribute("data-icon");

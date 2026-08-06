@@ -1,7 +1,7 @@
 import { compileTextFilter } from "../shared/text-filter";
 
 /**
- * Build an expandable JSON tree (Chrome DevTools–style).
+ * Build an expandable JSON tree.
  */
 
 export function tryParseJsonValue(text: string): { ok: true; value: unknown } | { ok: false } {
@@ -14,7 +14,7 @@ export function tryParseJsonValue(text: string): { ok: true; value: unknown } | 
     // continue
   }
 
-  // Multiline data that is NDJSON — wrap as array of parsed lines
+  // NDJSON: parse each line and wrap as an array
   const lines = trimmed.split("\n").map((l) => l.trim()).filter(Boolean);
   if (lines.length > 1) {
     try {

@@ -23,7 +23,7 @@
   --sidebar: 286px;
   --drawer: 358px;
 
-  /* Compat aliases used by remaining feature CSS */
+  /* Legacy color aliases */
   --bg: var(--canvas);
   --bg-elevated: var(--surface-1);
   --bg-hover: var(--surface-hover);
@@ -171,7 +171,7 @@ button.is-paused {
   stroke-width: 1.65;
 }
 
-/* Solid glyphs (pause dots, etc.) opt in via fill="currentColor" */
+/* Icons that need solid fill set fill="currentColor" */
 .tool-btn svg [fill="currentColor"],
 .icon-btn svg [fill="currentColor"],
 .input-wrap svg [fill="currentColor"] {

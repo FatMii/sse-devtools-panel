@@ -5,8 +5,5 @@ void initI18n().then(() => {
     t("devtoolsPanelName"),
     "icons/icon-32.png",
     "panel/panel.html",
-    () => {
-      // Panel created
-    },
   );
 });

@@ -213,7 +213,7 @@ function normalizeStreamBody(body: Record<string, unknown>): StreamExportBody {
   };
 }
 
-/** Parse exported JSON text into a portable stream body. */
+/** Parse exported JSON into a stream body. */
 export function parseStreamExportJson(text: string): StreamExportBody {
   let parsed: unknown;
   try {
@@ -242,7 +242,7 @@ export function createRequestId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-/** Build an in-memory StreamRecord from a portable export body. */
+/** Build a StreamRecord from an export body. */
 export function streamRecordFromExport(
   body: StreamExportBody,
   options: { requestId: string; origin: StreamOrigin },
@@ -299,7 +299,7 @@ function formatTimestampIso(ts: number): string {
 }
 
 /**
- * Build a CSV snapshot of a stream.
+ * Build a CSV export of a stream.
  * Includes UTF-8 BOM for Excel. Optional `events` overrides which rows to export
  * (e.g. current Events search filter); defaults to all events on the record.
  */

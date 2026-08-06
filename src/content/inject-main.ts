@@ -123,7 +123,7 @@ function resolveMethod(input: RequestInfo | URL, init?: RequestInit): string {
 
 const SENSITIVE_HEADER_RE =
   /^(authorization|cookie|set-cookie|x-api-key|api-key|x-auth-token|proxy-authorization)$/i;
-/** Align closer to Network panel usable payload size (still capped for extension memory). */
+/** Max chars kept for request/response payload previews. */
 const MAX_PAYLOAD_PREVIEW = 256_000;
 
 function redactHeaderValue(name: string, value: string): string {
@@ -348,7 +348,7 @@ function createConnectJsonSink(
   onComplete: () => void;
   onError: (message: string, closeReason?: Extract<StreamCloseReason, "abort" | "error">) => void;
 } {
-  // Inline framer — inject bundle must stay self-contained (no shared import tree).
+  // Connect framer inlined (no shared imports in page inject).
   const MAX_FRAME = 16 * 1024 * 1024;
   let buffer = new Uint8Array(0);
   let closed = false;
