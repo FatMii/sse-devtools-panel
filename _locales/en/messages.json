@@ -36,16 +36,16 @@
     "message": "Filter stream list by URL text"
   },
   "streamsTransportFilterTitle": {
-    "message": "Filter stream list by request type"
+    "message": "Filter stream list by request API"
   },
   "transportAll": {
-    "message": "All Types"
+    "message": "All Streams"
   },
   "transportFetch": {
     "message": "Fetch"
   },
   "transportEventSource": {
-    "message": "EventSource"
+    "message": "EventSource (SSE)"
   },
   "transportXhr": {
     "message": "XHR"

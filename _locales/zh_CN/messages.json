@@ -36,7 +36,7 @@
     "message": "按 URL 文本过滤左侧数据流列表"
   },
   "streamsTransportFilterTitle": {
-    "message": "按请求类型过滤左侧数据流列表"
+    "message": "按请求来源（API）过滤左侧数据流列表"
   },
   "transportAll": {
     "message": "全部类型"
@@ -45,7 +45,7 @@
     "message": "Fetch"
   },
   "transportEventSource": {
-    "message": "EventSource"
+    "message": "EventSource（SSE）"
   },
   "transportXhr": {
     "message": "XHR"
