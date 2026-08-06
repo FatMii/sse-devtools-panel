@@ -59,6 +59,9 @@
   "emptyWaitingAfter": {
     "message": "…"
   },
+  "emptyHintGuide": {
+    "message": "在本标签页发起 SSE/NDJSON 请求，或导入 JSON 捕获文件。"
+  },
   "tabEvents": {
     "message": "事件"
   },
@@ -840,6 +843,9 @@
   },
   "statusbarCapturePaused": {
     "message": "● 捕获已暂停"
+  },
+  "statusbarUiPaused": {
+    "message": "● 界面已暂停 · 捕获继续"
   },
   "toastCopied": {
     "message": "已复制"

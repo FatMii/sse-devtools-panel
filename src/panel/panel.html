@@ -10,10 +10,10 @@
       <header class="toolbar">
         <div class="brand">
           <span class="brand-mark" data-icon="brand" aria-hidden="true"></span>
-          <span class="toolbar-title" data-i18n="panelTitle">EventStream Panel</span>
+          <span class="toolbar-title" data-i18n="devtoolsPanelName">EventStream</span>
         </div>
 
-        <div class="toolbar-group">
+        <div class="toolbar-group toolbar-group--file">
           <button
             type="button"
             class="tool-btn"
@@ -78,19 +78,19 @@
             data-i18n-title="saveArchiveTitle"
           >
             <span class="tool-icon" data-icon="save"></span>
-            <span class="tool-label" data-i18n="saveArchive">Save</span>
+            <span class="tool-label tool-label--optional" data-i18n="saveArchive">Save</span>
           </button>
           <button type="button" class="tool-btn" id="btn-archives" data-i18n-title="archivesTitle">
             <span class="tool-icon" data-icon="archives"></span>
-            <span class="tool-label" data-i18n="archives">Archives</span>
+            <span class="tool-label tool-label--optional" data-i18n="archives">Archives</span>
           </button>
           <button type="button" class="tool-btn" id="btn-stats" data-i18n-title="statsTitle">
             <span class="tool-icon" data-icon="stats"></span>
-            <span class="tool-label" data-i18n="stats">Stats</span>
+            <span class="tool-label tool-label--optional" data-i18n="stats">Stats</span>
           </button>
         </div>
 
-        <div class="toolbar-group">
+        <div class="toolbar-group toolbar-group--runtime">
           <button type="button" class="tool-btn" id="btn-pause-ui" data-i18n-title="pauseUiTitle">
             <span class="tool-icon" data-icon="pause"></span>
             <span class="tool-label" data-i18n="pauseUi">Pause UI</span>
@@ -189,8 +189,13 @@
           </div>
           <ul id="stream-list" class="stream-list"></ul>
           <div id="empty-hint" class="empty-hint">
-            <span data-i18n="emptyWaitingBefore">Waiting for</span>
-            <code>text/event-stream</code><span data-i18n="emptyWaitingAfter">…</span>
+            <p class="empty-hint-lead">
+              <span data-i18n="emptyWaitingBefore">Waiting for</span>
+              <code>text/event-stream</code><span data-i18n="emptyWaitingAfter">…</span>
+            </p>
+            <p class="empty-hint-guide" data-i18n="emptyHintGuide">
+              Trigger SSE or NDJSON in this tab, or import a JSON capture.
+            </p>
           </div>
           <div class="sidebar-footer" data-i18n="sidebarFooter">
             Captures Fetch · EventSource · XHR · NDJSON
@@ -383,7 +388,7 @@
       </div>
 
       <footer class="statusbar">
-        <span class="statusbar-capture" id="statusbar-capture">● CAPTURE ACTIVE</span>
+        <span class="statusbar-capture" id="statusbar-capture">● Capturing</span>
         <span class="statusbar-transports" data-i18n="statusbarTransports"
           >Fetch / EventSource / XHR</span
         >

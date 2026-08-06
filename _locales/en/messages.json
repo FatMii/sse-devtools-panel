@@ -59,6 +59,9 @@
   "emptyWaitingAfter": {
     "message": "…"
   },
+  "emptyHintGuide": {
+    "message": "Trigger SSE or NDJSON in this tab, or import a JSON capture."
+  },
   "tabEvents": {
     "message": "Events"
   },
@@ -836,10 +839,13 @@
     "message": "Fetch / EventSource / XHR"
   },
   "statusbarCaptureActive": {
-    "message": "● CAPTURE ACTIVE"
+    "message": "● Capturing"
   },
   "statusbarCapturePaused": {
-    "message": "● CAPTURE PAUSED"
+    "message": "● Capture paused"
+  },
+  "statusbarUiPaused": {
+    "message": "● UI paused · capture on"
   },
   "toastCopied": {
     "message": "Copied"

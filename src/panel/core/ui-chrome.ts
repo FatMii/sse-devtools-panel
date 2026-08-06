@@ -77,7 +77,7 @@ export function setUiPaused(next: boolean, hooks: UiPauseResumeHooks): void {
   elPauseUi.title = state.uiPaused ? t("resumeUiTitle") : t("pauseUiTitle");
   if (elStatusbarCapture) {
     elStatusbarCapture.textContent = state.uiPaused
-      ? t("statusbarCapturePaused")
+      ? t("statusbarUiPaused")
       : t("statusbarCaptureActive");
     elStatusbarCapture.classList.toggle("is-paused", state.uiPaused);
   }
