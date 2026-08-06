@@ -63,8 +63,10 @@ export function renderList(): void {
     state.streams.size > 0 &&
     (urlFilter || state.streamsTransportFilter !== "all")
   ) {
+    elEmpty.className = "empty-hint empty-hint--filter";
     elEmpty.textContent = t("noStreamsMatchFilter");
   } else {
+    elEmpty.className = "empty-hint";
     elEmpty.innerHTML = `
       <p class="empty-hint-lead">
         <span>${escapeHtml(t("emptyWaitingBefore"))}</span>
