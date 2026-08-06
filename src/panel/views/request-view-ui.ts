@@ -1,15 +1,15 @@
-import { t, uiLanguage } from "../shared/i18n";
+import { t, uiLanguage } from "../../shared/i18n";
 import {
   looksLikeUrlEncoded,
   parseQueryStringParams,
   parseUrlEncodedPairs,
   requestContentType,
   type NameValuePair,
-} from "../shared/request-view";
-import type { StreamRecord } from "../shared/types";
-import { elRequestBody, elRequestPlaceholder } from "./dom";
-import { closeReasonLabel, escapeHtml, transportLabel } from "./format";
-import { createJsonTree, tryParseJsonValue } from "./json-tree";
+} from "../../shared/request-view";
+import type { StreamRecord } from "../../shared/types";
+import { elRequestBody, elRequestPlaceholder } from "../core/dom";
+import { closeReasonLabel, escapeHtml, transportLabel } from "../core/format";
+import { createJsonTree, tryParseJsonValue } from "../widgets/json-tree";
 
 let requestPane: "headers" | "payload" = "headers";
 let requestPayloadView: "parsed" | "source" = "parsed";

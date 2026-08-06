@@ -1,9 +1,9 @@
-import { mergeAiTranscript, transcriptHasContent, type AiTranscript } from "../shared/ai-merge";
-import { t } from "../shared/i18n";
-import type { StreamRecord } from "../shared/types";
-import { elTranscriptBody, elTranscriptPlaceholder } from "./dom";
-import { escapeHtml } from "./format";
-import { renderIcon } from "./icons";
+import { mergeAiTranscript, transcriptHasContent, type AiTranscript } from "../../shared/ai-merge";
+import { t } from "../../shared/i18n";
+import type { StreamRecord } from "../../shared/types";
+import { elTranscriptBody, elTranscriptPlaceholder } from "../core/dom";
+import { escapeHtml } from "../core/format";
+import { renderIcon } from "../core/icons";
 
 type TranscriptChannel = "content" | "reasoning" | "tools" | "meta";
 

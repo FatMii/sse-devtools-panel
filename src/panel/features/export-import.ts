@@ -1,5 +1,5 @@
-import { t } from "../shared/i18n";
-import { saveStreamArchive } from "../shared/stream-archive-db";
+import { t } from "../../shared/i18n";
+import { saveStreamArchive } from "../../shared/stream-archive-db";
 import {
   buildSseFixture,
   buildStreamExportCsv,
@@ -7,11 +7,11 @@ import {
   createRequestId,
   parseStreamExportJson,
   streamRecordFromExport,
-} from "../shared/stream-snapshot";
-import type { SseEvent, StreamRecord } from "../shared/types";
-import { buildExportFilename, shortPath } from "./format";
-import { state } from "./state";
-import { downloadTextFile, showToast } from "./ui-chrome";
+} from "../../shared/stream-snapshot";
+import type { SseEvent, StreamRecord } from "../../shared/types";
+import { buildExportFilename, shortPath } from "../core/format";
+import { state } from "../core/state";
+import { downloadTextFile, showToast } from "../core/ui-chrome";
 
 export type ExportImportHooks = {
   getBrowsableEvents: (record: StreamRecord) => SseEvent[];

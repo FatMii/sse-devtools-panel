@@ -1,4 +1,4 @@
-import type { StreamMetrics, StreamRecord } from "../shared/types";
+import type { StreamMetrics, StreamRecord } from "../../shared/types";
 
 export function computeStreamMetrics(record: StreamRecord): StreamMetrics {
   const events = record.events;

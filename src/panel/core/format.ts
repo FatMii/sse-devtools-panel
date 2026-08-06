@@ -1,6 +1,6 @@
-import { t } from "../shared/i18n";
-import type { HistogramBin } from "../shared/stream-timing";
-import type { StreamCloseReason, StreamRecord, StreamTransport } from "../shared/types";
+import { t } from "../../shared/i18n";
+import type { HistogramBin } from "../../shared/stream-timing";
+import type { StreamCloseReason, StreamRecord, StreamTransport } from "../../shared/types";
 
 export const DATA_PREVIEW_LEN = 80;
 

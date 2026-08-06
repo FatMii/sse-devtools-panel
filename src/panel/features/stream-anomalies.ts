@@ -1,10 +1,10 @@
-import { t } from "../shared/i18n";
+import { t } from "../../shared/i18n";
 import {
   scanStreamSpecWarnings,
   type SseSpecWarning,
   type SseSpecWarningKind,
-} from "../shared/sse-spec";
-import type { StreamRecord } from "../shared/types";
+} from "../../shared/sse-spec";
+import type { StreamRecord } from "../../shared/types";
 
 export type StreamAnomalyKind =
   "empty-data" | "json-parse-failed" | "duplicate-id" | "oversized-packet";

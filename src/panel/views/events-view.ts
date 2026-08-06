@@ -1,6 +1,6 @@
-import { t } from "../shared/i18n";
-import { compileTextFilter } from "../shared/text-filter";
-import type { SseEvent, StreamRecord } from "../shared/types";
+import { t } from "../../shared/i18n";
+import { compileTextFilter } from "../../shared/text-filter";
+import type { SseEvent, StreamRecord } from "../../shared/types";
 import {
   elContextMenu,
   elDrawer,
@@ -17,15 +17,15 @@ import {
   elResizer,
   elTableWrap,
   elTbody,
-} from "./dom";
-import { escapeHtml, formatTime, previewData } from "./format";
-import { applyTreeSearch, createJsonTree, tryParseJsonValue } from "./json-tree";
+} from "../core/dom";
+import { escapeHtml, formatTime, previewData } from "../core/format";
+import { applyTreeSearch, createJsonTree, tryParseJsonValue } from "../widgets/json-tree";
 import {
   getStreamSpecWarnings,
   specWarningKindLabel,
   specWarningMessage,
-} from "./stream-anomalies";
-import { state } from "./state";
+} from "../features/stream-anomalies";
+import { state } from "../core/state";
 
 export const DRAWER_WIDTH_MIN = 20;
 export const DRAWER_WIDTH_MAX = 75;

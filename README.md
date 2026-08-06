@@ -372,16 +372,16 @@ pnpm format
 pnpm test-only    # parser / connect / export / spec / timing / request-view / close / ai-merge
 ```
 
-| 路径                         | 职责                                           |
-| ---------------------------- | ---------------------------------------------- |
-| `src/content/inject-main.ts` | MAIN world：劫持 fetch / EventSource / XHR     |
-| `src/content/` + `bridge`    | ISOLATED：转发到扩展                           |
-| `src/background.ts`          | Service Worker 消息中继                        |
-| `src/panel/`                 | DevTools 面板 UI                               |
-| `src/shared/`                | 解析 · 时序 · Spec · 导出 · AI Profile / Merge |
-| `src/options/`               | 选项页                                         |
-| `_locales/`                  | i18n（`en` / `zh_CN`）                         |
-| `demo/`                      | 本地 SSE Demo 服务                             |
+| 路径                         | 职责                                                          |
+| ---------------------------- | ------------------------------------------------------------- |
+| `src/content/inject-main.ts` | MAIN world：劫持 fetch / EventSource / XHR                    |
+| `src/content/` + `bridge`    | ISOLATED：转发到扩展                                          |
+| `src/background.ts`          | Service Worker 消息中继                                       |
+| `src/panel/`                 | DevTools 面板 UI（`core` / `views` / `features` / `widgets`） |
+| `src/shared/`                | 解析 · 时序 · Spec · 导出 · AI Profile / Merge                |
+| `src/options/`               | 选项页                                                        |
+| `_locales/`                  | i18n（`en` / `zh_CN`）                                        |
+| `demo/`                      | 本地 SSE Demo 服务                                            |
 
 发 PR 前请跑通：
 

@@ -1,4 +1,4 @@
-import { t } from "../shared/i18n";
+import { t } from "../../shared/i18n";
 import {
   buildGapHistogram,
   buildTimelineMarks,
@@ -6,11 +6,11 @@ import {
   largestGaps,
   timelineSpanMs,
   type HistogramBin,
-} from "../shared/stream-timing";
-import type { StreamRecord } from "../shared/types";
-import { elTimelineBody, elTimelinePlaceholder } from "./dom";
-import { escapeHtml, formatGapBinLabel, formatMetricMs } from "./format";
-import { ensureStreamMetrics } from "./stream-metrics";
+} from "../../shared/stream-timing";
+import type { StreamRecord } from "../../shared/types";
+import { elTimelineBody, elTimelinePlaceholder } from "../core/dom";
+import { escapeHtml, formatGapBinLabel, formatMetricMs } from "../core/format";
+import { ensureStreamMetrics } from "../features/stream-metrics";
 
 export const TIMELINE_STALL_MS = 250;
 

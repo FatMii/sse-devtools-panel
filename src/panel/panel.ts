@@ -1,5 +1,5 @@
 import "./panel.css";
-import { applyIcons } from "./icons";
+import { applyIcons } from "./core/icons";
 import type {
   RelayMessage,
   SseEvent,
@@ -24,7 +24,7 @@ import { SseParser, type ParsedSseEvent } from "../shared/sse-parser";
 import { NdjsonParser } from "../shared/ndjson-parser";
 import { ConnectJsonParser } from "../shared/connect-json-parser";
 import { mergeAiTranscript, transcriptHasContent } from "../shared/ai-merge";
-import { initEventsColumnResizers } from "./column-resizer";
+import { initEventsColumnResizers } from "./widgets/column-resizer";
 import {
   elList,
   elMeta,
@@ -71,14 +71,17 @@ import {
   elSidebarResizer,
   elResizer,
   elEvents,
-} from "./dom";
-import { escapeHtml, formatDuration, closeReasonLabel } from "./format";
-import { computeStreamMetrics } from "./stream-metrics";
-import { clearStreamAnomalyCaches, invalidateStreamAnomalyCache } from "./stream-anomalies";
-import { renderTimeline } from "./timeline-view";
-import { renderRequest, resetRequestViewState } from "./request-view-ui";
-import { renderTranscript, resetTranscriptView } from "./transcript-view";
-import { state, type ActiveTab, type StreamParser } from "./state";
+} from "./core/dom";
+import { escapeHtml, formatDuration, closeReasonLabel } from "./core/format";
+import { computeStreamMetrics } from "./features/stream-metrics";
+import {
+  clearStreamAnomalyCaches,
+  invalidateStreamAnomalyCache,
+} from "./features/stream-anomalies";
+import { renderTimeline } from "./views/timeline-view";
+import { renderRequest, resetRequestViewState } from "./views/request-view-ui";
+import { renderTranscript, resetTranscriptView } from "./views/transcript-view";
+import { state, type ActiveTab, type StreamParser } from "./core/state";
 import {
   closeAllMenus,
   closeAppDialog,
@@ -86,7 +89,7 @@ import {
   setUiPaused,
   showToast,
   toggleMenu,
-} from "./ui-chrome";
+} from "./core/ui-chrome";
 import {
   addStaticStream,
   exportSelectedStreamCsv,
@@ -95,7 +98,7 @@ import {
   importStreamFromFile,
   saveSelectedStreamArchive,
   type ExportImportHooks,
-} from "./export-import";
+} from "./features/export-import";
 import {
   showAnomaliesDialog,
   showArchivesDialog,
@@ -103,7 +106,7 @@ import {
   showSpecWarningsDialog,
   showStatsDialog,
   type DialogHooks,
-} from "./dialogs";
+} from "./features/dialogs";
 import {
   applyDrawerWidth,
   applyDrawerSearch,
@@ -119,8 +122,8 @@ import {
   selectEventByIndex,
   updateDrawerNavButtons,
   bindJsonTreeContextMenu,
-} from "./events-view";
-import { renderList, scheduleRenderList } from "./stream-list";
+} from "./views/events-view";
+import { renderList, scheduleRenderList } from "./views/stream-list";
 
 const PANEL_PORT = "sse-devtools-panel";
 

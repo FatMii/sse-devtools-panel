@@ -1,14 +1,14 @@
-import { t } from "../shared/i18n";
-import { compileTextFilter } from "../shared/text-filter";
+import { t } from "../../shared/i18n";
+import { compileTextFilter } from "../../shared/text-filter";
 import {
   deleteStreamArchive,
   getStreamArchive,
   listStreamArchives,
   type StreamArchiveEntry,
-} from "../shared/stream-archive-db";
-import { createRequestId } from "../shared/stream-snapshot";
-import type { SseEvent, StreamRecord } from "../shared/types";
-import { escapeHtml, formatDuration, formatMetricMs, previewData, shortPath } from "./format";
+} from "../../shared/stream-archive-db";
+import { createRequestId } from "../../shared/stream-snapshot";
+import type { SseEvent, StreamRecord } from "../../shared/types";
+import { escapeHtml, formatDuration, formatMetricMs, previewData, shortPath } from "../core/format";
 import { ensureStreamMetrics } from "./stream-metrics";
 import {
   anomalyKindLabel,
@@ -17,8 +17,8 @@ import {
   specWarningKindLabel,
   specWarningMessage,
 } from "./stream-anomalies";
-import { state } from "./state";
-import { closeAppDialog, openAppDialog } from "./ui-chrome";
+import { state } from "../core/state";
+import { closeAppDialog, openAppDialog } from "../core/ui-chrome";
 
 export type DialogHooks = {
   renderList: () => void;

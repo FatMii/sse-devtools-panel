@@ -1,6 +1,6 @@
-import { t } from "../shared/i18n";
-import type { StreamRecord } from "../shared/types";
-import { elEmpty, elList, elStreamsCount } from "./dom";
+import { t } from "../../shared/i18n";
+import type { StreamRecord } from "../../shared/types";
+import { elEmpty, elList, elStreamsCount } from "../core/dom";
 import {
   closeReasonLabel,
   escapeHtml,
@@ -8,9 +8,9 @@ import {
   shortPath,
   streamStatusShort,
   transportLabel,
-} from "./format";
-import { getStreamSpecWarnings, scanStreamAnomalies } from "./stream-anomalies";
-import { state } from "./state";
+} from "../core/format";
+import { getStreamSpecWarnings, scanStreamAnomalies } from "../features/stream-anomalies";
+import { state } from "../core/state";
 
 let listRenderScheduled = false;
 

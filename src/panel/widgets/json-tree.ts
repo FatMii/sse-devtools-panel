@@ -1,4 +1,4 @@
-import { compileTextFilter } from "../shared/text-filter";
+import { compileTextFilter } from "../../shared/text-filter";
 
 /**
  * Build an expandable JSON tree.

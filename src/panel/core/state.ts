@@ -1,5 +1,5 @@
-import type { ParsedSseEvent } from "../shared/sse-parser";
-import type { StreamRecord, StreamTransport } from "../shared/types";
+import type { ParsedSseEvent } from "../../shared/sse-parser";
+import type { StreamRecord, StreamTransport } from "../../shared/types";
 
 export type StreamParser = {
   push(chunk: string): ParsedSseEvent[];
