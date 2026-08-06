@@ -247,6 +247,12 @@ button.is-paused {
   background: var(--surface-hover);
 }
 
+.menu-separator {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--stroke);
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

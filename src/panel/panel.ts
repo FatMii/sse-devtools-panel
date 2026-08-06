@@ -1532,7 +1532,10 @@ function renderList(): void {
     .sort((a, b) => a.startedAt - b.startedAt);
   elEmpty.classList.toggle("hidden", items.length > 0);
   if (elStreamsCount) {
-    elStreamsCount.textContent = t("streamsCount", [String(items.length), String(streams.size)]);
+    const filtered = Boolean(urlFilter) || streamsTransportFilter !== "all";
+    elStreamsCount.textContent = filtered
+      ? t("streamsCountFiltered", [String(items.length), String(streams.size)])
+      : t("streamsCount", String(streams.size));
   }
   if (items.length === 0 && streams.size > 0 && (urlFilter || streamsTransportFilter !== "all")) {
     elEmpty.textContent = t("noStreamsMatchFilter");

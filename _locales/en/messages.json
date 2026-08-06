@@ -871,10 +871,16 @@
     }
   },
   "streamsCount": {
+    "message": "$TOTAL$",
+    "placeholders": {
+      "total": { "content": "$1", "example": "3" }
+    }
+  },
+  "streamsCountFiltered": {
     "message": "$VISIBLE$ / $TOTAL$",
     "placeholders": {
-      "visible": { "content": "$1", "example": "3" },
-      "total": { "content": "$2", "example": "3" }
+      "visible": { "content": "$1", "example": "2" },
+      "total": { "content": "$2", "example": "10" }
     }
   },
   "eventsFilterHint": {
