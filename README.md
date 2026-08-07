@@ -190,58 +190,57 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 
 ## ⏱ Timeline
 
-- **到达瀑布**：每个 event 相对时间轴的位置
-- **间隔直方图**：chunk gap 分布
-- **≥250ms** 大间隔高亮，可跳回 Events 对应行
-- **重连**标记（菱形等）
+用时间轴看这条流「什么时候到、中间卡了多久」：
+
+- **到达时间线** — 每个事件按到达时刻排在轴上；点击可跳到 Events 对应行
+- **卡顿高亮** — 与上一条间隔 ≥250ms 的事件标红，方便找卡顿点
+- **间隔分布** — 相邻事件等待时长的直方图，长停顿一眼可见
+- **重连标记** — EventSource 重连会出现在时间轴上，并列出重连次数与 Last-Event-ID
 
 <p align="center">
-  <img width="1200" alt="Timeline Tab（待补图）" src="docs/assets/screenshots/tab-timeline.png">
+  <img width="1200" alt="Timeline Tab" src="docs/assets/screenshots/tab-timeline.png">
 </p>
 
-> 📌 占位：`docs/assets/screenshots/tab-timeline.png`
-
-<a name="raw"></a>
 
 ## 📄 Raw
 
-- 流原文（按解析后的事件拼回）
-- **一键复制**，方便贴 Issue / 做 fixture
+查看这条流的原文，方便和 Events / 对话等视图对照：
+
+- 展示按事件拼回的完整原文
+- 支持一键复制
 
 <a name="分析与工具栏"></a>
 
 ## 🛠 分析与工具栏
 
-| 能力               | 说明                                                               |
-| ------------------ | ------------------------------------------------------------------ |
-| **暂停 / 继续 UI** | 停界面刷新，**不停捕获**；暂停时用 play 图标，继续后补刷列表与详情 |
-| **Stats**          | TTFT、时长、平均 / 最大 gap、events·s 等                           |
-| **Anomalies**      | 异常扫描（空 data、异常间隔等启发式）                              |
-| **Spec**           | SSE 规范告警（字段 / 换行 / BOM 等）                               |
-| **Search All**     | 跨 Stream 全局搜索                                                 |
-| **Clear**          | 清空当前会话捕获                                                   |
-| **Settings**       | 选项页入口（语言等）                                               |
+| 能力            | 说明                                                         |
+| --------------- | ------------------------------------------------------------ |
+| **暂停 / 继续** | 只暂停界面刷新，后台仍继续捕获；继续后会补上最新列表与详情   |
+| **Stats**       | 首包延迟、总时长、平均 / 最大间隔、每秒事件数等              |
+| **Anomalies**   | 扫描空数据、异常间隔等可疑情况                               |
+| **Spec**        | 对照 SSE 规范提示字段、换行、BOM 等问题                      |
+| **Search All**  | 跨多条流全局搜索                                             |
+| **Clear**       | 清空当前会话已捕获的流                                       |
+| **Settings**    | 打开选项页（语言等）                                         |
 
 <p align="center">
-  <img width="1200" alt="Stats / Anomalies（待补图）" src="docs/assets/screenshots/dialog-stats.png">
+  <img width="1200" alt="Stats" src="docs/assets/screenshots/dialog-stats.png">
 </p>
-
-> 📌 占位：`docs/assets/screenshots/dialog-stats.png`
 
 <a name="导入--导出--归档"></a>
 
 ## 💾 导入 / 导出 / 归档
 
-- **导出** — JSON（`eventstream-stream-v1`）· CSV · `.sse` Fixture（方便 Mock / 单测）
-- **导入** — 回放本地 JSON，无需再打一次线上接口
-- **Save / Archives** — IndexedDB 本地归档，之后再打开翻看
+- **导出** — 可导出 JSON、CSV，或 `.sse` 原文文件
+- **导入** — 导入本地 JSON，在面板里直接回放查看
+- **保存 / 存档** — 把选中的流存到本地，之后再打开翻看
 
 <a name="国际化与设置"></a>
 
 ## 🌐 国际化与设置
 
-- 界面 **中文 / English**
-- 选项页：跟随浏览器，或固定语言
+- 界面支持中文与 English
+- 可在选项页选择：跟随浏览器，或固定某一种语言
 
 ---
 
