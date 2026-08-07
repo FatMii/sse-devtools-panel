@@ -325,7 +325,7 @@ pnpm build
 
 改代码时用 `pnpm dev` 监听构建，扩展管理页点「重新加载」即可。
 
-更完整的协作说明见 [CONTRIBUTING.md](./CONTRIBUTING.md)、[docs/GITHUB_SETUP.md](./docs/GITHUB_SETUP.md)。
+更完整的协作说明见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
 ---
 

@@ -301,7 +301,7 @@ pnpm build
 
 While coding, use `pnpm dev` for watch builds, then click **Reload** on the extensions page.
 
-More collaboration notes: [CONTRIBUTING.md](./CONTRIBUTING.md), [docs/GITHUB_SETUP.md](./docs/GITHUB_SETUP.md).
+More collaboration notes: [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ---
 

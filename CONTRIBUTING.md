@@ -57,8 +57,6 @@ Use the Feature request template. Describe the problem first, then the proposed 
 
 ## Maintainers: go public & branch protection
 
-Full checklist: [docs/GITHUB_SETUP.md](./docs/GITHUB_SETUP.md).
-
 Keep the repo **Private** until the Chrome Web Store listing is approved and live. Then:
 
 1. Put the store URL into `README.md` / `README.zh-CN.md`.
