@@ -1,5 +1,7 @@
 node_modules/
 dist/
+dist.zip
+*.zip
 .tmp-test/
 .tmp-test-*/
 .tmp-debug/
