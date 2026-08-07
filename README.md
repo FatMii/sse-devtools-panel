@@ -177,18 +177,16 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 - 国内主流 AI 网页与 OpenAI 兼容协议大多能合并（见下方[支持矩阵](#已支持的-ai-web-厂商)）
 
 <p align="center">
-  <img width="1200" alt="对话 正文 / 思考（待补图）" src="docs/assets/screenshots/tab-conversation-content.png">
+  <img width="1200" alt="对话正文" src="docs/assets/screenshots/tab-conversation-content.png">
 </p>
-
 
 <p align="center">
-  <img width="1200" alt="对话 工具 · 网页搜索（待补图）" src="docs/assets/screenshots/tab-conversation-tools.png">
+  <img width="1200" alt="对话思考" src="docs/assets/screenshots/tab-conversation-think.png">
 </p>
 
-> 📌 占位：`docs/assets/screenshots/tab-conversation-tools.png`  
-> 建议：展开后的「网页搜索」卡片（queries + 多条来源）
-
-
+<p align="center">
+  <img width="1200" alt="对话 工具 · 网页搜索" src="docs/assets/screenshots/tab-conversation-tools.png">
+</p>
 
 ## ⏱ Timeline
 
