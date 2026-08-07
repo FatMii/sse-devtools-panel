@@ -250,33 +250,29 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 
 ## 主界面
 
-围绕「多条流 + 单条深挖」设计：侧栏选流，右侧用 Tab 切换 Events / Request / Conversation / Timeline / Raw。
+侧栏选流，右侧用 Tab 切换 Events / Request / Conversation / Timeline / Raw。
 
 <p align="center">
-  <img width="1400" alt="主界面（待补图）" src="docs/assets/screenshots/main-workbench.png">
+  <img width="1400" alt="主界面" src="docs/assets/screenshots/main-workbench.png">
 </p>
 
-> 📌 占位：`docs/assets/screenshots/main-workbench.png`
 
 ## 工具栏与更多菜单
 
-导入、导出、归档、Stats、暂停 UI、清空；「更多」里放 Anomalies / Spec / 全局搜索 / 设置。
+常用操作放在顶栏：导入、导出、存档、Stats、暂停、清空；Anomalies、Spec、全局搜索、设置放在「更多」里。
 
 <p align="center">
-  <img width="1000" alt="工具栏（待补图）" src="docs/assets/screenshots/toolbar.png">
+  <img width="1000" alt="工具栏" src="docs/assets/screenshots/toolbar.png">
 </p>
 
-> 📌 占位：`docs/assets/screenshots/toolbar.png`
 
 ## Demo 页联调
 
-本地 Demo 一键打出 SSE，方便验证扩展是否注入成功。
+本地 Demo 可一键发起 SSE，用来确认扩展是否正常工作。
 
 <p align="center">
-  <img width="1000" alt="Demo 页（待补图）" src="docs/assets/screenshots/demo-page.png">
+  <img width="1000" alt="Demo 页" src="docs/assets/screenshots/demo-page.png">
 </p>
-
-> 📌 占位：`docs/assets/screenshots/demo-page.png`
 
 ---
 
@@ -284,22 +280,22 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 
 # 已支持的 AI Web 厂商
 
-对话视图按协议 Profile 合并。下列为当前已接线的 Web / 兼容形态（有抓包回归测试的优先保证）：
+对话视图会按协议类型合并内容。当前已适配：
 
-| Profile             | 典型站点 / 形态      | 说明                                                 |
-| ------------------- | -------------------- | ---------------------------------------------------- |
-| `openai-compatible` | 各类 OpenAI 兼容 API | `delta.content` / `reasoning_content` / `tool_calls` |
-| `deepseek-web`      | DeepSeek 网页        | JSON-patch 风格思考 + 正文；支持搜索工具             |
-| `doubao-web`        | 豆包网页             | 思考与正文拆分；搜索结果去重                         |
-| `kimi-web`          | Kimi（Connect+JSON） | think / text / search block                          |
-| `qwen-web`          | 通义千问网页         | AgentProxy：`plan_cot` / `deep_think` / 搜索 bar     |
-| `chatglm-web`       | 智谱清言 / ChatGLM   | `think` / `text` / `search` + `search_results`       |
-| `yuanbao-web`       | 腾讯元宝             | `deepSearch` 思考增量 + `searchGuid` 来源            |
-| `anthropic`         | Anthropic 风格 SSE   | content_block 等（基础识别）                         |
-| `generic`           | 未识别               | 仍可看 Events / Timeline / Raw                       |
+| Profile             | 典型站点 / 形态      | 说明                           |
+| ------------------- | -------------------- | ------------------------------ |
+| `openai-compatible` | 各类 OpenAI 兼容 API | 正文 / 思考 / 工具调用         |
+| `deepseek-web`      | DeepSeek 网页        | 思考 + 正文；支持搜索工具      |
+| `doubao-web`        | 豆包网页             | 思考与正文拆分；搜索结果去重   |
+| `kimi-web`          | Kimi                 | 思考 / 正文 / 搜索             |
+| `qwen-web`          | 通义千问网页         | 计划思考 / 深度思考 / 搜索     |
+| `chatglm-web`       | 智谱清言 / ChatGLM   | 思考 / 正文 / 搜索结果         |
+| `yuanbao-web`       | 腾讯元宝             | 深度搜索思考 + 来源            |
+| `anthropic`         | Anthropic 风格 SSE   | 基础识别                       |
+| `generic`           | 未识别               | 仍可看 Events / Timeline / Raw |
 
-> 厂商协议常变。若某站对话视图为空或工具卡对不上，请导出 **Raw / JSON** 开 Issue，并注明 URL。  
-> 未列出的站点：有真实抓包再适配，不主动扫库。
+> 各站协议常变。若对话视图为空或工具卡不对，请导出 Raw 或 JSON 并注明 URL。  
+> 未列出的站点：有真实样本后再适配。
 
 ---
 
@@ -325,11 +321,11 @@ pnpm build
 1. 打开 `chrome://extensions`，开启「开发者模式」
 2. 「加载已解压的扩展程序」→ 选择仓库里的 **`dist/`**
 3. 打开目标站点 → <kbd>F12</kbd> → **SSE DevTools**
-4. **刷新页面**（注入发生在 `document_start`），再触发流式接口
+4. **刷新页面**后再触发流式接口（扩展需在页面加载时生效）
 
 改代码时用 `pnpm dev` 监听构建，扩展管理页点「重新加载」即可。
 
-更完整的协作与分支保护说明见 [CONTRIBUTING.md](./CONTRIBUTING.md)、[docs/GITHUB_SETUP.md](./docs/GITHUB_SETUP.md)。
+更完整的协作说明见 [CONTRIBUTING.md](./CONTRIBUTING.md)、[docs/GITHUB_SETUP.md](./docs/GITHUB_SETUP.md)。
 
 ---
 
@@ -344,7 +340,7 @@ pnpm build && pnpm demo
 1. 浏览器打开 <http://127.0.0.1:8765>
 2. 确认扩展已加载 → 打开 DevTools → **SSE DevTools**
 3. **刷新 Demo 页** → 点击 **Start stream**
-4. 侧栏应出现流；Events / Timeline / Raw 有数据
+4. 侧栏应出现流；Events / Conversation / Timeline / Raw 等 Tab 有数据
 
 ---
 
@@ -353,24 +349,28 @@ pnpm build && pnpm demo
 # 开发
 
 ```bash
-pnpm build        # tsc --noEmit + 打包到 dist/
-pnpm dev          # watch 构建
+pnpm build        # 类型检查 + 打包到 dist/
+pnpm dev          # 监听构建
 pnpm typecheck
 pnpm lint
 pnpm format
-pnpm test-only    # parser / connect / export / spec / timing / request-view / close / ai-merge
+pnpm test-only    # 解析 / 导出 / Spec / 时序 / 对话合并等单测
 ```
 
-| 路径                         | 职责                                                          |
-| ---------------------------- | ------------------------------------------------------------- |
-| `src/content/inject-main.ts` | MAIN world：劫持 fetch / EventSource / XHR                    |
-| `src/content/` + `bridge`    | ISOLATED：转发到扩展                                          |
-| `src/background.ts`          | Service Worker 消息中继                                       |
-| `src/panel/`                 | DevTools 面板 UI（`core` / `views` / `features` / `widgets`） |
-| `src/shared/`                | 解析 · 时序 · Spec · 导出 · AI Profile / Merge                |
-| `src/options/`               | 选项页                                                        |
-| `_locales/`                  | i18n（`en` / `zh_CN`）                                        |
-| `demo/`                      | 本地 SSE Demo 服务                                            |
+| 路径                    | 职责                                           |
+| ----------------------- | ---------------------------------------------- |
+| `src/content/inject/`   | 页面侧捕获：fetch / EventSource / XHR 补丁     |
+| `src/content/inject-main.ts` | 注入入口（加载上述补丁）                  |
+| `src/content/bridge.ts` | 把捕获结果转发到扩展                           |
+| `src/background.ts`     | 扩展后台消息中继                               |
+| `src/devtools/`         | DevTools 面板注册入口                          |
+| `src/panel/`            | 面板 UI（`core` / `views` / `features` / `widgets`） |
+| `src/shared/`           | 解析、时序、Spec、导出等公共逻辑               |
+| `src/shared/ai-merge/`  | 对话合并（各厂商 Profile）                     |
+| `src/options/`          | 选项页                                         |
+| `_locales/`             | 中英文案（`en` / `zh_CN`）                     |
+| `demo/`                 | 本地 Demo 服务                                 |
+| `scripts/`              | 构建与单测脚本                                 |
 
 发 PR 前请跑通：
 
