@@ -72,7 +72,7 @@
     "message": "Request"
   },
   "tabTranscript": {
-    "message": "Transcript"
+    "message": "Conversation"
   },
   "tabRaw": {
     "message": "Raw"
@@ -96,7 +96,7 @@
     "message": "Copy current channel text"
   },
   "transcriptCopied": {
-    "message": "Transcript copied"
+    "message": "Conversation copied"
   },
   "transcriptEmpty": {
     "message": "No AI chat chunks detected in this stream"

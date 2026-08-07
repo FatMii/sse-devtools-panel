@@ -4,11 +4,16 @@
 
 <h1 align="center">SSE DevTools Panel</h1>
 
+<p align="center">
+  <em>SSE / EventSource / NDJSON debugger for Chrome DevTools</em>
+</p>
+
 <p align="center"><a href="./README.en.md">English</a></p>
 
 <p align="center">
-  <strong>Chrome 扩展：在 DevTools 里查看网页的 SSE / 流式接口。</strong><br/>
-  安装后打开 F12 → SSE DevTools，逐条看推送数据，可导出 JSON，页面照常运行。
+  <strong>Chrome 扩展：在 DevTools 里调试网页的 SSE / EventSource / NDJSON 流。</strong><br/>
+  安装后打开 F12 → SSE DevTools：事件列表、对话、时间线与全局搜索，都能在面板里直接看。<br/>
+  适合 AI 对话、通知推送、进度上报等长连接场景。
 </p>
 
 <p align="center">
@@ -21,40 +26,40 @@
   <a href="#"><img alt="Manifest" src="https://img.shields.io/badge/Manifest-V3-informational"></a>
 </p>
 
-<p align="center">
-  <code>v1.0.0</code> · 开发中
-</p>
 
 ---
 
 <p align="center">
   <!-- SCREENSHOT: hero / panel overview -->
-  <img width="1400" alt="面板总览（待补图）" src="docs/assets/screenshots/panel-overview.png">
+  <img width="1400" alt="面板总览" src="docs/assets/screenshots/panel-overview.gif">
 </p>
-
-> 📌 **截图占位** `docs/assets/screenshots/panel-overview.png`  
-> 建议：整页面板（左侧 Streams 列表 + 右侧 Detail，能看到 Events / Transcript / Timeline 等 Tab）
 
 ---
 
 # 目录
 
+- [目录](#目录)
 - [为什么需要它](#为什么需要它)
 - [它是什么 / 不是什么](#它是什么--不是什么)
 - [功能特性](#功能特性)
-  - [流式捕获](#-流式捕获)
-  - [Streams 侧栏](#-streams-侧栏)
-  - [Events](#-events)
-  - [Request](#-request)
-  - [Transcript（AI 合并视图）](#-transcriptai-合并视图)
-  - [Timeline](#-timeline)
-  - [Raw](#-raw)
-  - [分析与工具栏](#-分析与工具栏)
-  - [导入 / 导出 / 归档](#-导入--导出--归档)
-  - [国际化与设置](#-国际化与设置)
+  - [🎣 流式捕获](#-流式捕获)
+  - [📚 Streams 侧栏](#-streams-侧栏)
+  - [📋 Events](#-events)
+  - [📨 Request](#-request)
+  - [🧠 对话（Conversation）](#conversation)
+  - [⏱ Timeline](#-timeline)
+  - [📄 Raw](#-raw)
+  - [🛠 分析与工具栏](#-分析与工具栏)
+  - [💾 导入 / 导出 / 归档](#-导入--导出--归档)
+  - [🌐 国际化与设置](#-国际化与设置)
 - [界面截图](#界面截图)
+  - [主界面](#主界面)
+  - [工具栏与更多菜单](#工具栏与更多菜单)
+  - [Demo 页联调](#demo-页联调)
 - [已支持的 AI Web 厂商](#已支持的-ai-web-厂商)
 - [快速开始](#快速开始)
+    - [前置](#前置)
+    - [安装并加载](#安装并加载)
 - [30 秒 Demo](#30-秒-demo)
 - [开发](#开发)
 - [怎么工作的](#怎么工作的)
@@ -68,9 +73,9 @@
 
 # 为什么需要它
 
-Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://developer.chrome.com/docs/devtools/network/reference#analyze-events-in-a-stream) Tab（与 Headers / Response 同级），可以边流边看事件列表。
+Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://developer.chrome.com/docs/devtools/network/reference#analyze-events-in-a-stream) Tab（与 Headers / Response 同级），可以边接收流数据边看事件列表。
 
-但对现在的 AI / 业务流往往不够用——它们很少是「原生 EventSource 教科书样例」：
+但对很多 AI / 业务流不够用。它们通常不是单纯的 EventSource，常见问题是：
 
 - 多用 **`fetch` + 自定义 SSE / NDJSON / Connect+JSON**，Network 里经常只剩难读的 Response 碎片，或 EventStream Tab 空白 / 帮不上忙
 - **看不到流内节奏**（TTFT、chunk gap、卡顿分布、重连标记）
@@ -79,12 +84,10 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 | 场景                                          | Chrome Network             | SSE DevTools Panel                        |
 | --------------------------------------------- | -------------------------- | ----------------------------------------- |
 | 标准 SSE（EventSource / 部分 fetch）          | 请求详情有 EventStream Tab | 同样可看，并带过滤、JSON 树、导出         |
-| AI / 私有协议（NDJSON、Connect+JSON、厂商帧） | 多半是原文碎片，难拼成对话 | Profile 识别 + **Transcript** 分通道合并  |
+| AI / 私有协议（NDJSON、Connect+JSON、厂商帧） | 多半是原文碎片，难拼成对话 | Profile 识别 + **对话**分通道合并  |
 | 流内时序与卡顿                                | 基本只有整请求耗时         | Timeline + Stats（TTFT / gap / events·s） |
 | 规范与异常                                    | 无针对性扫描               | SSE Spec 告警 · Anomalies                 |
 | 网页搜索等工具结果                            | 埋在 raw 里                | 归一成 `web_search` 卡片（查询 + 来源）   |
-
-适合：**AI 对话流**、通知推送、进度上报，以及任何 `text/event-stream` / NDJSON / Connect+JSON 长连接。
 
 ---
 
@@ -95,8 +98,7 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 **SSE DevTools Panel 是**
 
 - 独立的 Chromium **DevTools 面板**（F12 → SSE DevTools）
-- 页面最早阶段（`document_start`）注入脚本，hook `fetch` / `EventSource` / `XHR`
-- 面向开发者的流式调试工作台：列表 · 时序 · 请求 · AI Transcript · 导出回放
+- 面向开发者的流式调试工作台：列表 · 时序 · 请求 · 对话 · 导出回放
 
 **SSE DevTools Panel 不是**
 
@@ -113,63 +115,56 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 
 ## 🎣 流式捕获
 
-- **传输** — `fetch` · `EventSource` · `XHR`
-- **格式** — SSE（`text/event-stream`）· NDJSON · Connect+JSON（如 Kimi）
-- **复制流** — 优先 `Response.clone()` 复制一份流给面板读，失败再 hook `getReader`；网页 JS 仍读原流
-- **生命周期** — 记录 `abort` / `error` / 关闭原因 · EventSource 重连 · `Last-Event-ID`
-- **延迟 announce** — 仅在响应 `Content-Type` 确认为流式后再登记，减少埋点 / 普通 JSON 误入列表
+- **传输** — 支持 `fetch`、`EventSource`、`XHR` 发起的流
+- **格式** — SSE（`text/event-stream`）、NDJSON、Connect+JSON
+- **独立查看** — 面板可读流内容，页面原有逻辑不受影响
+- **生命周期** — 记录中止、错误、关闭原因，以及 EventSource 重连与 `Last-Event-ID`
+- **减少误报** — 确认响应是流式内容后，才出现在侧栏列表，降低普通 JSON / 埋点请求混入
 
 <a name="streams-侧栏"></a>
 
 ## 📚 Streams 侧栏
 
-- 实时列出本页捕获到的流，显示方法、URL、状态、事件数
-- **URL 过滤** + **传输类型**筛选（All / Fetch / EventSource / XHR）
-- 无过滤时显示总数；有过滤时显示「可见 / 总数」
-- **拖拽调宽**侧栏（约 180–640px）
+- 实时列出本页捕获到的流：方法、URL、状态、事件数
+- 支持按 URL 搜索，并按传输类型筛选（全部类型 / Fetch / EventSource / XHR）
+- 过滤后能看清当前匹配条数与总条数
+- 侧栏宽度可拖拽调整
 
 <p align="center">
-  <img width="480" alt="Streams 侧栏（待补图）" src="docs/assets/screenshots/streams-sidebar.png">
+  <img width="480" alt="Streams 侧栏" src="docs/assets/screenshots/streams-sidebar.png">
 </p>
 
-> 📌 占位：`docs/assets/screenshots/streams-sidebar.png`
-
-<a name="events"></a>
 
 ## 📋 Events
 
-流事件表：序号 · 到达时间 · event 名 · data 摘要。
+按条查看流事件：序号、到达时间、事件名、数据摘要。
 
-- 行内展开 **可折叠 JSON 树**
-- **正则 / 文本过滤**（带匹配提示）
-- **列宽拖拽**
-- 与 Timeline / Raw 联动定位（大间隔跳转等）
+- 点击行可展开 JSON，支持折叠浏览
+- 支持文本或正则过滤事件 / 数据
+- 列宽可拖拽调整
+- 可与 Timeline、Raw 联动跳转定位
 
 <p align="center">
   <img width="1200" alt="Events Tab（待补图）" src="docs/assets/screenshots/tab-events.png">
 </p>
 
-> 📌 占位：`docs/assets/screenshots/tab-events.png`
-
-<a name="request"></a>
 
 ## 📨 Request
 
-仿 Network 的请求侧视图：
+查看这条流对应的请求信息（类似 Network）：
 
-- Headers / Payload
-- 敏感头脱敏
-- 与流元信息（method、URL、tags）同屏展示
+- 请求头与请求体
+- 敏感请求头自动脱敏
+- 与方法、URL、状态等基础信息同屏查看
 
 <p align="center">
   <img width="1200" alt="Request Tab（待补图）" src="docs/assets/screenshots/tab-request.png">
 </p>
 
-> 📌 占位：`docs/assets/screenshots/tab-request.png`
 
-<a name="transcriptai-合并视图"></a>
+<a name="conversation"></a>
 
-## 🧠 Transcript（AI 合并视图）
+## 🧠 对话（Conversation）
 
 把「一坨 SSE」收成可读对话稿，按通道拆分：
 
@@ -185,13 +180,13 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 - 国内主流 AI Web + OpenAI 兼容协议均可尝试合并（见下方[支持矩阵](#已支持的-ai-web-厂商)）
 
 <p align="center">
-  <img width="1200" alt="Transcript 正文 / 思考（待补图）" src="docs/assets/screenshots/tab-transcript-content.png">
+  <img width="1200" alt="对话 正文 / 思考（待补图）" src="docs/assets/screenshots/tab-transcript-content.png">
 </p>
 
 > 📌 占位：`docs/assets/screenshots/tab-transcript-content.png`
 
 <p align="center">
-  <img width="1200" alt="Transcript 工具 · 网页搜索（待补图）" src="docs/assets/screenshots/tab-transcript-tools.png">
+  <img width="1200" alt="对话 工具 · 网页搜索（待补图）" src="docs/assets/screenshots/tab-transcript-tools.png">
 </p>
 
 > 📌 占位：`docs/assets/screenshots/tab-transcript-tools.png`  
@@ -262,7 +257,7 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 
 ## 主界面
 
-围绕「多条流 + 单条深挖」设计：侧栏选流，右侧用 Tab 切换 Events / Request / Transcript / Timeline / Raw。
+围绕「多条流 + 单条深挖」设计：侧栏选流，右侧用 Tab 切换 Events / Request / Conversation / Timeline / Raw。
 
 <p align="center">
   <img width="1400" alt="主界面（待补图）" src="docs/assets/screenshots/main-workbench.png">
@@ -296,7 +291,7 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 
 # 已支持的 AI Web 厂商
 
-Transcript 按协议 Profile 合并。下列为当前已接线的 Web / 兼容形态（有抓包回归测试的优先保证）：
+对话视图按协议 Profile 合并。下列为当前已接线的 Web / 兼容形态（有抓包回归测试的优先保证）：
 
 | Profile             | 典型站点 / 形态      | 说明                                                 |
 | ------------------- | -------------------- | ---------------------------------------------------- |
@@ -310,7 +305,7 @@ Transcript 按协议 Profile 合并。下列为当前已接线的 Web / 兼容�
 | `anthropic`         | Anthropic 风格 SSE   | content_block 等（基础识别）                         |
 | `generic`           | 未识别               | 仍可看 Events / Timeline / Raw                       |
 
-> 厂商协议常变。若某站 Transcript 为空或工具卡对不上，请导出 **Raw / JSON** 开 Issue，并注明 URL。  
+> 厂商协议常变。若某站对话视图为空或工具卡对不上，请导出 **Raw / JSON** 开 Issue，并注明 URL。  
 > 未列出的站点：有真实抓包再适配，不主动扫库。
 
 ---
@@ -417,7 +412,7 @@ patch fetch / ES / XHR
 - 只面向 **Chromium** DevTools（不做 Firefox / Safari 面板）
 - 抓不到页面 **Service Worker** 内发起的 fetch
 - 更深的 Stream API hook（`pipeThrough` / `pipeTo` 等）尚未覆盖——有漏抓请带复现开 Issue
-- AI Transcript 依赖各站私有协议，升级后可能需重新适配
+- 对话视图依赖各站私有协议，升级后可能需重新适配
 - 当前开发版需本地 `pnpm build` 后加载 `dist/`
 
 ---
@@ -428,7 +423,7 @@ patch fetch / ES / XHR
 
 Issue / PR 都欢迎，请先读 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
-写清：复现步骤、Chrome 版本、目标 URL、能否用本地 Demo 打出；涉及 Transcript 时请附 **Raw 或导出 JSON**（可脱敏）。
+写清：复现步骤、Chrome 版本、目标 URL、能否用本地 Demo 打出；涉及对话视图时请附 **Raw 或导出 JSON**（可脱敏）。
 
 查看仓库 Issue / Discussions 了解正在推进的方向。厂商适配请「有抓包再开」，避免无样本空合。
 

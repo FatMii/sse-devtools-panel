@@ -72,7 +72,7 @@
     "message": "请求"
   },
   "tabTranscript": {
-    "message": "对话摘要"
+    "message": "对话"
   },
   "tabRaw": {
     "message": "原始流"
@@ -96,7 +96,7 @@
     "message": "复制当前通道文本"
   },
   "transcriptCopied": {
-    "message": "已复制对话摘要"
+    "message": "已复制对话"
   },
   "transcriptEmpty": {
     "message": "未检测到可合并的 AI 对话流"

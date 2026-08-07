@@ -8,7 +8,7 @@
 | `streams-sidebar.png`        | 左侧 Streams 列表 + 过滤                     |
 | `tab-events.png`             | Events 表 + JSON 树展开                      |
 | `tab-request.png`            | Request Headers / Payload                    |
-| `tab-transcript-content.png` | Transcript 正文 / 思考 Tab                   |
+| `tab-transcript-content.png` | 对话正文 / 思考 Tab                   |
 | `tab-transcript-tools.png`   | 网页搜索工具卡（queries + 来源）             |
 | `tab-timeline.png`           | Timeline 瀑布 + 直方图                       |
 | `dialog-stats.png`           | Stats 对话框                                 |
