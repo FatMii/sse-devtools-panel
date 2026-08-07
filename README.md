@@ -57,8 +57,8 @@
   - [Demo 页联调](#demo-页联调)
 - [已支持的 AI Web 厂商](#已支持的-ai-web-厂商)
 - [快速开始](#快速开始)
-    - [前置](#前置)
-    - [安装并加载](#安装并加载)
+  - [前置](#前置)
+  - [安装并加载](#安装并加载)
 - [30 秒 Demo](#30-秒-demo)
 - [开发](#开发)
 - [限制](#限制)
@@ -200,7 +200,6 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
   <img width="1200" alt="Timeline Tab" src="docs/assets/screenshots/tab-timeline.png">
 </p>
 
-
 ## 📄 Raw
 
 查看这条流的原文，方便和 Events / 对话等视图对照：
@@ -212,15 +211,15 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 
 ## 🛠 分析与工具栏
 
-| 能力            | 说明                                                         |
-| --------------- | ------------------------------------------------------------ |
-| **暂停 / 继续** | 只暂停界面刷新，后台仍继续捕获；继续后会补上最新列表与详情   |
-| **Stats**       | 首包延迟、总时长、平均 / 最大间隔、每秒事件数等              |
-| **Anomalies**   | 扫描空数据、异常间隔等可疑情况                               |
-| **Spec**        | 对照 SSE 规范提示字段、换行、BOM 等问题                      |
-| **Search All**  | 跨多条流全局搜索                                             |
-| **Clear**       | 清空当前会话已捕获的流                                       |
-| **Settings**    | 打开选项页（语言等）                                         |
+| 能力            | 说明                                                       |
+| --------------- | ---------------------------------------------------------- |
+| **暂停 / 继续** | 只暂停界面刷新，后台仍继续捕获；继续后会补上最新列表与详情 |
+| **Stats**       | 首包延迟、总时长、平均 / 最大间隔、每秒事件数等            |
+| **Anomalies**   | 扫描空数据、异常间隔等可疑情况                             |
+| **Spec**        | 对照 SSE 规范提示字段、换行、BOM 等问题                    |
+| **Search All**  | 跨多条流全局搜索                                           |
+| **Clear**       | 清空当前会话已捕获的流                                     |
+| **Settings**    | 打开选项页（语言等）                                       |
 
 <p align="center">
   <img width="1200" alt="Stats" src="docs/assets/screenshots/dialog-stats.png">
@@ -255,7 +254,6 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
   <img width="1400" alt="主界面" src="docs/assets/screenshots/main-workbench.png">
 </p>
 
-
 ## 工具栏与更多菜单
 
 常用操作放在顶栏：导入、导出、存档、Stats、暂停、清空；Anomalies、Spec、全局搜索、设置放在「更多」里。
@@ -263,7 +261,6 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 <p align="center">
   <img width="1000" alt="工具栏" src="docs/assets/screenshots/toolbar.png">
 </p>
-
 
 ## Demo 页联调
 
@@ -356,20 +353,20 @@ pnpm format
 pnpm test-only    # 解析 / 导出 / Spec / 时序 / 对话合并等单测
 ```
 
-| 路径                    | 职责                                           |
-| ----------------------- | ---------------------------------------------- |
-| `src/content/inject/`   | 页面侧捕获：fetch / EventSource / XHR 补丁     |
-| `src/content/inject-main.ts` | 注入入口（加载上述补丁）                  |
-| `src/content/bridge.ts` | 把捕获结果转发到扩展                           |
-| `src/background.ts`     | 扩展后台消息中继                               |
-| `src/devtools/`         | DevTools 面板注册入口                          |
-| `src/panel/`            | 面板 UI（`core` / `views` / `features` / `widgets`） |
-| `src/shared/`           | 解析、时序、Spec、导出等公共逻辑               |
-| `src/shared/ai-merge/`  | 对话合并（各厂商 Profile）                     |
-| `src/options/`          | 选项页                                         |
-| `_locales/`             | 中英文案（`en` / `zh_CN`）                     |
-| `demo/`                 | 本地 Demo 服务                                 |
-| `scripts/`              | 构建与单测脚本                                 |
+| 路径                         | 职责                                                 |
+| ---------------------------- | ---------------------------------------------------- |
+| `src/content/inject/`        | 页面侧捕获：fetch / EventSource / XHR 补丁           |
+| `src/content/inject-main.ts` | 注入入口（加载上述补丁）                             |
+| `src/content/bridge.ts`      | 把捕获结果转发到扩展                                 |
+| `src/background.ts`          | 扩展后台消息中继                                     |
+| `src/devtools/`              | DevTools 面板注册入口                                |
+| `src/panel/`                 | 面板 UI（`core` / `views` / `features` / `widgets`） |
+| `src/shared/`                | 解析、时序、Spec、导出等公共逻辑                     |
+| `src/shared/ai-merge/`       | 对话合并（各厂商 Profile）                           |
+| `src/options/`               | 选项页                                               |
+| `_locales/`                  | 中英文案（`en` / `zh_CN`）                           |
+| `demo/`                      | 本地 Demo 服务                                       |
+| `scripts/`                   | 构建与单测脚本                                       |
 
 发 PR 前请跑通：
 
@@ -410,4 +407,3 @@ pnpm format:check && pnpm lint && pnpm test-only && pnpm typecheck && pnpm build
 本项目采用 **[MIT](./LICENSE)** 协议开源。
 
 ---
-
