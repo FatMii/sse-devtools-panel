@@ -45,7 +45,7 @@
   - [📚 Streams 侧栏](#-streams-侧栏)
   - [📋 Events](#-events)
   - [📨 Request](#-request)
-  - [🧠 对话（Conversation）](#conversation)
+  - [🧠 对话（Conversation）](#-对话conversation)
   - [⏱ Timeline](#-timeline)
   - [📄 Raw](#-raw)
   - [🛠 分析与工具栏](#-分析与工具栏)
@@ -57,8 +57,8 @@
   - [Demo 页联调](#demo-页联调)
 - [已支持的 AI Web 厂商](#已支持的-ai-web-厂商)
 - [快速开始](#快速开始)
-  - [前置](#前置)
-  - [安装并加载](#安装并加载)
+    - [前置](#前置)
+    - [安装并加载](#安装并加载)
 - [30 秒 Demo](#30-秒-demo)
 - [开发](#开发)
 - [怎么工作的](#怎么工作的)
@@ -162,24 +162,24 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 
 ## 🧠 对话（Conversation）
 
-把「一坨 SSE」收成可读对话稿，按通道拆分：
+把流里的碎片合成可读对话，按通道分开看：
 
-| 通道       | 含义                                                     |
-| ---------- | -------------------------------------------------------- |
-| **正文**   | 最终回答                                                 |
-| **思考**   | reasoning / think / deepSearch 等                        |
-| **工具**   | 函数调用；网页搜索归一为 `web_search`（查询 + 来源卡片） |
-| **元数据** | finishReason、usage、model、profile / vendor             |
+| 通道       | 能看到什么                                |
+| ---------- | ----------------------------------------- |
+| **正文**   | 最终回答                                  |
+| **思考**   | 思考过程 / 深度搜索过程                   |
+| **工具**   | 函数调用；网页搜索会整理成查询 + 来源卡片 |
+| **元数据** | 结束原因、用量、模型、协议类型等          |
 
-- 自动 **Profile 识别**（按 payload 形状 + 主机提示）
-- 工具卡：查询芯片 · 结果列表（标题 / URL / 摘要）；可折叠
-- 国内主流 AI Web + OpenAI 兼容协议均可尝试合并（见下方[支持矩阵](#已支持的-ai-web-厂商)）
+- 顶部可看到当前识别到的协议与站点提示
+- 工具卡可折叠；网页搜索展示查询芯片与结果列表（标题 / URL / 摘要）
+- 当前通道内容可一键复制
+- 国内主流 AI 网页与 OpenAI 兼容协议大多能合并（见下方[支持矩阵](#已支持的-ai-web-厂商)）
 
 <p align="center">
   <img width="1200" alt="对话 正文 / 思考（待补图）" src="docs/assets/screenshots/tab-conversation-content.png">
 </p>
 
-> 📌 占位：`docs/assets/screenshots/tab-conversation-content.png`
 
 <p align="center">
   <img width="1200" alt="对话 工具 · 网页搜索（待补图）" src="docs/assets/screenshots/tab-conversation-tools.png">
@@ -188,7 +188,7 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 > 📌 占位：`docs/assets/screenshots/tab-conversation-tools.png`  
 > 建议：展开后的「网页搜索」卡片（queries + 多条来源）
 
-<a name="timeline"></a>
+
 
 ## ⏱ Timeline
 

@@ -81,7 +81,7 @@
     "message": "Content"
   },
   "conversationChannelReasoning": {
-    "message": "Reasoning"
+    "message": "Thinking"
   },
   "conversationChannelTools": {
     "message": "Tools"
@@ -126,7 +126,7 @@
     "message": "This profile does not parse tool calls yet. Switch to Events and search for tool / function / plugin."
   },
   "conversationReasoningFieldsLabel": {
-    "message": "reasoning fields"
+    "message": "thinking fields"
   },
   "conversationToolsQueries": {
     "message": "Queries"
