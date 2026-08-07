@@ -1,38 +1,50 @@
 # GitHub repository setup (maintainers)
 
-Checklist after merging the OSS scaffolding (CI, LICENSE, templates).
+Do these **after** the Chrome Web Store listing is approved and live.  
+Until then, keep the repo **Private**.
 
-## 1. Make the repository public
+## Day-of-public checklist
 
-When you are ready for outside contributors:
+### 1. Paste the store URL into README
+
+In `README.md` and `README.zh-CN.md`, replace the “under review” note with the live Chrome Web Store link (and badges if you want).
+
+### 2. Make the repository public
 
 1. Open https://github.com/FatMii/sse-devtools-panel/settings
 2. Scroll to **Danger Zone**
 3. **Change repository visibility** → **Public**
 
-Until this is Public, strangers cannot browse the code or open normal community PRs from forks.
+### 3. Protect `main` (requires Public, or GitHub Pro)
 
-## 2. Require CI on `main`
+Branch protection is **not available** on a private repo with a free personal account (API returns 403). Enable it right after going Public:
 
-1. Push / merge so `.github/workflows/ci.yml` has run at least once on `main` (Actions tab should show a green **CI** run).
+1. Confirm Actions has a green **CI** run on `main` (status check name: **`lint / test / typecheck / build`**).
 2. Open https://github.com/FatMii/sse-devtools-panel/settings/branches
-3. **Add branch protection rule** (or a Ruleset) for `main`:
+3. Add a branch protection rule / ruleset for `main`:
    - Require a pull request before merging
    - Require status checks to pass before merging
-   - Status check to require: **`lint / test / typecheck / build`**
+   - Required check: **`lint / test / typecheck / build`**
 4. Save.
 
-After this, a red CI blocks merge (unless an admin bypasses the rule).
+### 4. Verify About box
 
-## 3. Verify About box
+| Field       | Expected                                                                                                                                                   |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Description | Chrome extension DevTools panel for debugging SSE / EventSource / NDJSON streaming responses. Inspect, filter, search, and export stream events.           |
+| Homepage    | Chrome Web Store listing URL (set this when live)                                                                                                          |
+| Topics      | `chrome-extension`, `devtools`, `sse`, `eventsource`, `ndjson`, `browser-extension`, `debugging`, `developer-tools`, `event-stream`, `openai`, `streaming` |
 
-Confirm description and topics (already set via `gh` if that succeeded):
-
-- Description: Chrome DevTools panel for debugging SSE / NDJSON / Connect+JSON streaming responses
-- Topics: `chrome-extension`, `devtools`, `sse`, `eventsource`, `ndjson`
-
-## 4. Optional next steps
+### 5. Optional follow-ups
 
 - Create a GitHub Release when tagging versions
 - Add `CODE_OF_CONDUCT.md` / `SECURITY.md` when the community grows
 - Keep internal planning notes out of the default public docs tree
+
+## Already done (do not redo)
+
+- CI workflow (`.github/workflows/ci.yml`)
+- MIT `LICENSE`, issue / PR templates
+- English default `README.md` + `README.zh-CN.md`
+- `PRIVACY.md` for store privacy-policy URL
+- Store screenshot assets under `docs/assets/chrome-web-store/`

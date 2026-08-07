@@ -55,14 +55,13 @@ Use the Feature request template. Describe the problem first, then the proposed 
 - Current tests cover shared parsers / export / spec / timing / request-view / close / AI merge helpers. They do **not** fully cover the DevTools panel UI or every inject edge case.
 - AI Conversation view is implemented for several domestic Web profiles (see README vendor matrix). Deeper ReadableStream hooks (`pipeThrough` / `pipeTo`) remain out of scope until we have a confirmed miss-capture case.
 
-## Maintainers: publish & branch protection
+## Maintainers: go public & branch protection
 
-Step-by-step checklist: [docs/GITHUB_SETUP.md](./docs/GITHUB_SETUP.md).
+Full checklist: [docs/GITHUB_SETUP.md](./docs/GITHUB_SETUP.md).
 
-Summary:
+Keep the repo **Private** until the Chrome Web Store listing is approved and live. Then:
 
-1. **Make the repo public** (when ready) — Settings → Danger Zone → Change visibility → Public.
-2. Protect `main` — require PRs + status check **`lint / test / typecheck / build`** from `.github/workflows/ci.yml`.
-3. Confirm About description / topics.
-
-After CI has run at least once on `main`, the status check name will appear in the branch protection picker.
+1. Put the store URL into `README.md` / `README.zh-CN.md`.
+2. Change visibility to **Public**.
+3. Protect `main` — require PRs + status check **`lint / test / typecheck / build`** (needs Public or GitHub Pro).
+4. Set About homepage to the store URL; confirm description / topics.

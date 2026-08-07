@@ -11,6 +11,12 @@
 <p align="center"><a href="./README.md">English</a></p>
 
 <p align="center">
+  <strong>Chrome 网上应用店：</strong>已提交上架，<em>审核中</em>。<br/>
+  本仓库为官方项目，请勿用其他开发者账号重复上架同一扩展。<br/>
+  审核通过后会在此补充商店链接。
+</p>
+
+<p align="center">
   <strong>Chrome 扩展：在 DevTools 里调试网页的 SSE / EventSource / NDJSON 流。</strong><br/>
   安装后打开 F12 → SSE DevTools：事件列表、对话、时间线与全局搜索，都能在面板里直接看。<br/>
   适合 AI 对话、通知推送、进度上报等长连接场景。
@@ -382,7 +388,7 @@ pnpm format:check && pnpm lint && pnpm test-only && pnpm typecheck && pnpm build
 - 抓不到页面 Service Worker 里发起的请求
 - 部分更深层的流式 API 用法可能漏抓；若遇到请带复现步骤开 Issue
 - 对话视图依赖各站私有协议，站点改版后可能需要重新适配
-- 当前需本地 `pnpm build` 后，在扩展管理页加载 `dist/` 使用
+- 在 Chrome 网上应用店上架生效前，需本地 `pnpm build` 后，在扩展管理页加载 `dist/` 使用
 
 ---
 

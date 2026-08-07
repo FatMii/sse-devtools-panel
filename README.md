@@ -11,6 +11,12 @@
 <p align="center"><a href="./README.zh-CN.md">中文</a></p>
 
 <p align="center">
+  <strong>Chrome Web Store:</strong> listing submitted and <em>under review</em>.<br/>
+  This is the official project — please do not republish the same extension under another developer account.<br/>
+  Store link will be added here when the listing is live.
+</p>
+
+<p align="center">
   <strong>A Chrome extension to debug SSE / EventSource / NDJSON streams in DevTools.</strong><br/>
   After install, open F12 → SSE DevTools to inspect events, conversation, timeline, and global search.<br/>
   Built for long-lived streams such as AI chats, notifications, and progress updates.
@@ -352,7 +358,7 @@ pnpm format:check && pnpm lint && pnpm test-only && pnpm typecheck && pnpm build
 - Requests started inside a page Service Worker are not captured
 - Some deeper streaming API patterns may be missed; open an Issue with repro steps if you hit one
 - Conversation depends on each site’s private protocol and may need updates after site changes
-- For now, run `pnpm build` locally and load `dist/` from the extensions page
+- Until the Chrome Web Store listing is live, run `pnpm build` locally and load `dist/` from the extensions page
 
 ---
 
