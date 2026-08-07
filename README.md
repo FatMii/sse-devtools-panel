@@ -61,7 +61,6 @@
     - [安装并加载](#安装并加载)
 - [30 秒 Demo](#30-秒-demo)
 - [开发](#开发)
-- [怎么工作的](#怎么工作的)
 - [限制](#限制)
 - [参与贡献](#参与贡献)
 - [开源协议](#开源协议)
@@ -143,7 +142,7 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 - 可与 Timeline、Raw 联动跳转定位
 
 <p align="center">
-  <img width="1200" alt="Events Tab（待补图）" src="docs/assets/screenshots/tab-events.png">
+  <img width="1200" alt="Events Tab" src="docs/assets/screenshots/tab-events.png">
 </p>
 
 ## 📨 Request
@@ -155,7 +154,7 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 - 与方法、URL、状态等基础信息同屏查看
 
 <p align="center">
-  <img width="1200" alt="Request Tab（待补图）" src="docs/assets/screenshots/tab-request.png">
+  <img width="1200" alt="Request Tab" src="docs/assets/screenshots/tab-request.png">
 </p>
 
 <a name="conversation"></a>
@@ -380,33 +379,15 @@ pnpm format:check && pnpm lint && pnpm test-only && pnpm typecheck && pnpm build
 
 ---
 
-<a name="怎么工作的"></a>
-
-# 怎么工作的
-
-```text
-Page (MAIN)                    Extension                       DevTools
-─────────────────────────      ─────────────────────           ──────────────
-patch fetch / ES / XHR
-        │
-   clone() + pump  ──postMessage──► bridge ──► SW ──► SSE DevTools Panel
-   (or observe getReader)               │
-        │                               └─ 页面自己的 body 消费不受影响
-        ▼
-   页面继续读原 Response
-```
-
----
-
 <a name="限制"></a>
 
 # 限制
 
-- 只面向 **Chromium** DevTools（不做 Firefox / Safari 面板）
-- 抓不到页面 **Service Worker** 内发起的 fetch
-- 更深的 Stream API hook（`pipeThrough` / `pipeTo` 等）尚未覆盖——有漏抓请带复现开 Issue
-- 对话视图依赖各站私有协议，升级后可能需重新适配
-- 当前开发版需本地 `pnpm build` 后加载 `dist/`
+- 仅支持 Chromium 系浏览器的 DevTools（Chrome / Edge 等），暂无 Firefox / Safari 面板
+- 抓不到页面 Service Worker 里发起的请求
+- 部分更深层的流式 API 用法可能漏抓；若遇到请带复现步骤开 Issue
+- 对话视图依赖各站私有协议，站点改版后可能需要重新适配
+- 当前需本地 `pnpm build` 后，在扩展管理页加载 `dist/` 使用
 
 ---
 
@@ -414,11 +395,11 @@ patch fetch / ES / XHR
 
 # 参与贡献
 
-Issue / PR 都欢迎，请先读 [CONTRIBUTING.md](./CONTRIBUTING.md)。
+欢迎提 Issue / PR，请先阅读 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
-写清：复现步骤、Chrome 版本、目标 URL、能否用本地 Demo 打出；涉及对话视图时请附 **Raw 或导出 JSON**（可脱敏）。
+反馈问题时尽量写清：复现步骤、Chrome 版本、目标 URL，以及本地 Demo 能否复现。若涉及对话视图，请附上 Raw 或导出的 JSON（可脱敏）。
 
-查看仓库 Issue / Discussions 了解正在推进的方向。厂商适配请「有抓包再开」，避免无样本空合。
+厂商适配请附真实样本后再开 Issue，便于对照协议改动。
 
 ---
 
@@ -430,6 +411,3 @@ Issue / PR 都欢迎，请先读 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
 ---
 
-<p align="center">
-  <a href="https://github.com/FatMii/sse-devtools-panel">github.com/FatMii/sse-devtools-panel</a>
-</p>
