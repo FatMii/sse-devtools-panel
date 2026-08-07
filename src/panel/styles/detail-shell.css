@@ -174,7 +174,7 @@
 .view.active.events-layout {
   display: grid;
   grid-template-columns:
-    minmax(min(100%, var(--events-list-min)), 1fr) 5px
+    minmax(min(100%, var(--events-list-min)), 1fr) 1px
     var(--events-drawer-width, var(--drawer));
   padding: 0;
   overflow: hidden;
