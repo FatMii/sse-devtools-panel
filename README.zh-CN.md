@@ -128,9 +128,7 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 - 过滤后能看清当前匹配条数与总条数
 - 侧栏宽度可拖拽调整
 
-<p align="center">
-  <img width="480" alt="Streams 侧栏" src="docs/assets/screenshots/streams-sidebar.png">
-</p>
+<img width="280" alt="Streams 侧栏" src="docs/assets/screenshots/streams-sidebar.png">
 
 ## 📋 Events
 

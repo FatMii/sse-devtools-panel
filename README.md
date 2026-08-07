@@ -118,9 +118,7 @@ For many AI / product streams that is not enough. They are often not plain Event
 - Shows matched vs total count after filtering
 - Sidebar width is resizable
 
-<p align="center">
-  <img width="480" alt="Streams sidebar" src="docs/assets/screenshots/streams-sidebar.png">
-</p>
+<img width="280" alt="Streams sidebar" src="docs/assets/screenshots/streams-sidebar.png">
 
 ## 📋 Events
 
