@@ -24,7 +24,7 @@ import { latestEventIdFromEvents } from "../shared/stream-close";
 import { SseParser, type ParsedSseEvent } from "../shared/sse-parser";
 import { NdjsonParser } from "../shared/ndjson-parser";
 import { ConnectJsonParser } from "../shared/connect-json-parser";
-import { mergeAiTranscript, transcriptHasContent } from "../shared/ai-merge";
+import { mergeAiConversation, conversationHasContent } from "../shared/ai-merge";
 import { initEventsColumnResizers } from "./widgets/column-resizer";
 import {
   elList,
@@ -53,7 +53,7 @@ import {
   elStatusbarLocale,
   elTabCountEvents,
   elTabCountRaw,
-  elTabCountTranscript,
+  elTabCountConversation,
   elExportMenu,
   elExportMenuBtn,
   elExportMenuPanel,
@@ -81,7 +81,7 @@ import {
 } from "./features/stream-anomalies";
 import { renderTimeline } from "./views/timeline-view";
 import { renderRequest, resetRequestViewState } from "./views/request-view-ui";
-import { renderTranscript, resetTranscriptView } from "./views/transcript-view";
+import { renderConversation, resetConversationView } from "./views/conversation-view";
 import { state, type ActiveTab, type StreamParser } from "./core/state";
 import {
   closeAllMenus,
@@ -477,23 +477,23 @@ function updateTabCounts(record: StreamRecord | undefined): void {
       elTabCountRaw.textContent = "";
     }
   }
-  if (elTabCountTranscript) {
+  if (elTabCountConversation) {
     if (record && record.events.length > 0) {
-      const merged = mergeAiTranscript(record.events, record.url);
-      if (transcriptHasContent(merged)) {
-        elTabCountTranscript.hidden = false;
+      const merged = mergeAiConversation(record.events, record.url);
+      if (conversationHasContent(merged)) {
+        elTabCountConversation.hidden = false;
         const n =
           (merged.channels.content ? 1 : 0) +
           (merged.channels.reasoning ? 1 : 0) +
           (merged.channels.tools.length > 0 ? 1 : 0);
-        elTabCountTranscript.textContent = String(Math.max(n, 1));
+        elTabCountConversation.textContent = String(Math.max(n, 1));
       } else {
-        elTabCountTranscript.hidden = true;
-        elTabCountTranscript.textContent = "";
+        elTabCountConversation.hidden = true;
+        elTabCountConversation.textContent = "";
       }
     } else {
-      elTabCountTranscript.hidden = true;
-      elTabCountTranscript.textContent = "";
+      elTabCountConversation.hidden = true;
+      elTabCountConversation.textContent = "";
     }
   }
 }
@@ -522,7 +522,7 @@ function renderDetail(appendFriendly = false): void {
     elRaw.textContent = "";
     renderTimelineForSelection(undefined);
     renderRequestForSelection(undefined);
-    renderTranscriptForSelection(undefined);
+    renderConversationForSelection(undefined);
     return;
   }
 
@@ -533,7 +533,7 @@ function renderDetail(appendFriendly = false): void {
   renderEvents(record, appendFriendly);
   renderTimelineForSelection(record);
   renderRequestForSelection(record);
-  renderTranscriptForSelection(record);
+  renderConversationForSelection(record);
 
   if (state.activeTab === "raw") {
     elRaw.scrollTop = elRaw.scrollHeight;
@@ -568,8 +568,8 @@ function renderRequestForSelection(record: StreamRecord | undefined): void {
   renderRequest(record, { onBindJsonTreeContextMenu: bindJsonTreeContextMenu });
 }
 
-function renderTranscriptForSelection(record: StreamRecord | undefined): void {
-  renderTranscript(record, { copyText, showToast });
+function renderConversationForSelection(record: StreamRecord | undefined): void {
+  renderConversation(record, { copyText, showToast });
 }
 
 function setupTabs(): void {
@@ -581,7 +581,7 @@ function setupTabs(): void {
         tab !== "raw" &&
         tab !== "timeline" &&
         tab !== "request" &&
-        tab !== "transcript"
+        tab !== "conversation"
       ) {
         return;
       }
@@ -592,9 +592,9 @@ function setupTabs(): void {
       } else if (tab === "request") {
         const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
         renderRequestForSelection(record);
-      } else if (tab === "transcript") {
+      } else if (tab === "conversation") {
         const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
-        renderTranscriptForSelection(record);
+        renderConversationForSelection(record);
       }
     });
   });
@@ -619,7 +619,7 @@ function setupActions(): void {
     state.parsers.clear();
     clearStreamAnomalyCaches();
     resetRequestViewState();
-    resetTranscriptView();
+    resetConversationView();
     state.selectedId = null;
     state.selectedEventIndex = null;
     state.streamsUrlFilterQuery = "";

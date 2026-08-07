@@ -37,7 +37,7 @@ const { detectAiProfile, vendorHintFromUrl } = await buildEntry(
   "src/shared/ai-profile.ts",
   "ai-profile",
 );
-const { mergeAiTranscript, transcriptHasContent } = await buildEntry(
+const { mergeAiConversation, conversationHasContent } = await buildEntry(
   "src/shared/ai-merge/index.ts",
   "ai-merge",
 );
@@ -110,12 +110,12 @@ function ev(data, event = "message") {
   assert(det.vendorHint === "deepseek", "vendor deepseek");
   assert(det.reasoningFields.includes("reasoning_content"), "reasoning field");
 
-  const t = mergeAiTranscript(events, "https://api.deepseek.com/v1/chat/completions");
+  const t = mergeAiConversation(events, "https://api.deepseek.com/v1/chat/completions");
   assert(t.channels.reasoning === "先想一步再想一步", "reasoning merge");
   assert(t.channels.content === "你好，世界", "content merge");
   assert(t.endMeta.finishReason === "stop", "finish");
   assert(t.endMeta.usage && t.endMeta.usage.total_tokens === 15, "usage");
-  assert(transcriptHasContent(t), "has content");
+  assert(conversationHasContent(t), "has content");
 }
 
 {
@@ -160,7 +160,7 @@ function ev(data, event = "message") {
       }),
     ),
   ];
-  const t = mergeAiTranscript(
+  const t = mergeAiConversation(
     events,
     "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
   );
@@ -174,9 +174,9 @@ function ev(data, event = "message") {
 
 {
   const events = [ev("not-json"), ev("data: hello")];
-  const t = mergeAiTranscript(events);
+  const t = mergeAiConversation(events);
   assert(t.profile === "generic", "generic");
-  assert(!transcriptHasContent(t), "empty transcript");
+  assert(!conversationHasContent(t), "empty conversation");
 }
 
 {
@@ -200,7 +200,7 @@ function ev(data, event = "message") {
   );
   assert(det.profile === "doubao-web", "doubao web profile");
 
-  const t = mergeAiTranscript(
+  const t = mergeAiConversation(
     [
       ev(
         JSON.stringify({
@@ -281,7 +281,7 @@ function ev(data, event = "message") {
     ],
     scene: 1,
   };
-  const t = mergeAiTranscript(
+  const t = mergeAiConversation(
     [
       ev(
         JSON.stringify({
@@ -480,7 +480,7 @@ function ev(data, event = "message") {
   const det = detectAiProfile(events, "https://www.kimi.com/chat/...");
   assert(det.profile === "kimi-web", `kimi profile got ${det.profile}`);
   assert(det.vendorHint === "moonshot", "kimi vendor");
-  const t = mergeAiTranscript(events, "https://www.kimi.com/chat");
+  const t = mergeAiConversation(events, "https://www.kimi.com/chat");
   assert(t.profile === "kimi-web", "kimi merge profile");
   assert(t.channels.reasoning.includes("用户"), `kimi reasoning: ${t.channels.reasoning}`);
   assert(
@@ -492,7 +492,7 @@ function ev(data, event = "message") {
   assert(t.channels.tools.length === 1, `kimi tools ${t.channels.tools.length}`);
   assert(t.channels.tools[0].name === "web_search", "kimi web_search");
   assert(t.endMeta.finishReason === "stop", "kimi finish");
-  assert(transcriptHasContent(t), "kimi has content");
+  assert(conversationHasContent(t), "kimi has content");
 }
 
 {
@@ -611,7 +611,7 @@ function ev(data, event = "message") {
   const det = detectAiProfile(events, "https://www.qianwen.com/chat");
   assert(det.profile === "qwen-web", `qwen profile got ${det.profile}`);
   assert(det.vendorHint === "qwen", "qwen vendor");
-  const t = mergeAiTranscript(events, "https://www.qianwen.com/chat");
+  const t = mergeAiConversation(events, "https://www.qianwen.com/chat");
   assert(t.profile === "qwen-web", "qwen merge profile");
   assert(
     t.channels.reasoning.includes("用户询问深圳天气"),
@@ -629,7 +629,7 @@ function ev(data, event = "message") {
   );
   assert(Array.isArray(args.results) && args.results.length >= 1, "qwen results");
   assert(t.endMeta.finishReason === "stop", "qwen finish");
-  assert(transcriptHasContent(t), "qwen has content");
+  assert(conversationHasContent(t), "qwen has content");
 }
 
 {
@@ -645,7 +645,7 @@ function ev(data, event = "message") {
     "这是一个关于合肥市当日天气情况的查询问题。需要提供合肥市今天的温度范围、天气现象、风力风向、湿度等实时天气数据，以及相关的天气预警信息和生活指数建议。\n";
 
   const events = [ev(qwenEnvelope([{ mime_type: "plan_cot/post", content: stackedPlanCot }]))];
-  const t = mergeAiTranscript(events, "https://www.qianwen.com/chat");
+  const t = mergeAiConversation(events, "https://www.qianwen.com/chat");
   assert(
     t.channels.reasoning ===
       "这是一个关于合肥市当日天气情况的查询问题。需要提供合肥市今天的温度范围、天气现象、风力风向、湿度等实时天气数据，以及相关的天气预警信息和生活指数建议。",
@@ -784,7 +784,7 @@ function ev(data, event = "message") {
   const det = detectAiProfile(events, "https://chatglm.cn/main/chat");
   assert(det.profile === "chatglm-web", `chatglm profile got ${det.profile}`);
   assert(det.vendorHint === "chatglm", "chatglm vendor");
-  const t = mergeAiTranscript(events, "https://chatglm.cn/main/chat");
+  const t = mergeAiConversation(events, "https://chatglm.cn/main/chat");
   assert(t.profile === "chatglm-web", "chatglm merge profile");
   assert(t.channels.reasoning.includes("拆解用户请求"), `chatglm think: ${t.channels.reasoning}`);
   assert(t.channels.reasoning.includes("今天深圳天气"), "chatglm think snapshot");
@@ -812,7 +812,7 @@ function ev(data, event = "message") {
     "chatglm snippet stripped",
   );
   assert(t.endMeta.finishReason === "stop", "chatglm finish");
-  assert(transcriptHasContent(t), "chatglm has content");
+  assert(conversationHasContent(t), "chatglm has content");
 }
 
 {
@@ -895,7 +895,7 @@ function ev(data, event = "message") {
   const det = detectAiProfile(events, "https://yuanbao.tencent.com/chat");
   assert(det.profile === "yuanbao-web", `yuanbao profile got ${det.profile}`);
   assert(det.vendorHint === "yuanbao", "yuanbao vendor");
-  const t = mergeAiTranscript(events, "https://yuanbao.tencent.com/chat");
+  const t = mergeAiConversation(events, "https://yuanbao.tencent.com/chat");
   assert(t.profile === "yuanbao-web", "yuanbao merge profile");
   assert(
     t.channels.reasoning.includes("用户只说明天天气"),
@@ -915,7 +915,7 @@ function ev(data, event = "message") {
   assert(yArgs.results[0].site_name === "深圳气象局", "yuanbao site from searchGuid");
   assert(String(yArgs.results[0].snippet || "").includes("36"), "yuanbao quote snippet");
   assert(t.endMeta.finishReason === "stop", "yuanbao finish");
-  assert(transcriptHasContent(t), "yuanbao has content");
+  assert(conversationHasContent(t), "yuanbao has content");
 }
 
 // Real captures under data/ (optional locally; skip if missing)
@@ -976,7 +976,7 @@ function ev(data, event = "message") {
 
   if (existsSync(deepseekPath)) {
     const events = loadSse(deepseekPath);
-    const t = mergeAiTranscript(events, "https://chat.deepseek.com/api/v0/chat/completion");
+    const t = mergeAiConversation(events, "https://chat.deepseek.com/api/v0/chat/completion");
     assert(t.profile === "deepseek-web", `deepseek profile got ${t.profile}`);
     assert(t.vendorHint === "deepseek", "deepseek vendor");
     assert(
@@ -997,7 +997,7 @@ function ev(data, event = "message") {
   const deepseekSearchPath = resolve(root, "data/deepseek-search.txt");
   if (existsSync(deepseekSearchPath)) {
     const events = loadSse(deepseekSearchPath);
-    const t = mergeAiTranscript(events, "https://chat.deepseek.com/api/v0/chat/completion");
+    const t = mergeAiConversation(events, "https://chat.deepseek.com/api/v0/chat/completion");
     assert(t.profile === "deepseek-web", "search profile");
     assert(t.channels.tools.length >= 1, "search tool present");
     assert(t.channels.tools[0].name === "web_search", "web_search name");
@@ -1009,7 +1009,7 @@ function ev(data, event = "message") {
 
   if (existsSync(doubaoPath)) {
     const events = loadSse(doubaoPath);
-    const t = mergeAiTranscript(events, "https://www.doubao.com/chat");
+    const t = mergeAiConversation(events, "https://www.doubao.com/chat");
     assert(t.profile === "doubao-web", `doubao profile got ${t.profile}`);
     assert(t.vendorHint === "doubao-web", "doubao vendor");
     assert(
@@ -1035,7 +1035,7 @@ function ev(data, event = "message") {
   if (existsSync(kimiPath)) {
     const events = loadKimiJsonStream(kimiPath);
     assert(events.length > 50, `kimi events parsed: ${events.length}`);
-    const t = mergeAiTranscript(events, "https://www.kimi.com/chat");
+    const t = mergeAiConversation(events, "https://www.kimi.com/chat");
     assert(t.profile === "kimi-web", `kimi profile got ${t.profile}`);
     assert(t.vendorHint === "moonshot", "kimi vendor");
     assert(
@@ -1060,7 +1060,7 @@ function ev(data, event = "message") {
   if (existsSync(qwenPath)) {
     const events = loadSse(qwenPath);
     assert(events.length > 50, `qwen events parsed: ${events.length}`);
-    const t = mergeAiTranscript(events, "https://www.qianwen.com/chat");
+    const t = mergeAiConversation(events, "https://www.qianwen.com/chat");
     assert(t.profile === "qwen-web", `qwen profile got ${t.profile}`);
     assert(t.vendorHint === "qwen", "qwen vendor");
     assert(
@@ -1085,7 +1085,7 @@ function ev(data, event = "message") {
   if (existsSync(chatglmPath)) {
     const events = loadSse(chatglmPath);
     assert(events.length > 30, `chatglm events parsed: ${events.length}`);
-    const t = mergeAiTranscript(events, "https://chatglm.cn/main/chat");
+    const t = mergeAiConversation(events, "https://chatglm.cn/main/chat");
     assert(t.profile === "chatglm-web", `chatglm profile got ${t.profile}`);
     assert(t.vendorHint === "chatglm", "chatglm vendor");
     assert(
@@ -1121,7 +1121,7 @@ function ev(data, event = "message") {
   if (existsSync(yuanbaoPath)) {
     const events = loadSse(yuanbaoPath);
     assert(events.length > 50, `yuanbao events parsed: ${events.length}`);
-    const t = mergeAiTranscript(events, "https://yuanbao.tencent.com/chat");
+    const t = mergeAiConversation(events, "https://yuanbao.tencent.com/chat");
     assert(t.profile === "yuanbao-web", `yuanbao profile got ${t.profile}`);
     assert(t.vendorHint === "yuanbao", "yuanbao vendor");
     assert(

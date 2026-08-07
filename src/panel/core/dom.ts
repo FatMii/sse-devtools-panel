@@ -38,10 +38,10 @@ export const elRequestPlaceholder = document.getElementById(
   "request-placeholder",
 ) as HTMLDivElement;
 export const elRequestBody = document.getElementById("request-body") as HTMLDivElement;
-export const elTranscriptPlaceholder = document.getElementById(
-  "transcript-placeholder",
+export const elConversationPlaceholder = document.getElementById(
+  "conversation-placeholder",
 ) as HTMLDivElement;
-export const elTranscriptBody = document.getElementById("transcript-body") as HTMLDivElement;
+export const elConversationBody = document.getElementById("conversation-body") as HTMLDivElement;
 export const elStreamsUrlFilter = document.getElementById("streams-url-filter") as HTMLInputElement;
 export const elStreamsTransportFilter = document.getElementById(
   "streams-transport-filter",
@@ -78,8 +78,8 @@ export const elTabCountEvents = document.getElementById(
   "tab-count-events",
 ) as HTMLSpanElement | null;
 export const elTabCountRaw = document.getElementById("tab-count-raw") as HTMLSpanElement | null;
-export const elTabCountTranscript = document.getElementById(
-  "tab-count-transcript",
+export const elTabCountConversation = document.getElementById(
+  "tab-count-conversation",
 ) as HTMLSpanElement | null;
 export const elToast = document.getElementById("toast") as HTMLDivElement | null;
 export const elToastText = document.getElementById("toast-text") as HTMLSpanElement | null;

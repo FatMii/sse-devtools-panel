@@ -1,5 +1,5 @@
 import type { SseEvent } from "../types";
-import type { AiEndMeta, AiToolCall, AiTranscriptChannels, MergeChannelsResult } from "./types";
+import type { AiEndMeta, AiToolCall, AiConversationChannels, MergeChannelsResult } from "./types";
 import { isRecord, parseEventData } from "./helpers";
 
 export type FragType = "THINK" | "RESPONSE" | "SEARCH" | "TIP" | "OTHER";
@@ -67,7 +67,7 @@ export function ingestSearchFragment(frag: Record<string, unknown>, tools: AiToo
 
 export function ingestFragment(
   frag: unknown,
-  state: { current: FragType; channels: AiTranscriptChannels; chunkCount: number },
+  state: { current: FragType; channels: AiConversationChannels; chunkCount: number },
 ): void {
   if (!isRecord(frag)) return;
   const typ = fragmentType(frag);
@@ -95,7 +95,7 @@ export function applyDeepseekPatch(
   value: unknown,
   state: {
     current: FragType;
-    channels: AiTranscriptChannels;
+    channels: AiConversationChannels;
     endMeta: AiEndMeta;
     chunkCount: number;
   },

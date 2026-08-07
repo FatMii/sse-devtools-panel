@@ -1,6 +1,6 @@
 import type { SseEvent } from "./types";
 
-/** Transcript merge protocol family. */
+/** Conversation merge protocol family. */
 export type AiProfile =
   | "openai-compatible"
   | "deepseek-web"

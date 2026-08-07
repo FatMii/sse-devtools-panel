@@ -854,14 +854,14 @@ select {
   overflow: hidden;
 }
 
-.transcript-view.active {
+.conversation-view.active {
   display: flex;
   flex-direction: column;
   padding: 0;
   overflow: hidden;
 }
 
-.transcript-body {
+.conversation-body {
   flex: 1;
   min-height: 0;
   display: flex;
@@ -869,7 +869,7 @@ select {
   overflow: hidden;
 }
 
-.transcript-shell {
+.conversation-shell {
   flex: 1;
   min-height: 0;
   display: flex;
@@ -877,7 +877,7 @@ select {
   overflow: hidden;
 }
 
-.transcript-toolbar {
+.conversation-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -890,7 +890,7 @@ select {
   background: var(--surface-1);
 }
 
-.transcript-chips {
+.conversation-chips {
   display: flex;
   flex: 1 1 auto;
   flex-wrap: wrap;
@@ -898,7 +898,7 @@ select {
   min-width: 0;
 }
 
-.transcript-chips .transcript-chip {
+.conversation-chips .conversation-chip {
   height: 18px;
   padding: 0 6px;
   color: var(--text-muted);
@@ -907,11 +907,11 @@ select {
   text-transform: none;
 }
 
-.transcript-toolbar > .tool-btn {
+.conversation-toolbar > .tool-btn {
   flex: 0 0 auto;
 }
 
-.transcript-subtabs {
+.conversation-subtabs {
   flex-shrink: 0;
   display: flex;
   align-items: stretch;
@@ -925,7 +925,7 @@ select {
   scrollbar-width: thin;
 }
 
-.transcript-subtabs .request-subtab {
+.conversation-subtabs .request-subtab {
   flex-shrink: 0;
   height: 34px;
   padding: 0 11px;
@@ -935,12 +935,12 @@ select {
   margin-bottom: 0;
 }
 
-.transcript-subtabs .request-subtab.active {
+.conversation-subtabs .request-subtab.active {
   color: var(--text);
   border-bottom-color: var(--accent);
 }
 
-.transcript-pane {
+.conversation-pane {
   flex: 1;
   min-height: 0;
   overflow: auto;
@@ -954,7 +954,7 @@ select {
   line-height: 1.65;
 }
 
-.transcript-tools-pane {
+.conversation-tools-pane {
   font-family: var(--sans);
   white-space: normal;
   display: flex;
@@ -964,7 +964,7 @@ select {
   background: var(--canvas);
 }
 
-.transcript-tools-empty {
+.conversation-tools-empty {
   color: var(--text-faint);
   font-size: var(--text-sm);
   line-height: 1.55;
@@ -1772,7 +1772,7 @@ body.is-resizing {
   }
 
   .timeline-body,
-  .transcript-pane {
+  .conversation-pane {
     padding-inline: var(--space-4);
   }
 }

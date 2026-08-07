@@ -26,7 +26,6 @@
   <a href="#"><img alt="Manifest" src="https://img.shields.io/badge/Manifest-V3-informational"></a>
 </p>
 
-
 ---
 
 <p align="center">
@@ -58,8 +57,8 @@
   - [Demo 页联调](#demo-页联调)
 - [已支持的 AI Web 厂商](#已支持的-ai-web-厂商)
 - [快速开始](#快速开始)
-    - [前置](#前置)
-    - [安装并加载](#安装并加载)
+  - [前置](#前置)
+  - [安装并加载](#安装并加载)
 - [30 秒 Demo](#30-秒-demo)
 - [开发](#开发)
 - [怎么工作的](#怎么工作的)
@@ -84,7 +83,7 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 | 场景                                          | Chrome Network             | SSE DevTools Panel                        |
 | --------------------------------------------- | -------------------------- | ----------------------------------------- |
 | 标准 SSE（EventSource / 部分 fetch）          | 请求详情有 EventStream Tab | 同样可看，并带过滤、JSON 树、导出         |
-| AI / 私有协议（NDJSON、Connect+JSON、厂商帧） | 多半是原文碎片，难拼成对话 | Profile 识别 + **对话**分通道合并  |
+| AI / 私有协议（NDJSON、Connect+JSON、厂商帧） | 多半是原文碎片，难拼成对话 | Profile 识别 + **对话**分通道合并         |
 | 流内时序与卡顿                                | 基本只有整请求耗时         | Timeline + Stats（TTFT / gap / events·s） |
 | 规范与异常                                    | 无针对性扫描               | SSE Spec 告警 · Anomalies                 |
 | 网页搜索等工具结果                            | 埋在 raw 里                | 归一成 `web_search` 卡片（查询 + 来源）   |
@@ -134,7 +133,6 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
   <img width="480" alt="Streams 侧栏" src="docs/assets/screenshots/streams-sidebar.png">
 </p>
 
-
 ## 📋 Events
 
 按条查看流事件：序号、到达时间、事件名、数据摘要。
@@ -148,7 +146,6 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
   <img width="1200" alt="Events Tab（待补图）" src="docs/assets/screenshots/tab-events.png">
 </p>
 
-
 ## 📨 Request
 
 查看这条流对应的请求信息（类似 Network）：
@@ -160,7 +157,6 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 <p align="center">
   <img width="1200" alt="Request Tab（待补图）" src="docs/assets/screenshots/tab-request.png">
 </p>
-
 
 <a name="conversation"></a>
 
@@ -180,16 +176,16 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 - 国内主流 AI Web + OpenAI 兼容协议均可尝试合并（见下方[支持矩阵](#已支持的-ai-web-厂商)）
 
 <p align="center">
-  <img width="1200" alt="对话 正文 / 思考（待补图）" src="docs/assets/screenshots/tab-transcript-content.png">
+  <img width="1200" alt="对话 正文 / 思考（待补图）" src="docs/assets/screenshots/tab-conversation-content.png">
 </p>
 
-> 📌 占位：`docs/assets/screenshots/tab-transcript-content.png`
+> 📌 占位：`docs/assets/screenshots/tab-conversation-content.png`
 
 <p align="center">
-  <img width="1200" alt="对话 工具 · 网页搜索（待补图）" src="docs/assets/screenshots/tab-transcript-tools.png">
+  <img width="1200" alt="对话 工具 · 网页搜索（待补图）" src="docs/assets/screenshots/tab-conversation-tools.png">
 </p>
 
-> 📌 占位：`docs/assets/screenshots/tab-transcript-tools.png`  
+> 📌 占位：`docs/assets/screenshots/tab-conversation-tools.png`  
 > 建议：展开后的「网页搜索」卡片（queries + 多条来源）
 
 <a name="timeline"></a>

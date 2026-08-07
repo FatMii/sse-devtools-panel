@@ -7,7 +7,7 @@ export interface AiToolCall {
   arguments: string;
 }
 
-export interface AiTranscriptChannels {
+export interface AiConversationChannels {
   content: string;
   reasoning: string;
   tools: AiToolCall[];
@@ -19,18 +19,18 @@ export interface AiEndMeta {
   model?: string;
 }
 
-export interface AiTranscript {
+export interface AiConversation {
   profile: AiProfile;
   vendorHint: AiVendorHint;
   detection: AiProfileResult;
-  channels: AiTranscriptChannels;
+  channels: AiConversationChannels;
   endMeta: AiEndMeta;
   /** Number of events that contributed a parseable AI chunk. */
   chunkCount: number;
 }
 
 export type MergeChannelsResult = {
-  channels: AiTranscriptChannels;
+  channels: AiConversationChannels;
   endMeta: AiEndMeta;
   chunkCount: number;
 };

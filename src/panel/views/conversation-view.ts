@@ -1,30 +1,34 @@
-import { mergeAiTranscript, transcriptHasContent, type AiTranscript } from "../../shared/ai-merge";
+import {
+  mergeAiConversation,
+  conversationHasContent,
+  type AiConversation,
+} from "../../shared/ai-merge";
 import { t } from "../../shared/i18n";
 import type { StreamRecord } from "../../shared/types";
-import { elTranscriptBody, elTranscriptPlaceholder } from "../core/dom";
+import { elConversationBody, elConversationPlaceholder } from "../core/dom";
 import { escapeHtml } from "../core/format";
 import { renderIcon } from "../core/icons";
 
-type TranscriptChannel = "content" | "reasoning" | "tools" | "meta";
+type ConversationChannel = "content" | "reasoning" | "tools" | "meta";
 
-let transcriptChannel: TranscriptChannel = "content";
-let transcriptFingerprint = "";
+let conversationChannel: ConversationChannel = "content";
+let conversationFingerprint = "";
 /** Which tool cards stay expanded across Tools pane re-renders (per stream). */
 let toolsExpandStreamId: string | null = null;
 let toolsExpandedIndexes = new Set<number>();
 
-export type RenderTranscriptOptions = {
+export type RenderConversationOptions = {
   copyText: (text: string, notify?: boolean) => Promise<void>;
   showToast: (message: string) => void;
 };
 
-export function resetTranscriptView(): void {
-  transcriptFingerprint = "";
+export function resetConversationView(): void {
+  conversationFingerprint = "";
   toolsExpandStreamId = null;
   toolsExpandedIndexes = new Set();
 }
 
-function buildTranscriptFingerprint(record: StreamRecord, channel: TranscriptChannel): string {
+function buildConversationFingerprint(record: StreamRecord, channel: ConversationChannel): string {
   return [
     record.requestId,
     record.events.length,
@@ -34,7 +38,7 @@ function buildTranscriptFingerprint(record: StreamRecord, channel: TranscriptCha
   ].join("|");
 }
 
-function transcriptChannelText(merged: AiTranscript, channel: TranscriptChannel): string {
+function conversationChannelText(merged: AiConversation, channel: ConversationChannel): string {
   switch (channel) {
     case "content":
       return merged.channels.content;
@@ -51,20 +55,21 @@ function transcriptChannelText(merged: AiTranscript, channel: TranscriptChannel)
         : "";
     case "meta": {
       const lines: string[] = [
-        `${t("transcriptProfileLabel")}: ${merged.profile}`,
-        `${t("transcriptVendorLabel")}: ${merged.vendorHint}`,
-        `${t("transcriptChunksLabel")}: ${merged.chunkCount}`,
+        `${t("conversationProfileLabel")}: ${merged.profile}`,
+        `${t("conversationVendorLabel")}: ${merged.vendorHint}`,
+        `${t("conversationChunksLabel")}: ${merged.chunkCount}`,
       ];
-      if (merged.endMeta.model) lines.push(`${t("transcriptModelLabel")}: ${merged.endMeta.model}`);
+      if (merged.endMeta.model)
+        lines.push(`${t("conversationModelLabel")}: ${merged.endMeta.model}`);
       if (merged.endMeta.finishReason) {
-        lines.push(`${t("transcriptFinishLabel")}: ${merged.endMeta.finishReason}`);
+        lines.push(`${t("conversationFinishLabel")}: ${merged.endMeta.finishReason}`);
       }
       if (merged.endMeta.usage) {
-        lines.push(`${t("transcriptUsageLabel")}: ${JSON.stringify(merged.endMeta.usage)}`);
+        lines.push(`${t("conversationUsageLabel")}: ${JSON.stringify(merged.endMeta.usage)}`);
       }
       if (merged.detection.reasoningFields.length) {
         lines.push(
-          `${t("transcriptReasoningFieldsLabel")}: ${merged.detection.reasoningFields.join(", ")}`,
+          `${t("conversationReasoningFieldsLabel")}: ${merged.detection.reasoningFields.join(", ")}`,
         );
       }
       return lines.join("\n");
@@ -102,15 +107,17 @@ function toolsExpandedForStream(streamId: string, toolCount: number): Set<number
   return toolsExpandedIndexes;
 }
 
-export function createToolsPane(merged: AiTranscript, streamId: string): HTMLElement {
+export function createToolsPane(merged: AiConversation, streamId: string): HTMLElement {
   const pane = document.createElement("div");
-  pane.className = "transcript-pane transcript-tools-pane";
+  pane.className = "conversation-pane conversation-tools-pane";
 
   if (merged.channels.tools.length === 0) {
     const empty = document.createElement("div");
-    empty.className = "transcript-tools-empty";
+    empty.className = "conversation-tools-empty";
     const unsupported = merged.profile === "generic";
-    empty.textContent = unsupported ? t("transcriptToolsUnsupported") : t("transcriptToolsEmpty");
+    empty.textContent = unsupported
+      ? t("conversationToolsUnsupported")
+      : t("conversationToolsEmpty");
     pane.appendChild(empty);
     return pane;
   }
@@ -129,7 +136,7 @@ export function createToolsPane(merged: AiTranscript, streamId: string): HTMLEle
     head.type = "button";
     head.className = "tool-card-head";
     head.setAttribute("aria-expanded", isOpen ? "true" : "false");
-    head.title = isOpen ? t("transcriptToolsCollapse") : t("transcriptToolsExpand");
+    head.title = isOpen ? t("conversationToolsCollapse") : t("conversationToolsExpand");
 
     const caret = document.createElement("span");
     caret.className = "tool-card-caret";
@@ -139,8 +146,8 @@ export function createToolsPane(merged: AiTranscript, streamId: string): HTMLEle
     const badge = document.createElement("span");
     badge.className = "tool-card-badge";
     badge.textContent = isSearch
-      ? t("transcriptToolsWebSearch")
-      : tc.name || t("transcriptToolsFunction");
+      ? t("conversationToolsWebSearch")
+      : tc.name || t("conversationToolsFunction");
     head.append(caret, badge);
 
     if (tc.id) {
@@ -153,7 +160,7 @@ export function createToolsPane(merged: AiTranscript, streamId: string): HTMLEle
     let summaryText = "";
     if (isSearch && isWebSearchPayload(parsed)) {
       const results = Array.isArray(parsed.results) ? parsed.results : [];
-      summaryText = t("transcriptToolsResults", String(results.length));
+      summaryText = t("conversationToolsResults", String(results.length));
     } else if (tc.name) {
       summaryText = tc.name;
     }
@@ -177,7 +184,7 @@ export function createToolsPane(merged: AiTranscript, streamId: string): HTMLEle
         qSection.className = "tool-card-section";
         const qLabel = document.createElement("div");
         qLabel.className = "tool-card-label";
-        qLabel.textContent = t("transcriptToolsQueries");
+        qLabel.textContent = t("conversationToolsQueries");
         const qList = document.createElement("div");
         qList.className = "tool-query-list";
         for (const q of queries) {
@@ -195,7 +202,7 @@ export function createToolsPane(merged: AiTranscript, streamId: string): HTMLEle
       rSection.className = "tool-card-section";
       const rLabel = document.createElement("div");
       rLabel.className = "tool-card-label";
-      rLabel.textContent = t("transcriptToolsResults", String(results.length));
+      rLabel.textContent = t("conversationToolsResults", String(results.length));
       rSection.appendChild(rLabel);
 
       const list = document.createElement("ol");
@@ -259,7 +266,7 @@ export function createToolsPane(merged: AiTranscript, streamId: string): HTMLEle
         nameRow.className = "tool-card-section";
         const nameLabel = document.createElement("div");
         nameLabel.className = "tool-card-label";
-        nameLabel.textContent = t("transcriptToolsFunction");
+        nameLabel.textContent = t("conversationToolsFunction");
         const nameVal = document.createElement("code");
         nameVal.className = "tool-fn-name";
         nameVal.textContent = tc.name;
@@ -270,7 +277,7 @@ export function createToolsPane(merged: AiTranscript, streamId: string): HTMLEle
       argsSection.className = "tool-card-section";
       const argsLabel = document.createElement("div");
       argsLabel.className = "tool-card-label";
-      argsLabel.textContent = t("transcriptToolsArgs");
+      argsLabel.textContent = t("conversationToolsArgs");
       const argsPre = document.createElement("pre");
       argsPre.className = "tool-args-pre";
       if (parsed != null) {
@@ -294,7 +301,7 @@ export function createToolsPane(merged: AiTranscript, streamId: string): HTMLEle
       card.classList.toggle("is-collapsed", !nextOpen);
       body.hidden = !nextOpen;
       head.setAttribute("aria-expanded", nextOpen ? "true" : "false");
-      head.title = nextOpen ? t("transcriptToolsCollapse") : t("transcriptToolsExpand");
+      head.title = nextOpen ? t("conversationToolsCollapse") : t("conversationToolsExpand");
     });
 
     card.append(head, body);
@@ -304,95 +311,95 @@ export function createToolsPane(merged: AiTranscript, streamId: string): HTMLEle
   return pane;
 }
 
-export function renderTranscript(
+export function renderConversation(
   record: StreamRecord | undefined,
-  options: RenderTranscriptOptions,
+  options: RenderConversationOptions,
 ): void {
   if (!record) {
-    elTranscriptPlaceholder.hidden = false;
-    elTranscriptPlaceholder.textContent = t("noStreamSelected");
-    elTranscriptBody.hidden = true;
-    elTranscriptBody.innerHTML = "";
-    transcriptFingerprint = "";
+    elConversationPlaceholder.hidden = false;
+    elConversationPlaceholder.textContent = t("noStreamSelected");
+    elConversationBody.hidden = true;
+    elConversationBody.innerHTML = "";
+    conversationFingerprint = "";
     toolsExpandStreamId = null;
     toolsExpandedIndexes = new Set();
     return;
   }
 
-  const fp = buildTranscriptFingerprint(record, transcriptChannel);
+  const fp = buildConversationFingerprint(record, conversationChannel);
   if (
-    fp === transcriptFingerprint &&
-    elTranscriptBody.querySelector(".transcript-shell") &&
-    !elTranscriptBody.hidden
+    fp === conversationFingerprint &&
+    elConversationBody.querySelector(".conversation-shell") &&
+    !elConversationBody.hidden
   ) {
     return;
   }
-  transcriptFingerprint = fp;
+  conversationFingerprint = fp;
 
-  const merged = mergeAiTranscript(record.events, record.url);
+  const merged = mergeAiConversation(record.events, record.url);
 
-  if (!transcriptHasContent(merged) && merged.profile === "generic") {
-    elTranscriptPlaceholder.hidden = false;
-    elTranscriptPlaceholder.textContent = t("transcriptEmpty");
-    elTranscriptBody.hidden = true;
-    elTranscriptBody.innerHTML = "";
+  if (!conversationHasContent(merged) && merged.profile === "generic") {
+    elConversationPlaceholder.hidden = false;
+    elConversationPlaceholder.textContent = t("conversationEmpty");
+    elConversationBody.hidden = true;
+    elConversationBody.innerHTML = "";
     return;
   }
 
-  elTranscriptPlaceholder.hidden = true;
-  elTranscriptBody.hidden = false;
-  elTranscriptBody.innerHTML = "";
+  elConversationPlaceholder.hidden = true;
+  elConversationBody.hidden = false;
+  elConversationBody.innerHTML = "";
 
   const shell = document.createElement("div");
-  shell.className = "transcript-shell";
+  shell.className = "conversation-shell";
 
   const toolbar = document.createElement("div");
-  toolbar.className = "transcript-toolbar";
+  toolbar.className = "conversation-toolbar";
 
   const chips = document.createElement("div");
-  chips.className = "transcript-chips";
+  chips.className = "conversation-chips";
   const chipProfile = document.createElement("span");
-  chipProfile.className = "meta-chip transcript-chip";
-  chipProfile.textContent = `${t("transcriptProfileLabel")}: ${merged.profile}`;
+  chipProfile.className = "meta-chip conversation-chip";
+  chipProfile.textContent = `${t("conversationProfileLabel")}: ${merged.profile}`;
   const chipVendor = document.createElement("span");
-  chipVendor.className = "meta-chip transcript-chip";
-  chipVendor.textContent = `${t("transcriptVendorLabel")}: ${merged.vendorHint}`;
+  chipVendor.className = "meta-chip conversation-chip";
+  chipVendor.textContent = `${t("conversationVendorLabel")}: ${merged.vendorHint}`;
   chips.append(chipProfile, chipVendor);
   if (merged.endMeta.finishReason) {
     const chipFinish = document.createElement("span");
-    chipFinish.className = "meta-chip transcript-chip";
-    chipFinish.textContent = `${t("transcriptFinishLabel")}: ${merged.endMeta.finishReason}`;
+    chipFinish.className = "meta-chip conversation-chip";
+    chipFinish.textContent = `${t("conversationFinishLabel")}: ${merged.endMeta.finishReason}`;
     chips.appendChild(chipFinish);
   }
 
   const copyBtn = document.createElement("button");
   copyBtn.type = "button";
   copyBtn.className = "tool-btn tool-btn-icon";
-  copyBtn.title = t("transcriptCopyTitle");
-  copyBtn.setAttribute("aria-label", t("transcriptCopy"));
+  copyBtn.title = t("conversationCopyTitle");
+  copyBtn.setAttribute("aria-label", t("conversationCopy"));
   copyBtn.innerHTML =
     renderIcon("copy", "tool-icon") +
-    `<span class="visually-hidden">${escapeHtml(t("transcriptCopy"))}</span>`;
+    `<span class="visually-hidden">${escapeHtml(t("conversationCopy"))}</span>`;
   copyBtn.addEventListener("click", () => {
-    const text = transcriptChannelText(merged, transcriptChannel) || "";
-    void options.copyText(text, false).then(() => options.showToast(t("transcriptCopied")));
+    const text = conversationChannelText(merged, conversationChannel) || "";
+    void options.copyText(text, false).then(() => options.showToast(t("conversationCopied")));
   });
 
   toolbar.append(chips, copyBtn);
 
   const subtabs = document.createElement("div");
-  subtabs.className = "transcript-subtabs request-subtabs";
-  const channels: TranscriptChannel[] = ["content", "reasoning", "tools", "meta"];
-  const labels: Record<TranscriptChannel, string> = {
-    content: t("transcriptChannelContent"),
-    reasoning: t("transcriptChannelReasoning"),
-    tools: t("transcriptChannelTools"),
-    meta: t("transcriptChannelMeta"),
+  subtabs.className = "conversation-subtabs request-subtabs";
+  const channels: ConversationChannel[] = ["content", "reasoning", "tools", "meta"];
+  const labels: Record<ConversationChannel, string> = {
+    content: t("conversationChannelContent"),
+    reasoning: t("conversationChannelReasoning"),
+    tools: t("conversationChannelTools"),
+    meta: t("conversationChannelMeta"),
   };
   for (const ch of channels) {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "request-subtab" + (transcriptChannel === ch ? " active" : "");
+    btn.className = "request-subtab" + (conversationChannel === ch ? " active" : "");
     let label = labels[ch];
     if (ch === "reasoning" && merged.channels.reasoning)
       label += ` (${merged.channels.reasoning.length})`;
@@ -404,28 +411,28 @@ export function renderTranscript(
     btn.addEventListener("pointerdown", (e) => {
       if (e.button !== 0) return;
       e.preventDefault();
-      if (transcriptChannel === ch) return;
-      transcriptChannel = ch;
-      transcriptFingerprint = "";
-      renderTranscript(record, options);
+      if (conversationChannel === ch) return;
+      conversationChannel = ch;
+      conversationFingerprint = "";
+      renderConversation(record, options);
     });
     subtabs.appendChild(btn);
   }
 
-  const text = transcriptChannelText(merged, transcriptChannel);
+  const text = conversationChannelText(merged, conversationChannel);
   let pane: HTMLElement;
-  if (transcriptChannel === "tools") {
+  if (conversationChannel === "tools") {
     pane = createToolsPane(merged, record.requestId);
   } else {
     pane = document.createElement("pre");
-    pane.className = "transcript-pane code";
-    if (!text && transcriptChannel !== "meta") {
-      pane.textContent = t("transcriptEmpty");
+    pane.className = "conversation-pane code";
+    if (!text && conversationChannel !== "meta") {
+      pane.textContent = t("conversationEmpty");
     } else {
       pane.textContent = text;
     }
   }
 
   shell.append(toolbar, subtabs, pane);
-  elTranscriptBody.appendChild(shell);
+  elConversationBody.appendChild(shell);
 }

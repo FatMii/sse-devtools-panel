@@ -71,67 +71,67 @@
   "tabRequest": {
     "message": "请求"
   },
-  "tabTranscript": {
+  "tabConversation": {
     "message": "对话"
   },
   "tabRaw": {
     "message": "原始流"
   },
-  "transcriptChannelContent": {
+  "conversationChannelContent": {
     "message": "正文"
   },
-  "transcriptChannelReasoning": {
+  "conversationChannelReasoning": {
     "message": "思考"
   },
-  "transcriptChannelTools": {
+  "conversationChannelTools": {
     "message": "工具"
   },
-  "transcriptChannelMeta": {
+  "conversationChannelMeta": {
     "message": "元数据"
   },
-  "transcriptCopy": {
+  "conversationCopy": {
     "message": "复制"
   },
-  "transcriptCopyTitle": {
+  "conversationCopyTitle": {
     "message": "复制当前通道文本"
   },
-  "transcriptCopied": {
+  "conversationCopied": {
     "message": "已复制对话"
   },
-  "transcriptEmpty": {
+  "conversationEmpty": {
     "message": "未检测到可合并的 AI 对话流"
   },
-  "transcriptProfileLabel": {
+  "conversationProfileLabel": {
     "message": "协议"
   },
-  "transcriptVendorLabel": {
+  "conversationVendorLabel": {
     "message": "厂商"
   },
-  "transcriptChunksLabel": {
+  "conversationChunksLabel": {
     "message": "块数"
   },
-  "transcriptFinishLabel": {
+  "conversationFinishLabel": {
     "message": "结束"
   },
-  "transcriptModelLabel": {
+  "conversationModelLabel": {
     "message": "模型"
   },
-  "transcriptUsageLabel": {
+  "conversationUsageLabel": {
     "message": "用量"
   },
-  "transcriptToolsEmpty": {
+  "conversationToolsEmpty": {
     "message": "本条流未出现 tool_calls / SEARCH"
   },
-  "transcriptToolsUnsupported": {
+  "conversationToolsUnsupported": {
     "message": "当前协议暂未解析工具调用。可到「事件」里搜 tool / function / plugin 自行确认。"
   },
-  "transcriptReasoningFieldsLabel": {
+  "conversationReasoningFieldsLabel": {
     "message": "思考字段"
   },
-  "transcriptToolsQueries": {
+  "conversationToolsQueries": {
     "message": "搜索词"
   },
-  "transcriptToolsResults": {
+  "conversationToolsResults": {
     "message": "$COUNT$ 个网页",
     "placeholders": {
       "COUNT": {
@@ -140,19 +140,19 @@
       }
     }
   },
-  "transcriptToolsArgs": {
+  "conversationToolsArgs": {
     "message": "参数"
   },
-  "transcriptToolsFunction": {
+  "conversationToolsFunction": {
     "message": "函数"
   },
-  "transcriptToolsWebSearch": {
+  "conversationToolsWebSearch": {
     "message": "网页搜索"
   },
-  "transcriptToolsExpand": {
+  "conversationToolsExpand": {
     "message": "展开工具详情"
   },
-  "transcriptToolsCollapse": {
+  "conversationToolsCollapse": {
     "message": "收起工具详情"
   },
   "eventsSearchPlaceholder": {

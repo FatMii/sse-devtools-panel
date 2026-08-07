@@ -71,67 +71,67 @@
   "tabRequest": {
     "message": "Request"
   },
-  "tabTranscript": {
+  "tabConversation": {
     "message": "Conversation"
   },
   "tabRaw": {
     "message": "Raw"
   },
-  "transcriptChannelContent": {
+  "conversationChannelContent": {
     "message": "Content"
   },
-  "transcriptChannelReasoning": {
+  "conversationChannelReasoning": {
     "message": "Reasoning"
   },
-  "transcriptChannelTools": {
+  "conversationChannelTools": {
     "message": "Tools"
   },
-  "transcriptChannelMeta": {
+  "conversationChannelMeta": {
     "message": "Meta"
   },
-  "transcriptCopy": {
+  "conversationCopy": {
     "message": "Copy"
   },
-  "transcriptCopyTitle": {
+  "conversationCopyTitle": {
     "message": "Copy current channel text"
   },
-  "transcriptCopied": {
+  "conversationCopied": {
     "message": "Conversation copied"
   },
-  "transcriptEmpty": {
+  "conversationEmpty": {
     "message": "No AI chat chunks detected in this stream"
   },
-  "transcriptProfileLabel": {
+  "conversationProfileLabel": {
     "message": "Profile"
   },
-  "transcriptVendorLabel": {
+  "conversationVendorLabel": {
     "message": "Vendor"
   },
-  "transcriptChunksLabel": {
+  "conversationChunksLabel": {
     "message": "Chunks"
   },
-  "transcriptFinishLabel": {
+  "conversationFinishLabel": {
     "message": "Finish"
   },
-  "transcriptModelLabel": {
+  "conversationModelLabel": {
     "message": "Model"
   },
-  "transcriptUsageLabel": {
+  "conversationUsageLabel": {
     "message": "Usage"
   },
-  "transcriptToolsEmpty": {
+  "conversationToolsEmpty": {
     "message": "No tool_calls / SEARCH in this stream"
   },
-  "transcriptToolsUnsupported": {
+  "conversationToolsUnsupported": {
     "message": "This profile does not parse tool calls yet. Switch to Events and search for tool / function / plugin."
   },
-  "transcriptReasoningFieldsLabel": {
+  "conversationReasoningFieldsLabel": {
     "message": "reasoning fields"
   },
-  "transcriptToolsQueries": {
+  "conversationToolsQueries": {
     "message": "Queries"
   },
-  "transcriptToolsResults": {
+  "conversationToolsResults": {
     "message": "$COUNT$ sources",
     "placeholders": {
       "COUNT": {
@@ -140,19 +140,19 @@
       }
     }
   },
-  "transcriptToolsArgs": {
+  "conversationToolsArgs": {
     "message": "Arguments"
   },
-  "transcriptToolsFunction": {
+  "conversationToolsFunction": {
     "message": "Function"
   },
-  "transcriptToolsWebSearch": {
+  "conversationToolsWebSearch": {
     "message": "Web search"
   },
-  "transcriptToolsExpand": {
+  "conversationToolsExpand": {
     "message": "Expand tool details"
   },
-  "transcriptToolsCollapse": {
+  "conversationToolsCollapse": {
     "message": "Collapse tool details"
   },
   "eventsSearchPlaceholder": {

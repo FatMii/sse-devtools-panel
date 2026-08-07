@@ -1,6 +1,6 @@
 import type { SseEvent } from "../types";
 import { detectAiProfile } from "../ai-profile";
-import type { AiEndMeta, AiTranscript, AiTranscriptChannels } from "./types";
+import type { AiEndMeta, AiConversation, AiConversationChannels } from "./types";
 import { mergeOpenAiCompatible } from "./openai";
 import { mergeDeepseekWeb } from "./deepseek";
 import { mergeDoubaoWeb } from "./doubao";
@@ -11,21 +11,21 @@ import { mergeYuanbaoWeb } from "./yuanbao";
 
 export type {
   AiToolCall,
-  AiTranscriptChannels,
+  AiConversationChannels,
   AiEndMeta,
-  AiTranscript,
+  AiConversation,
   MergeChannelsResult,
 } from "./types";
 
 /**
- * Merge stream events into an AI transcript.
+ * Merge stream events into an AI conversation.
  */
-export function mergeAiTranscript(
+export function mergeAiConversation(
   events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,
   url?: string,
-): AiTranscript {
+): AiConversation {
   const detection = detectAiProfile(events, url);
-  let channels: AiTranscriptChannels = { content: "", reasoning: "", tools: [] };
+  let channels: AiConversationChannels = { content: "", reasoning: "", tools: [] };
   let endMeta: AiEndMeta = {};
   let chunkCount = 0;
 
@@ -76,7 +76,7 @@ export function mergeAiTranscript(
   };
 }
 
-export function transcriptHasContent(t: AiTranscript): boolean {
+export function conversationHasContent(t: AiConversation): boolean {
   return (
     t.channels.content.length > 0 ||
     t.channels.reasoning.length > 0 ||
