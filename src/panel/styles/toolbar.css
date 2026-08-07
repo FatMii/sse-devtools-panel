@@ -1,0 +1,195 @@
+.app {
+  height: 100vh;
+  display: grid;
+  grid-template-rows: var(--toolbar-h) 1fr var(--statusbar-h);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--stroke);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-toolbar);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+  min-width: 0;
+  color: var(--text);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.01em;
+}
+
+.brand-mark,
+.brand svg.brand-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--r-md);
+  color: #fff;
+  background: var(--accent);
+  flex-shrink: 0;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.75;
+}
+
+.brand svg.brand-mark [fill="currentColor"] {
+  fill: currentColor;
+  stroke: none;
+}
+
+.brand svg.brand-mark [fill="var(--surface-1)"] {
+  fill: var(--surface-1);
+}
+
+.toolbar-title {
+  font-weight: inherit;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.toolbar-group--runtime {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.toolbar-group--file {
+  min-width: 0;
+}
+
+.toolbar-separator {
+  width: 1px;
+  height: 18px;
+  margin: 0 5px;
+  background: var(--stroke);
+}
+
+.tool-btn {
+  min-height: 27px;
+  padding: 0 var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+}
+
+.tool-btn svg,
+.tool-btn .tool-icon,
+.tool-btn .tool-caret,
+.icon-btn svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+/* Icons that need solid fill set fill="currentColor" */
+.tool-btn svg [fill="currentColor"],
+.icon-btn svg [fill="currentColor"],
+.input-wrap svg [fill="currentColor"] {
+  fill: currentColor;
+  stroke: none;
+}
+
+.tool-btn:hover,
+.icon-btn:hover {
+  color: var(--text);
+}
+
+.tool-btn.primary {
+  color: var(--accent-strong);
+}
+
+.tool-btn.tool-btn-danger:hover,
+.tool-btn.danger:hover {
+  color: var(--danger);
+}
+
+.tool-btn.tool-btn-icon {
+  width: 28px;
+  justify-content: center;
+  padding: 0;
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--good);
+}
+
+.menu {
+  position: relative;
+}
+
+.menu-panel {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  z-index: 30;
+  min-width: 168px;
+  padding: var(--space-1);
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-menu);
+}
+
+.menu-panel-end {
+  left: auto;
+  right: 0;
+}
+
+.menu-panel[hidden] {
+  display: none;
+}
+
+.menu-panel button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  border-radius: var(--r-sm);
+  padding: 6px 8px;
+  color: var(--text);
+}
+
+.menu-panel button:hover {
+  background: var(--surface-hover);
+}
+
+.menu-separator {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--stroke);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

@@ -1,0 +1,136 @@
+:root {
+  color-scheme: light;
+
+  /* B — Independent tool brand: palette */
+  --canvas: #f6f8fb;
+  --surface-1: #ffffff;
+  --surface-2: #f0f3f8;
+  --surface-hover: #e9eef5;
+  --surface-selected: #e5f0fb;
+  --stroke: #d8dee8;
+  --stroke-strong: #b8c3d1;
+  --text: #1d2633;
+  --text-muted: #596779;
+  --text-faint: #7c8999;
+  --accent: #176fc1;
+  --accent-strong: #145fa8;
+  --accent-wash: #e2effb;
+  --good: #218739;
+  --warning: #9a6700;
+  --danger: #c33c30;
+
+  /* Typography */
+  --mono: "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+  --sans: "Segoe UI Variable", "Noto Sans SC", "Microsoft YaHei UI", sans-serif;
+  --text-xs: 10px;
+  --text-sm: 11px;
+  --text-base: 12px;
+  --text-md: 13px;
+  --leading: 1.45;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 650;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 6px;
+  --space-3: 8px;
+  --space-4: 10px;
+  --space-5: 12px;
+
+  /* Layout rhythm */
+  --toolbar-h: 42px;
+  --tab-h: 38px;
+  --statusbar-h: 24px;
+  --sidebar: 312px;
+  --drawer: 358px;
+  --events-list-min: 350px;
+
+  /* Shape & elevation */
+  --r-sm: 4px;
+  --r-md: 5px;
+  --shadow-toolbar: 0 1px 0 rgb(28 50 74 / 4%);
+  --shadow-menu: 0 8px 24px rgb(28 50 74 / 10%);
+  --shadow-drawer: -5px 0 18px rgb(32 55 82 / 5%);
+
+  /* Focus & motion */
+  --focus-ring: 2px solid color-mix(in srgb, var(--accent) 72%, white);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --duration-fast: 120ms;
+  --duration-ui: 160ms;
+
+  /* Legacy color aliases */
+  --bg: var(--canvas);
+  --bg-elevated: var(--surface-1);
+  --bg-hover: var(--surface-hover);
+  --bg-active: var(--surface-selected);
+  --border: var(--stroke);
+  --success: var(--good);
+  --warn: var(--warning);
+  --error: var(--danger);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  background: var(--canvas);
+  font: var(--text-base) / var(--leading) var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  color: var(--text);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-ui) var(--ease-out),
+    color var(--duration-ui) var(--ease-out),
+    border-color var(--duration-ui) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  button:hover {
+    background: var(--surface-hover);
+  }
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: -1px;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+button:disabled:hover {
+  background: transparent;
+}
+
+button.is-paused {
+  color: var(--warning);
+}
