@@ -1,0 +1,223 @@
+.request-view.active {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  background: var(--canvas);
+}
+
+.request-view .request-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-height: 0;
+  overflow: auto;
+  padding: 0 0 16px;
+}
+
+.request-view .request-subtabs {
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  min-width: 0;
+  padding: 0 var(--space-5);
+  border-bottom: 1px solid var(--stroke);
+  background: var(--surface-1);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.request-view .request-subtab {
+  flex-shrink: 0;
+  height: 34px;
+  padding: 0 11px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: 0;
+}
+
+.request-view .request-subtab:hover {
+  color: var(--text);
+}
+
+.request-view .request-subtab.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+.request-pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-height: 0;
+  padding: 0 var(--space-5);
+}
+
+.request-pane[hidden] {
+  display: none !important;
+}
+
+.request-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--stroke);
+}
+
+.request-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.request-section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.request-section-title {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.request-view-toggle {
+  display: inline-flex;
+  gap: 0;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  background: var(--surface-1);
+}
+
+.request-view-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: background-color var(--duration-ui) var(--ease-out);
+}
+
+.request-view-btn:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+
+.request-view-btn.active {
+  background: var(--accent-wash);
+  color: var(--accent-strong);
+}
+
+.request-section-hint,
+.request-empty {
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+  line-height: 1.55;
+}
+
+.request-kv {
+  display: grid;
+  gap: 5px;
+  padding: 7px 9px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+}
+
+.request-kv-row {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+  font-size: var(--text-sm);
+}
+
+.request-kv-row span {
+  color: var(--text-muted);
+}
+
+.request-kv-row code,
+.request-header-name code,
+.request-header-value code {
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.request-url {
+  color: var(--text);
+}
+
+.request-headers-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  background: var(--surface-1);
+}
+
+.request-headers-table th,
+.request-headers-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--stroke);
+}
+
+.request-headers-table tr:last-child th,
+.request-headers-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.request-headers-table th {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  background: var(--surface-2);
+}
+
+.request-header-name {
+  width: 28%;
+}
+
+.request-header-value.is-redacted code {
+  color: var(--warning);
+}
+
+.request-payload-content {
+  min-height: 0;
+}
+
+.request-payload-text {
+  margin: 0;
+  padding: 7px 9px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 420px;
+  overflow: auto;
+}
