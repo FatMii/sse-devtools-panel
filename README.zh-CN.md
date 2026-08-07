@@ -69,6 +69,7 @@
 - [开发](#开发)
 - [限制](#限制)
 - [参与贡献](#参与贡献)
+- [致谢](#致谢)
 - [开源协议](#开源协议)
 
 ---
@@ -401,6 +402,16 @@ pnpm format:check && pnpm lint && pnpm test-only && pnpm typecheck && pnpm build
 反馈问题时尽量写清：复现步骤、Chrome 版本、目标 URL，以及本地 Demo 能否复现。若涉及对话视图，请附上 Raw 或导出的 JSON（可脱敏）。
 
 厂商适配请附真实样本后再开 Issue，便于对照协议改动。
+
+---
+
+<a name="致谢"></a>
+
+# 致谢
+
+- **界面图标** — 改编自 [Lucide](https://lucide.dev)（[ISC](https://lucide.dev/license)）。新增图标请同样使用 Lucide，见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
+- **运行平台** — 基于 Chromium DevTools 扩展能力。
+- **协议参考** — SSE 对照 [HTML Living Standard](https://html.spec.whatwg.org/multipage/server-sent-events.html)；Connect+JSON 对照 [Connect 协议](https://connectrpc.com/docs/protocol)。
 
 ---
 

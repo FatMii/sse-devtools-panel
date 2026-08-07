@@ -69,6 +69,7 @@
 - [Development](#development)
 - [Limitations](#limitations)
 - [Contributing](#contributing)
+- [Acknowledgments](#acknowledgments)
 - [License](#license)
 
 ---
@@ -369,6 +370,14 @@ Issues and PRs are welcome. Please read [CONTRIBUTING.md](./CONTRIBUTING.md) fir
 When reporting a bug, include repro steps, Chrome version, target URL, and whether the local demo reproduces it. For Conversation issues, attach Raw or exported JSON (redacted is fine).
 
 For vendor adaptations, please include a real sample so we can match protocol changes.
+
+---
+
+# Acknowledgments
+
+- **UI icons** — adapted from [Lucide](https://lucide.dev) ([ISC](https://lucide.dev/license)). New icons should also come from Lucide; see [CONTRIBUTING.md](./CONTRIBUTING.md).
+- **Platform** — built as a Chromium DevTools extension.
+- **Protocols** — SSE follows the [HTML Living Standard](https://html.spec.whatwg.org/multipage/server-sent-events.html); Connect+JSON framing follows the [Connect protocol](https://connectrpc.com/docs/protocol).
 
 ---
 

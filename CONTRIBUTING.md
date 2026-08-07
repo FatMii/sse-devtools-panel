@@ -35,6 +35,15 @@ pnpm build
 3. Keep PRs focused. Prefer Conventional Commits style when possible, e.g. `feat: …`, `fix: …`, `docs: …`, `test: …`, `chore: …`.
 4. Shared logic changes should include or update tests under `scripts/test-*.mjs` when practical.
 
+## UI icons
+
+Panel icons live in `src/panel/core/icons.ts`.
+
+- Prefer [Lucide](https://lucide.dev) outline icons (24×24, 2px stroke).
+- Copy the SVG paths into `ICONS` and wire them with `data-icon` / `renderIcon`.
+- Keep style consistent with existing icons (`currentColor`, round caps/joins).
+- Do not add a second icon library (Font Awesome, Material, etc.) without discussion.
+
 CI (GitHub Actions) runs the same `test-only` + `typecheck` + `build` checks on every PR to `main`. A red CI means the PR is not ready to merge.
 
 ## Reporting bugs
