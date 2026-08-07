@@ -8,12 +8,12 @@
   <em>SSE / EventSource / NDJSON debugger for Chrome DevTools</em>
 </p>
 
-<p align="center"><a href="./README.en.md">English</a></p>
+<p align="center"><a href="./README.zh-CN.md">中文</a></p>
 
 <p align="center">
-  <strong>Chrome 扩展：在 DevTools 里调试网页的 SSE / EventSource / NDJSON 流。</strong><br/>
-  安装后打开 F12 → SSE DevTools：事件列表、对话、时间线与全局搜索，都能在面板里直接看。<br/>
-  适合 AI 对话、通知推送、进度上报等长连接场景。
+  <strong>A Chrome extension to debug SSE / EventSource / NDJSON streams in DevTools.</strong><br/>
+  After install, open F12 → SSE DevTools to inspect events, conversation, timeline, and global search.<br/>
+  Built for long-lived streams such as AI chats, notifications, and progress updates.
 </p>
 
 <p align="center">
@@ -30,282 +30,258 @@
 
 <p align="center">
   <!-- SCREENSHOT: hero / panel overview -->
-  <img width="1400" alt="面板总览" src="docs/assets/screenshots/panel-overview.gif">
+  <img width="1400" alt="Panel overview" src="docs/assets/screenshots/panel-overview.gif">
 </p>
 
 ---
 
-# 目录
+# Table of contents
 
-- [目录](#目录)
-- [为什么需要它](#为什么需要它)
-- [它是什么 / 不是什么](#它是什么--不是什么)
-- [功能特性](#功能特性)
-  - [🎣 流式捕获](#-流式捕获)
-  - [📚 Streams 侧栏](#-streams-侧栏)
+- [Table of contents](#table-of-contents)
+- [Why you need it](#why-you-need-it)
+- [What it is / is not](#what-it-is--is-not)
+- [Features](#features)
+  - [🎣 Stream capture](#-stream-capture)
+  - [📚 Streams sidebar](#-streams-sidebar)
   - [📋 Events](#-events)
   - [📨 Request](#-request)
-  - [🧠 对话（Conversation）](#-对话conversation)
+  - [🧠 Conversation](#-conversation)
   - [⏱ Timeline](#-timeline)
   - [📄 Raw](#-raw)
-  - [🛠 分析与工具栏](#-分析与工具栏)
-  - [💾 导入 / 导出 / 归档](#-导入--导出--归档)
-  - [🌐 国际化与设置](#-国际化与设置)
-- [界面截图](#界面截图)
-  - [主界面](#主界面)
-  - [工具栏与更多菜单](#工具栏与更多菜单)
-  - [Demo 页联调](#demo-页联调)
-- [已支持的 AI Web 厂商](#已支持的-ai-web-厂商)
-- [快速开始](#快速开始)
-  - [前置](#前置)
-  - [安装并加载](#安装并加载)
-- [30 秒 Demo](#30-秒-demo)
-- [开发](#开发)
-- [限制](#限制)
-- [参与贡献](#参与贡献)
-- [开源协议](#开源协议)
+  - [🛠 Analysis & toolbar](#-analysis--toolbar)
+  - [💾 Import / export / archives](#-import--export--archives)
+  - [🌐 i18n & settings](#-i18n--settings)
+- [Screenshots](#screenshots)
+  - [Main workbench](#main-workbench)
+  - [Toolbar & More menu](#toolbar--more-menu)
+  - [Demo page](#demo-page)
+- [Supported AI web vendors](#supported-ai-web-vendors)
+- [Quick start](#quick-start)
+  - [Prerequisites](#prerequisites)
+  - [Install & load](#install--load)
+- [30-second demo](#30-second-demo)
+- [Development](#development)
+- [Limitations](#limitations)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-<a name="为什么需要它"></a>
+# Why you need it
 
-# 为什么需要它
+Chrome Network already has an [EventStream](https://developer.chrome.com/docs/devtools/network/reference#analyze-events-in-a-stream) tab for **standard SSE** (alongside Headers / Response), so you can watch events arrive while the stream is open.
 
-Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://developer.chrome.com/docs/devtools/network/reference#analyze-events-in-a-stream) Tab（与 Headers / Response 同级），可以边接收流数据边看事件列表。
+For many AI / product streams that is not enough. They are often not plain EventSource, and common pain points are:
 
-但对很多 AI / 业务流不够用。它们通常不是单纯的 EventSource，常见问题是：
+- Most use **`fetch` + custom SSE / NDJSON / Connect+JSON**. Network often shows hard-to-read Response fragments, or an empty / useless EventStream tab
+- **No in-stream timing** (TTFT, chunk gaps, stall distribution, reconnect markers)
+- **AI chats are hard to read**: thinking / content / tool calls / search sources mixed in raw frames and need manual stitching
 
-- 多用 **`fetch` + 自定义 SSE / NDJSON / Connect+JSON**，Network 里经常只剩难读的 Response 碎片，或 EventStream Tab 空白 / 帮不上忙
-- **看不到流内节奏**（TTFT、chunk gap、卡顿分布、重连标记）
-- **AI 对话难读**：思考 / 正文 / 工具调用 / 搜索来源混在原始帧里，需要人工拼
-
-| 场景                                          | Chrome Network             | SSE DevTools Panel                        |
-| --------------------------------------------- | -------------------------- | ----------------------------------------- |
-| 标准 SSE（EventSource / 部分 fetch）          | 请求详情有 EventStream Tab | 同样可看，并带过滤、JSON 树、导出         |
-| AI / 私有协议（NDJSON、Connect+JSON、厂商帧） | 多半是原文碎片，难拼成对话 | Profile 识别 + **对话**分通道合并         |
-| 流内时序与卡顿                                | 基本只有整请求耗时         | Timeline + Stats（TTFT / gap / events·s） |
-| 规范与异常                                    | 无针对性扫描               | SSE Spec 告警 · Anomalies                 |
-| 网页搜索等工具结果                            | 埋在 raw 里                | 归一成 `web_search` 卡片（查询 + 来源）   |
+| Scenario                                         | Chrome Network                                       | SSE DevTools Panel                                |
+| ------------------------------------------------ | ---------------------------------------------------- | ------------------------------------------------- |
+| Standard SSE (EventSource / some fetch)          | EventStream tab on the request                       | Same view, plus filters, JSON tree, export        |
+| AI / private protocols (NDJSON, Connect+JSON, …) | Mostly raw fragments; hard to reassemble into a chat | Profile detection + **Conversation** channels     |
+| In-stream timing & stalls                        | Mostly whole-request duration                        | Timeline + Stats (TTFT / gap / events·s)          |
+| Spec & anomalies                                 | No targeted scan                                     | SSE Spec warnings · Anomalies                     |
+| Web search / tool results                        | Buried in raw                                        | Normalized `web_search` cards (queries + sources) |
 
 ---
 
-<a name="它是什么--不是什么"></a>
+# What it is / is not
 
-# 它是什么 / 不是什么
+**SSE DevTools Panel is**
 
-**SSE DevTools Panel 是**
+- A dedicated Chromium **DevTools panel** (F12 → SSE DevTools)
+- A stream debugging workbench: list · timing · request · conversation · export / replay
 
-- 独立的 Chromium **DevTools 面板**（F12 → SSE DevTools）
-- 面向开发者的流式调试工作台：列表 · 时序 · 请求 · 对话 · 导出回放
+**SSE DevTools Panel is not**
 
-**SSE DevTools Panel 不是**
-
-- Network 面板的替代品（Headers 全量审计仍以 Network 为准）
-- 通用抓包工具 / MITM 代理
+- A replacement for the Network panel (full Headers audit still belongs in Network)
+- A general packet sniffer / MITM proxy
 
 ---
 
-<a name="功能特性"></a>
+# Features
 
-# 功能特性
+## 🎣 Stream capture
 
-<a name="流式捕获"></a>
+- **Transports** — streams started with `fetch`, `EventSource`, or `XHR`
+- **Formats** — SSE (`text/event-stream`), NDJSON, Connect+JSON
+- **Independent view** — the panel can read stream content without changing page behavior
+- **Lifecycle** — records abort, errors, close reasons, plus EventSource reconnects and `Last-Event-ID`
+- **Fewer false positives** — a response appears in the sidebar only after it is confirmed as streaming content, so ordinary JSON / analytics requests are less likely to clutter the list
 
-## 🎣 流式捕获
+## 📚 Streams sidebar
 
-- **传输** — 支持 `fetch`、`EventSource`、`XHR` 发起的流
-- **格式** — SSE（`text/event-stream`）、NDJSON、Connect+JSON
-- **独立查看** — 面板可读流内容，页面原有逻辑不受影响
-- **生命周期** — 记录中止、错误、关闭原因，以及 EventSource 重连与 `Last-Event-ID`
-- **减少误报** — 确认响应是流式内容后，才出现在侧栏列表，降低普通 JSON / 埋点请求混入
-
-<a name="streams-侧栏"></a>
-
-## 📚 Streams 侧栏
-
-- 实时列出本页捕获到的流：方法、URL、状态、事件数
-- 支持按 URL 搜索，并按传输类型筛选（全部类型 / Fetch / EventSource / XHR）
-- 过滤后能看清当前匹配条数与总条数
-- 侧栏宽度可拖拽调整
+- Live list of streams captured on the page: method, URL, status, event count
+- Filter by URL search and transport (All / Fetch / EventSource / XHR)
+- Shows matched vs total count after filtering
+- Sidebar width is resizable
 
 <p align="center">
-  <img width="480" alt="Streams 侧栏" src="docs/assets/screenshots/streams-sidebar.png">
+  <img width="480" alt="Streams sidebar" src="docs/assets/screenshots/streams-sidebar.png">
 </p>
 
 ## 📋 Events
 
-按条查看流事件：序号、到达时间、事件名、数据摘要。
+Inspect stream events row by row: index, arrival time, event name, data summary.
 
-- 点击行可展开 JSON，支持折叠浏览
-- 支持文本或正则过滤事件 / 数据
-- 列宽可拖拽调整
-- 可与 Timeline、Raw 联动跳转定位
+- Click a row to expand JSON (collapsible)
+- Filter event / data with text or regex
+- Column widths are resizable
+- Jump to matching rows from Timeline / Raw
 
 <p align="center">
-  <img width="1200" alt="Events Tab" src="docs/assets/screenshots/tab-events.png">
+  <img width="1200" alt="Events tab" src="docs/assets/screenshots/tab-events.png">
 </p>
 
 ## 📨 Request
 
-查看这条流对应的请求信息（类似 Network）：
+Inspect the request for the selected stream (similar to Network):
 
-- 请求头与请求体
-- 敏感请求头自动脱敏
-- 与方法、URL、状态等基础信息同屏查看
+- Request headers and body
+- Sensitive headers redacted automatically
+- Shown together with method, URL, status, and other basics
 
 <p align="center">
-  <img width="1200" alt="Request Tab" src="docs/assets/screenshots/tab-request.png">
+  <img width="1200" alt="Request tab" src="docs/assets/screenshots/tab-request.png">
 </p>
 
-<a name="conversation"></a>
+## 🧠 Conversation
 
-## 🧠 对话（Conversation）
+Merge stream fragments into a readable conversation, split by channel:
 
-把流里的碎片合成可读对话，按通道分开看：
+| Channel      | What you see                                            |
+| ------------ | ------------------------------------------------------- |
+| **Content**  | Final answer                                            |
+| **Thinking** | Thinking / deep-search process                          |
+| **Tools**    | Function calls; web search becomes query + source cards |
+| **Meta**     | Finish reason, usage, model, protocol type, and more    |
 
-| 通道       | 能看到什么                                |
-| ---------- | ----------------------------------------- |
-| **正文**   | 最终回答                                  |
-| **思考**   | 思考过程 / 深度搜索过程                   |
-| **工具**   | 函数调用；网页搜索会整理成查询 + 来源卡片 |
-| **元数据** | 结束原因、用量、模型、协议类型等          |
-
-- 顶部可看到当前识别到的协议与站点提示
-- 工具卡可折叠；网页搜索展示查询芯片与结果列表（标题 / URL / 摘要）
-- 当前通道内容可一键复制
-- 国内主流 AI 网页与 OpenAI 兼容协议大多能合并（见下方[支持矩阵](#已支持的-ai-web-厂商)）
+- Top chips show the detected protocol and site hint
+- Tool cards are collapsible; web search shows query chips and result lists (title / URL / snippet)
+- One-click copy for the current channel
+- Most major Chinese AI web apps and OpenAI-compatible APIs can be merged (see the [support matrix](#supported-ai-web-vendors) below)
 
 <p align="center">
-  <img width="1200" alt="对话正文" src="docs/assets/screenshots/tab-conversation-content.png">
-</p>
-
-<p align="center">
-  <img width="1200" alt="对话思考" src="docs/assets/screenshots/tab-conversation-think.png">
+  <img width="1200" alt="Conversation content" src="docs/assets/screenshots/tab-conversation-content.png">
 </p>
 
 <p align="center">
-  <img width="1200" alt="对话 工具 · 网页搜索" src="docs/assets/screenshots/tab-conversation-tools.png">
+  <img width="1200" alt="Conversation thinking" src="docs/assets/screenshots/tab-conversation-think.png">
+</p>
+
+<p align="center">
+  <img width="1200" alt="Conversation tools · web search" src="docs/assets/screenshots/tab-conversation-tools.png">
 </p>
 
 ## ⏱ Timeline
 
-用时间轴看这条流「什么时候到、中间卡了多久」：
+Use the timeline to see when events arrived and how long gaps lasted:
 
-- **到达时间线** — 每个事件按到达时刻排在轴上；点击可跳到 Events 对应行
-- **卡顿高亮** — 与上一条间隔 ≥250ms 的事件标红，方便找卡顿点
-- **间隔分布** — 相邻事件等待时长的直方图，长停顿一眼可见
-- **重连标记** — EventSource 重连会出现在时间轴上，并列出重连次数与 Last-Event-ID
+- **Arrival track** — each event placed by arrival time; click to jump to the Events row
+- **Stall highlight** — events with ≥250ms gap from the previous one are marked red
+- **Gap distribution** — histogram of waits between adjacent events; long stalls stand out
+- **Reconnect markers** — EventSource reconnects appear on the track, with reconnect count and Last-Event-ID
 
 <p align="center">
-  <img width="1200" alt="Timeline Tab" src="docs/assets/screenshots/tab-timeline.png">
+  <img width="1200" alt="Timeline tab" src="docs/assets/screenshots/tab-timeline.png">
 </p>
 
 ## 📄 Raw
 
-查看这条流的原文，方便和 Events / 对话等视图对照：
+View the stream text so you can compare it with Events / Conversation:
 
-- 展示按事件拼回的完整原文
-- 支持一键复制
+- Full text rebuilt from parsed events
+- One-click copy
 
-<a name="分析与工具栏"></a>
+## 🛠 Analysis & toolbar
 
-## 🛠 分析与工具栏
-
-| 能力            | 说明                                                       |
-| --------------- | ---------------------------------------------------------- |
-| **暂停 / 继续** | 只暂停界面刷新，后台仍继续捕获；继续后会补上最新列表与详情 |
-| **Stats**       | 首包延迟、总时长、平均 / 最大间隔、每秒事件数等            |
-| **Anomalies**   | 扫描空数据、异常间隔等可疑情况                             |
-| **Spec**        | 对照 SSE 规范提示字段、换行、BOM 等问题                    |
-| **Search All**  | 跨多条流全局搜索                                           |
-| **Clear**       | 清空当前会话已捕获的流                                     |
-| **Settings**    | 打开选项页（语言等）                                       |
+| Capability         | Description                                                                   |
+| ------------------ | ----------------------------------------------------------------------------- |
+| **Pause / Resume** | Pauses UI refresh only; capture keeps running; resume refreshes list & detail |
+| **Stats**          | First-byte latency, duration, avg / max gap, events per second, and more      |
+| **Anomalies**      | Scans empty data, odd gaps, and similar suspects                              |
+| **Spec**           | SSE-spec hints for fields, newlines, BOM, and related issues                  |
+| **Search All**     | Global search across streams                                                  |
+| **Clear**          | Clears streams captured in the current session                                |
+| **Settings**       | Opens the options page (language, etc.)                                       |
 
 <p align="center">
   <img width="1200" alt="Stats" src="docs/assets/screenshots/dialog-stats.png">
 </p>
 
-<a name="导入--导出--归档"></a>
+## 💾 Import / export / archives
 
-## 💾 导入 / 导出 / 归档
+- **Export** — JSON, CSV, or `.sse` text files
+- **Import** — load a local JSON file and replay it in the panel
+- **Save / Archives** — save the selected stream locally and open it again later
 
-- **导出** — 可导出 JSON、CSV，或 `.sse` 原文文件
-- **导入** — 导入本地 JSON，在面板里直接回放查看
-- **保存 / 存档** — 把选中的流存到本地，之后再打开翻看
+## 🌐 i18n & settings
 
-<a name="国际化与设置"></a>
-
-## 🌐 国际化与设置
-
-- 界面支持中文与 English
-- 可在选项页选择：跟随浏览器，或固定某一种语言
+- UI supports Chinese and English
+- Options page: follow the browser language, or pin one language
 
 ---
 
-<a name="界面截图"></a>
+# Screenshots
 
-# 界面截图
+## Main workbench
 
-## 主界面
-
-侧栏选流，右侧用 Tab 切换 Events / Request / Conversation / Timeline / Raw。
+Pick a stream in the sidebar; switch Events / Request / Conversation / Timeline / Raw on the right.
 
 <p align="center">
-  <img width="1400" alt="主界面" src="docs/assets/screenshots/main-workbench.png">
+  <img width="1400" alt="Main workbench" src="docs/assets/screenshots/main-workbench.png">
 </p>
 
-## 工具栏与更多菜单
+## Toolbar & More menu
 
-常用操作放在顶栏：导入、导出、存档、Stats、暂停、清空；Anomalies、Spec、全局搜索、设置放在「更多」里。
+Common actions live in the top bar: import, export, archives, Stats, pause, clear. Anomalies, Spec, global search, and settings are under **More**.
 
 <p align="center">
-  <img width="1000" alt="工具栏" src="docs/assets/screenshots/toolbar.png">
+  <img width="1000" alt="Toolbar" src="docs/assets/screenshots/toolbar.png">
 </p>
 
-## Demo 页联调
+## Demo page
 
-本地 Demo 可一键发起 SSE，用来确认扩展是否正常工作。
+The local demo can start an SSE stream in one click, so you can confirm the extension is working.
 
 <p align="center">
-  <img width="1000" alt="Demo 页" src="docs/assets/screenshots/demo-page.png">
+  <img width="1000" alt="Demo page" src="docs/assets/screenshots/demo-page.png">
 </p>
 
 ---
 
-<a name="已支持的-ai-web-厂商"></a>
+# Supported AI web vendors
 
-# 已支持的 AI Web 厂商
+Conversation merges content by protocol profile. Currently supported:
 
-对话视图会按协议类型合并内容。当前已适配：
+| Profile             | Typical site / shape    | Notes                                     |
+| ------------------- | ----------------------- | ----------------------------------------- |
+| `openai-compatible` | OpenAI-compatible APIs  | Content / thinking / tool calls           |
+| `deepseek-web`      | DeepSeek web            | Thinking + content; search tools          |
+| `doubao-web`        | Doubao web              | Split thinking / content; deduped sources |
+| `kimi-web`          | Kimi                    | Thinking / content / search               |
+| `qwen-web`          | Qwen web                | Plan thinking / deep thinking / search    |
+| `chatglm-web`       | ChatGLM / Zhipu Qingyan | Thinking / content / search results       |
+| `yuanbao-web`       | Tencent Yuanbao         | Deep-search thinking + sources            |
+| `anthropic`         | Anthropic-style SSE     | Basic detection                           |
+| `generic`           | Unrecognized            | Events / Timeline / Raw still work        |
 
-| Profile             | 典型站点 / 形态      | 说明                           |
-| ------------------- | -------------------- | ------------------------------ |
-| `openai-compatible` | 各类 OpenAI 兼容 API | 正文 / 思考 / 工具调用         |
-| `deepseek-web`      | DeepSeek 网页        | 思考 + 正文；支持搜索工具      |
-| `doubao-web`        | 豆包网页             | 思考与正文拆分；搜索结果去重   |
-| `kimi-web`          | Kimi                 | 思考 / 正文 / 搜索             |
-| `qwen-web`          | 通义千问网页         | 计划思考 / 深度思考 / 搜索     |
-| `chatglm-web`       | 智谱清言 / ChatGLM   | 思考 / 正文 / 搜索结果         |
-| `yuanbao-web`       | 腾讯元宝             | 深度搜索思考 + 来源            |
-| `anthropic`         | Anthropic 风格 SSE   | 基础识别                       |
-| `generic`           | 未识别               | 仍可看 Events / Timeline / Raw |
-
-> 各站协议常变。若对话视图为空或工具卡不对，请导出 Raw 或 JSON 并注明 URL。  
-> 未列出的站点：有真实样本后再适配。
+> Vendor protocols change often. If Conversation is empty or tool cards look wrong, export Raw or JSON and include the URL.  
+> Sites not listed here are adapted after we have a real sample.
 
 ---
 
-<a name="快速开始"></a>
+# Quick start
 
-# 快速开始
+### Prerequisites
 
-### 前置
+- Node.js 20+ (recommended)
+- [pnpm](https://pnpm.io) 10.x (see the `packageManager` field)
+- A Chromium-based browser (Chrome / Edge / …)
 
-- Node.js 20+（建议）
-- [pnpm](https://pnpm.io) 10.x（见 `packageManager` 字段）
-- Chromium 内核浏览器（Chrome / Edge 等）
-
-### 安装并加载
+### Install & load
 
 ```bash
 git clone https://github.com/FatMii/sse-devtools-panel.git
@@ -314,61 +290,57 @@ pnpm i
 pnpm build
 ```
 
-1. 打开 `chrome://extensions`，开启「开发者模式」
-2. 「加载已解压的扩展程序」→ 选择仓库里的 **`dist/`**
-3. 打开目标站点 → <kbd>F12</kbd> → **SSE DevTools**
-4. **刷新页面**后再触发流式接口（扩展需在页面加载时生效）
+1. Open `chrome://extensions` and enable **Developer mode**
+2. **Load unpacked** → select the repo’s **`dist/`** folder
+3. Open the target site → <kbd>F12</kbd> → **SSE DevTools**
+4. **Refresh the page**, then trigger a streaming API (the extension must be active at page load)
 
-改代码时用 `pnpm dev` 监听构建，扩展管理页点「重新加载」即可。
+While coding, use `pnpm dev` for watch builds, then click **Reload** on the extensions page.
 
-更完整的协作说明见 [CONTRIBUTING.md](./CONTRIBUTING.md)、[docs/GITHUB_SETUP.md](./docs/GITHUB_SETUP.md)。
+More collaboration notes: [CONTRIBUTING.md](./CONTRIBUTING.md), [docs/GITHUB_SETUP.md](./docs/GITHUB_SETUP.md).
 
 ---
 
-<a name="30-秒-demo"></a>
-
-# 30 秒 Demo
+# 30-second demo
 
 ```bash
 pnpm build && pnpm demo
 ```
 
-1. 浏览器打开 <http://127.0.0.1:8765>
-2. 确认扩展已加载 → 打开 DevTools → **SSE DevTools**
-3. **刷新 Demo 页** → 点击 **Start stream**
-4. 侧栏应出现流；Events / Conversation / Timeline / Raw 等 Tab 有数据
+1. Open <http://127.0.0.1:8765>
+2. Confirm the extension is loaded → open DevTools → **SSE DevTools**
+3. **Refresh the demo page** → click **Start stream**
+4. A stream should appear in the sidebar; Events / Conversation / Timeline / Raw tabs should have data
 
 ---
 
-<a name="开发"></a>
-
-# 开发
+# Development
 
 ```bash
-pnpm build        # 类型检查 + 打包到 dist/
-pnpm dev          # 监听构建
+pnpm build        # typecheck + bundle into dist/
+pnpm dev          # watch build
 pnpm typecheck
 pnpm lint
 pnpm format
-pnpm test-only    # 解析 / 导出 / Spec / 时序 / 对话合并等单测
+pnpm test-only    # parsers / export / Spec / timing / conversation merge tests
 ```
 
-| 路径                         | 职责                                                 |
-| ---------------------------- | ---------------------------------------------------- |
-| `src/content/inject/`        | 页面侧捕获：fetch / EventSource / XHR 补丁           |
-| `src/content/inject-main.ts` | 注入入口（加载上述补丁）                             |
-| `src/content/bridge.ts`      | 把捕获结果转发到扩展                                 |
-| `src/background.ts`          | 扩展后台消息中继                                     |
-| `src/devtools/`              | DevTools 面板注册入口                                |
-| `src/panel/`                 | 面板 UI（`core` / `views` / `features` / `widgets`） |
-| `src/shared/`                | 解析、时序、Spec、导出等公共逻辑                     |
-| `src/shared/ai-merge/`       | 对话合并（各厂商 Profile）                           |
-| `src/options/`               | 选项页                                               |
-| `_locales/`                  | 中英文案（`en` / `zh_CN`）                           |
-| `demo/`                      | 本地 Demo 服务                                       |
-| `scripts/`                   | 构建与单测脚本                                       |
+| Path                         | Role                                                      |
+| ---------------------------- | --------------------------------------------------------- |
+| `src/content/inject/`        | Page-side capture: fetch / EventSource / XHR patches      |
+| `src/content/inject-main.ts` | Inject entry (loads the patches above)                    |
+| `src/content/bridge.ts`      | Forwards captured data into the extension                 |
+| `src/background.ts`          | Extension background message relay                        |
+| `src/devtools/`              | DevTools panel registration                               |
+| `src/panel/`                 | Panel UI (`core` / `views` / `features` / `widgets`)      |
+| `src/shared/`                | Shared parsers, timing, Spec, export, and related helpers |
+| `src/shared/ai-merge/`       | Conversation merge (per-vendor profiles)                  |
+| `src/options/`               | Options page                                              |
+| `_locales/`                  | UI strings (`en` / `zh_CN`)                               |
+| `demo/`                      | Local demo server                                         |
+| `scripts/`                   | Build and test scripts                                    |
 
-发 PR 前请跑通：
+Before opening a PR, run:
 
 ```bash
 pnpm format:check && pnpm lint && pnpm test-only && pnpm typecheck && pnpm build
@@ -376,34 +348,26 @@ pnpm format:check && pnpm lint && pnpm test-only && pnpm typecheck && pnpm build
 
 ---
 
-<a name="限制"></a>
+# Limitations
 
-# 限制
-
-- 仅支持 Chromium 系浏览器的 DevTools（Chrome / Edge 等），暂无 Firefox / Safari 面板
-- 抓不到页面 Service Worker 里发起的请求
-- 部分更深层的流式 API 用法可能漏抓；若遇到请带复现步骤开 Issue
-- 对话视图依赖各站私有协议，站点改版后可能需要重新适配
-- 当前需本地 `pnpm build` 后，在扩展管理页加载 `dist/` 使用
+- Chromium DevTools only (Chrome / Edge / …); no Firefox / Safari panel yet
+- Requests started inside a page Service Worker are not captured
+- Some deeper streaming API patterns may be missed; open an Issue with repro steps if you hit one
+- Conversation depends on each site’s private protocol and may need updates after site changes
+- For now, run `pnpm build` locally and load `dist/` from the extensions page
 
 ---
 
-<a name="参与贡献"></a>
+# Contributing
 
-# 参与贡献
+Issues and PRs are welcome. Please read [CONTRIBUTING.md](./CONTRIBUTING.md) first.
 
-欢迎提 Issue / PR，请先阅读 [CONTRIBUTING.md](./CONTRIBUTING.md)。
+When reporting a bug, include repro steps, Chrome version, target URL, and whether the local demo reproduces it. For Conversation issues, attach Raw or exported JSON (redacted is fine).
 
-反馈问题时尽量写清：复现步骤、Chrome 版本、目标 URL，以及本地 Demo 能否复现。若涉及对话视图，请附上 Raw 或导出的 JSON（可脱敏）。
-
-厂商适配请附真实样本后再开 Issue，便于对照协议改动。
+For vendor adaptations, please include a real sample so we can match protocol changes.
 
 ---
 
-<a name="开源协议"></a>
+# License
 
-# 开源协议
-
-本项目采用 **[MIT](./LICENSE)** 协议开源。
-
----
+This project is released under the **[MIT](./LICENSE)** license.
