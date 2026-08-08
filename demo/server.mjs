@@ -89,7 +89,7 @@ const DEMO_HTML = `<!DOCTYPE html>
   <title>SSE DevTools · Demo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     :root {
       --ink: #10221f;
@@ -158,13 +158,14 @@ const DEMO_HTML = `<!DOCTYPE html>
     }
 
     .brand {
-      font-family: Syne, sans-serif;
-      font-weight: 800;
-      font-size: clamp(2.6rem, 8vw, 4.6rem);
-      line-height: 0.95;
-      letter-spacing: -0.04em;
+      font-family: "Bricolage Grotesque", sans-serif;
+      font-optical-sizing: auto;
+      font-weight: 700;
+      font-size: clamp(2.75rem, 7.5vw, 4.35rem);
+      line-height: 1.08;
+      letter-spacing: -0.015em;
       margin: 0;
-      max-width: 12ch;
+      max-width: 14ch;
       animation: rise 0.7s var(--ease) both;
     }
 
