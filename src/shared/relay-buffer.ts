@@ -39,10 +39,7 @@ export class RelayBuffer<T extends BufferedRelay> {
   push(item: T): void {
     this.items.push(item);
     this.bytes += item.byteSize;
-    while (
-      this.items.length > this.options.maxMessages ||
-      this.bytes > this.options.maxBytes
-    ) {
+    while (this.items.length > this.options.maxMessages || this.bytes > this.options.maxBytes) {
       const removed = this.items.shift();
       if (!removed) break;
       this.bytes -= removed.byteSize;
