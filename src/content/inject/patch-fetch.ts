@@ -1,6 +1,6 @@
 import { classifyThrownError } from "../../shared/stream-close";
 import type { StreamKind } from "../../shared/types";
-import { detectStreamKind, looksLikeKimiConnectUrl, requestLooksLikeConnectJson } from "./detect";
+import { resolveStreamKind } from "./detect";
 import {
   collectFetchRequestMeta,
   normalizeResponseHeaders,
@@ -53,23 +53,16 @@ export function patchFetch(
       announced = true;
     };
 
-    const resolveFetchStreamKind = (contentType: string | null): StreamKind | null => {
-      let streamKind = detectStreamKind(contentType);
-      // Some gateways omit/mislabel CT; fall back to request Accept/Content-Type or host.
-      if (!streamKind && requestLooksLikeConnectJson(reqMeta.headers)) {
-        streamKind = "connect-json";
-      }
-      if (!streamKind && looksLikeKimiConnectUrl(url)) {
-        streamKind = "connect-json";
-      }
-      return streamKind;
-    };
-
     try {
       const response = await originalFetch(input, init);
 
       const contentType = response.headers.get("content-type");
-      const streamKind = resolveFetchStreamKind(contentType);
+      const streamKind = resolveStreamKind({
+        responseContentType: contentType,
+        requestHeaders: reqMeta.headers,
+        url: response.url || url,
+        requestPayloadPreview: reqMeta.payloadPreview,
+      });
       if (!streamKind) {
         return response;
       }

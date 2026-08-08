@@ -328,7 +328,7 @@ pnpm build && pnpm demo
 
 1. Open <http://127.0.0.1:8765>
 2. Confirm the extension is loaded → open DevTools → **SSE DevTools**
-3. **Refresh the demo page** → try **Fetch SSE**, **EventSource**, **XHR SSE**, or **Fetch NDJSON**
+3. **Refresh the demo page** → try **Fetch SSE**, **EventSource**, **XHR SSE**, **Fetch NDJSON**, **Fetch SSE (JSON CT)**, or **EventSource onping**
 4. A stream should appear in the sidebar; Events / Conversation / Timeline / Raw tabs should have data
 
 ---
@@ -372,6 +372,7 @@ pnpm format:check && pnpm lint && pnpm test-only && pnpm typecheck && pnpm build
 - Chromium DevTools only (Chrome / Edge / …); no Firefox / Safari panel yet
 - Requests started inside a page Service Worker are not captured
 - Some deeper streaming API patterns may be missed; open an Issue with repro steps if you hit one
+- Stream detection follows response `Content-Type`, then request hints (`Accept: text/event-stream`, `"stream": true` body / `?stream=true`) when the response CT is missing or generic (`application/json`, `text/plain`, …). Plain JSON APIs without those hints stay ignored
 - Conversation depends on each site’s private protocol and may need updates after site changes
 - If the SSE panel opens after a stream already started, the background service worker replays a recent buffer (up to ~2 000 messages / ~4 MB per tab). Older traffic may be dropped when the cap is hit; an extension service-worker restart can still clear the buffer
 - Until the Chrome Web Store listing is live, run `pnpm build` locally and load `dist/` from the extensions page

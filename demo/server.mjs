@@ -76,9 +76,15 @@ function runTimedStream(res, writeFrame, count, intervalMs, writeDone) {
  * @param {number} count
  * @param {number} intervalMs
  */
-function writeSseStream(res, count, intervalMs) {
+/**
+ * @param {import('node:http').ServerResponse} res
+ * @param {number} count
+ * @param {number} intervalMs
+ * @param {string} [contentType]
+ */
+function writeSseStream(res, count, intervalMs, contentType = "text/event-stream; charset=utf-8") {
   res.writeHead(200, {
-    "Content-Type": "text/event-stream; charset=utf-8",
+    "Content-Type": contentType,
     "Cache-Control": "no-cache",
     Connection: "keep-alive",
   });
@@ -107,6 +113,32 @@ function writeSseStream(res, count, intervalMs) {
           done: true,
         })}\n\n`,
       );
+    },
+  );
+}
+
+/**
+ * SSE frames with a custom event type (`event: ping`) for EventSource `onping` tests.
+ * @param {import('node:http').ServerResponse} res
+ * @param {number} count
+ * @param {number} intervalMs
+ */
+function writeSseCustomEventStream(res, count, intervalMs) {
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream; charset=utf-8",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+  });
+
+  runTimedStream(
+    res,
+    (i) => {
+      res.write(`event: ping\ndata: ${JSON.stringify(demoChatChunk(i, count))}\n\n`);
+    },
+    count,
+    intervalMs,
+    () => {
+      res.write(`event: ping\ndata: ${JSON.stringify({ done: true })}\n\n`);
     },
   );
 }
@@ -382,6 +414,8 @@ const DEMO_HTML = `<!DOCTYPE html>
       <button id="go-es" class="ghost" type="button">EventSource</button>
       <button id="go-xhr" class="ghost" type="button">XHR SSE</button>
       <button id="go-ndjson" class="ghost" type="button">Fetch NDJSON</button>
+      <button id="go-json-ct" class="ghost" type="button">Fetch SSE (JSON CT)</button>
+      <button id="go-es-on" class="ghost" type="button">EventSource onping</button>
       <button id="go10k" class="ghost" type="button">Fetch SSE 10k</button>
     </div>
     <div class="status" id="status" aria-live="polite">
@@ -407,14 +441,14 @@ const DEMO_HTML = `<!DOCTYPE html>
       out.textContent = text;
     }
 
-    async function runFetchStream(path, label) {
+    async function runFetchStream(path, label, init) {
       if (activeEs) { activeEs.close(); activeEs = null; }
       out.textContent = "";
       setBusy(true);
       statusText.textContent = label + " · streaming…";
       let n = 0;
       try {
-        const res = await fetch(path);
+        const res = await fetch(path, init);
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         while (true) {
@@ -437,26 +471,29 @@ const DEMO_HTML = `<!DOCTYPE html>
       }
     }
 
-    function runEventSource(path) {
+    function runEventSource(path, useOnping) {
       if (activeEs) { activeEs.close(); activeEs = null; }
       out.textContent = "";
       setBusy(true);
-      statusText.textContent = "EventSource · streaming…";
+      const label = useOnping ? "EventSource onping" : "EventSource";
+      statusText.textContent = label + " · streaming…";
       let n = 0;
       const es = new EventSource(path);
       activeEs = es;
-      es.onmessage = (ev) => {
+      const onEv = (ev) => {
         n += 1;
-        statusText.textContent = "EventSource · events=" + n;
+        statusText.textContent = label + " · events=" + n;
         if (n <= 40 || n % 100 === 0) {
-          note("EventSource · events=" + n + "\\n" + String(ev.data).slice(0, 400));
+          note(label + " · type=" + ev.type + " · events=" + n + "\\n" + String(ev.data).slice(0, 400));
         }
       };
+      if (useOnping) es.onping = onEv;
+      else es.onmessage = onEv;
       es.onerror = () => {
         es.close();
         if (activeEs === es) activeEs = null;
         note((out.textContent || "") + "\\n--- EventSource closed ---");
-        statusText.textContent = "EventSource · done/closed · events=" + n;
+        statusText.textContent = label + " · done/closed · events=" + n;
         setBusy(false);
       };
     }
@@ -493,9 +530,16 @@ const DEMO_HTML = `<!DOCTYPE html>
     }
 
     document.getElementById("go-fetch").onclick = () => runFetchStream("/api/stream", "Fetch SSE");
-    document.getElementById("go-es").onclick = () => runEventSource("/api/stream");
+    document.getElementById("go-es").onclick = () => runEventSource("/api/stream", false);
     document.getElementById("go-xhr").onclick = () => runXhr("/api/stream");
     document.getElementById("go-ndjson").onclick = () => runFetchStream("/api/ndjson", "Fetch NDJSON");
+    document.getElementById("go-json-ct").onclick = () =>
+      runFetchStream("/api/stream-json-ct", "Fetch SSE (JSON CT)", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stream: true, model: "demo" }),
+      });
+    document.getElementById("go-es-on").onclick = () => runEventSource("/api/stream-custom", true);
     document.getElementById("go10k").onclick = () => runFetchStream("/api/stream?count=10000", "Fetch SSE 10k");
   </script>
 </body>
@@ -510,7 +554,12 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  if (url.pathname === "/api/stream" || url.pathname === "/api/ndjson") {
+  if (
+    url.pathname === "/api/stream" ||
+    url.pathname === "/api/ndjson" ||
+    url.pathname === "/api/stream-json-ct" ||
+    url.pathname === "/api/stream-custom"
+  ) {
     const countRaw = Number(url.searchParams.get("count") || DEFAULT_CHUNKS.length);
     const count = Number.isFinite(countRaw)
       ? Math.min(Math.max(1, Math.floor(countRaw)), 50_000)
@@ -518,7 +567,11 @@ const server = http.createServer((req, res) => {
     // Short demo keeps the original cadence; bulk mode is as fast as practical.
     const intervalMs = count > DEFAULT_CHUNKS.length ? 0 : 220;
     if (url.pathname === "/api/ndjson") writeNdjsonStream(res, count, intervalMs);
-    else writeSseStream(res, count, intervalMs);
+    else if (url.pathname === "/api/stream-json-ct") {
+      writeSseStream(res, count, intervalMs, "application/json; charset=utf-8");
+    } else if (url.pathname === "/api/stream-custom") {
+      writeSseCustomEventStream(res, count, intervalMs);
+    } else writeSseStream(res, count, intervalMs);
     return;
   }
 

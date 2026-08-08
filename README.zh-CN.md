@@ -404,6 +404,7 @@ pnpm format:check && pnpm lint && pnpm test-only && pnpm typecheck && pnpm build
 - 仅支持 Chromium 系浏览器的 DevTools（Chrome / Edge 等），暂无 Firefox / Safari 面板
 - 抓不到页面 Service Worker 里发起的请求
 - 部分更深层的流式 API 用法可能漏抓；若遇到请带复现步骤开 Issue
+- 流识别优先看响应 `Content-Type`；若 CT 缺失或很泛（如 `application/json` / `text/plain`），再看请求提示（`Accept: text/event-stream`、body 里 `"stream": true`、`?stream=true`）。没有这些提示的普通 JSON 接口仍不会抓
 - 对话视图依赖各站私有协议，站点改版后可能需要重新适配
 - 若流已开始后再打开 SSE 面板，background 会回放该 tab 的近期缓冲（约 2000 条 / 4MB 上限）；超限会丢最旧数据，扩展 Service Worker 被回收后缓冲也会清空
 - 在 Chrome 网上应用店上架生效前，需本地 `pnpm build` 后，在扩展管理页加载 `dist/` 使用
