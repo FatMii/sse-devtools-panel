@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { SseParser, extractMergedData } from "./sse-parser";
+import { SseParser, extractMergedData } from "../sse-parser";
 
 function assert(cond: unknown, msg: string): asserts cond {
   expect(cond, msg).toBeTruthy();

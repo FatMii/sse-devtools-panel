@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { estimateRelayBytes, RelayBuffer } from "./relay-buffer";
+import { estimateRelayBytes, RelayBuffer } from "../relay-buffer";
 
 function assert(cond: unknown, msg: string): asserts cond {
   expect(cond, msg).toBeTruthy();

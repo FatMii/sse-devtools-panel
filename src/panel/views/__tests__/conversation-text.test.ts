@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { planTextPaneUpdate } from "./conversation-text";
+import { planTextPaneUpdate } from "../conversation-text";
 
 function assert(cond: unknown, msg: string): asserts cond {
   expect(cond, msg).toBeTruthy();

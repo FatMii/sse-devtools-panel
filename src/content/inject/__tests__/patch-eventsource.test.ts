@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { eventTypeFromOnProperty, toSseFrame } from "./patch-eventsource";
+import { eventTypeFromOnProperty, toSseFrame } from "../patch-eventsource";
 
 function assert(cond: unknown, msg: string): asserts cond {
   expect(cond, msg).toBeTruthy();

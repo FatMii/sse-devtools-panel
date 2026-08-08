@@ -12,5 +12,5 @@
     "types": ["chrome"]
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "vitest.config.ts"],
-  "exclude": ["src/**/*.test.ts"]
+  "exclude": ["src/**/__tests__/**"]
 }

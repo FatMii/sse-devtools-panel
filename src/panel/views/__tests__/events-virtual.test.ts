@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeVirtualWindow, isNearBottom, EVENTS_VIRTUAL_OVERSCAN } from "./events-virtual";
+import { computeVirtualWindow, isNearBottom, EVENTS_VIRTUAL_OVERSCAN } from "../events-virtual";
 
 function assert(cond: unknown, msg: string): asserts cond {
   expect(cond, msg).toBeTruthy();

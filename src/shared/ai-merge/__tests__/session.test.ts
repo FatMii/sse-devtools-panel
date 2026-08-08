@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ConversationMergeSession, mergeAiConversation } from "./index";
+import { ConversationMergeSession, mergeAiConversation } from "../index";
 
 function assert(cond: unknown, msg: string): asserts cond {
   expect(cond, msg).toBeTruthy();

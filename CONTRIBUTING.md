@@ -19,7 +19,7 @@ pnpm dev           # watch rebuild
 pnpm typecheck
 pnpm lint          # eslint
 pnpm format        # prettier write
-pnpm test          # Vitest unit tests (`src/**/*.test.ts`)
+pnpm test          # Vitest unit tests (`src/**/__tests__/**/*.test.ts`)
 pnpm test:watch    # Vitest watch mode
 pnpm build
 ```
@@ -34,7 +34,7 @@ pnpm build
 
 2. If you change UI or capture behavior, smoke-test with `pnpm demo` (or a real SSE page).
 3. Keep PRs focused. Prefer Conventional Commits style when possible, e.g. `feat: …`, `fix: …`, `docs: …`, `test: …`, `chore: …`.
-4. Shared logic changes should include or update Vitest tests next to the code (`src/**/*.test.ts`) when practical.
+4. Shared logic changes should include or update Vitest tests under a sibling `__tests__/` folder when practical.
 
 ## UI icons
 

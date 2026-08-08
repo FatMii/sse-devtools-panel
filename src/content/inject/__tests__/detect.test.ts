@@ -5,7 +5,7 @@ import {
   payloadLooksLikeStreamTrue,
   resolveStreamKind,
   urlLooksLikeStreamQuery,
-} from "./detect";
+} from "../detect";
 
 function assert(cond: unknown, msg: string): asserts cond {
   expect(cond, msg).toBeTruthy();

@@ -5,7 +5,7 @@ import {
   collectEventGaps,
   largestGaps,
   timelineSpanMs,
-} from "./stream-timing";
+} from "../stream-timing";
 
 function assert(cond: unknown, msg: string): asserts cond {
   expect(cond, msg).toBeTruthy();
