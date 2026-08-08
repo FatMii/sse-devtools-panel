@@ -70,11 +70,7 @@ function paintRawWindow(force: boolean): void {
     paintedEnd = 0;
     return;
   }
-  const win = computeConvVirtualWindow(
-    elRaw.scrollTop,
-    elRaw.clientHeight || 1,
-    rawRows.length,
-  );
+  const win = computeConvVirtualWindow(elRaw.scrollTop, elRaw.clientHeight || 1, rawRows.length);
   if (!force && win.start === paintedStart && win.end === paintedEnd) {
     topSpacer.style.height = `${win.paddingTop}px`;
     bottomSpacer.style.height = `${win.paddingBottom}px`;

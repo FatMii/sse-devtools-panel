@@ -30,11 +30,9 @@ await build({
   logLevel: "error",
 });
 
-const {
-  wrapTextToRows,
-  computeConvVirtualWindow,
-  estimateCols,
-} = await import(`file:///${resolve(outDir, "conversation-virtual.js").replace(/\\/g, "/")}`);
+const { wrapTextToRows, computeConvVirtualWindow, estimateCols } = await import(
+  `file:///${resolve(outDir, "conversation-virtual.js").replace(/\\/g, "/")}`
+);
 
 function assert(cond, msg) {
   if (!cond) throw new Error(msg);
