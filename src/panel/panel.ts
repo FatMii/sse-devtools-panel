@@ -81,10 +81,7 @@ import {
 } from "./core/dom";
 import { escapeHtml, formatDuration, closeReasonLabel } from "./core/format";
 import { computeStreamMetrics } from "./features/stream-metrics";
-import {
-  clearStreamAnomalyCaches,
-  invalidateStreamAnomalyCache,
-} from "./features/stream-anomalies";
+import { clearStreamAnomalyCaches } from "./features/stream-anomalies";
 import { renderTimeline } from "./views/timeline-view";
 import { renderRequest, resetRequestViewState } from "./views/request-view-ui";
 import { renderConversation, resetConversationView } from "./views/conversation-view";
