@@ -284,7 +284,7 @@ Conversation merges content by protocol profile. Currently supported:
 | `qwen-web`          | Qwen web                | Plan thinking / deep thinking / search    |
 | `chatglm-web`       | ChatGLM / Zhipu Qingyan | Thinking / content / search results       |
 | `yuanbao-web`       | Tencent Yuanbao         | Deep-search thinking + sources            |
-| `anthropic`         | Anthropic-style SSE     | Basic detection                           |
+| `anthropic`         | Anthropic-style SSE     | Profile detection only — no Conversation merge yet |
 | `generic`           | Unrecognized            | Events / Timeline / Raw still work        |
 
 > Vendor protocols change often. If Conversation is empty or tool cards look wrong, export Raw or JSON and include the URL.  

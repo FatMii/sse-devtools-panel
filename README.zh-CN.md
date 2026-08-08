@@ -308,7 +308,7 @@ Events、对话（正文 / 思考）、Raw 都用了虚拟滚动：屏幕外的�
 | `qwen-web`          | 通义千问网页         | 计划思考 / 深度思考 / 搜索     |
 | `chatglm-web`       | 智谱清言 / ChatGLM   | 思考 / 正文 / 搜索结果         |
 | `yuanbao-web`       | 腾讯元宝             | 深度搜索思考 + 来源            |
-| `anthropic`         | Anthropic 风格 SSE   | 基础识别                       |
+| `anthropic`         | Anthropic 风格 SSE   | 仅协议识别 — 对话合并尚未实现  |
 | `generic`           | 未识别               | 仍可看 Events / Timeline / Raw |
 
 > 各站协议常变。若对话视图为空或工具卡不对，请导出 Raw 或 JSON 并注明 URL。  
