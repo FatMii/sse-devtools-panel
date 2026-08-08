@@ -1,6 +1,6 @@
 import {
-  mergeAiConversation,
   conversationHasContent,
+  syncConversationMergeSession,
   type AiConversation,
 } from "../../shared/ai-merge";
 import { t } from "../../shared/i18n";
@@ -8,6 +8,7 @@ import type { StreamRecord } from "../../shared/types";
 import { elConversationBody, elConversationPlaceholder } from "../core/dom";
 import { escapeHtml } from "../core/format";
 import { renderIcon } from "../core/icons";
+import { planTextPaneUpdate } from "./conversation-text";
 
 type ConversationChannel = "content" | "reasoning" | "tools" | "meta";
 
@@ -16,6 +17,12 @@ let conversationFingerprint = "";
 /** Which tool cards stay expanded across Tools pane re-renders (per stream). */
 let toolsExpandStreamId: string | null = null;
 let toolsExpandedIndexes = new Set<number>();
+
+let lastRenderedChannelText = "";
+let lastRenderedStreamId: string | null = null;
+let lastRenderedChannel: ConversationChannel | null = null;
+let lastToolsFingerprint = "";
+let latestMerged: AiConversation | null = null;
 
 export type RenderConversationOptions = {
   copyText: (text: string, notify?: boolean) => Promise<void>;
@@ -26,16 +33,33 @@ export function resetConversationView(): void {
   conversationFingerprint = "";
   toolsExpandStreamId = null;
   toolsExpandedIndexes = new Set();
+  lastRenderedChannelText = "";
+  lastRenderedStreamId = null;
+  lastRenderedChannel = null;
+  lastToolsFingerprint = "";
+  latestMerged = null;
 }
 
-function buildConversationFingerprint(record: StreamRecord, channel: ConversationChannel): string {
+function buildConversationFingerprint(
+  merged: AiConversation,
+  channel: ConversationChannel,
+): string {
   return [
-    record.requestId,
-    record.events.length,
-    record.raw.length,
-    record.streamStatus,
+    merged.profile,
+    merged.channels.content.length,
+    merged.channels.reasoning.length,
+    merged.channels.tools.length,
+    merged.channels.tools.reduce((n, tc) => n + tc.arguments.length, 0),
+    merged.endMeta.finishReason ?? "",
+    merged.chunkCount,
     channel,
   ].join("|");
+}
+
+function toolsFingerprint(merged: AiConversation): string {
+  return merged.channels.tools
+    .map((tc) => `${tc.index}:${tc.name ?? ""}:${tc.arguments.length}:${tc.id ?? ""}`)
+    .join("|");
 }
 
 function conversationChannelText(merged: AiConversation, channel: ConversationChannel): string {
@@ -101,7 +125,6 @@ function isWebSearchPayload(value: unknown): value is {
 function toolsExpandedForStream(streamId: string, toolCount: number): Set<number> {
   if (toolsExpandStreamId !== streamId) {
     toolsExpandStreamId = streamId;
-    // Default: only the first tool's body/list is expanded.
     toolsExpandedIndexes = new Set(toolCount > 0 ? [0] : []);
   }
   return toolsExpandedIndexes;
@@ -311,44 +334,87 @@ export function createToolsPane(merged: AiConversation, streamId: string): HTMLE
   return pane;
 }
 
-export function renderConversation(
-  record: StreamRecord | undefined,
+function channelSubtabLabel(merged: AiConversation, ch: ConversationChannel): string {
+  const labels: Record<ConversationChannel, string> = {
+    content: t("conversationChannelContent"),
+    reasoning: t("conversationChannelReasoning"),
+    tools: t("conversationChannelTools"),
+    meta: t("conversationChannelMeta"),
+  };
+  let label = labels[ch];
+  if (ch === "reasoning" && merged.channels.reasoning)
+    label += ` (${merged.channels.reasoning.length})`;
+  if (ch === "content" && merged.channels.content) label += ` (${merged.channels.content.length})`;
+  if (ch === "tools" && merged.channels.tools.length) label += ` (${merged.channels.tools.length})`;
+  return label;
+}
+
+function syncConversationChrome(shell: HTMLElement, merged: AiConversation): void {
+  const chips = shell.querySelector(".conversation-chips");
+  if (chips) {
+    chips.replaceChildren();
+    const chipProfile = document.createElement("span");
+    chipProfile.className = "meta-chip conversation-chip";
+    chipProfile.textContent = `${t("conversationProfileLabel")}: ${merged.profile}`;
+    const chipVendor = document.createElement("span");
+    chipVendor.className = "meta-chip conversation-chip";
+    chipVendor.textContent = `${t("conversationVendorLabel")}: ${merged.vendorHint}`;
+    chips.append(chipProfile, chipVendor);
+    if (merged.endMeta.finishReason) {
+      const chipFinish = document.createElement("span");
+      chipFinish.className = "meta-chip conversation-chip";
+      chipFinish.textContent = `${t("conversationFinishLabel")}: ${merged.endMeta.finishReason}`;
+      chips.appendChild(chipFinish);
+    }
+  }
+
+  const buttons = shell.querySelectorAll<HTMLButtonElement>(
+    ".conversation-subtabs .request-subtab",
+  );
+  const channels: ConversationChannel[] = ["content", "reasoning", "tools", "meta"];
+  buttons.forEach((btn, i) => {
+    const ch = channels[i];
+    if (!ch) return;
+    btn.textContent = channelSubtabLabel(merged, ch);
+    btn.classList.toggle("active", conversationChannel === ch);
+  });
+}
+
+function applyTextToPane(pane: HTMLPreElement, nextText: string, showingEmpty: boolean): void {
+  const emptyLabel = t("conversationEmpty");
+  if (showingEmpty) {
+    pane.textContent = emptyLabel;
+    lastRenderedChannelText = "";
+    return;
+  }
+
+  const plan = planTextPaneUpdate(lastRenderedChannelText, nextText);
+  const nearBottom = pane.scrollTop + pane.clientHeight >= pane.scrollHeight - 48;
+
+  if (plan.mode === "noop") {
+    if (pane.textContent === emptyLabel && nextText) pane.textContent = nextText;
+  } else if (plan.mode === "append") {
+    if (!lastRenderedChannelText || pane.textContent === emptyLabel) {
+      pane.textContent = nextText;
+    } else {
+      pane.appendChild(document.createTextNode(plan.suffix));
+    }
+  } else {
+    pane.textContent = plan.text;
+  }
+
+  lastRenderedChannelText = nextText;
+  if (nearBottom) pane.scrollTop = pane.scrollHeight;
+}
+
+function mountFullConversation(
+  record: StreamRecord,
+  merged: AiConversation,
   options: RenderConversationOptions,
 ): void {
-  if (!record) {
-    elConversationPlaceholder.hidden = false;
-    elConversationPlaceholder.textContent = t("noStreamSelected");
-    elConversationBody.hidden = true;
-    elConversationBody.innerHTML = "";
-    conversationFingerprint = "";
-    toolsExpandStreamId = null;
-    toolsExpandedIndexes = new Set();
-    return;
-  }
-
-  const fp = buildConversationFingerprint(record, conversationChannel);
-  if (
-    fp === conversationFingerprint &&
-    elConversationBody.querySelector(".conversation-shell") &&
-    !elConversationBody.hidden
-  ) {
-    return;
-  }
-  conversationFingerprint = fp;
-
-  const merged = mergeAiConversation(record.events, record.url);
-
-  if (!conversationHasContent(merged) && merged.profile === "generic") {
-    elConversationPlaceholder.hidden = false;
-    elConversationPlaceholder.textContent = t("conversationEmpty");
-    elConversationBody.hidden = true;
-    elConversationBody.innerHTML = "";
-    return;
-  }
-
   elConversationPlaceholder.hidden = true;
   elConversationBody.hidden = false;
-  elConversationBody.innerHTML = "";
+  elConversationBody.replaceChildren();
 
   const shell = document.createElement("div");
   shell.className = "conversation-shell";
@@ -358,19 +424,7 @@ export function renderConversation(
 
   const chips = document.createElement("div");
   chips.className = "conversation-chips";
-  const chipProfile = document.createElement("span");
-  chipProfile.className = "meta-chip conversation-chip";
-  chipProfile.textContent = `${t("conversationProfileLabel")}: ${merged.profile}`;
-  const chipVendor = document.createElement("span");
-  chipVendor.className = "meta-chip conversation-chip";
-  chipVendor.textContent = `${t("conversationVendorLabel")}: ${merged.vendorHint}`;
-  chips.append(chipProfile, chipVendor);
-  if (merged.endMeta.finishReason) {
-    const chipFinish = document.createElement("span");
-    chipFinish.className = "meta-chip conversation-chip";
-    chipFinish.textContent = `${t("conversationFinishLabel")}: ${merged.endMeta.finishReason}`;
-    chips.appendChild(chipFinish);
-  }
+  toolbar.append(chips);
 
   const copyBtn = document.createElement("button");
   copyBtn.type = "button";
@@ -381,39 +435,29 @@ export function renderConversation(
     renderIcon("copy", "tool-icon") +
     `<span class="visually-hidden">${escapeHtml(t("conversationCopy"))}</span>`;
   copyBtn.addEventListener("click", () => {
-    const text = conversationChannelText(merged, conversationChannel) || "";
+    const src = latestMerged ?? merged;
+    const text = conversationChannelText(src, conversationChannel) || "";
     void options.copyText(text, false).then(() => options.showToast(t("conversationCopied")));
   });
-
-  toolbar.append(chips, copyBtn);
+  toolbar.append(copyBtn);
 
   const subtabs = document.createElement("div");
   subtabs.className = "conversation-subtabs request-subtabs";
   const channels: ConversationChannel[] = ["content", "reasoning", "tools", "meta"];
-  const labels: Record<ConversationChannel, string> = {
-    content: t("conversationChannelContent"),
-    reasoning: t("conversationChannelReasoning"),
-    tools: t("conversationChannelTools"),
-    meta: t("conversationChannelMeta"),
-  };
   for (const ch of channels) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "request-subtab" + (conversationChannel === ch ? " active" : "");
-    let label = labels[ch];
-    if (ch === "reasoning" && merged.channels.reasoning)
-      label += ` (${merged.channels.reasoning.length})`;
-    if (ch === "content" && merged.channels.content)
-      label += ` (${merged.channels.content.length})`;
-    if (ch === "tools" && merged.channels.tools.length)
-      label += ` (${merged.channels.tools.length})`;
-    btn.textContent = label;
+    btn.textContent = channelSubtabLabel(merged, ch);
     btn.addEventListener("pointerdown", (e) => {
       if (e.button !== 0) return;
       e.preventDefault();
       if (conversationChannel === ch) return;
       conversationChannel = ch;
       conversationFingerprint = "";
+      lastRenderedChannelText = "";
+      lastRenderedChannel = null;
+      lastToolsFingerprint = "";
       renderConversation(record, options);
     });
     subtabs.appendChild(btn);
@@ -423,16 +467,105 @@ export function renderConversation(
   let pane: HTMLElement;
   if (conversationChannel === "tools") {
     pane = createToolsPane(merged, record.requestId);
+    lastRenderedChannelText = "";
+    lastToolsFingerprint = toolsFingerprint(merged);
   } else {
-    pane = document.createElement("pre");
-    pane.className = "conversation-pane code";
-    if (!text && conversationChannel !== "meta") {
-      pane.textContent = t("conversationEmpty");
+    const pre = document.createElement("pre");
+    pre.className = "conversation-pane code";
+    const showingEmpty = !text && conversationChannel !== "meta";
+    if (showingEmpty) {
+      pre.textContent = t("conversationEmpty");
+      lastRenderedChannelText = "";
     } else {
-      pane.textContent = text;
+      pre.textContent = text;
+      lastRenderedChannelText = text;
     }
+    pane = pre;
   }
 
   shell.append(toolbar, subtabs, pane);
+  syncConversationChrome(shell, merged);
   elConversationBody.appendChild(shell);
+
+  lastRenderedStreamId = record.requestId;
+  lastRenderedChannel = conversationChannel;
+}
+
+/**
+ * Render Conversation from an incremental merge session snapshot (O(Δ) push already done).
+ */
+export function renderConversation(
+  record: StreamRecord | undefined,
+  options: RenderConversationOptions,
+): void {
+  if (!record) {
+    elConversationPlaceholder.hidden = false;
+    elConversationPlaceholder.textContent = t("noStreamSelected");
+    elConversationBody.hidden = true;
+    elConversationBody.replaceChildren();
+    conversationFingerprint = "";
+    toolsExpandStreamId = null;
+    toolsExpandedIndexes = new Set();
+    lastRenderedChannelText = "";
+    lastRenderedStreamId = null;
+    lastRenderedChannel = null;
+    lastToolsFingerprint = "";
+    latestMerged = null;
+    return;
+  }
+
+  const merged = syncConversationMergeSession(record.requestId, record.events, record.url);
+  latestMerged = merged;
+
+  const fp = buildConversationFingerprint(merged, conversationChannel);
+  if (
+    fp === conversationFingerprint &&
+    elConversationBody.querySelector(".conversation-shell") &&
+    !elConversationBody.hidden
+  ) {
+    return;
+  }
+  conversationFingerprint = fp;
+
+  if (!conversationHasContent(merged) && merged.profile === "generic") {
+    elConversationPlaceholder.hidden = false;
+    elConversationPlaceholder.textContent = t("conversationEmpty");
+    elConversationBody.hidden = true;
+    elConversationBody.replaceChildren();
+    lastRenderedChannelText = "";
+    lastRenderedStreamId = null;
+    lastRenderedChannel = null;
+    lastToolsFingerprint = "";
+    return;
+  }
+
+  const existingShell = elConversationBody.querySelector<HTMLElement>(".conversation-shell");
+  const text = conversationChannelText(merged, conversationChannel);
+  const canPatch =
+    Boolean(existingShell) &&
+    lastRenderedStreamId === record.requestId &&
+    lastRenderedChannel === conversationChannel &&
+    !elConversationBody.hidden;
+
+  if (canPatch && existingShell) {
+    syncConversationChrome(existingShell, merged);
+    if (conversationChannel === "tools") {
+      const tf = toolsFingerprint(merged);
+      if (tf !== lastToolsFingerprint) {
+        const next = createToolsPane(merged, record.requestId);
+        const prev = existingShell.querySelector(".conversation-pane");
+        if (prev) prev.replaceWith(next);
+        else existingShell.appendChild(next);
+        lastToolsFingerprint = tf;
+      }
+      return;
+    }
+    const pane = existingShell.querySelector<HTMLPreElement>("pre.conversation-pane.code");
+    if (pane) {
+      applyTextToPane(pane, text, !text && conversationChannel !== "meta");
+      return;
+    }
+  }
+
+  mountFullConversation(record, merged, options);
 }

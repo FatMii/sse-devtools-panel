@@ -2,6 +2,26 @@ import type { SseEvent } from "../types";
 import type { AiEndMeta, AiToolCall, MergeChannelsResult } from "./types";
 import { asString, isRecord, parseEventData } from "./helpers";
 
+export type ChatglmWebMergeState = {
+  thinkLatest: string;
+  textLatest: string;
+  tools: AiToolCall[];
+  chunkCount: number;
+  endMeta: AiEndMeta;
+  seenGenericToolKeys: Set<string>;
+};
+
+export function createChatglmWebMergeState(): ChatglmWebMergeState {
+  return {
+    thinkLatest: "",
+    textLatest: "",
+    tools: [],
+    chunkCount: 0,
+    endMeta: {},
+    seenGenericToolKeys: new Set(),
+  };
+}
+
 /**
  * ChatGLM / Qingyan web SSE:
  * - parts[].content[] type=think —reasoning (cumulative snapshot)
@@ -9,16 +29,10 @@ import { asString, isRecord, parseEventData } from "./helpers";
  * - parts[].content[] type=tool_calls —tools (skip finish)
  * - top-level / part status finish —endMeta
  */
-export function mergeChatglmWeb(
+export function pushChatglmWeb(
+  state: ChatglmWebMergeState,
   events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,
-): MergeChannelsResult {
-  let thinkLatest = "";
-  let textLatest = "";
-  const tools: AiToolCall[] = [];
-  let chunkCount = 0;
-  const endMeta: AiEndMeta = {};
-  const seenGenericToolKeys = new Set<string>();
-
+): void {
   const isSearchToolName = (name: string): boolean => {
     const n = name.toLowerCase();
     return (
@@ -204,37 +218,37 @@ export function mergeChatglmWeb(
       return JSON.stringify({ type: "SEARCH", queries: mergedQueries, results: mergedResults });
     };
 
-    const orphan = tools.find((t) => t.name === "web_search");
+    const orphan = state.tools.find((t) => t.name === "web_search");
     if (orphan) {
       orphan.arguments = mergeArgs(orphan.arguments, queries, results);
       if (id && !orphan.id) orphan.id = id;
-      chunkCount++;
+      state.chunkCount++;
       return;
     }
 
-    tools.push({
-      index: tools.length,
+    state.tools.push({
+      index: state.tools.length,
       id,
       name: "web_search",
       arguments: JSON.stringify({ type: "SEARCH", queries, results }),
     });
-    chunkCount++;
+    state.chunkCount++;
   };
 
   const upsertGenericTool = (name: string, args: string, id?: string): void => {
     if (!name || name === "finish") return;
     if (isSearchToolName(name)) return;
     const key = `${name}:${args}`;
-    if (seenGenericToolKeys.has(key)) return;
-    seenGenericToolKeys.add(key);
-    const existing = tools.find((t) => t.name === name && (!id || t.id === id));
+    if (state.seenGenericToolKeys.has(key)) return;
+    state.seenGenericToolKeys.add(key);
+    const existing = state.tools.find((t) => t.name === name && (!id || t.id === id));
     if (existing) {
       existing.arguments = args;
-      chunkCount++;
+      state.chunkCount++;
       return;
     }
-    tools.push({ index: tools.length, id, name, arguments: args });
-    chunkCount++;
+    state.tools.push({ index: state.tools.length, id, name, arguments: args });
+    state.chunkCount++;
   };
 
   const ingestToolCalls = (raw: unknown): void => {
@@ -304,7 +318,7 @@ export function mergeChatglmWeb(
     if (!isRecord(parsed)) continue;
 
     if (parsed.status === "finish" || parsed.status === "finished" || parsed.status === "done") {
-      endMeta.finishReason = endMeta.finishReason ?? "stop";
+      state.endMeta.finishReason = state.endMeta.finishReason ?? "stop";
     }
 
     ingestMeta(parsed.meta_data);
@@ -318,10 +332,10 @@ export function mergeChatglmWeb(
     for (const part of parts) {
       if (!isRecord(part)) continue;
       if (part.status === "finish" || part.status === "finished") {
-        endMeta.finishReason = endMeta.finishReason ?? "stop";
+        state.endMeta.finishReason = state.endMeta.finishReason ?? "stop";
       }
-      if (typeof part.model === "string" && !endMeta.model) {
-        endMeta.model = part.model;
+      if (typeof part.model === "string" && !state.endMeta.model) {
+        state.endMeta.model = part.model;
       }
 
       ingestMeta(part.meta_data);
@@ -333,18 +347,18 @@ export function mergeChatglmWeb(
 
         if (typ === "think") {
           const think = asString(item.think) ?? asString(item.text) ?? "";
-          if (think && think.length >= thinkLatest.length) {
-            thinkLatest = think;
-            chunkCount++;
+          if (think && think.length >= state.thinkLatest.length) {
+            state.thinkLatest = think;
+            state.chunkCount++;
           }
           continue;
         }
 
         if (typ === "text") {
           const text = asString(item.text) ?? "";
-          if (text && text.length >= textLatest.length) {
-            textLatest = text;
-            chunkCount++;
+          if (text && text.length >= state.textLatest.length) {
+            state.textLatest = text;
+            state.chunkCount++;
           }
           continue;
         }
@@ -391,14 +405,24 @@ export function mergeChatglmWeb(
       }
     }
   }
+}
 
+export function snapshotChatglmWeb(state: ChatglmWebMergeState): MergeChannelsResult {
   return {
     channels: {
-      content: textLatest,
-      reasoning: thinkLatest,
-      tools,
+      content: state.textLatest,
+      reasoning: state.thinkLatest,
+      tools: state.tools,
     },
-    endMeta,
-    chunkCount,
+    endMeta: state.endMeta,
+    chunkCount: state.chunkCount,
   };
+}
+
+export function mergeChatglmWeb(
+  events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,
+): MergeChannelsResult {
+  const s = createChatglmWebMergeState();
+  pushChatglmWeb(s, events);
+  return snapshotChatglmWeb(s);
 }
