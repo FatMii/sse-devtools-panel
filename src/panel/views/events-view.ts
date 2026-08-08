@@ -56,6 +56,8 @@ export function eventMatchesSearch(ev: SseEvent, query: string): boolean {
 
 /** Events currently visible under the Events search filter (ordered). */
 export function getBrowsableEvents(record: StreamRecord): SseEvent[] {
+  // Empty filter: reuse the source array — avoid copying 10k+ events every paint.
+  if (compileTextFilter(state.eventsSearchQuery).isEmpty) return record.events;
   return record.events.filter((ev) => eventMatchesSearch(ev, state.eventsSearchQuery));
 }
 
@@ -336,11 +338,12 @@ export function createEventRow(ev: SseEvent): HTMLTableRowElement {
           eventWarnings.map((w) => specWarningKindLabel(w.kind)).join(", "),
         )}">S</span>`
       : "";
+  const dataPreview = escapeHtml(previewData(ev.data));
   tr.innerHTML = `
     <td class="col-index col-n">${ev.index}${warnMark}</td>
     <td class="col-time">${escapeHtml(formatTime(ev.receivedAt))}</td>
     <td class="col-event">${escapeHtml(ev.event)}</td>
-    <td class="col-data data-cell" title="${escapeHtml(ev.data)}">${escapeHtml(previewData(ev.data))}</td>
+    <td class="col-data data-cell" title="${dataPreview}">${dataPreview}</td>
   `;
   tr.addEventListener("click", () => {
     hideContextMenu();
