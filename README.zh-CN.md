@@ -157,7 +157,7 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 查看这条流对应的请求信息（类似 Network）：
 
 - 请求头与请求体
-- 敏感请求头自动脱敏
+- 对常见敏感请求头自动脱敏（如 `Authorization` / `Cookie` / `*token*` / `*api-key*`；非常用头名可能未覆盖）
 - 与方法、URL、状态等基础信息同屏查看
 
 <p align="center">
