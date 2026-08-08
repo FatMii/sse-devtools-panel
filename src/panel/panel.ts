@@ -498,22 +498,56 @@ function updateTabCounts(record: StreamRecord | undefined): void {
   }
 }
 
+/** Min gap between coalesced detail paints during high-frequency stream-chunk. */
+const DETAIL_MIN_INTERVAL_MS = 100;
+
 let detailRenderScheduled = false;
 let detailRenderAppendFriendly = false;
+let detailThrottleTimer: ReturnType<typeof setTimeout> | null = null;
+let detailRenderToken = 0;
+let lastDetailRenderAt = 0;
 
 function scheduleRenderDetail(appendFriendly = false): void {
   detailRenderAppendFriendly = detailRenderAppendFriendly || appendFriendly;
   if (detailRenderScheduled) return;
   detailRenderScheduled = true;
-  requestAnimationFrame(() => {
-    detailRenderScheduled = false;
-    const append = detailRenderAppendFriendly;
-    detailRenderAppendFriendly = false;
-    renderDetail(append);
-  });
+  const token = ++detailRenderToken;
+  const delay = Math.max(0, DETAIL_MIN_INTERVAL_MS - (Date.now() - lastDetailRenderAt));
+
+  const fire = (): void => {
+    detailThrottleTimer = null;
+    requestAnimationFrame(() => {
+      if (token !== detailRenderToken) return;
+      detailRenderScheduled = false;
+      const append = detailRenderAppendFriendly;
+      detailRenderAppendFriendly = false;
+      lastDetailRenderAt = Date.now();
+      paintDetail(append);
+    });
+  };
+
+  if (delay === 0) {
+    fire();
+  } else {
+    detailThrottleTimer = setTimeout(fire, delay);
+  }
 }
 
 function renderDetail(appendFriendly = false): void {
+  // Invalidate any pending coalesced paint so sync callers win immediately.
+  detailRenderToken += 1;
+  if (detailThrottleTimer != null) {
+    clearTimeout(detailThrottleTimer);
+    detailThrottleTimer = null;
+  }
+  detailRenderScheduled = false;
+  const append = appendFriendly || detailRenderAppendFriendly;
+  detailRenderAppendFriendly = false;
+  lastDetailRenderAt = Date.now();
+  paintDetail(append);
+}
+
+function paintDetail(appendFriendly = false): void {
   const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
   if (!record) {
     renderStreamMeta(undefined);

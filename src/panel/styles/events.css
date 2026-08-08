@@ -117,6 +117,21 @@
   box-shadow: inset 2px 0 0 var(--accent);
 }
 
+.events-table tbody tr.virtual-spacer,
+.events-table tbody tr.virtual-spacer:hover {
+  cursor: default;
+  background: transparent;
+  pointer-events: none;
+  box-shadow: none;
+}
+
+.events-table tbody tr.virtual-spacer td {
+  padding: 0;
+  border: 0;
+  line-height: 0;
+  overflow: hidden;
+}
+
 .col-index,
 .col-n {
   width: var(--col-index-width);
