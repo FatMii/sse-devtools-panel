@@ -2,14 +2,7 @@ import { MESSAGE_SOURCE, type PageToExtensionMessage } from "../shared/types";
 import { patchEventSource } from "./inject/patch-eventsource";
 import { patchFetch } from "./inject/patch-fetch";
 import { patchXhr } from "./inject/patch-xhr";
-import type {
-  PostChunk,
-  PostDiscard,
-  PostEnd,
-  PostError,
-  PostReconnect,
-  PostStart,
-} from "./inject/types";
+import type { PostChunk, PostEnd, PostError, PostReconnect, PostStart } from "./inject/types";
 
 const STATE_KEY = "__EVENTSTREAM_PANEL_INSTALLED__";
 
@@ -42,10 +35,8 @@ function install(): void {
     post({ source: MESSAGE_SOURCE, type: "stream-error", payload });
   const postReconnect: PostReconnect = (payload) =>
     post({ source: MESSAGE_SOURCE, type: "stream-reconnect", payload });
-  const postDiscard: PostDiscard = (requestId) =>
-    post({ source: MESSAGE_SOURCE, type: "stream-discard", payload: { requestId } });
 
-  patchFetch(nextId, postStart, postChunk, postEnd, postError, postDiscard);
+  patchFetch(nextId, postStart, postChunk, postEnd, postError);
   patchEventSource(nextId, postStart, postChunk, postEnd, postError, postReconnect);
   patchXhr(nextId, postStart, postChunk, postEnd, postError);
 }

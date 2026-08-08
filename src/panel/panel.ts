@@ -185,9 +185,6 @@ function handleRelay(msg: RelayMessage): void {
     case "stream-reconnect":
       onReconnect(msg.payload);
       break;
-    case "stream-discard":
-      onDiscard(msg.payload.requestId);
-      break;
   }
 }
 
@@ -282,26 +279,6 @@ function onStart(payload: StreamStartPayload): void {
       renderDetail();
     }
   }
-}
-
-function onDiscard(requestId: string): void {
-  state.streams.delete(requestId);
-  state.parsers.delete(requestId);
-  discardConversationMergeSession(requestId);
-  invalidateStreamAnomalyCache(requestId);
-  if (state.selectedId === requestId) {
-    state.selectedId = null;
-    state.selectedEventIndex = null;
-    const next = Array.from(state.streams.keys())[0] ?? null;
-    state.selectedId = next;
-  }
-  if (state.uiPaused) {
-    state.pendingListRefreshWhilePaused = true;
-    state.pendingDetailRefreshWhilePaused = true;
-    return;
-  }
-  renderList();
-  renderDetail();
 }
 
 function onChunk(payload: StreamChunkPayload): void {
