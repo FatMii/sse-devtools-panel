@@ -328,7 +328,7 @@ pnpm build && pnpm demo
 
 1. Open <http://127.0.0.1:8765>
 2. Confirm the extension is loaded → open DevTools → **SSE DevTools**
-3. **Refresh the demo page** → click **Start stream**
+3. **Refresh the demo page** → try **Fetch SSE**, **EventSource**, **XHR SSE**, or **Fetch NDJSON**
 4. A stream should appear in the sidebar; Events / Conversation / Timeline / Raw tabs should have data
 
 ---
