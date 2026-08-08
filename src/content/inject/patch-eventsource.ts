@@ -11,6 +11,12 @@ export function toSseFrame(typeName: string, data: string, id?: string): string 
   return `${idLine}${eventLine}${dataLines}\n\n`;
 }
 
+/** `onping` → `ping`; ignores non-handler property names. */
+export function eventTypeFromOnProperty(prop: string): string | null {
+  if (!prop.startsWith("on") || prop.length <= 2) return null;
+  return prop.slice(2);
+}
+
 export function patchEventSource(
   nextId: () => string,
   postStart: PostStart,
@@ -75,19 +81,24 @@ export function patchEventSource(
       postChunk({ requestId, text: toSseFrame(typeName, data, eventId) });
     };
 
-    instance.addEventListener("message", onMessage);
-
     const trackedTypes = new Set<string>(["message"]);
     const originalAdd = instance.addEventListener.bind(instance);
+
+    const trackType = (type: string): void => {
+      if (!type || type === "error" || type === "open") return;
+      if (trackedTypes.has(type)) return;
+      trackedTypes.add(type);
+      originalAdd(type, onMessage);
+    };
+
+    originalAdd("message", onMessage);
+
     instance.addEventListener = ((
       type: string,
       listener: EventListenerOrEventListenerObject | null,
       options?: boolean | AddEventListenerOptions,
     ) => {
-      if (type !== "error" && type !== "open" && !trackedTypes.has(type)) {
-        trackedTypes.add(type);
-        originalAdd(type, onMessage);
-      }
+      trackType(type);
       return originalAdd(type, listener as EventListener, options);
     }) as typeof instance.addEventListener;
 
@@ -118,7 +129,16 @@ export function patchEventSource(
       finish("error", "abort", "EventSource closed by client");
     };
 
-    return instance;
+    // Legacy / convenience handlers: `es.onping = fn` (in addition to addEventListener).
+    return new Proxy(instance, {
+      set(target, prop, value, receiver) {
+        if (typeof prop === "string") {
+          const type = eventTypeFromOnProperty(prop);
+          if (type) trackType(type);
+        }
+        return Reflect.set(target, prop, value, receiver);
+      },
+    });
   }
 
   PatchedEventSource.prototype = OriginalEventSource.prototype;

@@ -1,6 +1,6 @@
 import { classifyHttpStatus } from "../../shared/stream-close";
 import type { StreamCloseReason, StreamTransport } from "../../shared/types";
-import { detectStreamKind } from "./detect";
+import { resolveStreamKind } from "./detect";
 import { clipPayloadText, parseRawResponseHeaders, redactHeaderValue } from "./headers";
 import type { PostChunk, PostEnd, PostError, PostStart } from "./types";
 
@@ -92,7 +92,12 @@ export function patchXhr(
         return;
       }
 
-      const kind = detectStreamKind(contentType);
+      const kind = resolveStreamKind({
+        responseContentType: contentType,
+        requestHeaders,
+        url,
+        requestPayloadPreview,
+      });
       // Connect+JSON is binary length-prefixed — XHR responseText corrupts frames.
       if (!kind || kind === "connect-json") return;
 
