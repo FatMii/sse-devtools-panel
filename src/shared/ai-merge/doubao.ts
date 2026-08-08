@@ -2,6 +2,29 @@ import type { SseEvent } from "../types";
 import type { AiEndMeta, AiToolCall, MergeChannelsResult } from "./types";
 import { asString, isRecord, parseEventData } from "./helpers";
 
+export type DoubaoWebMergeState = {
+  content: string;
+  reasoning: string;
+  tools: AiToolCall[];
+  chunkCount: number;
+  endMeta: AiEndMeta;
+  thinkingBlockIds: Set<string>;
+  /** CHUNK_DELTA has no block id — follow the last text-bearing channel. */
+  deltaChannel: "content" | "reasoning";
+};
+
+export function createDoubaoWebMergeState(): DoubaoWebMergeState {
+  return {
+    content: "",
+    reasoning: "",
+    tools: [],
+    chunkCount: 0,
+    endMeta: {},
+    thinkingBlockIds: new Set(),
+    deltaChannel: "content",
+  };
+}
+
 /**
  * Doubao.com web SSE (real capture):
  * - block_type 10040 = thinking container (thinking_block)
@@ -11,24 +34,16 @@ import { asString, isRecord, parseEventData } from "./helpers";
  * - CHUNK_DELTA continues the last text channel (reasoning or content)
  * - Ignore tts_content (patch_object 111) and user FULL_MSG_NOTIFY
  */
-export function mergeDoubaoWeb(
+export function pushDoubaoWeb(
+  state: DoubaoWebMergeState,
   events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,
-): MergeChannelsResult {
-  let content = "";
-  let reasoning = "";
-  const tools: AiToolCall[] = [];
-  let chunkCount = 0;
-  const endMeta: AiEndMeta = {};
-  const thinkingBlockIds = new Set<string>();
-  /** CHUNK_DELTA has no block id — follow the last text-bearing channel. */
-  let deltaChannel: "content" | "reasoning" = "content";
-
+): void {
   const pushText = (text: string, channel: "content" | "reasoning") => {
     if (!text) return;
-    chunkCount++;
-    deltaChannel = channel;
-    if (channel === "reasoning") reasoning += text;
-    else content += text;
+    state.chunkCount++;
+    state.deltaChannel = channel;
+    if (channel === "reasoning") state.reasoning += text;
+    else state.content += text;
   };
 
   const looksLikeDeepThinkIcon = (url: unknown): boolean =>
@@ -67,7 +82,7 @@ export function mergeDoubaoWeb(
 
     const blockId = asString(block.block_id);
     const parentId = asString(block.parent_id);
-    const underThinking = parentId != null && thinkingBlockIds.has(parentId);
+    const underThinking = parentId != null && state.thinkingBlockIds.has(parentId);
     // scene 1 = live search in thinking; scene 2 = end-of-answer reference replay (same payload, new block_id).
     const scene = typeof search.scene === "number" ? search.scene : undefined;
     const fingerprint = `${queries.join("\u0001")}\u0000${results
@@ -82,14 +97,14 @@ export function mergeDoubaoWeb(
       scene,
     });
 
-    const existingById = blockId != null ? tools.find((t) => t.id === blockId) : undefined;
+    const existingById = blockId != null ? state.tools.find((t) => t.id === blockId) : undefined;
     if (existingById && existingById.name === "web_search") {
       existingById.arguments = payload;
-      chunkCount++;
+      state.chunkCount++;
       return;
     }
 
-    const duplicate = tools.find((t) => {
+    const duplicate = state.tools.find((t) => {
       if (t.name !== "web_search") return false;
       try {
         const prev = JSON.parse(t.arguments) as { queries?: unknown; results?: unknown[] };
@@ -115,17 +130,17 @@ export function mergeDoubaoWeb(
 
     // Prefer not creating a lone scene=2 card when it has no thinking parent and no prior tool —
     // still allow it as fallback if it's the only search we ever see.
-    if (scene === 2 && !underThinking && tools.some((t) => t.name === "web_search")) {
+    if (scene === 2 && !underThinking && state.tools.some((t) => t.name === "web_search")) {
       return;
     }
 
-    tools.push({
-      index: tools.length,
+    state.tools.push({
+      index: state.tools.length,
       id: blockId,
       name: "web_search",
       arguments: payload,
     });
-    chunkCount++;
+    state.chunkCount++;
   };
 
   const ingestContentBlocks = (blocks: unknown): void => {
@@ -138,9 +153,9 @@ export function mergeDoubaoWeb(
       const bag = isRecord(block.content) ? block.content : null;
 
       if (blockType === 10040 || (bag && isRecord(bag.thinking_block))) {
-        if (blockId) thinkingBlockIds.add(blockId);
+        if (blockId) state.thinkingBlockIds.add(blockId);
         // Container only — text arrives in child blocks / CHUNK_DELTA.
-        deltaChannel = "reasoning";
+        state.deltaChannel = "reasoning";
         continue;
       }
 
@@ -153,12 +168,12 @@ export function mergeDoubaoWeb(
       if (!textBlock) continue;
       const text = asString(textBlock.text);
       const underThinking =
-        (parentId != null && thinkingBlockIds.has(parentId)) ||
+        (parentId != null && state.thinkingBlockIds.has(parentId)) ||
         looksLikeDeepThinkIcon(textBlock.icon_url) ||
         looksLikeDeepThinkIcon(textBlock.icon_url_dark);
       const channel: "content" | "reasoning" = underThinking ? "reasoning" : "content";
       if (text) pushText(text, channel);
-      else deltaChannel = channel;
+      else state.deltaChannel = channel;
     }
   };
 
@@ -169,7 +184,7 @@ export function mergeDoubaoWeb(
 
     if (name === "CHUNK_DELTA") {
       const text = asString(parsed.text);
-      if (text) pushText(text, deltaChannel);
+      if (text) pushText(text, state.deltaChannel);
       continue;
     }
 
@@ -200,11 +215,11 @@ export function mergeDoubaoWeb(
 
     if (name === "SSE_REPLY_END") {
       if (typeof parsed.end_type === "number" && parsed.end_type === 1) {
-        endMeta.finishReason = "SSE_REPLY_END";
+        state.endMeta.finishReason = "SSE_REPLY_END";
         const attr = isRecord(parsed.msg_finish_attr) ? parsed.msg_finish_attr : null;
-        if (attr && typeof attr.brief === "string" && !content) {
-          content = attr.brief;
-          chunkCount++;
+        if (attr && typeof attr.brief === "string" && !state.content) {
+          state.content = attr.brief;
+          state.chunkCount++;
         }
       }
       continue;
@@ -212,15 +227,25 @@ export function mergeDoubaoWeb(
 
     // Fallback for captures without event names
     if (typeof parsed.text === "string") {
-      pushText(parsed.text, deltaChannel);
+      pushText(parsed.text, state.deltaChannel);
     } else if (typeof parsed.block_type === "number" || Array.isArray(parsed.content_block)) {
       ingestContentBlocks(Array.isArray(parsed.content_block) ? parsed.content_block : [parsed]);
     }
   }
+}
 
+export function snapshotDoubaoWeb(state: DoubaoWebMergeState): MergeChannelsResult {
   return {
-    channels: { content, reasoning, tools },
-    endMeta,
-    chunkCount,
+    channels: { content: state.content, reasoning: state.reasoning, tools: state.tools },
+    endMeta: state.endMeta,
+    chunkCount: state.chunkCount,
   };
+}
+
+export function mergeDoubaoWeb(
+  events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,
+): MergeChannelsResult {
+  const s = createDoubaoWebMergeState();
+  pushDoubaoWeb(s, events);
+  return snapshotDoubaoWeb(s);
 }

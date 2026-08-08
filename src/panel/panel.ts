@@ -24,7 +24,13 @@ import { latestEventIdFromEvents } from "../shared/stream-close";
 import { SseParser, type ParsedSseEvent } from "../shared/sse-parser";
 import { NdjsonParser } from "../shared/ndjson-parser";
 import { ConnectJsonParser } from "../shared/connect-json-parser";
-import { mergeAiConversation, conversationHasContent } from "../shared/ai-merge";
+import {
+  clearConversationMergeSessions,
+  conversationHasContent,
+  discardConversationMergeSession,
+  getConversationMergeSession,
+  syncConversationMergeSession,
+} from "../shared/ai-merge";
 import { initEventsColumnResizers } from "./widgets/column-resizer";
 import {
   elList,
@@ -32,7 +38,6 @@ import {
   elMetaMethod,
   elMetaUrl,
   elMetaTags,
-  elRaw,
   elStreamsUrlFilter,
   elStreamsTransportFilter,
   elExportJson,
@@ -82,6 +87,7 @@ import {
 import { renderTimeline } from "./views/timeline-view";
 import { renderRequest, resetRequestViewState } from "./views/request-view-ui";
 import { renderConversation, resetConversationView } from "./views/conversation-view";
+import { renderRawView, resetRawView } from "./views/raw-view";
 import { state, type ActiveTab, type StreamParser } from "./core/state";
 import {
   closeAllMenus,
@@ -224,6 +230,8 @@ function onStart(payload: StreamStartPayload): void {
         existing.events = [];
         const rebuilt = stampEvents([...parser.push(existing.raw), ...parser.flush()]);
         existing.events.push(...rebuilt);
+        discardConversationMergeSession(payload.requestId);
+        getConversationMergeSession(payload.requestId).push(existing.events, existing.url);
       }
     }
     if (state.uiPaused) {
@@ -279,6 +287,7 @@ function onStart(payload: StreamStartPayload): void {
 function onDiscard(requestId: string): void {
   state.streams.delete(requestId);
   state.parsers.delete(requestId);
+  discardConversationMergeSession(requestId);
   invalidateStreamAnomalyCache(requestId);
   if (state.selectedId === requestId) {
     state.selectedId = null;
@@ -307,6 +316,8 @@ function onChunk(payload: StreamChunkPayload): void {
     const latestId = latestEventIdFromEvents(events);
     if (latestId) record.lastEventId = latestId;
   }
+  // Keep merge session caught up so Conversation tab opens without a full re-parse.
+  getConversationMergeSession(payload.requestId).push(record.events, record.url);
 
   if (state.uiPaused) {
     state.pendingListRefreshWhilePaused = true;
@@ -478,23 +489,50 @@ function updateTabCounts(record: StreamRecord | undefined): void {
     }
   }
   if (elTabCountConversation) {
-    if (record && record.events.length > 0) {
-      const merged = mergeAiConversation(record.events, record.url);
-      if (conversationHasContent(merged)) {
-        elTabCountConversation.hidden = false;
-        const n =
-          (merged.channels.content ? 1 : 0) +
-          (merged.channels.reasoning ? 1 : 0) +
-          (merged.channels.tools.length > 0 ? 1 : 0);
-        elTabCountConversation.textContent = String(Math.max(n, 1));
-      } else {
-        elTabCountConversation.hidden = true;
-        elTabCountConversation.textContent = "";
-      }
-    } else {
-      elTabCountConversation.hidden = true;
-      elTabCountConversation.textContent = "";
-    }
+    updateConversationTabCount(record);
+  }
+}
+
+let convTabCountAt = 0;
+let convTabCountEvents = -1;
+let convTabCountRequestId: string | null = null;
+
+function updateConversationTabCount(record: StreamRecord | undefined): void {
+  if (!elTabCountConversation) return;
+  if (!record || record.events.length === 0) {
+    elTabCountConversation.hidden = true;
+    elTabCountConversation.textContent = "";
+    convTabCountRequestId = null;
+    convTabCountEvents = -1;
+    return;
+  }
+
+  const streaming = record.streamStatus === "streaming";
+  const sameStream = convTabCountRequestId === record.requestId;
+  const due =
+    !streaming ||
+    !sameStream ||
+    Date.now() - convTabCountAt >= 400 ||
+    record.events.length - convTabCountEvents >= 20 ||
+    state.activeTab === "conversation";
+
+  if (!due && sameStream) return;
+
+  const merged = syncConversationMergeSession(record.requestId, record.events, record.url);
+  convTabCountAt = Date.now();
+  convTabCountEvents = record.events.length;
+  convTabCountRequestId = record.requestId;
+
+  if (conversationHasContent(merged)) {
+    elTabCountConversation.hidden = false;
+    const n =
+      (merged.channels.content ? 1 : 0) +
+      (merged.channels.reasoning ? 1 : 0) +
+      (merged.channels.tools.length > 0 ? 1 : 0);
+    elTabCountConversation.textContent = String(Math.max(n, 1));
+  } else {
+    elTabCountConversation.hidden = true;
+    elTabCountConversation.textContent = "";
   }
 }
 
@@ -553,7 +591,7 @@ function paintDetail(appendFriendly = false): void {
     renderStreamMeta(undefined);
     updateTabCounts(undefined);
     clearEventsView();
-    elRaw.textContent = "";
+    resetRawView();
     renderTimelineForSelection(undefined);
     renderRequestForSelection(undefined);
     renderConversationForSelection(undefined);
@@ -562,15 +600,18 @@ function paintDetail(appendFriendly = false): void {
 
   renderStreamMeta(record);
   updateTabCounts(record);
-  elRaw.textContent = record.raw || "";
 
-  renderEvents(record, appendFriendly);
-  renderTimelineForSelection(record);
-  renderRequestForSelection(record);
-  renderConversationForSelection(record);
-
-  if (state.activeTab === "raw") {
-    elRaw.scrollTop = elRaw.scrollHeight;
+  // Only paint the active detail tab; inactive panes refresh on tab click.
+  if (state.activeTab === "events") {
+    renderEvents(record, appendFriendly);
+  } else if (state.activeTab === "timeline") {
+    renderTimelineForSelection(record);
+  } else if (state.activeTab === "request") {
+    renderRequestForSelection(record);
+  } else if (state.activeTab === "raw") {
+    renderRawView(record);
+  } else if (state.activeTab === "conversation") {
+    renderConversationForSelection(record);
   }
 }
 
@@ -620,14 +661,17 @@ function setupTabs(): void {
         return;
       }
       activateTab(tab);
-      if (tab === "timeline") {
-        const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
+      const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
+      if (tab === "events") {
+        if (record) renderEvents(record, false);
+        else clearEventsView();
+      } else if (tab === "timeline") {
         renderTimelineForSelection(record);
       } else if (tab === "request") {
-        const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
         renderRequestForSelection(record);
+      } else if (tab === "raw") {
+        renderRawView(record);
       } else if (tab === "conversation") {
-        const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
         renderConversationForSelection(record);
       }
     });
@@ -652,8 +696,10 @@ function setupActions(): void {
     state.streams.clear();
     state.parsers.clear();
     clearStreamAnomalyCaches();
+    clearConversationMergeSessions();
     resetRequestViewState();
     resetConversationView();
+    resetRawView();
     state.selectedId = null;
     state.selectedEventIndex = null;
     state.streamsUrlFilterQuery = "";

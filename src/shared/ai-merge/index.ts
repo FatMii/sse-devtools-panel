@@ -1,13 +1,6 @@
 import type { SseEvent } from "../types";
-import { detectAiProfile } from "../ai-profile";
-import type { AiEndMeta, AiConversation, AiConversationChannels } from "./types";
-import { mergeOpenAiCompatible } from "./openai";
-import { mergeDeepseekWeb } from "./deepseek";
-import { mergeDoubaoWeb } from "./doubao";
-import { mergeKimiWeb } from "./kimi";
-import { mergeQwenWeb } from "./qwen";
-import { mergeChatglmWeb } from "./chatglm";
-import { mergeYuanbaoWeb } from "./yuanbao";
+import type { AiConversation } from "./types";
+import { ConversationMergeSession } from "./session";
 
 export type {
   AiToolCall,
@@ -17,63 +10,76 @@ export type {
   MergeChannelsResult,
 } from "./types";
 
+export type { OpenAiCompatibleMergeState } from "./openai";
+export {
+  createOpenAiCompatibleMergeState,
+  pushOpenAiCompatible,
+  snapshotOpenAiCompatible,
+  mergeOpenAiCompatible,
+} from "./openai";
+
+export type { DeepseekWebMergeState, FragType } from "./deepseek";
+export {
+  createDeepseekWebMergeState,
+  pushDeepseekWeb,
+  snapshotDeepseekWeb,
+  mergeDeepseekWeb,
+} from "./deepseek";
+
+export type { DoubaoWebMergeState } from "./doubao";
+export {
+  createDoubaoWebMergeState,
+  pushDoubaoWeb,
+  snapshotDoubaoWeb,
+  mergeDoubaoWeb,
+} from "./doubao";
+
+export type { KimiWebMergeState } from "./kimi";
+export { createKimiWebMergeState, pushKimiWeb, snapshotKimiWeb, mergeKimiWeb } from "./kimi";
+
+export type { QwenWebMergeState } from "./qwen";
+export {
+  collapseCumulativeLines,
+  createQwenWebMergeState,
+  pushQwenWeb,
+  snapshotQwenWeb,
+  mergeQwenWeb,
+} from "./qwen";
+
+export type { ChatglmWebMergeState } from "./chatglm";
+export {
+  createChatglmWebMergeState,
+  pushChatglmWeb,
+  snapshotChatglmWeb,
+  mergeChatglmWeb,
+} from "./chatglm";
+
+export type { YuanbaoWebMergeState } from "./yuanbao";
+export {
+  createYuanbaoWebMergeState,
+  pushYuanbaoWeb,
+  snapshotYuanbaoWeb,
+  mergeYuanbaoWeb,
+} from "./yuanbao";
+
+export {
+  ConversationMergeSession,
+  getConversationMergeSession,
+  discardConversationMergeSession,
+  clearConversationMergeSessions,
+  syncConversationMergeSession,
+} from "./session";
+
 /**
- * Merge stream events into an AI conversation.
+ * Merge stream events into an AI conversation (one-shot via incremental session).
  */
 export function mergeAiConversation(
   events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,
   url?: string,
 ): AiConversation {
-  const detection = detectAiProfile(events, url);
-  let channels: AiConversationChannels = { content: "", reasoning: "", tools: [] };
-  let endMeta: AiEndMeta = {};
-  let chunkCount = 0;
-
-  if (detection.profile === "openai-compatible") {
-    const merged = mergeOpenAiCompatible(events);
-    channels = merged.channels;
-    endMeta = merged.endMeta;
-    chunkCount = merged.chunkCount;
-  } else if (detection.profile === "deepseek-web") {
-    const merged = mergeDeepseekWeb(events);
-    channels = merged.channels;
-    endMeta = merged.endMeta;
-    chunkCount = merged.chunkCount;
-  } else if (detection.profile === "doubao-web") {
-    const merged = mergeDoubaoWeb(events);
-    channels = merged.channels;
-    endMeta = merged.endMeta;
-    chunkCount = merged.chunkCount;
-  } else if (detection.profile === "kimi-web") {
-    const merged = mergeKimiWeb(events);
-    channels = merged.channels;
-    endMeta = merged.endMeta;
-    chunkCount = merged.chunkCount;
-  } else if (detection.profile === "qwen-web") {
-    const merged = mergeQwenWeb(events);
-    channels = merged.channels;
-    endMeta = merged.endMeta;
-    chunkCount = merged.chunkCount;
-  } else if (detection.profile === "chatglm-web") {
-    const merged = mergeChatglmWeb(events);
-    channels = merged.channels;
-    endMeta = merged.endMeta;
-    chunkCount = merged.chunkCount;
-  } else if (detection.profile === "yuanbao-web") {
-    const merged = mergeYuanbaoWeb(events);
-    channels = merged.channels;
-    endMeta = merged.endMeta;
-    chunkCount = merged.chunkCount;
-  }
-
-  return {
-    profile: detection.profile,
-    vendorHint: detection.vendorHint,
-    detection,
-    channels,
-    endMeta,
-    chunkCount,
-  };
+  const session = new ConversationMergeSession();
+  session.push(events, url);
+  return session.snapshot();
 }
 
 export function conversationHasContent(t: AiConversation): boolean {
