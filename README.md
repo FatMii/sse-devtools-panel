@@ -341,7 +341,7 @@ pnpm dev          # watch build
 pnpm typecheck
 pnpm lint
 pnpm format
-pnpm test         # Vitest unit tests (src/**/*.test.ts)
+pnpm test         # Vitest unit tests (src/**/__tests__/**/*.test.ts)
 pnpm test:watch   # Vitest watch mode
 ```
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildStreamExportCsv, escapeCsvCell } from "./stream-snapshot";
+import { buildStreamExportCsv, escapeCsvCell } from "../stream-snapshot";
 
 function assert(cond: unknown, msg: string): asserts cond {
   expect(cond, msg).toBeTruthy();

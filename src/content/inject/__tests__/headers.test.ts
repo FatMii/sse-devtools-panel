@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isSensitiveHeaderName, normalizeHeaders, redactHeaderValue } from "./headers";
+import { isSensitiveHeaderName, normalizeHeaders, redactHeaderValue } from "../headers";
 
 function assert(cond: unknown, msg: string): asserts cond {
   expect(cond, msg).toBeTruthy();

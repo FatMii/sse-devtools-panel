@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeConvVirtualWindow, estimateCols, wrapTextToRows } from "./conversation-virtual";
+import { computeConvVirtualWindow, estimateCols, wrapTextToRows } from "../conversation-virtual";
 
 function assert(cond: unknown, msg: string): asserts cond {
   expect(cond, msg).toBeTruthy();

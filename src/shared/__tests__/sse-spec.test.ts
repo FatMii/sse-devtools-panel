@@ -4,7 +4,7 @@ import {
   lintSseEventBlock,
   lintSseStreamRaw,
   scanStreamSpecWarnings,
-} from "./sse-spec";
+} from "../sse-spec";
 
 function assert(cond: unknown, msg: string): asserts cond {
   expect(cond, msg).toBeTruthy();

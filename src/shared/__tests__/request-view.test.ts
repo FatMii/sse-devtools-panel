@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { looksLikeUrlEncoded, parseQueryStringParams, parseUrlEncodedPairs } from "./request-view";
+import { looksLikeUrlEncoded, parseQueryStringParams, parseUrlEncodedPairs } from "../request-view";
 
 function assert(cond: unknown, msg: string): asserts cond {
   expect(cond, msg).toBeTruthy();

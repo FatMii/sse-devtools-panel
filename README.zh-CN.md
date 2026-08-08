@@ -371,7 +371,7 @@ pnpm dev          # 监听构建
 pnpm typecheck
 pnpm lint
 pnpm format
-pnpm test         # Vitest 单测（src/**/*.test.ts）
+pnpm test         # Vitest 单测（src/**/__tests__/**/*.test.ts）
 pnpm test:watch   # Vitest 监听模式
 ```
 

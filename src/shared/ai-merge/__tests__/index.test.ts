@@ -2,11 +2,11 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { SseParser } from "../sse-parser";
-import { detectAiProfile, vendorHintFromUrl } from "../ai-profile";
-import { conversationHasContent, mergeAiConversation } from "./index";
+import { SseParser } from "../../sse-parser";
+import { detectAiProfile, vendorHintFromUrl } from "../../ai-profile";
+import { conversationHasContent, mergeAiConversation } from "../index";
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
 
 function assert(cond: unknown, msg: string): asserts cond {
   expect(cond, msg).toBeTruthy();

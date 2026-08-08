@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ConnectBinaryFramer, ConnectJsonParser } from "./connect-json-parser";
+import { ConnectBinaryFramer, ConnectJsonParser } from "../connect-json-parser";
 
 function assert(cond: unknown, msg: string): asserts cond {
   expect(cond, msg).toBeTruthy();

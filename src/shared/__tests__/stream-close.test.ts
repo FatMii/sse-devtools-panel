@@ -5,7 +5,7 @@ import {
   isStreamCloseReason,
   latestEventIdFromEvents,
   normalizeReconnectMarks,
-} from "./stream-close";
+} from "../stream-close";
 
 function assert(cond: unknown, msg: string): asserts cond {
   expect(cond, msg).toBeTruthy();
