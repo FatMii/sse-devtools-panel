@@ -37,6 +37,30 @@ export function collapseCumulativeLines(text: string): string {
   return out.join("\n");
 }
 
+export type QwenWebMergeState = {
+  content: string;
+  reasoning: string;
+  tools: AiToolCall[];
+  chunkCount: number;
+  endMeta: AiEndMeta;
+  snapshots: Map<string, string>;
+  planCotLatest: string;
+  deepThinkLatest: string;
+};
+
+export function createQwenWebMergeState(): QwenWebMergeState {
+  return {
+    content: "",
+    reasoning: "",
+    tools: [],
+    chunkCount: 0,
+    endMeta: {},
+    snapshots: new Map(),
+    planCotLatest: "",
+    deepThinkLatest: "",
+  };
+}
+
 /**
  * Qwen / Tongyi web AgentProxy SSE:
  * - plan_cot/post → reasoning (latest snapshot; collapse stacked lines)
@@ -45,32 +69,24 @@ export function collapseCumulativeLines(text: string): string {
  * - bar/progress cot query + result list → tools web_search
  * - bar/iframe sources + source_group_web → tools web_search
  */
-export function mergeQwenWeb(
+export function pushQwenWeb(
+  state: QwenWebMergeState,
   events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,
-): MergeChannelsResult {
-  let content = "";
-  let reasoning = "";
-  const tools: AiToolCall[] = [];
-  let chunkCount = 0;
-  const endMeta: AiEndMeta = {};
-  const snapshots = new Map<string, string>();
-  let planCotLatest = "";
-  let deepThinkLatest = "";
-
+): void {
   const pushSnapshot = (key: string, full: string, channel: "content" | "reasoning"): void => {
     if (!full) return;
-    const prev = snapshots.get(key) ?? "";
+    const prev = state.snapshots.get(key) ?? "";
     let delta = full;
     if (full.startsWith(prev)) {
       delta = full.slice(prev.length);
     } else if (prev.startsWith(full)) {
       return;
     }
-    if (full.length >= prev.length) snapshots.set(key, full);
+    if (full.length >= prev.length) state.snapshots.set(key, full);
     if (!delta) return;
-    chunkCount++;
-    if (channel === "reasoning") reasoning += delta;
-    else content += delta;
+    state.chunkCount++;
+    if (channel === "reasoning") state.reasoning += delta;
+    else state.content += delta;
   };
 
   const extractSourceResults = (list: unknown[]): Array<Record<string, unknown>> => {
@@ -121,19 +137,19 @@ export function mergeQwenWeb(
       return JSON.stringify({ type: "SEARCH", queries: mergedQueries, results: mergedResults });
     };
 
-    const orphan = tools.find((t) => t.name === "web_search");
+    const orphan = state.tools.find((t) => t.name === "web_search");
     if (orphan) {
       orphan.arguments = mergeArgs(orphan.arguments, queries, results);
-      chunkCount++;
+      state.chunkCount++;
       return;
     }
 
-    tools.push({
-      index: tools.length,
+    state.tools.push({
+      index: state.tools.length,
       name: "web_search",
       arguments: JSON.stringify({ type: "SEARCH", queries, results }),
     });
-    chunkCount++;
+    state.chunkCount++;
   };
 
   const ingestSourceGroupWeb = (item: Record<string, unknown>): void => {
@@ -157,7 +173,7 @@ export function mergeQwenWeb(
 
     const extra = isRecord(data.extra_info) ? data.extra_info : null;
     if (extra && (extra.sse_end === "1" || extra.sse_end === 1)) {
-      endMeta.finishReason = endMeta.finishReason ?? "stop";
+      state.endMeta.finishReason = state.endMeta.finishReason ?? "stop";
     }
 
     const messages = Array.isArray(data.messages) ? data.messages : [];
@@ -167,9 +183,9 @@ export function mergeQwenWeb(
 
       if (mime === "plan_cot/post") {
         const text = asString(msg.content);
-        if (text && text.length >= planCotLatest.length) {
-          planCotLatest = text;
-          chunkCount++;
+        if (text && text.length >= state.planCotLatest.length) {
+          state.planCotLatest = text;
+          state.chunkCount++;
         }
         continue;
       }
@@ -212,9 +228,9 @@ export function mergeQwenWeb(
           if (!isRecord(item)) continue;
           if (item.type === "deep_think" && isRecord(item.content)) {
             const think = asString(item.content.think_content);
-            if (think && think.length >= deepThinkLatest.length) {
-              deepThinkLatest = think;
-              chunkCount++;
+            if (think && think.length >= state.deepThinkLatest.length) {
+              state.deepThinkLatest = think;
+              state.chunkCount++;
             }
           } else if (item.type === "source_group_web") {
             ingestSourceGroupWeb(item);
@@ -255,16 +271,26 @@ export function mergeQwenWeb(
       }
     }
   }
+}
 
-  const planCotCollapsed = planCotLatest ? collapseCumulativeLines(planCotLatest) : "";
+export function snapshotQwenWeb(state: QwenWebMergeState): MergeChannelsResult {
+  const planCotCollapsed = state.planCotLatest ? collapseCumulativeLines(state.planCotLatest) : "";
   const reasoningParts: string[] = [];
   if (planCotCollapsed) reasoningParts.push(planCotCollapsed);
-  if (deepThinkLatest) reasoningParts.push(deepThinkLatest);
-  reasoning = reasoningParts.join("\n\n");
+  if (state.deepThinkLatest) reasoningParts.push(state.deepThinkLatest);
+  state.reasoning = reasoningParts.join("\n\n");
 
   return {
-    channels: { content, reasoning, tools },
-    endMeta,
-    chunkCount,
+    channels: { content: state.content, reasoning: state.reasoning, tools: state.tools },
+    endMeta: state.endMeta,
+    chunkCount: state.chunkCount,
   };
+}
+
+export function mergeQwenWeb(
+  events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,
+): MergeChannelsResult {
+  const s = createQwenWebMergeState();
+  pushQwenWeb(s, events);
+  return snapshotQwenWeb(s);
 }

@@ -2,6 +2,35 @@ import type { SseEvent } from "../types";
 import type { AiEndMeta, AiToolCall, MergeChannelsResult } from "./types";
 import { asString, isRecord, parseEventData } from "./helpers";
 
+export type KimiWebMergeState = {
+  content: string;
+  reasoning: string;
+  tools: AiToolCall[];
+  chunkCount: number;
+  endMeta: AiEndMeta;
+  /** Blocks under STAGE_NAME_THINKING (multiStage / stage / descendants). */
+  thinkingBlockIds: Set<string>;
+  /** Latest full text snapshot per block (Kimi often sends cumulative block.text). */
+  blockTextSnapshots: Map<string, string>;
+  /** Incremental tool args keyed by block id. */
+  toolArgsByBlockId: Map<string, string>;
+  thinkingActive: boolean;
+};
+
+export function createKimiWebMergeState(): KimiWebMergeState {
+  return {
+    content: "",
+    reasoning: "",
+    tools: [],
+    chunkCount: 0,
+    endMeta: {},
+    thinkingBlockIds: new Set(),
+    blockTextSnapshots: new Map(),
+    toolArgsByBlockId: new Map(),
+    thinkingActive: false,
+  };
+}
+
 /**
  * Kimi.com Connect+JSON (real capture / Bridge-compatible):
  * - mask chat.lastRequest / heartbeat → ignore
@@ -10,22 +39,10 @@ import { asString, isRecord, parseEventData } from "./helpers";
  * - delta.content / block.text.content → route by thinking block parent chain
  * - block.stage/block.search search payloads → Tools web_search
  */
-export function mergeKimiWeb(
+export function pushKimiWeb(
+  state: KimiWebMergeState,
   events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,
-): MergeChannelsResult {
-  let content = "";
-  let reasoning = "";
-  const tools: AiToolCall[] = [];
-  let chunkCount = 0;
-  const endMeta: AiEndMeta = {};
-  /** Blocks under STAGE_NAME_THINKING (multiStage / stage / descendants). */
-  const thinkingBlockIds = new Set<string>();
-  /** Latest full text snapshot per block (Kimi often sends cumulative block.text). */
-  const blockTextSnapshots = new Map<string, string>();
-  /** Incremental tool args keyed by block id. */
-  const toolArgsByBlockId = new Map<string, string>();
-  let thinkingActive = false;
-
+): void {
   const stageEnded = (status: unknown): boolean =>
     status === "STAGE_STATUS_DONE" ||
     status === "STAGE_STATUS_END" ||
@@ -48,21 +65,21 @@ export function mergeKimiWeb(
       name.includes("SEARCH"));
 
   const markThinkingBlock = (blockId: string | undefined): void => {
-    if (blockId) thinkingBlockIds.add(blockId);
+    if (blockId) state.thinkingBlockIds.add(blockId);
   };
 
   const underThinking = (parentId?: string, blockId?: string): boolean => {
-    if (thinkingActive) return true;
-    if (blockId && thinkingBlockIds.has(blockId)) return true;
-    if (parentId && thinkingBlockIds.has(parentId)) return true;
+    if (state.thinkingActive) return true;
+    if (blockId && state.thinkingBlockIds.has(blockId)) return true;
+    if (parentId && state.thinkingBlockIds.has(parentId)) return true;
     return false;
   };
 
   const pushText = (text: string, channel: "content" | "reasoning") => {
     if (!text) return;
-    chunkCount++;
-    if (channel === "reasoning") reasoning += text;
-    else content += text;
+    state.chunkCount++;
+    if (channel === "reasoning") state.reasoning += text;
+    else state.content += text;
   };
 
   /** Push block.text — dedupe cumulative snapshots for thinking blocks. */
@@ -73,14 +90,14 @@ export function mergeKimiWeb(
   ) => {
     if (!text) return;
     if (channel === "reasoning" && blockId) {
-      const prev = blockTextSnapshots.get(blockId) ?? "";
+      const prev = state.blockTextSnapshots.get(blockId) ?? "";
       let delta = text;
       if (text.startsWith(prev)) {
         delta = text.slice(prev.length);
       } else if (prev.startsWith(text)) {
         return;
       }
-      if (text.length >= prev.length) blockTextSnapshots.set(blockId, text);
+      if (text.length >= prev.length) state.blockTextSnapshots.set(blockId, text);
       pushText(delta, "reasoning");
       return;
     }
@@ -125,32 +142,32 @@ export function mergeKimiWeb(
     };
 
     const existingById = blockId
-      ? tools.find((t) => t.id === blockId && t.name === name)
+      ? state.tools.find((t) => t.id === blockId && t.name === name)
       : undefined;
     if (existingById) {
       existingById.arguments = mergeArgs(existingById.arguments, queries, results);
-      chunkCount++;
+      state.chunkCount++;
       return;
     }
 
     if (name === "web_search") {
-      const orphan = tools.find((t) => t.name === "web_search");
+      const orphan = state.tools.find((t) => t.name === "web_search");
       if (orphan) {
         if (blockId) orphan.id = blockId;
         orphan.arguments = mergeArgs(orphan.arguments, queries, results);
-        chunkCount++;
+        state.chunkCount++;
         return;
       }
     }
 
     const payload = JSON.stringify({ type: "SEARCH", queries, results });
-    tools.push({
-      index: tools.length,
+    state.tools.push({
+      index: state.tools.length,
       id: blockId,
       name,
       arguments: payload,
     });
-    chunkCount++;
+    state.chunkCount++;
   };
 
   const ingestSearchPayload = (search: Record<string, unknown>, blockId?: string): void => {
@@ -217,12 +234,12 @@ export function mergeKimiWeb(
     const argsFragment = asString(toolBag.args);
     let queries: string[] = [];
     if (argsFragment && toolBlockId) {
-      const prev = toolArgsByBlockId.get(toolBlockId) ?? "";
+      const prev = state.toolArgsByBlockId.get(toolBlockId) ?? "";
       const combined =
         argsFragment.startsWith("{") && argsFragment.endsWith("}")
           ? argsFragment
           : prev + argsFragment;
-      toolArgsByBlockId.set(toolBlockId, combined);
+      state.toolArgsByBlockId.set(toolBlockId, combined);
       queries = parseToolQueries(combined);
     }
 
@@ -280,11 +297,11 @@ export function mergeKimiWeb(
     if (isThinkingStageName(name)) {
       markThinkingBlock(blockId);
       if (parentId) markThinkingBlock(parentId);
-      thinkingActive = !stageEnded(stage.status);
+      state.thinkingActive = !stageEnded(stage.status);
     } else if (isSearchStageName(name)) {
       if (isRecord(stage.search)) ingestSearchPayload(stage.search, blockId);
-    } else if (stageEnded(stage.status) && parentId && thinkingBlockIds.has(parentId)) {
-      thinkingActive = false;
+    } else if (stageEnded(stage.status) && parentId && state.thinkingBlockIds.has(parentId)) {
+      state.thinkingActive = false;
     }
 
     const stageText =
@@ -318,7 +335,7 @@ export function mergeKimiWeb(
         if (!isRecord(stage)) continue;
         if (isThinkingStageName(stage.name)) {
           markThinkingBlock(blockId);
-          thinkingActive = !stageEnded(stage.status);
+          state.thinkingActive = !stageEnded(stage.status);
         }
         if (isSearchStageName(stage.name) && isRecord(stage.search)) {
           ingestSearchPayload(stage.search, blockId);
@@ -365,7 +382,7 @@ export function mergeKimiWeb(
     if (isRecord(block.exception)) {
       const err = isRecord(block.exception.error) ? block.exception.error : null;
       const reason = err ? asString(err.reason) : undefined;
-      if (reason) endMeta.finishReason = reason;
+      if (reason) state.endMeta.finishReason = reason;
     }
   };
 
@@ -406,7 +423,7 @@ export function mergeKimiWeb(
         ingestMessageRefs(msg);
         const status = asString(msg.status);
         if (status === "MESSAGE_STATUS_COMPLETED") {
-          endMeta.finishReason = endMeta.finishReason ?? "stop";
+          state.endMeta.finishReason = state.endMeta.finishReason ?? "stop";
         }
       }
       continue;
@@ -418,10 +435,20 @@ export function mergeKimiWeb(
       ingestBlock(parsed.block);
     }
   }
+}
 
+export function snapshotKimiWeb(state: KimiWebMergeState): MergeChannelsResult {
   return {
-    channels: { content, reasoning, tools },
-    endMeta,
-    chunkCount,
+    channels: { content: state.content, reasoning: state.reasoning, tools: state.tools },
+    endMeta: state.endMeta,
+    chunkCount: state.chunkCount,
   };
+}
+
+export function mergeKimiWeb(
+  events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,
+): MergeChannelsResult {
+  const s = createKimiWebMergeState();
+  pushKimiWeb(s, events);
+  return snapshotKimiWeb(s);
 }
