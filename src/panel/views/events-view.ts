@@ -26,10 +26,26 @@ import {
   specWarningMessage,
 } from "../features/stream-anomalies";
 import { state } from "../core/state";
+import {
+  computeVirtualWindow,
+  EVENTS_ROW_HEIGHT_DEFAULT,
+  EVENTS_VIRTUAL_OVERSCAN,
+  isNearBottom,
+} from "./events-virtual";
 
 export const DRAWER_WIDTH_MIN = 20;
 export const DRAWER_WIDTH_MAX = 75;
 export const DRAWER_WIDTH_DEFAULT = 42;
+
+const COL_COUNT = 4;
+const NEAR_BOTTOM_PX = 48;
+
+let browsableEvents: SseEvent[] = [];
+let rowHeight = EVENTS_ROW_HEIGHT_DEFAULT;
+let scrollListening = false;
+let scrollPaintScheduled = false;
+/** When true, next paint should pin scroll to bottom after layout. */
+let stickToBottomPending = false;
 
 export function eventMatchesSearch(ev: SseEvent, query: string): boolean {
   // Align with Chrome Network EventStream: filter on event type + data payload
@@ -43,29 +59,151 @@ export function getBrowsableEvents(record: StreamRecord): SseEvent[] {
   return record.events.filter((ev) => eventMatchesSearch(ev, state.eventsSearchQuery));
 }
 
-export function scrollEventRowIntoView(row: HTMLTableRowElement, mode: "nearest" | "start"): void {
+function ensureScrollListener(): void {
+  if (scrollListening) return;
+  elTableWrap.addEventListener("scroll", onTableScroll, { passive: true });
+  scrollListening = true;
+}
+
+function teardownScrollListener(): void {
+  if (!scrollListening) return;
+  elTableWrap.removeEventListener("scroll", onTableScroll);
+  scrollListening = false;
+  scrollPaintScheduled = false;
+}
+
+function onTableScroll(): void {
+  if (scrollPaintScheduled) return;
+  scrollPaintScheduled = true;
+  requestAnimationFrame(() => {
+    scrollPaintScheduled = false;
+    paintVisibleRows();
+  });
+}
+
+function createSpacerRow(kind: "top" | "bottom", heightPx: number): HTMLTableRowElement {
+  const tr = document.createElement("tr");
+  tr.className = `virtual-spacer virtual-spacer-${kind}`;
+  tr.setAttribute("aria-hidden", "true");
+  const td = document.createElement("td");
+  td.colSpan = COL_COUNT;
+  td.style.height = `${Math.max(0, heightPx)}px`;
+  td.style.padding = "0";
+  td.style.border = "0";
+  tr.appendChild(td);
+  return tr;
+}
+
+function measureRowHeight(sample: HTMLTableRowElement): void {
+  const h = sample.getBoundingClientRect().height;
+  if (h > 0) rowHeight = h;
+}
+
+function updateFilterHint(record: StreamRecord, visible: number): void {
+  if (!elEventsFilterHint) return;
+  if (record.events.length > 0) {
+    elEventsFilterHint.hidden = false;
+    elEventsFilterHint.textContent = t("eventsFilterHint", [
+      String(visible),
+      String(record.events.length),
+    ]);
+  } else {
+    elEventsFilterHint.hidden = true;
+    elEventsFilterHint.textContent = "";
+  }
+}
+
+function refreshBrowsable(record: StreamRecord): void {
+  browsableEvents = getBrowsableEvents(record);
+  updateFilterHint(record, browsableEvents.length);
+
+  if (record.events.length > 0 && browsableEvents.length === 0 && state.eventsSearchQuery.trim()) {
+    elPlaceholder.hidden = false;
+    elPlaceholder.textContent = t("noEventsMatch");
+  } else if (record.events.length > 0) {
+    elPlaceholder.hidden = true;
+  }
+}
+
+function paintVisibleRows(): void {
+  const total = browsableEvents.length;
+  if (total === 0) {
+    elTbody.replaceChildren();
+    return;
+  }
+
   const wrap = elTableWrap;
-  const wrapRect = wrap.getBoundingClientRect();
-  const rowRect = row.getBoundingClientRect();
+  const win = computeVirtualWindow({
+    scrollTop: wrap.scrollTop,
+    viewportHeight: wrap.clientHeight,
+    rowHeight,
+    total,
+    overscan: EVENTS_VIRTUAL_OVERSCAN,
+  });
+
+  const frag = document.createDocumentFragment();
+  if (win.paddingTop > 0) {
+    frag.appendChild(createSpacerRow("top", win.paddingTop));
+  }
+  for (let i = win.start; i < win.end; i++) {
+    frag.appendChild(createEventRow(browsableEvents[i]));
+  }
+  if (win.paddingBottom > 0) {
+    frag.appendChild(createSpacerRow("bottom", win.paddingBottom));
+  }
+  elTbody.replaceChildren(frag);
+
+  const firstData = elTbody.querySelector<HTMLTableRowElement>("tr[data-index]");
+  if (firstData) {
+    const prevHeight = rowHeight;
+    measureRowHeight(firstData);
+    // Spacers used the previous estimate; rebuild once after the first real measure.
+    if (Math.abs(rowHeight - prevHeight) >= 1) {
+      paintVisibleRows();
+      return;
+    }
+  }
+
+  syncRowSelection();
+
+  if (stickToBottomPending) {
+    stickToBottomPending = false;
+    wrap.scrollTop = wrap.scrollHeight;
+  }
+}
+
+function scrollFilteredIndexIntoView(filteredIndex: number, mode: "nearest" | "start"): void {
+  const wrap = elTableWrap;
   const thead = wrap.querySelector("thead");
   const headerHeight = thead ? thead.getBoundingClientRect().height : 0;
   const pad = 4;
+  const rowTop = filteredIndex * rowHeight;
 
   if (mode === "start") {
-    const targetTop = Math.max(0, row.offsetTop - headerHeight - pad);
-    wrap.scrollTop = targetTop;
+    wrap.scrollTop = Math.max(0, rowTop - pad);
+    paintVisibleRows();
     return;
   }
 
-  const visibleTop = wrapRect.top + headerHeight;
-  const visibleBottom = wrapRect.bottom;
-  if (rowRect.top < visibleTop) {
-    wrap.scrollTop -= visibleTop - rowRect.top + pad;
-    return;
+  const viewTop = wrap.scrollTop;
+  const viewBottom = viewTop + wrap.clientHeight - headerHeight;
+  const rowBottom = rowTop + rowHeight;
+
+  if (rowTop < viewTop + pad) {
+    wrap.scrollTop = Math.max(0, rowTop - pad);
+  } else if (rowBottom > viewBottom - pad) {
+    wrap.scrollTop = Math.max(0, rowBottom - (wrap.clientHeight - headerHeight) + pad);
   }
-  if (rowRect.bottom > visibleBottom) {
-    wrap.scrollTop += rowRect.bottom - visibleBottom + pad;
-  }
+  paintVisibleRows();
+}
+
+export function scrollEventRowIntoView(row: HTMLTableRowElement, mode: "nearest" | "start"): void {
+  const indexAttr = row.getAttribute("data-index");
+  if (indexAttr == null) return;
+  const eventIndex = Number(indexAttr);
+  const filteredIndex = browsableEvents.findIndex((ev) => ev.index === eventIndex);
+  if (filteredIndex === -1) return;
+  scrollFilteredIndexIntoView(filteredIndex, mode);
 }
 
 export function selectEventByIndex(
@@ -76,11 +214,13 @@ export function selectEventByIndex(
   const ev = record.events.find((e) => e.index === index);
   if (!ev) return;
   state.selectedEventIndex = index;
-  syncRowSelection();
   openDrawer(ev);
-  const row = elTbody.querySelector<HTMLTableRowElement>(`tr[data-index="${index}"]`);
-  if (row) {
-    scrollEventRowIntoView(row, options?.scrollMode ?? "nearest");
+
+  const filteredIndex = browsableEvents.findIndex((e) => e.index === index);
+  if (filteredIndex !== -1) {
+    scrollFilteredIndexIntoView(filteredIndex, options?.scrollMode ?? "nearest");
+  } else {
+    syncRowSelection();
   }
 }
 
@@ -115,10 +255,13 @@ export function updateDrawerNavButtons(): void {
 
 export function renderEvents(record: StreamRecord, appendFriendly: boolean): void {
   if (record.events.length === 0) {
+    browsableEvents = [];
+    stickToBottomPending = false;
+    teardownScrollListener();
     elPlaceholder.hidden = false;
     elPlaceholder.textContent = t("noEventsYet");
     elTableWrap.hidden = true;
-    elTbody.innerHTML = "";
+    elTbody.replaceChildren();
     if (elEventsFilterHint) {
       elEventsFilterHint.hidden = true;
       elEventsFilterHint.textContent = "";
@@ -129,21 +272,23 @@ export function renderEvents(record: StreamRecord, appendFriendly: boolean): voi
 
   elPlaceholder.hidden = true;
   elTableWrap.hidden = false;
+  ensureScrollListener();
+  refreshBrowsable(record);
 
-  const existing = elTbody.querySelectorAll("tr").length;
-  if (!appendFriendly || existing === 0) {
-    elTbody.innerHTML = "";
-    for (const ev of record.events) {
-      elTbody.appendChild(createEventRow(ev));
-    }
-  } else {
-    for (let i = existing; i < record.events.length; i++) {
-      elTbody.appendChild(createEventRow(record.events[i]));
-    }
-  }
+  const wasNearBottom = isNearBottom(
+    elTableWrap.scrollTop,
+    elTableWrap.scrollHeight,
+    elTableWrap.clientHeight,
+    NEAR_BOTTOM_PX,
+  );
+  const shouldStick =
+    state.activeTab === "events" &&
+    appendFriendly &&
+    !state.eventsSearchQuery.trim() &&
+    (wasNearBottom || elTableWrap.scrollHeight <= elTableWrap.clientHeight + 1);
 
-  applyEventsFilter();
-  syncRowSelection();
+  stickToBottomPending = shouldStick;
+  paintVisibleRows();
 
   if (state.selectedEventIndex != null) {
     const ev = record.events.find((e) => e.index === state.selectedEventIndex);
@@ -155,51 +300,31 @@ export function renderEvents(record: StreamRecord, appendFriendly: boolean): voi
   } else {
     closeDrawer();
   }
-
-  if (state.activeTab === "events" && appendFriendly && !state.eventsSearchQuery.trim()) {
-    elTableWrap.scrollTop = elTableWrap.scrollHeight;
-  }
 }
 
 export function applyEventsFilter(): void {
   const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
   if (!record) return;
 
-  let visible = 0;
-  elTbody.querySelectorAll("tr").forEach((tr) => {
-    const idx = Number(tr.getAttribute("data-index"));
-    const ev = record.events.find((e) => e.index === idx);
-    const show = ev ? eventMatchesSearch(ev, state.eventsSearchQuery) : false;
-    tr.hidden = !show;
-    if (show) visible += 1;
-  });
-
-  if (elEventsFilterHint) {
-    if (record.events.length > 0) {
-      elEventsFilterHint.hidden = false;
-      elEventsFilterHint.textContent = t("eventsFilterHint", [
-        String(visible),
-        String(record.events.length),
-      ]);
-    } else {
-      elEventsFilterHint.hidden = true;
-      elEventsFilterHint.textContent = "";
-    }
+  refreshBrowsable(record);
+  stickToBottomPending = false;
+  if (record.events.length === 0) {
+    elTbody.replaceChildren();
+    return;
   }
-
-  if (record.events.length > 0 && visible === 0 && state.eventsSearchQuery.trim()) {
-    elPlaceholder.hidden = false;
-    elPlaceholder.textContent = t("noEventsMatch");
-    // keep table visible so clearing search restores rows without rebuild
-  } else if (record.events.length > 0) {
-    elPlaceholder.hidden = true;
+  elTableWrap.hidden = false;
+  ensureScrollListener();
+  // Keep scroll position when filtering; clamp if list shrank.
+  const maxScroll = Math.max(0, browsableEvents.length * rowHeight - elTableWrap.clientHeight);
+  if (elTableWrap.scrollTop > maxScroll) {
+    elTableWrap.scrollTop = maxScroll;
   }
+  paintVisibleRows();
 }
 
 export function createEventRow(ev: SseEvent): HTMLTableRowElement {
   const tr = document.createElement("tr");
   tr.dataset.index = String(ev.index);
-  tr.hidden = !eventMatchesSearch(ev, state.eventsSearchQuery);
   const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
   const eventWarnings =
     record && record.streamKind === "sse"
@@ -279,7 +404,7 @@ export function bindJsonTreeContextMenu(tree: HTMLElement): void {
 }
 
 export function syncRowSelection(): void {
-  elTbody.querySelectorAll("tr").forEach((tr) => {
+  elTbody.querySelectorAll("tr[data-index]").forEach((tr) => {
     const idx = Number(tr.getAttribute("data-index"));
     tr.classList.toggle("selected", idx === state.selectedEventIndex);
   });
@@ -403,10 +528,13 @@ export function closeDrawer(): void {
 
 /** Clear events table UI when no stream is selected. */
 export function clearEventsView(): void {
+  browsableEvents = [];
+  stickToBottomPending = false;
+  teardownScrollListener();
   elPlaceholder.hidden = false;
   elPlaceholder.textContent = t("noStreamSelected");
   elTableWrap.hidden = true;
-  elTbody.innerHTML = "";
+  elTbody.replaceChildren();
   closeDrawer();
   if (elEventsFilterHint) {
     elEventsFilterHint.hidden = true;
