@@ -147,7 +147,7 @@ Inspect stream events row by row: index, arrival time, event name, data summary.
 Inspect the request for the selected stream (similar to Network):
 
 - Request headers and body
-- Sensitive headers redacted automatically
+- Common sensitive headers redacted automatically (e.g. `Authorization` / `Cookie` / `*token*` / `*api-key*`; uncommon custom names may not be covered)
 - Shown together with method, URL, status, and other basics
 
 <p align="center">
