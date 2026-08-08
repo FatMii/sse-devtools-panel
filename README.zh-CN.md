@@ -356,7 +356,7 @@ pnpm build && pnpm demo
 
 1. 浏览器打开 <http://127.0.0.1:8765>
 2. 确认扩展已加载 → 打开 DevTools → **SSE DevTools**
-3. **刷新 Demo 页** → 点击 **Start stream**
+3. **刷新 Demo 页** → 分别试 **Fetch SSE**、**EventSource**、**XHR SSE**、**Fetch NDJSON**
 4. 侧栏应出现流；Events / Conversation / Timeline / Raw 等 Tab 有数据
 
 ---
