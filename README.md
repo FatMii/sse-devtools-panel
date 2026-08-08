@@ -341,7 +341,8 @@ pnpm dev          # watch build
 pnpm typecheck
 pnpm lint
 pnpm format
-pnpm test-only    # parsers / export / Spec / timing / conversation merge tests
+pnpm test         # Vitest unit tests (src/**/__tests__/**/*.test.ts)
+pnpm test:watch   # Vitest watch mode
 ```
 
 | Path                         | Role                                                      |
@@ -362,7 +363,7 @@ pnpm test-only    # parsers / export / Spec / timing / conversation merge tests
 Before opening a PR, run:
 
 ```bash
-pnpm format:check && pnpm lint && pnpm test-only && pnpm typecheck && pnpm build
+pnpm format:check && pnpm lint && pnpm test && pnpm typecheck && pnpm build
 ```
 
 ---

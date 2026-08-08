@@ -19,7 +19,8 @@ pnpm dev           # watch rebuild
 pnpm typecheck
 pnpm lint          # eslint
 pnpm format        # prettier write
-pnpm test-only     # unit-style checks for shared logic
+pnpm test          # Vitest unit tests (`src/**/__tests__/**/*.test.ts`)
+pnpm test:watch    # Vitest watch mode
 pnpm build
 ```
 
@@ -28,12 +29,12 @@ pnpm build
 1. Run locally:
 
    ```bash
-   pnpm format:check && pnpm lint && pnpm test-only && pnpm typecheck && pnpm build
+   pnpm format:check && pnpm lint && pnpm test && pnpm typecheck && pnpm build
    ```
 
 2. If you change UI or capture behavior, smoke-test with `pnpm demo` (or a real SSE page).
 3. Keep PRs focused. Prefer Conventional Commits style when possible, e.g. `feat: …`, `fix: …`, `docs: …`, `test: …`, `chore: …`.
-4. Shared logic changes should include or update tests under `scripts/test-*.mjs` when practical.
+4. Shared logic changes should include or update Vitest tests under a sibling `__tests__/` folder when practical.
 
 ## UI icons
 
@@ -44,7 +45,7 @@ Panel icons live in `src/panel/core/icons.ts`.
 - Keep style consistent with existing icons (`currentColor`, round caps/joins).
 - Do not add a second icon library (Font Awesome, Material, etc.) without discussion.
 
-CI (GitHub Actions) runs `format:check` + `lint` + `test-only` + `typecheck` + `build` on every PR to `main` (Node.js 22). A red CI means the PR is not ready to merge.
+CI (GitHub Actions) runs `format:check` + `lint` + `test` + `typecheck` + `build` on every PR to `main` (Node.js 22). A red CI means the PR is not ready to merge.
 
 ## Reporting bugs
 
