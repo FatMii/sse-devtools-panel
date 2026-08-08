@@ -296,7 +296,7 @@ Conversation merges content by protocol profile. Currently supported:
 
 ### Prerequisites
 
-- Node.js 20+ (recommended)
+- Node.js 20+ (`engines`; CI uses Node.js 22)
 - [pnpm](https://pnpm.io) 10.x (see the `packageManager` field)
 - A Chromium-based browser (Chrome / Edge / …)
 

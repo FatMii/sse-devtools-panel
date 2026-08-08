@@ -322,7 +322,7 @@ Events、对话（正文 / 思考）、Raw 都用了虚拟滚动：屏幕外的�
 
 ### 前置
 
-- Node.js 20+（建议）
+- Node.js 20+（`engines`；CI 使用 Node.js 22）
 - [pnpm](https://pnpm.io) 10.x（见 `packageManager` 字段）
 - Chromium 内核浏览器（Chrome / Edge 等）
 
