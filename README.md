@@ -275,17 +275,17 @@ The local demo can start an SSE stream in one click, so you can confirm the exte
 
 Conversation merges content by protocol profile. Currently supported:
 
-| Profile             | Typical site / shape    | Notes                                     |
-| ------------------- | ----------------------- | ----------------------------------------- |
-| `openai-compatible` | OpenAI-compatible APIs  | Content / thinking / tool calls           |
-| `deepseek-web`      | DeepSeek web            | Thinking + content; search tools          |
-| `doubao-web`        | Doubao web              | Split thinking / content; deduped sources |
-| `kimi-web`          | Kimi                    | Thinking / content / search               |
-| `qwen-web`          | Qwen web                | Plan thinking / deep thinking / search    |
-| `chatglm-web`       | ChatGLM / Zhipu Qingyan | Thinking / content / search results       |
-| `yuanbao-web`       | Tencent Yuanbao         | Deep-search thinking + sources            |
+| Profile             | Typical site / shape    | Notes                                              |
+| ------------------- | ----------------------- | -------------------------------------------------- |
+| `openai-compatible` | OpenAI-compatible APIs  | Content / thinking / tool calls                    |
+| `deepseek-web`      | DeepSeek web            | Thinking + content; search tools                   |
+| `doubao-web`        | Doubao web              | Split thinking / content; deduped sources          |
+| `kimi-web`          | Kimi                    | Thinking / content / search                        |
+| `qwen-web`          | Qwen web                | Plan thinking / deep thinking / search             |
+| `chatglm-web`       | ChatGLM / Zhipu Qingyan | Thinking / content / search results                |
+| `yuanbao-web`       | Tencent Yuanbao         | Deep-search thinking + sources                     |
 | `anthropic`         | Anthropic-style SSE     | Profile detection only — no Conversation merge yet |
-| `generic`           | Unrecognized            | Events / Timeline / Raw still work        |
+| `generic`           | Unrecognized            | Events / Timeline / Raw still work                 |
 
 > Vendor protocols change often. If Conversation is empty or tool cards look wrong, export Raw or JSON and include the URL.  
 > Sites not listed here are adapted after we have a real sample.
