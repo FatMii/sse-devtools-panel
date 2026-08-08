@@ -6,6 +6,9 @@
   "description": "Chrome DevTools panel for debugging SSE / NDJSON / Connect+JSON streaming responses",
   "type": "module",
   "packageManager": "pnpm@10.13.1",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "node scripts/build.mjs --watch",
     "build": "tsc --noEmit && node scripts/build.mjs",

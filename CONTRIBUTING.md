@@ -44,7 +44,7 @@ Panel icons live in `src/panel/core/icons.ts`.
 - Keep style consistent with existing icons (`currentColor`, round caps/joins).
 - Do not add a second icon library (Font Awesome, Material, etc.) without discussion.
 
-CI (GitHub Actions) runs the same `test-only` + `typecheck` + `build` checks on every PR to `main`. A red CI means the PR is not ready to merge.
+CI (GitHub Actions) runs `format:check` + `lint` + `test-only` + `typecheck` + `build` on every PR to `main` (Node.js 22). A red CI means the PR is not ready to merge.
 
 ## Reporting bugs
 
