@@ -54,6 +54,7 @@
   - [🧠 Conversation](#-conversation)
   - [⏱ Timeline](#-timeline)
   - [📄 Raw](#-raw)
+  - [⚡ Virtual scrolling](#-virtual-scrolling)
   - [🛠 Analysis & toolbar](#-analysis--toolbar)
   - [💾 Import / export / archives](#-import--export--archives)
   - [🌐 i18n & settings](#-i18n--settings)
@@ -131,6 +132,7 @@ For many AI / product streams that is not enough. They are often not plain Event
 
 Inspect stream events row by row: index, arrival time, event name, data summary.
 
+- **Virtual scrolling** — as the list grows, only on-screen rows are drawn, so scrolling stays steadier
 - Click a row to expand JSON (collapsible)
 - Filter event / data with text or regex
 - Column widths are resizable
@@ -165,6 +167,7 @@ Merge stream fragments into a readable conversation, split by channel:
 
 - Top chips show the detected protocol and site hint
 - Tool cards are collapsible; web search shows query chips and result lists (title / URL / snippet)
+- **Virtual scrolling** — longer Content / Thinking text is not dumped into the page all at once
 - One-click copy for the current channel
 - Most major Chinese AI web apps and OpenAI-compatible APIs can be merged (see the [support matrix](#supported-ai-web-vendors) below)
 
@@ -198,7 +201,18 @@ Use the timeline to see when events arrived and how long gaps lasted:
 View the stream text so you can compare it with Events / Conversation:
 
 - Full text rebuilt from parsed events
+- **Virtual scrolling** — longer Raw text stays steadier to scroll
 - One-click copy
+
+## ⚡ Virtual scrolling
+
+While you debug a stream, the event list grows with each chunk, and Conversation / Raw can hold longer text. Drawing everything at once makes the panel feel heavy.
+
+Events, Conversation (Content / Thinking), and Raw use virtual scrolling: off-screen content is drawn only when you scroll to it. The scrollbar still matches the full length, and live streams can stay pinned to the latest chunk.
+
+<p align="center">
+  <img width="1200" alt="Virtual scrolling" src="docs/assets/screenshots/virtual-scrolling.gif">
+</p>
 
 ## 🛠 Analysis & toolbar
 
