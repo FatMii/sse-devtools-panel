@@ -20,6 +20,7 @@ import {
   t,
   uiLanguage,
 } from "../shared/i18n";
+import { stampReceivedAt } from "../shared/event-stamp";
 import { latestEventIdFromEvents } from "../shared/stream-close";
 import { SseParser, type ParsedSseEvent } from "../shared/sse-parser";
 import { NdjsonParser } from "../shared/ndjson-parser";
@@ -80,10 +81,7 @@ import {
 } from "./core/dom";
 import { escapeHtml, formatDuration, closeReasonLabel } from "./core/format";
 import { computeStreamMetrics } from "./features/stream-metrics";
-import {
-  clearStreamAnomalyCaches,
-  invalidateStreamAnomalyCache,
-} from "./features/stream-anomalies";
+import { clearStreamAnomalyCaches } from "./features/stream-anomalies";
 import { renderTimeline } from "./views/timeline-view";
 import { renderRequest, resetRequestViewState } from "./views/request-view-ui";
 import { renderConversation, resetConversationView } from "./views/conversation-view";
@@ -185,15 +183,11 @@ function handleRelay(msg: RelayMessage): void {
     case "stream-reconnect":
       onReconnect(msg.payload);
       break;
-    case "stream-discard":
-      onDiscard(msg.payload.requestId);
-      break;
   }
 }
 
-function stampEvents(events: ParsedSseEvent[]): SseEvent[] {
-  const now = Date.now();
-  return events.map((e) => ({ ...e, receivedAt: now }));
+function stampEvents(events: ParsedSseEvent[], previousReceivedAt?: number): SseEvent[] {
+  return stampReceivedAt(events, { previousReceivedAt });
 }
 
 function createParser(kind: StreamKind): StreamParser {
@@ -228,7 +222,10 @@ function onStart(payload: StreamStartPayload): void {
       // Chunks may have arrived under the wrong parser (postMessage race). Rebuild events from raw.
       if (prevKind !== payload.streamKind && existing.raw) {
         existing.events = [];
-        const rebuilt = stampEvents([...parser.push(existing.raw), ...parser.flush()]);
+        const rebuilt = stampEvents(
+          [...parser.push(existing.raw), ...parser.flush()],
+          existing.startedAt - 1,
+        );
         existing.events.push(...rebuilt);
         discardConversationMergeSession(payload.requestId);
         getConversationMergeSession(payload.requestId).push(existing.events, existing.url);
@@ -284,33 +281,16 @@ function onStart(payload: StreamStartPayload): void {
   }
 }
 
-function onDiscard(requestId: string): void {
-  state.streams.delete(requestId);
-  state.parsers.delete(requestId);
-  discardConversationMergeSession(requestId);
-  invalidateStreamAnomalyCache(requestId);
-  if (state.selectedId === requestId) {
-    state.selectedId = null;
-    state.selectedEventIndex = null;
-    const next = Array.from(state.streams.keys())[0] ?? null;
-    state.selectedId = next;
-  }
-  if (state.uiPaused) {
-    state.pendingListRefreshWhilePaused = true;
-    state.pendingDetailRefreshWhilePaused = true;
-    return;
-  }
-  renderList();
-  renderDetail();
-}
-
 function onChunk(payload: StreamChunkPayload): void {
   const record = state.streams.get(payload.requestId);
   const parser = state.parsers.get(payload.requestId);
   if (!record || !parser) return;
 
   record.raw += payload.text;
-  const events = stampEvents(parser.push(payload.text));
+  const prevAt = record.events.length
+    ? record.events[record.events.length - 1]!.receivedAt
+    : undefined;
+  const events = stampEvents(parser.push(payload.text), prevAt);
   if (events.length) {
     record.events.push(...events);
     const latestId = latestEventIdFromEvents(events);
@@ -337,7 +317,10 @@ function onEnd(payload: StreamEndPayload): void {
   if (!record) return;
 
   if (parser) {
-    const rest = stampEvents(parser.flush());
+    const prevAt = record.events.length
+      ? record.events[record.events.length - 1]!.receivedAt
+      : undefined;
+    const rest = stampEvents(parser.flush(), prevAt);
     if (rest.length) {
       record.events.push(...rest);
       const latestId = latestEventIdFromEvents(rest);

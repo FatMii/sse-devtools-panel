@@ -147,7 +147,7 @@ Inspect stream events row by row: index, arrival time, event name, data summary.
 Inspect the request for the selected stream (similar to Network):
 
 - Request headers and body
-- Sensitive headers redacted automatically
+- Common sensitive headers redacted automatically (e.g. `Authorization` / `Cookie` / `*token*` / `*api-key*`; uncommon custom names may not be covered)
 - Shown together with method, URL, status, and other basics
 
 <p align="center">
@@ -275,17 +275,17 @@ The local demo can start an SSE stream in one click, so you can confirm the exte
 
 Conversation merges content by protocol profile. Currently supported:
 
-| Profile             | Typical site / shape    | Notes                                     |
-| ------------------- | ----------------------- | ----------------------------------------- |
-| `openai-compatible` | OpenAI-compatible APIs  | Content / thinking / tool calls           |
-| `deepseek-web`      | DeepSeek web            | Thinking + content; search tools          |
-| `doubao-web`        | Doubao web              | Split thinking / content; deduped sources |
-| `kimi-web`          | Kimi                    | Thinking / content / search               |
-| `qwen-web`          | Qwen web                | Plan thinking / deep thinking / search    |
-| `chatglm-web`       | ChatGLM / Zhipu Qingyan | Thinking / content / search results       |
-| `yuanbao-web`       | Tencent Yuanbao         | Deep-search thinking + sources            |
-| `anthropic`         | Anthropic-style SSE     | Basic detection                           |
-| `generic`           | Unrecognized            | Events / Timeline / Raw still work        |
+| Profile             | Typical site / shape    | Notes                                              |
+| ------------------- | ----------------------- | -------------------------------------------------- |
+| `openai-compatible` | OpenAI-compatible APIs  | Content / thinking / tool calls                    |
+| `deepseek-web`      | DeepSeek web            | Thinking + content; search tools                   |
+| `doubao-web`        | Doubao web              | Split thinking / content; deduped sources          |
+| `kimi-web`          | Kimi                    | Thinking / content / search                        |
+| `qwen-web`          | Qwen web                | Plan thinking / deep thinking / search             |
+| `chatglm-web`       | ChatGLM / Zhipu Qingyan | Thinking / content / search results                |
+| `yuanbao-web`       | Tencent Yuanbao         | Deep-search thinking + sources                     |
+| `anthropic`         | Anthropic-style SSE     | Profile detection only — no Conversation merge yet |
+| `generic`           | Unrecognized            | Events / Timeline / Raw still work                 |
 
 > Vendor protocols change often. If Conversation is empty or tool cards look wrong, export Raw or JSON and include the URL.  
 > Sites not listed here are adapted after we have a real sample.
@@ -296,7 +296,7 @@ Conversation merges content by protocol profile. Currently supported:
 
 ### Prerequisites
 
-- Node.js 20+ (recommended)
+- Node.js 20+ (`engines`; CI uses Node.js 22)
 - [pnpm](https://pnpm.io) 10.x (see the `packageManager` field)
 - A Chromium-based browser (Chrome / Edge / …)
 
@@ -328,7 +328,7 @@ pnpm build && pnpm demo
 
 1. Open <http://127.0.0.1:8765>
 2. Confirm the extension is loaded → open DevTools → **SSE DevTools**
-3. **Refresh the demo page** → click **Start stream**
+3. **Refresh the demo page** → try **Fetch SSE**, **EventSource**, **XHR SSE**, or **Fetch NDJSON**
 4. A stream should appear in the sidebar; Events / Conversation / Timeline / Raw tabs should have data
 
 ---
