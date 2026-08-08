@@ -371,7 +371,8 @@ pnpm dev          # 监听构建
 pnpm typecheck
 pnpm lint
 pnpm format
-pnpm test-only    # 解析 / 导出 / Spec / 时序 / 对话合并等单测
+pnpm test         # Vitest 单测（src/**/*.test.ts）
+pnpm test:watch   # Vitest 监听模式
 ```
 
 | 路径                         | 职责                                                 |
@@ -392,7 +393,7 @@ pnpm test-only    # 解析 / 导出 / Spec / 时序 / 对话合并等单测
 发 PR 前请跑通：
 
 ```bash
-pnpm format:check && pnpm lint && pnpm test-only && pnpm typecheck && pnpm build
+pnpm format:check && pnpm lint && pnpm test && pnpm typecheck && pnpm build
 ```
 
 ---
