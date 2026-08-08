@@ -373,6 +373,7 @@ pnpm format:check && pnpm lint && pnpm test-only && pnpm typecheck && pnpm build
 - Requests started inside a page Service Worker are not captured
 - Some deeper streaming API patterns may be missed; open an Issue with repro steps if you hit one
 - Conversation depends on each site’s private protocol and may need updates after site changes
+- If the SSE panel opens after a stream already started, the background service worker replays a recent buffer (up to ~2 000 messages / ~4 MB per tab). Older traffic may be dropped when the cap is hit; an extension service-worker restart can still clear the buffer
 - Until the Chrome Web Store listing is live, run `pnpm build` locally and load `dist/` from the extensions page
 
 ---
