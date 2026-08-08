@@ -8,7 +8,7 @@ import {
   resolveUrl,
 } from "./headers";
 import { captureFetchResponseBody, createConnectJsonSink, createFetchTextSink } from "./stream";
-import type { PostChunk, PostDiscard, PostEnd, PostError, PostStart } from "./types";
+import type { PostChunk, PostEnd, PostError, PostStart } from "./types";
 
 export function patchFetch(
   nextId: () => string,
@@ -16,7 +16,6 @@ export function patchFetch(
   postChunk: PostChunk,
   postEnd: PostEnd,
   postError: PostError,
-  _postDiscard: PostDiscard,
 ): void {
   const originalFetch = window.fetch.bind(window);
 
