@@ -29,7 +29,7 @@ export const elMenuCopyJsonValue = elContextMenu.querySelector<HTMLButtonElement
 export const elMenuCopyJsonPath = elContextMenu.querySelector<HTMLButtonElement>(
   'button[data-action="copy-json-path"]',
 );
-export const elRaw = document.getElementById("raw-body") as HTMLPreElement;
+export const elRaw = document.getElementById("raw-body") as HTMLElement;
 export const elTimelinePlaceholder = document.getElementById(
   "timeline-placeholder",
 ) as HTMLDivElement;

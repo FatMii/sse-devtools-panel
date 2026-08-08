@@ -601,15 +601,16 @@ function paintDetail(appendFriendly = false): void {
   renderStreamMeta(record);
   updateTabCounts(record);
 
-  renderEvents(record, appendFriendly);
-  renderTimelineForSelection(record);
-  renderRequestForSelection(record);
-
-  // Heavy panes: only touch DOM while their tab is active.
-  if (state.activeTab === "raw") {
+  // Only paint the active detail tab; inactive panes refresh on tab click.
+  if (state.activeTab === "events") {
+    renderEvents(record, appendFriendly);
+  } else if (state.activeTab === "timeline") {
+    renderTimelineForSelection(record);
+  } else if (state.activeTab === "request") {
+    renderRequestForSelection(record);
+  } else if (state.activeTab === "raw") {
     renderRawView(record);
-  }
-  if (state.activeTab === "conversation") {
+  } else if (state.activeTab === "conversation") {
     renderConversationForSelection(record);
   }
 }
@@ -661,7 +662,10 @@ function setupTabs(): void {
       }
       activateTab(tab);
       const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
-      if (tab === "timeline") {
+      if (tab === "events") {
+        if (record) renderEvents(record, false);
+        else clearEventsView();
+      } else if (tab === "timeline") {
         renderTimelineForSelection(record);
       } else if (tab === "request") {
         renderRequestForSelection(record);

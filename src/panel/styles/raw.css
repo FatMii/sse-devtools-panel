@@ -24,3 +24,27 @@
   word-break: break-word;
   line-height: 1.65;
 }
+
+.raw-virtual-pane {
+  display: block;
+  white-space: normal;
+  word-break: normal;
+}
+
+.raw-virtual-spacer {
+  width: 100%;
+  pointer-events: none;
+}
+
+.raw-virtual-window {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  white-space: pre;
+  word-break: normal;
+  line-height: 18px;
+  overflow: visible;
+}

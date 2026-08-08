@@ -98,6 +98,37 @@
   line-height: 1.65;
 }
 
+/* Virtualized text: only a window of soft-wrapped rows is mounted. */
+.conversation-virtual-pane {
+  display: block;
+  white-space: normal;
+  word-break: normal;
+  padding: 9px 11px;
+}
+
+.conversation-virtual-spacer {
+  width: 100%;
+  pointer-events: none;
+}
+
+.conversation-virtual-window {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  white-space: pre;
+  word-break: normal;
+  line-height: 18px;
+  overflow: visible;
+}
+
+.conversation-virtual-window.is-empty {
+  white-space: pre-wrap;
+  color: var(--text-faint);
+}
+
 .conversation-tools-pane {
   font-family: var(--sans);
   white-space: normal;

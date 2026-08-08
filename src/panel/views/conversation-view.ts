@@ -9,8 +9,29 @@ import { elConversationBody, elConversationPlaceholder } from "../core/dom";
 import { escapeHtml } from "../core/format";
 import { renderIcon } from "../core/icons";
 import { planTextPaneUpdate } from "./conversation-text";
+import {
+  CONV_ROW_HEIGHT_PX,
+  computeConvVirtualWindow,
+  estimateCols,
+  isNearBottom,
+  wrapTextToRows,
+} from "./conversation-virtual";
 
 type ConversationChannel = "content" | "reasoning" | "tools" | "meta";
+
+type VirtualTextPane = {
+  root: HTMLElement;
+  topSpacer: HTMLElement;
+  windowEl: HTMLElement;
+  bottomSpacer: HTMLElement;
+  text: string;
+  rows: string[];
+  cols: number;
+  empty: boolean;
+  paintedStart: number;
+  paintedEnd: number;
+  ro: ResizeObserver | null;
+};
 
 let conversationChannel: ConversationChannel = "content";
 let conversationFingerprint = "";
@@ -23,6 +44,7 @@ let lastRenderedStreamId: string | null = null;
 let lastRenderedChannel: ConversationChannel | null = null;
 let lastToolsFingerprint = "";
 let latestMerged: AiConversation | null = null;
+let activeVirtualPane: VirtualTextPane | null = null;
 
 export type RenderConversationOptions = {
   copyText: (text: string, notify?: boolean) => Promise<void>;
@@ -30,6 +52,7 @@ export type RenderConversationOptions = {
 };
 
 export function resetConversationView(): void {
+  disposeVirtualTextPane();
   conversationFingerprint = "";
   toolsExpandStreamId = null;
   toolsExpandedIndexes = new Set();
@@ -38,6 +61,119 @@ export function resetConversationView(): void {
   lastRenderedChannel = null;
   lastToolsFingerprint = "";
   latestMerged = null;
+}
+
+function disposeVirtualTextPane(): void {
+  if (!activeVirtualPane) return;
+  activeVirtualPane.root.removeEventListener("scroll", onVirtualScroll);
+  activeVirtualPane.ro?.disconnect();
+  activeVirtualPane = null;
+}
+
+function onVirtualScroll(): void {
+  if (activeVirtualPane) paintVirtualWindow(activeVirtualPane, false);
+}
+
+function paintVirtualWindow(pane: VirtualTextPane, force: boolean): void {
+  if (pane.empty) {
+    pane.topSpacer.style.height = "0px";
+    pane.bottomSpacer.style.height = "0px";
+    pane.paintedStart = 0;
+    pane.paintedEnd = 0;
+    return;
+  }
+  const win = computeConvVirtualWindow(
+    pane.root.scrollTop,
+    pane.root.clientHeight || 1,
+    pane.rows.length,
+  );
+  if (!force && win.start === pane.paintedStart && win.end === pane.paintedEnd) {
+    pane.topSpacer.style.height = `${win.paddingTop}px`;
+    pane.bottomSpacer.style.height = `${win.paddingBottom}px`;
+    return;
+  }
+  pane.topSpacer.style.height = `${win.paddingTop}px`;
+  pane.bottomSpacer.style.height = `${win.paddingBottom}px`;
+  pane.windowEl.textContent = pane.rows.slice(win.start, win.end).join("\n");
+  pane.paintedStart = win.start;
+  pane.paintedEnd = win.end;
+}
+
+function createVirtualTextPane(): VirtualTextPane {
+  disposeVirtualTextPane();
+  const root = document.createElement("div");
+  root.className = "conversation-pane code conversation-virtual-pane";
+  const topSpacer = document.createElement("div");
+  topSpacer.className = "conversation-virtual-spacer";
+  const windowEl = document.createElement("pre");
+  windowEl.className = "conversation-virtual-window";
+  const bottomSpacer = document.createElement("div");
+  bottomSpacer.className = "conversation-virtual-spacer";
+  root.append(topSpacer, windowEl, bottomSpacer);
+
+  const pane: VirtualTextPane = {
+    root,
+    topSpacer,
+    windowEl,
+    bottomSpacer,
+    text: "",
+    rows: [],
+    cols: 80,
+    empty: true,
+    paintedStart: -1,
+    paintedEnd: -1,
+    ro: null,
+  };
+
+  root.addEventListener("scroll", onVirtualScroll, { passive: true });
+  pane.ro = new ResizeObserver(() => {
+    if (!activeVirtualPane || activeVirtualPane !== pane || pane.empty) return;
+    const nextCols = estimateCols(pane.root.clientWidth || 0);
+    if (nextCols === pane.cols) {
+      paintVirtualWindow(pane, true);
+      return;
+    }
+    const near = isNearBottom(pane.root.scrollTop, pane.root.scrollHeight, pane.root.clientHeight);
+    pane.cols = nextCols;
+    pane.rows = wrapTextToRows(pane.text, nextCols);
+    pane.paintedStart = -1;
+    paintVirtualWindow(pane, true);
+    if (near) pane.root.scrollTop = pane.rows.length * CONV_ROW_HEIGHT_PX;
+  });
+  pane.ro.observe(root);
+  activeVirtualPane = pane;
+  return pane;
+}
+
+function setVirtualText(pane: VirtualTextPane, nextText: string, showingEmpty: boolean): void {
+  const emptyLabel = t("conversationEmpty");
+  if (showingEmpty) {
+    pane.empty = true;
+    pane.text = "";
+    pane.rows = [];
+    pane.windowEl.textContent = emptyLabel;
+    pane.windowEl.classList.add("is-empty");
+    paintVirtualWindow(pane, true);
+    lastRenderedChannelText = "";
+    return;
+  }
+
+  const plan = planTextPaneUpdate(lastRenderedChannelText, nextText);
+  const near = isNearBottom(pane.root.scrollTop, pane.root.scrollHeight, pane.root.clientHeight);
+  pane.empty = false;
+  pane.windowEl.classList.remove("is-empty");
+  pane.cols = estimateCols(pane.root.clientWidth || 0);
+
+  if (plan.mode === "noop" && pane.text === nextText && pane.rows.length > 0) {
+    return;
+  }
+
+  pane.text = nextText;
+  pane.rows = wrapTextToRows(nextText, pane.cols);
+  pane.paintedStart = -1;
+  paintVirtualWindow(pane, true);
+  lastRenderedChannelText = nextText;
+  if (near) pane.root.scrollTop = pane.rows.length * CONV_ROW_HEIGHT_PX;
 }
 
 function buildConversationFingerprint(
@@ -380,33 +516,6 @@ function syncConversationChrome(shell: HTMLElement, merged: AiConversation): voi
   });
 }
 
-function applyTextToPane(pane: HTMLPreElement, nextText: string, showingEmpty: boolean): void {
-  const emptyLabel = t("conversationEmpty");
-  if (showingEmpty) {
-    pane.textContent = emptyLabel;
-    lastRenderedChannelText = "";
-    return;
-  }
-
-  const plan = planTextPaneUpdate(lastRenderedChannelText, nextText);
-  const nearBottom = pane.scrollTop + pane.clientHeight >= pane.scrollHeight - 48;
-
-  if (plan.mode === "noop") {
-    if (pane.textContent === emptyLabel && nextText) pane.textContent = nextText;
-  } else if (plan.mode === "append") {
-    if (!lastRenderedChannelText || pane.textContent === emptyLabel) {
-      pane.textContent = nextText;
-    } else {
-      pane.appendChild(document.createTextNode(plan.suffix));
-    }
-  } else {
-    pane.textContent = plan.text;
-  }
-
-  lastRenderedChannelText = nextText;
-  if (nearBottom) pane.scrollTop = pane.scrollHeight;
-}
-
 function mountFullConversation(
   record: StreamRecord,
   merged: AiConversation,
@@ -414,6 +523,7 @@ function mountFullConversation(
 ): void {
   elConversationPlaceholder.hidden = true;
   elConversationBody.hidden = false;
+  disposeVirtualTextPane();
   elConversationBody.replaceChildren();
 
   const shell = document.createElement("div");
@@ -465,27 +575,24 @@ function mountFullConversation(
 
   const text = conversationChannelText(merged, conversationChannel);
   let pane: HTMLElement;
+  let virtual: VirtualTextPane | null = null;
   if (conversationChannel === "tools") {
+    disposeVirtualTextPane();
     pane = createToolsPane(merged, record.requestId);
     lastRenderedChannelText = "";
     lastToolsFingerprint = toolsFingerprint(merged);
   } else {
-    const pre = document.createElement("pre");
-    pre.className = "conversation-pane code";
-    const showingEmpty = !text && conversationChannel !== "meta";
-    if (showingEmpty) {
-      pre.textContent = t("conversationEmpty");
-      lastRenderedChannelText = "";
-    } else {
-      pre.textContent = text;
-      lastRenderedChannelText = text;
-    }
-    pane = pre;
+    virtual = createVirtualTextPane();
+    pane = virtual.root;
   }
 
   shell.append(toolbar, subtabs, pane);
   syncConversationChrome(shell, merged);
   elConversationBody.appendChild(shell);
+  if (virtual) {
+    // Width is only known after the pane is in an active layout tree.
+    setVirtualText(virtual, text, !text && conversationChannel !== "meta");
+  }
 
   lastRenderedStreamId = record.requestId;
   lastRenderedChannel = conversationChannel;
@@ -502,6 +609,7 @@ export function renderConversation(
     elConversationPlaceholder.hidden = false;
     elConversationPlaceholder.textContent = t("noStreamSelected");
     elConversationBody.hidden = true;
+    disposeVirtualTextPane();
     elConversationBody.replaceChildren();
     conversationFingerprint = "";
     toolsExpandStreamId = null;
@@ -531,6 +639,7 @@ export function renderConversation(
     elConversationPlaceholder.hidden = false;
     elConversationPlaceholder.textContent = t("conversationEmpty");
     elConversationBody.hidden = true;
+    disposeVirtualTextPane();
     elConversationBody.replaceChildren();
     lastRenderedChannelText = "";
     lastRenderedStreamId = null;
@@ -560,9 +669,9 @@ export function renderConversation(
       }
       return;
     }
-    const pane = existingShell.querySelector<HTMLPreElement>("pre.conversation-pane.code");
-    if (pane) {
-      applyTextToPane(pane, text, !text && conversationChannel !== "meta");
+    const paneEl = existingShell.querySelector<HTMLElement>(".conversation-virtual-pane");
+    if (paneEl && activeVirtualPane && activeVirtualPane.root === paneEl) {
+      setVirtualText(activeVirtualPane, text, !text && conversationChannel !== "meta");
       return;
     }
   }
