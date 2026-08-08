@@ -4,6 +4,13 @@ import { isRecord, parseEventData } from "./helpers";
 
 export type FragType = "THINK" | "RESPONSE" | "SEARCH" | "TIP" | "OTHER";
 
+export type DeepseekWebMergeState = {
+  current: FragType;
+  channels: AiConversationChannels;
+  endMeta: AiEndMeta;
+  chunkCount: number;
+};
+
 export function fragmentType(raw: unknown): FragType {
   if (!isRecord(raw) || typeof raw.type !== "string") return "OTHER";
   if (raw.type === "THINK") return "THINK";
@@ -152,22 +159,19 @@ export function applyDeepseekPatch(
   }
 }
 
-/**
- * DeepSeek web (chat.deepseek.com): JSON Patch style.
- * - THINK / RESPONSE text fragments
- * - SEARCH fragment → Tools as web_search (queries + results)
- * - Shorthand { v: "token" } appends to current fragment
- */
-export function mergeDeepseekWeb(
-  events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,
-): MergeChannelsResult {
-  const state = {
-    current: "OTHER" as FragType,
-    channels: { content: "", reasoning: "", tools: [] as AiToolCall[] },
-    endMeta: {} as AiEndMeta,
+export function createDeepseekWebMergeState(): DeepseekWebMergeState {
+  return {
+    current: "OTHER",
+    channels: { content: "", reasoning: "", tools: [] },
+    endMeta: {},
     chunkCount: 0,
   };
+}
 
+export function pushDeepseekWeb(
+  state: DeepseekWebMergeState,
+  events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,
+): void {
   for (const ev of events) {
     if (ev.event === "ready" || ev.event === "update_session" || ev.event === "close") {
       if (ev.event === "close") state.endMeta.finishReason = state.endMeta.finishReason ?? "close";
@@ -237,10 +241,26 @@ export function mergeDeepseekWeb(
       );
     }
   }
+}
 
+export function snapshotDeepseekWeb(state: DeepseekWebMergeState): MergeChannelsResult {
   return {
     channels: state.channels,
     endMeta: state.endMeta,
     chunkCount: state.chunkCount,
   };
+}
+
+/**
+ * DeepSeek web (chat.deepseek.com): JSON Patch style.
+ * - THINK / RESPONSE text fragments
+ * - SEARCH fragment → Tools as web_search (queries + results)
+ * - Shorthand { v: "token" } appends to current fragment
+ */
+export function mergeDeepseekWeb(
+  events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,
+): MergeChannelsResult {
+  const s = createDeepseekWebMergeState();
+  pushDeepseekWeb(s, events);
+  return snapshotDeepseekWeb(s);
 }

@@ -2,6 +2,26 @@ import type { SseEvent } from "../types";
 import type { AiEndMeta, AiToolCall, MergeChannelsResult } from "./types";
 import { asString, isRecord, parseEventData } from "./helpers";
 
+export type YuanbaoWebMergeState = {
+  thinkByComponent: Map<string, string>;
+  thinkComponentOrder: string[];
+  content: string;
+  tools: AiToolCall[];
+  chunkCount: number;
+  endMeta: AiEndMeta;
+};
+
+export function createYuanbaoWebMergeState(): YuanbaoWebMergeState {
+  return {
+    thinkByComponent: new Map(),
+    thinkComponentOrder: [],
+    content: "",
+    tools: [],
+    chunkCount: 0,
+    endMeta: {},
+  };
+}
+
 /**
  * Tencent Yuanbao (元宝) web SSE:
  * - type=deepSearch contents[].text.msg → reasoning (delta per componentId)
@@ -11,16 +31,10 @@ import { asString, isRecord, parseEventData } from "./helpers";
  * - type=text.msg → content (delta)
  * - type=meta.stopReason → endMeta
  */
-export function mergeYuanbaoWeb(
+export function pushYuanbaoWeb(
+  state: YuanbaoWebMergeState,
   events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,
-): MergeChannelsResult {
-  const thinkByComponent = new Map<string, string>();
-  const thinkComponentOrder: string[] = [];
-  let content = "";
-  const tools: AiToolCall[] = [];
-  let chunkCount = 0;
-  const endMeta: AiEndMeta = {};
-
+): void {
   const upsertWebSearch = (queries: string[], results: Array<Record<string, unknown>>): void => {
     if (queries.length === 0 && results.length === 0) return;
 
@@ -62,19 +76,19 @@ export function mergeYuanbaoWeb(
       return JSON.stringify({ type: "SEARCH", queries: mergedQueries, results: mergedResults });
     };
 
-    const orphan = tools.find((t) => t.name === "web_search");
+    const orphan = state.tools.find((t) => t.name === "web_search");
     if (orphan) {
       orphan.arguments = mergeArgs(orphan.arguments, queries, results);
-      chunkCount++;
+      state.chunkCount++;
       return;
     }
 
-    tools.push({
-      index: tools.length,
+    state.tools.push({
+      index: state.tools.length,
       name: "web_search",
       arguments: JSON.stringify({ type: "SEARCH", queries, results }),
     });
-    chunkCount++;
+    state.chunkCount++;
   };
 
   const normalizeDoc = (raw: unknown): Record<string, unknown> | null => {
@@ -122,9 +136,9 @@ export function mergeYuanbaoWeb(
           const msg = asString(item.msg);
           if (!msg) continue;
           const id = String(item.componentId ?? "0");
-          if (!thinkByComponent.has(id)) thinkComponentOrder.push(id);
-          thinkByComponent.set(id, (thinkByComponent.get(id) ?? "") + msg);
-          chunkCount++;
+          if (!state.thinkByComponent.has(id)) state.thinkComponentOrder.push(id);
+          state.thinkByComponent.set(id, (state.thinkByComponent.get(id) ?? "") + msg);
+          state.chunkCount++;
           continue;
         }
         if (itemType === "toolCall") {
@@ -149,31 +163,41 @@ export function mergeYuanbaoWeb(
     if (typ === "text") {
       const msg = asString(parsed.msg);
       if (!msg) continue;
-      content += msg;
-      chunkCount++;
+      state.content += msg;
+      state.chunkCount++;
       continue;
     }
 
     if (typ === "meta") {
       const stop = asString(parsed.stopReason);
-      if (stop) endMeta.finishReason = stop;
+      if (stop) state.endMeta.finishReason = stop;
       const usage = parsed.tokenUsageInfo;
-      if (isRecord(usage)) endMeta.usage = usage;
+      if (isRecord(usage)) state.endMeta.usage = usage;
     }
   }
+}
 
-  const reasoning = thinkComponentOrder
-    .map((id) => thinkByComponent.get(id) ?? "")
+export function snapshotYuanbaoWeb(state: YuanbaoWebMergeState): MergeChannelsResult {
+  const reasoning = state.thinkComponentOrder
+    .map((id) => state.thinkByComponent.get(id) ?? "")
     .filter(Boolean)
     .join("");
 
   return {
     channels: {
-      content,
+      content: state.content,
       reasoning,
-      tools,
+      tools: state.tools,
     },
-    endMeta,
-    chunkCount,
+    endMeta: state.endMeta,
+    chunkCount: state.chunkCount,
   };
+}
+
+export function mergeYuanbaoWeb(
+  events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,
+): MergeChannelsResult {
+  const s = createYuanbaoWebMergeState();
+  pushYuanbaoWeb(s, events);
+  return snapshotYuanbaoWeb(s);
 }
