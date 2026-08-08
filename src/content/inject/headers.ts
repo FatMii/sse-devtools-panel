@@ -12,13 +12,22 @@ export function resolveMethod(input: RequestInfo | URL, init?: RequestInit): str
   return "GET";
 }
 
+/**
+ * Exact names plus common secret-bearing patterns (`*token*`, `*api-key*`, …).
+ * Matches common sensitive header names only; uncommon custom names may still appear in cleartext.
+ */
 export const SENSITIVE_HEADER_RE =
-  /^(authorization|cookie|set-cookie|x-api-key|api-key|x-auth-token|proxy-authorization)$/i;
+  /^(authorization|proxy-authorization|cookie|set-cookie|authentication|x-authentication|x-amz-security-token|x-goog-api-key)$|^(?:x-)?(?:api[_-]?key|auth[_-]?token|access[_-]?token|id[_-]?token|private[_-]?token|session[_-]?token|csrf[_-]?token|xsrf[_-]?token)$|(?:^|-)(?:api[_-]?key|access[_-]?token|auth[_-]?token|id[_-]?token|private[_-]?token|session[_-]?token|csrf|xsrf|secret|password)(?:-|$)/i;
+
 /** Max chars kept for request/response payload previews. */
 export const MAX_PAYLOAD_PREVIEW = 256_000;
 
+export function isSensitiveHeaderName(name: string): boolean {
+  return SENSITIVE_HEADER_RE.test(name.trim());
+}
+
 export function redactHeaderValue(name: string, value: string): string {
-  if (SENSITIVE_HEADER_RE.test(name)) return "[REDACTED]";
+  if (isSensitiveHeaderName(name)) return "[REDACTED]";
   return value;
 }
 

@@ -6,6 +6,9 @@
   "description": "Chrome DevTools panel for debugging SSE / NDJSON / Connect+JSON streaming responses",
   "type": "module",
   "packageManager": "pnpm@10.13.1",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "node scripts/build.mjs --watch",
     "build": "tsc --noEmit && node scripts/build.mjs",
@@ -22,7 +25,9 @@
     "test:conversation-text": "node scripts/test-conversation-text.mjs",
     "test:conversation-virtual": "node scripts/test-conversation-virtual.mjs",
     "test:merge-session": "node scripts/test-merge-session.mjs",
-    "test-only": "pnpm test:parser && pnpm test:connect && pnpm test:export && pnpm test:spec && pnpm test:timing && pnpm test:request-view && pnpm test:close && pnpm test:ai-merge && pnpm test:events-virtual && pnpm test:conversation-text && pnpm test:conversation-virtual && pnpm test:merge-session",
+    "test:headers": "node scripts/test-headers.mjs",
+    "test:event-stamp": "node scripts/test-event-stamp.mjs",
+    "test-only": "pnpm test:parser && pnpm test:connect && pnpm test:export && pnpm test:spec && pnpm test:timing && pnpm test:request-view && pnpm test:close && pnpm test:ai-merge && pnpm test:events-virtual && pnpm test:conversation-text && pnpm test:conversation-virtual && pnpm test:merge-session && pnpm test:headers && pnpm test:event-stamp",
     "lint": "eslint src --max-warnings=0",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write .",

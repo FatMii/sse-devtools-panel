@@ -15,6 +15,63 @@ const DEFAULT_CHUNKS = [
 ];
 
 /**
+ * @param {number} i
+ * @param {number} count
+ */
+function demoChunkContent(i, count) {
+  return count <= DEFAULT_CHUNKS.length
+    ? DEFAULT_CHUNKS[i]
+    : `token-${i + 1}/${count} ${DEFAULT_CHUNKS[i % DEFAULT_CHUNKS.length]}`;
+}
+
+/**
+ * @param {number} i
+ * @param {number} count
+ */
+function demoChatChunk(i, count) {
+  return {
+    id: "chatcmpl-demo",
+    object: "chat.completion.chunk",
+    model: "demo-assistant-v1",
+    choices: [{ index: 0, delta: { content: demoChunkContent(i, count) } }],
+  };
+}
+
+/**
+ * @param {import('node:http').ServerResponse} res
+ * @param {() => void} writeFrame
+ * @param {number} count
+ * @param {number} intervalMs
+ * @param {() => void} writeDone
+ */
+function runTimedStream(res, writeFrame, count, intervalMs, writeDone) {
+  let i = 0;
+  let closed = false;
+  res.req.on("close", () => {
+    closed = true;
+  });
+
+  const writeOne = () => {
+    if (closed) return;
+    if (i >= count) {
+      writeDone();
+      res.end();
+      return;
+    }
+    writeFrame(i);
+    i += 1;
+    if (intervalMs <= 0) {
+      if (i % 50 === 0) setImmediate(writeOne);
+      else writeOne();
+    } else {
+      setTimeout(writeOne, intervalMs);
+    }
+  };
+
+  writeOne();
+}
+
+/**
  * @param {import('node:http').ServerResponse} res
  * @param {number} count
  * @param {number} intervalMs
@@ -26,16 +83,14 @@ function writeSseStream(res, count, intervalMs) {
     Connection: "keep-alive",
   });
 
-  let i = 0;
-  let closed = false;
-  const onClose = () => {
-    closed = true;
-  };
-  res.req.on("close", onClose);
-
-  const writeOne = () => {
-    if (closed) return;
-    if (i >= count) {
+  runTimedStream(
+    res,
+    (i) => {
+      res.write(`data: ${JSON.stringify(demoChatChunk(i, count))}\n\n`);
+    },
+    count,
+    intervalMs,
+    () => {
       const donePayload = JSON.stringify({
         id: "chatcmpl-demo",
         object: "chat.completion.chunk",
@@ -52,33 +107,40 @@ function writeSseStream(res, count, intervalMs) {
           done: true,
         })}\n\n`,
       );
-      res.end();
-      return;
-    }
+    },
+  );
+}
 
-    const content =
-      count <= DEFAULT_CHUNKS.length
-        ? DEFAULT_CHUNKS[i]
-        : `token-${i + 1}/${count} ${DEFAULT_CHUNKS[i % DEFAULT_CHUNKS.length]}`;
-    const payload = JSON.stringify({
-      id: "chatcmpl-demo",
-      object: "chat.completion.chunk",
-      model: "demo-assistant-v1",
-      choices: [{ index: 0, delta: { content } }],
-    });
-    res.write(`data: ${payload}\n\n`);
-    i += 1;
+/**
+ * @param {import('node:http').ServerResponse} res
+ * @param {number} count
+ * @param {number} intervalMs
+ */
+function writeNdjsonStream(res, count, intervalMs) {
+  res.writeHead(200, {
+    "Content-Type": "application/x-ndjson; charset=utf-8",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+  });
 
-    if (intervalMs <= 0) {
-      // Batch a bit so the event loop / client can breathe on 10k streams.
-      if (i % 50 === 0) setImmediate(writeOne);
-      else writeOne();
-    } else {
-      setTimeout(writeOne, intervalMs);
-    }
-  };
-
-  writeOne();
+  runTimedStream(
+    res,
+    (i) => {
+      res.write(`${JSON.stringify(demoChatChunk(i, count))}\n`);
+    },
+    count,
+    intervalMs,
+    () => {
+      res.write(
+        `${JSON.stringify({
+          id: "chatcmpl-demo",
+          object: "chat.completion.chunk",
+          model: "demo-assistant-v1",
+          choices: [{ index: 0, delta: {}, finish_reason: "stop" }],
+        })}\n`,
+      );
+    },
+  );
 }
 
 const DEMO_HTML = `<!DOCTYPE html>
@@ -207,23 +269,23 @@ const DEMO_HTML = `<!DOCTYPE html>
       cursor: wait;
     }
 
-    #go {
+    button.primary {
       background: var(--signal);
       color: #f4fffb;
     }
 
-    #go:hover:not(:disabled) {
+    button.primary:hover:not(:disabled) {
       background: var(--signal-deep);
       transform: translateY(-1px);
     }
 
-    #go10k {
+    button.ghost {
       background: transparent;
       color: var(--ink-soft);
       border-color: rgba(16, 34, 31, 0.22);
     }
 
-    #go10k:hover:not(:disabled) {
+    button.ghost:hover:not(:disabled) {
       border-color: var(--signal);
       color: var(--signal-deep);
       transform: translateY(-1px);
@@ -314,10 +376,13 @@ const DEMO_HTML = `<!DOCTYPE html>
 <body>
   <main class="shell">
     <h1 class="brand">SSE DevTools<span>Panel</span></h1>
-    <p class="lead">Local stream playground. Load the extension, open this page in DevTools, then fire a short or 10k event stream.</p>
+    <p class="lead">Local stream playground. Load the extension, open DevTools → SSE DevTools, refresh this page, then try each transport.</p>
     <div class="actions">
-      <button id="go" type="button">Start stream</button>
-      <button id="go10k" type="button">Start 10k stream</button>
+      <button id="go-fetch" class="primary" type="button">Fetch SSE</button>
+      <button id="go-es" class="ghost" type="button">EventSource</button>
+      <button id="go-xhr" class="ghost" type="button">XHR SSE</button>
+      <button id="go-ndjson" class="ghost" type="button">Fetch NDJSON</button>
+      <button id="go10k" class="ghost" type="button">Fetch SSE 10k</button>
     </div>
     <div class="status" id="status" aria-live="polite">
       <span class="dot" aria-hidden="true"></span>
@@ -330,17 +395,23 @@ const DEMO_HTML = `<!DOCTYPE html>
     const out = document.getElementById("out");
     const status = document.getElementById("status");
     const statusText = document.getElementById("statusText");
-    const buttons = [document.getElementById("go"), document.getElementById("go10k")];
+    const buttons = Array.from(document.querySelectorAll(".actions button"));
+    let activeEs = null;
 
     function setBusy(busy) {
       for (const btn of buttons) btn.disabled = busy;
       status.classList.toggle("is-live", busy);
     }
 
-    async function runStream(path) {
+    function note(text) {
+      out.textContent = text;
+    }
+
+    async function runFetchStream(path, label) {
+      if (activeEs) { activeEs.close(); activeEs = null; }
       out.textContent = "";
       setBusy(true);
-      statusText.textContent = "Streaming…";
+      statusText.textContent = label + " · streaming…";
       let n = 0;
       try {
         const res = await fetch(path);
@@ -350,25 +421,82 @@ const DEMO_HTML = `<!DOCTYPE html>
           const { done, value } = await reader.read();
           if (done) break;
           const text = decoder.decode(value, { stream: true });
-          n += (text.match(/^data:/gm) || []).length;
-          statusText.textContent = "Streaming · events≈" + n;
-          // Avoid freezing the page UI when dumping 10k frames into <pre>.
+          n += (text.match(/^data:/gm) || text.match(/\\n/g) || []).length;
+          statusText.textContent = label + " · chunks≈" + n;
           if (n <= 40 || n % 500 === 0) {
-            out.textContent = "events≈" + n + "\\n" + text.slice(0, 400);
+            note(label + " · chunks≈" + n + "\\n" + text.slice(0, 400));
           }
         }
-        out.textContent += "\\n--- done, events≈" + n + " ---";
-        statusText.textContent = "Done · events≈" + n;
+        note((out.textContent || "") + "\\n--- done ---");
+        statusText.textContent = label + " · done";
       } catch (err) {
-        out.textContent = String(err && err.message ? err.message : err);
-        statusText.textContent = "Failed";
+        note(String(err && err.message ? err.message : err));
+        statusText.textContent = label + " · failed";
       } finally {
         setBusy(false);
       }
     }
 
-    document.getElementById("go").onclick = () => runStream("/api/stream");
-    document.getElementById("go10k").onclick = () => runStream("/api/stream?count=10000");
+    function runEventSource(path) {
+      if (activeEs) { activeEs.close(); activeEs = null; }
+      out.textContent = "";
+      setBusy(true);
+      statusText.textContent = "EventSource · streaming…";
+      let n = 0;
+      const es = new EventSource(path);
+      activeEs = es;
+      es.onmessage = (ev) => {
+        n += 1;
+        statusText.textContent = "EventSource · events=" + n;
+        if (n <= 40 || n % 100 === 0) {
+          note("EventSource · events=" + n + "\\n" + String(ev.data).slice(0, 400));
+        }
+      };
+      es.onerror = () => {
+        es.close();
+        if (activeEs === es) activeEs = null;
+        note((out.textContent || "") + "\\n--- EventSource closed ---");
+        statusText.textContent = "EventSource · done/closed · events=" + n;
+        setBusy(false);
+      };
+    }
+
+    function runXhr(path) {
+      if (activeEs) { activeEs.close(); activeEs = null; }
+      out.textContent = "";
+      setBusy(true);
+      statusText.textContent = "XHR · streaming…";
+      const xhr = new XMLHttpRequest();
+      let lastLen = 0;
+      let n = 0;
+      xhr.open("GET", path);
+      xhr.onprogress = () => {
+        const chunk = xhr.responseText.slice(lastLen);
+        lastLen = xhr.responseText.length;
+        n += (chunk.match(/^data:/gm) || []).length;
+        statusText.textContent = "XHR · events≈" + n;
+        if (n <= 40 || n % 100 === 0) {
+          note("XHR · events≈" + n + "\\n" + chunk.slice(0, 400));
+        }
+      };
+      xhr.onload = () => {
+        note((out.textContent || "") + "\\n--- XHR done ---");
+        statusText.textContent = "XHR · done · events≈" + n;
+        setBusy(false);
+      };
+      xhr.onerror = () => {
+        note("XHR failed");
+        statusText.textContent = "XHR · failed";
+        setBusy(false);
+      };
+      xhr.send();
+    }
+
+    document.getElementById("go-fetch").onclick = () => runFetchStream("/api/stream", "Fetch SSE");
+    document.getElementById("go-es").onclick = () => runEventSource("/api/stream");
+    document.getElementById("go-xhr").onclick = () => runXhr("/api/stream");
+    document.getElementById("go-ndjson").onclick = () => runFetchStream("/api/ndjson", "Fetch NDJSON");
+    document.getElementById("go10k").onclick = () => runFetchStream("/api/stream?count=10000", "Fetch SSE 10k");
   </script>
 </body>
 </html>`;
@@ -382,14 +510,15 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  if (url.pathname === "/api/stream") {
+  if (url.pathname === "/api/stream" || url.pathname === "/api/ndjson") {
     const countRaw = Number(url.searchParams.get("count") || DEFAULT_CHUNKS.length);
     const count = Number.isFinite(countRaw)
       ? Math.min(Math.max(1, Math.floor(countRaw)), 50_000)
       : DEFAULT_CHUNKS.length;
     // Short demo keeps the original cadence; bulk mode is as fast as practical.
     const intervalMs = count > DEFAULT_CHUNKS.length ? 0 : 220;
-    writeSseStream(res, count, intervalMs);
+    if (url.pathname === "/api/ndjson") writeNdjsonStream(res, count, intervalMs);
+    else writeSseStream(res, count, intervalMs);
     return;
   }
 
@@ -409,6 +538,7 @@ server.on("error", (err) => {
 
 server.listen(PORT, () => {
   console.log(`SSE demo at http://127.0.0.1:${PORT}`);
-  console.log(`  short:  http://127.0.0.1:${PORT}/api/stream`);
+  console.log(`  SSE:    http://127.0.0.1:${PORT}/api/stream`);
+  console.log(`  NDJSON: http://127.0.0.1:${PORT}/api/ndjson`);
   console.log(`  10k:    http://127.0.0.1:${PORT}/api/stream?count=10000`);
 });

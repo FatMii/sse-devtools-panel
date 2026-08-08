@@ -44,7 +44,7 @@ Panel icons live in `src/panel/core/icons.ts`.
 - Keep style consistent with existing icons (`currentColor`, round caps/joins).
 - Do not add a second icon library (Font Awesome, Material, etc.) without discussion.
 
-CI (GitHub Actions) runs the same `test-only` + `typecheck` + `build` checks on every PR to `main`. A red CI means the PR is not ready to merge.
+CI (GitHub Actions) runs `format:check` + `lint` + `test-only` + `typecheck` + `build` on every PR to `main` (Node.js 22). A red CI means the PR is not ready to merge.
 
 ## Reporting bugs
 
@@ -62,7 +62,7 @@ Use the Feature request template. Describe the problem first, then the proposed 
 ## Scope notes
 
 - Current tests cover shared parsers / export / spec / timing / request-view / close / AI merge helpers. They do **not** fully cover the DevTools panel UI or every inject edge case.
-- AI Conversation view is implemented for several domestic Web profiles (see README vendor matrix). Deeper ReadableStream hooks (`pipeThrough` / `pipeTo`) remain out of scope until we have a confirmed miss-capture case.
+- AI Conversation merge is implemented for several Web profiles (see README vendor matrix). Anthropic is detected as a profile but Conversation merge is not implemented yet. Deeper ReadableStream hooks (`pipeThrough` / `pipeTo`) remain out of scope until we have a confirmed miss-capture case.
 
 ## Maintainers: go public & branch protection
 

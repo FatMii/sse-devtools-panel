@@ -157,7 +157,7 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 查看这条流对应的请求信息（类似 Network）：
 
 - 请求头与请求体
-- 敏感请求头自动脱敏
+- 对常见敏感请求头自动脱敏（如 `Authorization` / `Cookie` / `*token*` / `*api-key*`；非常用头名可能未覆盖）
 - 与方法、URL、状态等基础信息同屏查看
 
 <p align="center">
@@ -308,7 +308,7 @@ Events、对话（正文 / 思考）、Raw 都用了虚拟滚动：屏幕外的�
 | `qwen-web`          | 通义千问网页         | 计划思考 / 深度思考 / 搜索     |
 | `chatglm-web`       | 智谱清言 / ChatGLM   | 思考 / 正文 / 搜索结果         |
 | `yuanbao-web`       | 腾讯元宝             | 深度搜索思考 + 来源            |
-| `anthropic`         | Anthropic 风格 SSE   | 基础识别                       |
+| `anthropic`         | Anthropic 风格 SSE   | 仅协议识别 — 对话合并尚未实现  |
 | `generic`           | 未识别               | 仍可看 Events / Timeline / Raw |
 
 > 各站协议常变。若对话视图为空或工具卡不对，请导出 Raw 或 JSON 并注明 URL。  
@@ -322,7 +322,7 @@ Events、对话（正文 / 思考）、Raw 都用了虚拟滚动：屏幕外的�
 
 ### 前置
 
-- Node.js 20+（建议）
+- Node.js 20+（`engines`；CI 使用 Node.js 22）
 - [pnpm](https://pnpm.io) 10.x（见 `packageManager` 字段）
 - Chromium 内核浏览器（Chrome / Edge 等）
 
@@ -356,7 +356,7 @@ pnpm build && pnpm demo
 
 1. 浏览器打开 <http://127.0.0.1:8765>
 2. 确认扩展已加载 → 打开 DevTools → **SSE DevTools**
-3. **刷新 Demo 页** → 点击 **Start stream**
+3. **刷新 Demo 页** → 分别试 **Fetch SSE**、**EventSource**、**XHR SSE**、**Fetch NDJSON**
 4. 侧栏应出现流；Events / Conversation / Timeline / Raw 等 Tab 有数据
 
 ---
