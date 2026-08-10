@@ -65,5 +65,22 @@ describe("detect", () => {
       }) === "connect-json",
       "connect accept",
     );
+
+    assert(
+      resolveStreamKind({
+        responseContentType: "application/json",
+        url: "https://www.kimi.com/update.json?t=1",
+      }) === null,
+      "kimi host alone does not capture",
+    );
+
+    assert(
+      resolveStreamKind({
+        responseContentType: "application/connect+json",
+        requestHeaders: { "content-type": "application/connect+json" },
+        url: "https://www.kimi.com/apiv2/kimi.gateway.chat.v1.ChatService/Chat",
+      }) === "connect-json",
+      "kimi Chat connect+json still captured",
+    );
   });
 });
