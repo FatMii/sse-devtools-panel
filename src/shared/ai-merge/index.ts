@@ -35,7 +35,13 @@ export {
 } from "./doubao";
 
 export type { KimiWebMergeState } from "./kimi";
-export { createKimiWebMergeState, pushKimiWeb, snapshotKimiWeb, mergeKimiWeb, sanitizeKimiAnswerText } from "./kimi";
+export {
+  createKimiWebMergeState,
+  pushKimiWeb,
+  snapshotKimiWeb,
+  mergeKimiWeb,
+  sanitizeKimiAnswerText,
+} from "./kimi";
 
 export type { QwenWebMergeState } from "./qwen";
 export {
