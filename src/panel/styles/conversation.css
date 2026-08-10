@@ -158,6 +158,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
 }
 
 .tool-card.is-expanded {
