@@ -1,0 +1,11 @@
+{
+  "url": "https://chat.deepseek.com/api/v0/chat/completion",
+  "profile": "deepseek-web",
+  "vendorHint": "deepseek",
+  "reasoningIncludes": ["analyze the user request"],
+  "contentIncludes": ["hello world"],
+  "contentExcludes": ["analyze the user request"],
+  "minTools": 1,
+  "toolName": "web_search",
+  "finishReason": "FINISHED"
+}

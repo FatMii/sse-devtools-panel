@@ -8,6 +8,7 @@ Why this change is needed (not only what files changed).
 - [ ] UI / capture changes were smoke-tested (`pnpm demo` or a real page)
 - [ ] Shared logic changes include or update tests when practical
 - [ ] No secrets or personal data in fixtures / screenshots
+- [ ] If `detect` / `ai-merge` / vendor fixtures changed, `pnpm test` covers them
 
 ## Test plan
 
