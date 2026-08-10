@@ -11,12 +11,6 @@
 <p align="center"><a href="./README.md">English</a></p>
 
 <p align="center">
-  <strong>Chrome 网上应用店：</strong>已提交上架，<em>审核中</em>。<br/>
-  本仓库为官方项目，请勿用其他开发者账号重复上架同一扩展。<br/>
-  审核通过后会在此补充商店链接。
-</p>
-
-<p align="center">
   <strong>Chrome 扩展：在 DevTools 里调试网页的 SSE / EventSource / NDJSON 流。</strong><br/>
   安装后打开 F12 → SSE DevTools：事件列表、对话、时间线与全局搜索，都能在面板里直接看。<br/>
   适合 AI 对话、通知推送、进度上报等长连接场景。
@@ -35,7 +29,6 @@
 ---
 
 <p align="center">
-  <!-- SCREENSHOT: hero / panel overview -->
   <img width="1400" alt="面板总览" src="docs/assets/screenshots/panel-overview.gif">
 </p>
 
@@ -408,7 +401,6 @@ pnpm format:check && pnpm lint && pnpm test && pnpm typecheck && pnpm build
 - 扩展怎么判断「这是一条要抓的流」：先看响应头有没有正经流类型（如 `Content-Type: text/event-stream` / NDJSON / Connect+JSON）。很多 AI 网关会标错或干脆不标——响应仍是 SSE 正文，但写成 `application/json`、`text/plain`，或响应头里根本没有 `Content-Type`。这时会再看请求是否像在要流：例如 `Accept: text/event-stream`、POST body 含 `"stream": true`、URL 带 `?stream=true`。Demo 里的 **Fetch SSE (JSON CT)** 就是「响应标成 JSON、请求 body 带 stream:true」这种。普通查用户资料一类的 JSON 接口没有这些提示，仍然不会进侧栏
 - 对话视图依赖各站私有协议，站点改版后可能需要重新适配
 - 若流已开始后再打开 SSE 面板，background 会回放该 tab 的近期缓冲（约 2000 条 / 4MB 上限）；超限会丢最旧数据，扩展 Service Worker 被回收后缓冲也会清空
-- 在 Chrome 网上应用店上架生效前，需本地 `pnpm build` 后，在扩展管理页加载 `dist/` 使用
 
 ---
 

@@ -64,12 +64,3 @@ Use the Feature request template. Describe the problem first, then the proposed 
 
 - Current tests cover shared parsers / export / spec / timing / request-view / close / AI merge helpers. They do **not** fully cover the DevTools panel UI or every inject edge case.
 - AI Conversation merge is implemented for several Web profiles (see README vendor matrix). Anthropic is detected as a profile but Conversation merge is not implemented yet. Deeper ReadableStream hooks (`pipeThrough` / `pipeTo`) remain out of scope until we have a confirmed miss-capture case.
-
-## Maintainers: go public & branch protection
-
-Keep the repo **Private** until the Chrome Web Store listing is approved and live. Then:
-
-1. Put the store URL into `README.md` / `README.zh-CN.md`.
-2. Change visibility to **Public**.
-3. Protect `main` — require PRs + status check **`lint / test / typecheck / build`** (needs Public or GitHub Pro).
-4. Set About homepage to the store URL; confirm description / topics.
