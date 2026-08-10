@@ -13,7 +13,7 @@ A clear description of what went wrong.
 
 - Chrome version:
 - OS:
-- Extension build: (commit SHA or `v1.0.0` / local `dist`)
+- Extension build: (commit SHA or `v1.1.0` / local `dist`)
 
 ## Steps to reproduce
 
