@@ -11,12 +11,6 @@
 <p align="center"><a href="./README.zh-CN.md">中文</a></p>
 
 <p align="center">
-  <strong>Chrome Web Store:</strong> listing submitted and <em>under review</em>.<br/>
-  This is the official project — please do not republish the same extension under another developer account.<br/>
-  Store link will be added here when the listing is live.
-</p>
-
-<p align="center">
   <strong>A Chrome extension to debug SSE / EventSource / NDJSON streams in DevTools.</strong><br/>
   After install, open F12 → SSE DevTools to inspect events, conversation, timeline, and global search.<br/>
   Built for long-lived streams such as AI chats, notifications, and progress updates.
@@ -35,7 +29,6 @@
 ---
 
 <p align="center">
-  <!-- SCREENSHOT: hero / panel overview -->
   <img width="1400" alt="Panel overview" src="docs/assets/screenshots/panel-overview.gif">
 </p>
 
@@ -376,7 +369,6 @@ pnpm format:check && pnpm lint && pnpm test && pnpm typecheck && pnpm build
 - How we decide a response is a stream: first check the response `Content-Type` for real stream types (`text/event-stream`, NDJSON, Connect+JSON). Many AI gateways mislabel or omit it — the body is still SSE, but the header says `application/json` / `text/plain`, or there is no `Content-Type` at all. In those cases we also look at the request: `Accept: text/event-stream`, a JSON body with `"stream": true`, or `?stream=true` on the URL. The demo button **Fetch SSE (JSON CT)** is that case (JSON response header + `stream: true` in the body). Ordinary JSON APIs without those hints are still ignored
 - Conversation depends on each site’s private protocol and may need updates after site changes
 - If the SSE panel opens after a stream already started, the background service worker replays a recent buffer (up to ~2 000 messages / ~4 MB per tab). Older traffic may be dropped when the cap is hit; an extension service-worker restart can still clear the buffer
-- Until the Chrome Web Store listing is live, run `pnpm build` locally and load `dist/` from the extensions page
 
 ---
 
