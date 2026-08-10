@@ -21,22 +21,6 @@ export function detectStreamKind(contentType: string | null | undefined): Stream
   return null;
 }
 
-/** Kimi.com web uses Connect+JSON (not api.moonshot OpenAI SSE). */
-export function looksLikeKimiConnectUrl(url: string): boolean {
-  try {
-    const host = new URL(url, "https://dummy.local").hostname.toLowerCase();
-    if (host.includes("api.moonshot.")) return false;
-    return (
-      host.includes("kimi.com") ||
-      host.includes("kimi.ai") ||
-      host === "kimi.moonshot.cn" ||
-      host.endsWith(".moonshot.cn")
-    );
-  } catch {
-    return /kimi\.com|kimi\.ai/i.test(url);
-  }
-}
-
 export function requestLooksLikeConnectJson(headers?: Record<string, string>): boolean {
   if (!headers) return false;
   const accept = (headers.accept ?? "").toLowerCase();
@@ -111,7 +95,6 @@ export function resolveStreamKind(input: ResolveStreamKindInput): StreamKind | n
   if (fromCt) return fromCt;
 
   if (requestLooksLikeConnectJson(input.requestHeaders)) return "connect-json";
-  if (input.url && looksLikeKimiConnectUrl(input.url)) return "connect-json";
 
   if (requestAcceptsEventStream(input.requestHeaders)) return "sse";
   if (requestAcceptsNdjson(input.requestHeaders)) return "ndjson";
