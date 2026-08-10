@@ -32,6 +32,19 @@ export function createKimiWebMergeState(): KimiWebMergeState {
 }
 
 /**
+ * Strip Kimi inline citation chips embedded in answer text.
+ * Runtime shape (Connect+JSON block.text): \uE3A0article🛠web_search:N#M…\uE3A8
+ */
+export function sanitizeKimiAnswerText(text: string): string {
+  if (!text) return text;
+  let out = text.replace(/\uE3A0[\s\S]*?\uE3A8/g, "");
+  // Orphan hammer + ref tokens if delimiters were split across chunks
+  out = out.replace(/\u{1F6E0}web_search:\d+#\d+/gu, "");
+  out = out.replace(/\uE3A0|\uE3A8/g, "");
+  return out;
+}
+
+/**
  * Kimi.com Connect+JSON (real capture / Bridge-compatible):
  * - mask chat.lastRequest / heartbeat → ignore
  * - mask message role=user → ignore; assistant status completed → finish
@@ -75,8 +88,15 @@ export function pushKimiWeb(
     return false;
   };
 
-  const pushText = (text: string, channel: "content" | "reasoning") => {
-    if (!text) return;
+  const pushText = (raw: string, channel: "content" | "reasoning") => {
+    let text = raw;
+    if (channel === "content") {
+      text = sanitizeKimiAnswerText(text);
+      // Do not seed Content tab with whitespace-only crumbs while thinking streams
+      if (!text || (!state.content && /^\s*$/.test(text))) return;
+    } else if (!text) {
+      return;
+    }
     state.chunkCount++;
     if (channel === "reasoning") state.reasoning += text;
     else state.content += text;

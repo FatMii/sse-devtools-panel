@@ -452,6 +452,43 @@ describe("ai-merge", () => {
       assert(t.channels.tools[0].name === "web_search", "kimi web_search");
       assert(t.endMeta.finishReason === "stop", "kimi finish");
       assert(conversationHasContent(t), "kimi has content");
+
+      // Citation chips in block.text must not leak into Content tab
+      const citeChip =
+        "\uE3A0article\u{1F6E0}web_search:16#7\u{1F6E0}web_search:16#5\u{1F6E0}web_search:16#9\uE3A8";
+      const citeEvents = [
+        ev(
+          JSON.stringify({
+            op: "append",
+            mask: "block.text.content",
+            block: { id: "c1", parentId: "", text: { content: " " } },
+          }),
+          "block.text.content",
+        ),
+        ev(
+          JSON.stringify({
+            op: "append",
+            mask: "block.text.content",
+            block: { id: "c1", parentId: "", text: { content: citeChip } },
+          }),
+          "block.text.content",
+        ),
+        ev(
+          JSON.stringify({
+            op: "append",
+            mask: "block.text.content",
+            block: { id: "c1", parentId: "", text: { content: "## 合肥天气" } },
+          }),
+          "block.text.content",
+        ),
+      ];
+      const citeMerged = mergeAiConversation(citeEvents, "https://www.kimi.com/chat");
+      assert(citeMerged.profile === "kimi-web", "cite profile");
+      assert(!citeMerged.channels.content.includes("web_search:"), "cite chip stripped");
+      assert(!citeMerged.channels.content.includes("article"), "article chip stripped");
+      assert(!citeMerged.channels.content.includes("\uE3A0"), "pua start stripped");
+      assert(citeMerged.channels.content.includes("## 合肥天气"), "real answer kept");
+      assert(citeMerged.channels.content.trim().startsWith("##"), "no leading whitespace seed");
     }
 
     {
