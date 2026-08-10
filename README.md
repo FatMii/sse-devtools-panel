@@ -281,7 +281,8 @@ Conversation merges content by protocol profile. Currently supported:
 | `generic`           | Unrecognized            | Events / Timeline / Raw still work                 |
 
 > Vendor protocols change often. If Conversation is empty or tool cards look wrong, export Raw or JSON and include the URL.  
-> Sites not listed here are adapted after we have a real sample.
+> Sites not listed here are adapted after we have a real sample.  
+> CI regression samples: [`fixtures/vendors/`](./fixtures/vendors/).
 
 ---
 

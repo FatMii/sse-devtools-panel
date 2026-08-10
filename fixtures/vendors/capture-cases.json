@@ -1,0 +1,106 @@
+{
+  "mustIgnore": [
+    {
+      "name": "kimi update.json",
+      "input": {
+        "responseContentType": "application/json",
+        "url": "https://www.kimi.com/update.json?t=1"
+      }
+    },
+    {
+      "name": "kimi ListMessages unary json",
+      "input": {
+        "responseContentType": "application/json",
+        "requestHeaders": { "content-type": "application/json" },
+        "url": "https://www.kimi.com/apiv2/kimi.gateway.chat.v1.ChatService/ListMessages"
+      }
+    },
+    {
+      "name": "kimi auth RegisterDevice",
+      "input": {
+        "responseContentType": "application/json",
+        "requestHeaders": { "content-type": "application/json" },
+        "url": "https://auth.kimi.com/api/account.gateway.v1.DeviceService/RegisterDevice"
+      }
+    },
+    {
+      "name": "moonshot static riv",
+      "input": {
+        "responseContentType": "application/octet-stream",
+        "url": "https://statics.moonshot.cn/kimi-web-seo/assets/avatar.riv"
+      }
+    },
+    {
+      "name": "doubao host alone",
+      "input": {
+        "responseContentType": "application/json",
+        "url": "https://www.doubao.com/api/config"
+      }
+    },
+    {
+      "name": "deepseek host alone",
+      "input": {
+        "responseContentType": "application/json",
+        "url": "https://chat.deepseek.com/api/v0/user"
+      }
+    },
+    {
+      "name": "qwen host alone",
+      "input": {
+        "responseContentType": "application/json",
+        "url": "https://www.qianwen.com/api/config"
+      }
+    },
+    {
+      "name": "chatglm host alone",
+      "input": {
+        "responseContentType": "application/json",
+        "url": "https://chatglm.cn/api/config"
+      }
+    },
+    {
+      "name": "yuanbao host alone",
+      "input": {
+        "responseContentType": "application/json",
+        "url": "https://yuanbao.tencent.com/api/config"
+      }
+    }
+  ],
+  "mustCapture": [
+    {
+      "name": "kimi Chat connect+json response CT",
+      "expect": "connect-json",
+      "input": {
+        "responseContentType": "application/connect+json",
+        "requestHeaders": { "content-type": "application/connect+json" },
+        "url": "https://www.kimi.com/apiv2/kimi.gateway.chat.v1.ChatService/Chat"
+      }
+    },
+    {
+      "name": "sse by accept",
+      "expect": "sse",
+      "input": {
+        "responseContentType": "application/json",
+        "requestHeaders": { "accept": "text/event-stream" },
+        "url": "https://www.doubao.com/chat/stream"
+      }
+    },
+    {
+      "name": "sse by stream=true query",
+      "expect": "sse",
+      "input": {
+        "responseContentType": "application/json",
+        "url": "https://api.deepseek.com/v1/chat/completions?stream=true"
+      }
+    },
+    {
+      "name": "connect accept without response CT",
+      "expect": "connect-json",
+      "input": {
+        "responseContentType": null,
+        "requestHeaders": { "accept": "application/connect+json" },
+        "url": "https://www.kimi.com/apiv2/kimi.gateway.chat.v1.ChatService/Chat"
+      }
+    }
+  ]
+}

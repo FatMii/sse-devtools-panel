@@ -1,0 +1,46 @@
+[
+  {
+    "event": "chat.lastRequest",
+    "data": "{\"op\":\"set\",\"mask\":\"chat.lastRequest\",\"chat\":{\"id\":\"c1\",\"lastRequest\":{\"options\":{\"thinking\":true}}}}"
+  },
+  {
+    "event": "message",
+    "data": "{\"op\":\"set\",\"mask\":\"message\",\"message\":{\"id\":\"u1\",\"role\":\"user\",\"blocks\":[{\"text\":{\"content\":\"weather\"}}]}}"
+  },
+  {
+    "event": "block.multiStage",
+    "data": "{\"op\":\"set\",\"mask\":\"block.multiStage\",\"block\":{\"id\":\"1\",\"multiStage\":{\"stages\":[{\"name\":\"STAGE_NAME_THINKING\",\"status\":\"STAGE_STATUS_START\"}]}}}"
+  },
+  {
+    "event": "block.stage",
+    "data": "{\"op\":\"set\",\"mask\":\"block.stage\",\"block\":{\"id\":\"2\",\"parentId\":\"1\",\"stage\":{\"name\":\"STAGE_NAME_THINKING\",\"status\":\"STAGE_STATUS_START\"}}}"
+  },
+  {
+    "event": "block.think",
+    "data": "{\"op\":\"set\",\"mask\":\"block.think\",\"block\":{\"id\":\"3\",\"parentId\":\"2\",\"think\":{\"content\":\"user\"}}}"
+  },
+  {
+    "event": "block.think.content",
+    "data": "{\"op\":\"append\",\"mask\":\"block.think.content\",\"block\":{\"id\":\"3\",\"parentId\":\"2\",\"think\":{\"content\":\"asks about weather\"}}}"
+  },
+  {
+    "event": "block.stage",
+    "data": "{\"op\":\"set\",\"mask\":\"block.stage\",\"block\":{\"id\":\"2\",\"parentId\":\"1\",\"stage\":{\"name\":\"STAGE_NAME_THINKING\",\"status\":\"STAGE_STATUS_END\"}}}"
+  },
+  {
+    "event": "block.tool",
+    "data": "{\"op\":\"set\",\"block\":{\"id\":\"5\",\"tool\":{\"toolCallId\":\"web_search:7\",\"name\":\"web_search\",\"args\":\"{\\\"queries\\\": [\\\"weather forecast next 3 days\\\"]}\",\"status\":\"STATUS_RUNNING\"}}}"
+  },
+  {
+    "event": "block.tool.contents,block.tool.status",
+    "data": "{\"op\":\"set\",\"mask\":\"block.tool.contents,block.tool.status\",\"block\":{\"id\":\"5\",\"tool\":{\"contents\":[{\"searchResult\":{\"id\":\"1\",\"base\":{\"title\":\"Weather site\",\"url\":\"https://www.example.com/weather\",\"siteName\":\"example\",\"snippet\":\"cloudy then sunny\"},\"refIndex\":\"web_search:7#0\"}}],\"status\":\"STATUS_DONE\"}}}"
+  },
+  {
+    "event": "block.text.content",
+    "data": "{\"op\":\"append\",\"mask\":\"block.text.content\",\"block\":{\"id\":\"4\",\"parentId\":\"\",\"text\":{\"content\":\"answer draft\"}}}"
+  },
+  {
+    "event": "message",
+    "data": "{\"op\":\"set\",\"mask\":\"message\",\"message\":{\"id\":\"a1\",\"role\":\"assistant\",\"status\":\"MESSAGE_STATUS_COMPLETED\"}}"
+  }
+]

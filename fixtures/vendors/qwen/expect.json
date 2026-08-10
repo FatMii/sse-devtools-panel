@@ -1,0 +1,11 @@
+{
+  "url": "https://www.qianwen.com/chat",
+  "profile": "qwen-web",
+  "vendorHint": "qwen",
+  "reasoningIncludes": ["user asked about weather", "based on search results"],
+  "contentIncludes": ["today is partly cloudy"],
+  "contentExcludes": ["I need to answer about weather"],
+  "minTools": 1,
+  "toolName": "web_search",
+  "finishReason": "stop"
+}

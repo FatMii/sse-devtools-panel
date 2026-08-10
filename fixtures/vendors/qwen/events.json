@@ -1,0 +1,30 @@
+[
+  {
+    "event": "message",
+    "data": "{\"error_msg\":\"\",\"error_code\":0,\"data\":{\"extra_info\":{\"agent_name\":\"AgentProxy\",\"scene\":\"deep_think_r1lite\"},\"messages\":[{\"mime_type\":\"plan_cot/post\",\"content\":\"user asked about weather, prepare to search.\",\"status\":\"processing\"}]}}"
+  },
+  {
+    "event": "message",
+    "data": "{\"error_msg\":\"\",\"error_code\":0,\"data\":{\"extra_info\":{\"agent_name\":\"AgentProxy\",\"scene\":\"deep_think_r1lite\"},\"messages\":[{\"mime_type\":\"plan_cot/post\",\"content\":\"user asked about weather, prepare to search.\\nI will collect info in these steps.\\n- look up today's weather \",\"status\":\"processing\"}]}}"
+  },
+  {
+    "event": "message",
+    "data": "{\"error_msg\":\"\",\"error_code\":0,\"data\":{\"extra_info\":{\"agent_name\":\"AgentProxy\",\"scene\":\"deep_think_r1lite\"},\"messages\":[{\"mime_type\":\"bar/progress\",\"meta_data\":{\"type\":\"cot\",\"content\":{\"list\":[{\"query\":\"city weather\"}]}},\"status\":\"processing\"}]}}"
+  },
+  {
+    "event": "message",
+    "data": "{\"error_msg\":\"\",\"error_code\":0,\"data\":{\"extra_info\":{\"agent_name\":\"AgentProxy\",\"scene\":\"deep_think_r1lite\"},\"messages\":[{\"mime_type\":\"bar/progress\",\"meta_data\":{\"match_num\":2,\"list\":[{\"title\":\"Weather forecast\",\"url\":\"https://weather.example.com/\",\"summary\":\"partly cloudy\"}]},\"status\":\"processing\"}]}}"
+  },
+  {
+    "event": "message",
+    "data": "{\"error_msg\":\"\",\"error_code\":0,\"data\":{\"extra_info\":{\"agent_name\":\"AgentProxy\",\"scene\":\"deep_think_r1lite\"},\"messages\":[{\"mime_type\":\"multi_load/iframe\",\"meta_data\":{\"multi_load\":[{\"type\":\"deep_think\",\"content\":{\"think_content\":\"I need to answer about weather\",\"status\":\"processing\"}}]},\"content\":\"[(deep_think)]\",\"status\":\"processing\"}]}}"
+  },
+  {
+    "event": "message",
+    "data": "{\"error_msg\":\"\",\"error_code\":0,\"data\":{\"extra_info\":{\"agent_name\":\"AgentProxy\",\"scene\":\"deep_think_r1lite\"},\"messages\":[{\"mime_type\":\"multi_load/iframe\",\"meta_data\":{\"multi_load\":[{\"type\":\"deep_think\",\"content\":{\"think_content\":\"I need to answer about weather, based on search results.\",\"status\":\"complete\"}}]},\"content\":\"[(deep_think)]\\n\\ntoday is partly cloudy\",\"status\":\"processing\"}]}}"
+  },
+  {
+    "event": "message",
+    "data": "{\"error_msg\":\"\",\"error_code\":0,\"data\":{\"extra_info\":{\"agent_name\":\"AgentProxy\",\"scene\":\"deep_think_r1lite\",\"sse_end\":\"1\"},\"messages\":[{\"mime_type\":\"multi_load/iframe\",\"meta_data\":{\"multi_load\":[]},\"content\":\"[(deep_think)]\\n\\ntoday is partly cloudy, 26-33C.\",\"status\":\"complete\"}]}}"
+  }
+]

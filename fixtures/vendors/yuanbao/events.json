@@ -1,0 +1,34 @@
+[
+  { "event": "message", "data": "{\"type\":\"text\"}" },
+  { "event": "speech_type", "data": "status" },
+  {
+    "event": "message",
+    "data": "{\"type\":\"step\",\"msg\":\"searching sources\",\"toolCallType\":\"web_search\",\"scene\":\"ai_search_deep_search\"}"
+  },
+  {
+    "event": "message",
+    "data": "{\"type\":\"deepSearch\",\"title\":\"Thinking\",\"contents\":[{\"type\":\"toolCall\",\"toolCallName\":\"hunyuan_web_search\",\"docs\":[{\"index\":1,\"title\":\"Weather bureau\",\"url\":\"https://weather.example.com/a\"},{\"index\":2,\"title\":\"News site\",\"url\":\"https://example.com/b\"}]}]}"
+  },
+  {
+    "event": "message",
+    "data": "{\"type\":\"deepSearch\",\"title\":\"Thinking\",\"contents\":[{\"type\":\"text\",\"componentId\":\"0\",\"msg\":\"user only said\"}]}"
+  },
+  {
+    "event": "message",
+    "data": "{\"type\":\"deepSearch\",\"title\":\"Thinking\",\"contents\":[{\"type\":\"text\",\"componentId\":\"0\",\"msg\":\"tomorrow weather\"}]}"
+  },
+  {
+    "event": "message",
+    "data": "{\"type\":\"deepSearch\",\"title\":\"Deep thinking done\",\"contents\":[{\"type\":\"text\",\"componentId\":\"2\",\"msg\":\"continue as city context\"}]}"
+  },
+  {
+    "event": "message",
+    "data": "{\"type\":\"searchGuid\",\"title\":\"Cited 2 sources\",\"docs\":[{\"index\":1,\"title\":\"Weather bureau update\",\"url\":\"https://weather.example.com/a\",\"quote\":\"high 36C\",\"web_site_name\":\"Weather bureau\"},{\"index\":2,\"title\":\"News weather\",\"url\":\"https://example.com/b\",\"web_site_name\":\"News site\"}]}"
+  },
+  { "event": "message", "data": "{\"type\":\"text\",\"msg\":\"tomorrow\"}" },
+  { "event": "message", "data": "{\"type\":\"text\",\"msg\":\"sunny and hot\"}" },
+  {
+    "event": "message",
+    "data": "{\"type\":\"meta\",\"stopReason\":\"stop\",\"pluginID\":\"OneAgent\"}"
+  }
+]

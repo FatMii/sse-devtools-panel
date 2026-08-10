@@ -1,0 +1,11 @@
+{
+  "url": "https://www.kimi.com/chat",
+  "profile": "kimi-web",
+  "vendorHint": "moonshot",
+  "reasoningIncludes": ["user", "asks about weather"],
+  "contentIncludes": ["answer draft"],
+  "contentExcludes": ["asks about weather", "web_search:"],
+  "minTools": 1,
+  "toolName": "web_search",
+  "finishReason": "stop"
+}
