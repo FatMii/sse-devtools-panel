@@ -1,0 +1,22 @@
+[
+  {
+    "event": "STREAM_MSG_NOTIFY",
+    "data": "{\"content\":{\"content_block\":[{\"block_type\":10040,\"block_id\":\"think-1\",\"content\":{\"thinking_block\":{\"streaming_title\":\"Thinking\"}}}]},\"meta\":{\"user_type\":2}}"
+  },
+  {
+    "event": "STREAM_CHUNK",
+    "data": "{\"patch_op\":[{\"patch_object\":1,\"patch_value\":{\"content_block\":[{\"block_type\":10000,\"block_id\":\"think-text\",\"parent_id\":\"think-1\",\"content\":{\"text_block\":{\"text\":\"think first\",\"icon_url\":\"https://cdn.example/Deep_Think.png\"}}}]}}]}"
+  },
+  {
+    "event": "CHUNK_DELTA",
+    "data": "{\"text\":\" step\"}"
+  },
+  {
+    "event": "STREAM_CHUNK",
+    "data": "{\"patch_op\":[{\"patch_object\":1,\"patch_value\":{\"content_block\":[{\"block_type\":10000,\"block_id\":\"answer-1\",\"content\":{\"text_block\":{\"text\":\"hello\"}}}]}}]}"
+  },
+  {
+    "event": "CHUNK_DELTA",
+    "data": "{\"text\":\" there\"}"
+  }
+]

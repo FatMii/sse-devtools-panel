@@ -1,0 +1,9 @@
+{
+  "url": "https://www.doubao.com/chat",
+  "profile": "doubao-web",
+  "vendorHint": "doubao-web",
+  "reasoningIncludes": ["think first"],
+  "contentIncludes": ["hello there"],
+  "contentExcludes": ["think first"],
+  "minTools": 0
+}

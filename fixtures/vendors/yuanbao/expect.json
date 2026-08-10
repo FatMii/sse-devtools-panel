@@ -1,0 +1,11 @@
+{
+  "url": "https://yuanbao.tencent.com/chat",
+  "profile": "yuanbao-web",
+  "vendorHint": "yuanbao",
+  "reasoningIncludes": ["user only said", "tomorrow weather"],
+  "contentIncludes": ["tomorrow", "sunny and hot"],
+  "contentExcludes": ["user only said"],
+  "minTools": 1,
+  "toolName": "web_search",
+  "finishReason": "stop"
+}

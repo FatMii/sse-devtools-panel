@@ -35,6 +35,7 @@ pnpm build
 2. If you change UI or capture behavior, smoke-test with `pnpm demo` (or a real SSE page).
 3. Keep PRs focused. Prefer Conventional Commits style when possible, e.g. `feat: …`, `fix: …`, `docs: …`, `test: …`, `chore: …`.
 4. Shared logic changes should include or update Vitest tests under a sibling `__tests__/` folder when practical.
+5. Changes to stream detection or Conversation merge should keep `fixtures/vendors/` tests passing.
 
 ## UI icons
 
@@ -62,5 +63,5 @@ Use the Feature request template. Describe the problem first, then the proposed 
 
 ## Scope notes
 
-- Current tests cover shared parsers / export / spec / timing / request-view / close / AI merge helpers. They do **not** fully cover the DevTools panel UI or every inject edge case.
+- Current tests cover shared parsers / export / spec / timing / request-view / close / AI merge helpers, and required samples under `fixtures/vendors/`. They do **not** fully cover the DevTools panel UI or every inject edge case.
 - AI Conversation merge is implemented for several Web profiles (see README vendor matrix). Anthropic is detected as a profile but Conversation merge is not implemented yet. Deeper ReadableStream hooks (`pipeThrough` / `pipeTo`) remain out of scope until we have a confirmed miss-capture case.

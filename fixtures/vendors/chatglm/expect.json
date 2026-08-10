@@ -1,0 +1,11 @@
+{
+  "url": "https://chatglm.cn/main/chat",
+  "profile": "chatglm-web",
+  "vendorHint": "chatglm",
+  "reasoningIncludes": ["break down the request", "today weather"],
+  "contentIncludes": ["partly cloudy"],
+  "contentExcludes": ["break down the request"],
+  "minTools": 1,
+  "toolName": "web_search",
+  "finishReason": "stop"
+}

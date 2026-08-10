@@ -1,3 +1,6 @@
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it, expect } from "vitest";
 import {
   detectStreamKind,
@@ -5,11 +8,26 @@ import {
   payloadLooksLikeStreamTrue,
   resolveStreamKind,
   urlLooksLikeStreamQuery,
+  type ResolveStreamKindInput,
 } from "../detect";
 
 function assert(cond: unknown, msg: string): asserts cond {
   expect(cond, msg).toBeTruthy();
 }
+
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../../../");
+const captureCasesPath = resolve(repoRoot, "fixtures/vendors/capture-cases.json");
+
+type CaptureCase = {
+  name: string;
+  expect?: string;
+  input: ResolveStreamKindInput;
+};
+
+type CaptureCasesFile = {
+  mustIgnore: CaptureCase[];
+  mustCapture: CaptureCase[];
+};
 
 describe("detect", () => {
   it("matches previous script coverage", () => {
@@ -65,22 +83,21 @@ describe("detect", () => {
       }) === "connect-json",
       "connect accept",
     );
+  });
 
-    assert(
-      resolveStreamKind({
-        responseContentType: "application/json",
-        url: "https://www.kimi.com/update.json?t=1",
-      }) === null,
-      "kimi host alone does not capture",
-    );
+  it("enforces capture-cases.json (host alone never captures)", () => {
+    assert(existsSync(captureCasesPath), `missing ${captureCasesPath}`);
+    const cases = JSON.parse(readFileSync(captureCasesPath, "utf8")) as CaptureCasesFile;
+    assert(Array.isArray(cases.mustIgnore) && cases.mustIgnore.length > 0, "mustIgnore empty");
+    assert(Array.isArray(cases.mustCapture) && cases.mustCapture.length > 0, "mustCapture empty");
 
-    assert(
-      resolveStreamKind({
-        responseContentType: "application/connect+json",
-        requestHeaders: { "content-type": "application/connect+json" },
-        url: "https://www.kimi.com/apiv2/kimi.gateway.chat.v1.ChatService/Chat",
-      }) === "connect-json",
-      "kimi Chat connect+json still captured",
-    );
+    for (const c of cases.mustIgnore) {
+      const kind = resolveStreamKind(c.input);
+      assert(kind === null, `mustIgnore ${c.name}: got ${kind}`);
+    }
+    for (const c of cases.mustCapture) {
+      const kind = resolveStreamKind(c.input);
+      assert(kind === c.expect, `mustCapture ${c.name}: got ${kind}, want ${c.expect}`);
+    }
   });
 });
