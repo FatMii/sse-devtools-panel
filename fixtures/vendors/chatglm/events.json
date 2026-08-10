@@ -1,0 +1,30 @@
+[
+  {
+    "event": "message",
+    "data": "{\"id\":\"msg1\",\"conversation_id\":\"conv1\",\"assistant_id\":\"65940acff94777010aa6b796\",\"status\":\"init\",\"parts\":[],\"meta_data\":{}}"
+  },
+  {
+    "event": "message",
+    "data": "{\"id\":\"msg1\",\"conversation_id\":\"conv1\",\"assistant_id\":\"65940acff94777010aa6b796\",\"status\":\"init\",\"parts\":[{\"role\":\"assistant\",\"status\":\"init\",\"content\":[{\"type\":\"think\",\"think\":\"break down the request\",\"tool_calls\":{}}]}],\"meta_data\":{}}"
+  },
+  {
+    "event": "message",
+    "data": "{\"id\":\"msg1\",\"conversation_id\":\"conv1\",\"assistant_id\":\"65940acff94777010aa6b796\",\"status\":\"init\",\"parts\":[{\"role\":\"assistant\",\"status\":\"init\",\"content\":[{\"type\":\"think\",\"think\":\"break down the request: today weather\",\"tool_calls\":{}}]}],\"meta_data\":{}}"
+  },
+  {
+    "event": "message",
+    "data": "{\"id\":\"msg1\",\"conversation_id\":\"conv1\",\"assistant_id\":\"65940acff94777010aa6b796\",\"status\":\"init\",\"parts\":[{\"role\":\"assistant\",\"status\":\"init\",\"content\":[{\"type\":\"tool_calls\",\"tool_calls\":{\"id\":\"tool-abc\",\"name\":\"search\",\"arguments\":\"{\\\"search_query\\\":[{\\\"q\\\":\\\"region weather forecast today\\\",\\\"recency\\\":1}]}\"}}],\"meta_data\":{\"show_type\":\"mc_tool_call2\"}}],\"meta_data\":{}}"
+  },
+  {
+    "event": "message",
+    "data": "{\"id\":\"msg1\",\"conversation_id\":\"conv1\",\"assistant_id\":\"65940acff94777010aa6b796\",\"status\":\"finish\",\"parts\":[{\"role\":\"assistant\",\"status\":\"finish\",\"content\":[{\"type\":\"tool_result\",\"tool_calls\":{\"id\":\"tool-abc\",\"name\":\"search\",\"arguments\":\"{\\\"search_query\\\":[{\\\"q\\\":\\\"region weather forecast today\\\",\\\"recency\\\":1}]}\"}}],\"meta_data\":{\"show_type\":\"mc_tool_result2\",\"tool_result_extra\":{\"search_duration\":6.7,\"search_results\":[{\"title\":\"Regional weather alert\",\"url\":\"https://example.com/nj\",\"host_name\":\"example.com\",\"index\":1,\"snippet\":\"<p>High near 35C</p>\"}]}}}],\"meta_data\":{}}"
+  },
+  {
+    "event": "message",
+    "data": "{\"id\":\"msg1\",\"conversation_id\":\"conv1\",\"assistant_id\":\"65940acff94777010aa6b796\",\"status\":\"init\",\"parts\":[{\"role\":\"assistant\",\"status\":\"init\",\"content\":[{\"type\":\"text\",\"text\":\"OK, today is\"}]}],\"meta_data\":{}}"
+  },
+  {
+    "event": "message",
+    "data": "{\"id\":\"msg1\",\"conversation_id\":\"conv1\",\"assistant_id\":\"65940acff94777010aa6b796\",\"status\":\"finish\",\"parts\":[{\"role\":\"assistant\",\"status\":\"finish\",\"model\":\"glm-4\",\"content\":[{\"type\":\"text\",\"text\":\"OK, today is partly cloudy, 26-33C.\"}]}],\"meta_data\":{}}"
+  }
+]

@@ -1,0 +1,10 @@
+[
+  {
+    "event": "message",
+    "data": "{\"v\":{\"response\":{\"fragments\":[{\"type\":\"THINK\",\"content\":\"analyze the user request\"},{\"type\":\"SEARCH\",\"id\":\"s1\",\"queries\":[{\"query\":\"weather forecast\"}],\"results\":[{\"title\":\"Weather site\",\"url\":\"https://example.com/w\",\"site_name\":\"example\",\"snippet\":\"cloudy\"}]},{\"type\":\"RESPONSE\",\"content\":\"hello world\"}],\"status\":\"FINISHED\"}}}"
+  },
+  {
+    "event": "message",
+    "data": "{\"p\":\"response/status\",\"o\":\"REPLACE\",\"v\":\"FINISHED\"}"
+  }
+]
