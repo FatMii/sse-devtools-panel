@@ -48,7 +48,7 @@ function ensureStructure(): void {
       rawRows = wrapTextToRows(lastRawShown, nextCols);
       paintedStart = -1;
       paintRawWindow(true);
-      if (near) elRaw.scrollTop = rawRows.length * CONV_ROW_HEIGHT_PX;
+      if (near) elRaw.scrollTop = elRaw.scrollHeight;
     });
     resizeObserver.observe(elRaw);
   }
@@ -56,7 +56,12 @@ function ensureStructure(): void {
 }
 
 function onRawScroll(): void {
+  // Preserve scroll position across spacer rewrites (Chrome scroll anchoring).
+  const pinnedScrollTop = elRaw.scrollTop;
   paintRawWindow(false);
+  if (elRaw.scrollTop !== pinnedScrollTop) {
+    elRaw.scrollTop = pinnedScrollTop;
+  }
 }
 
 function paintRawWindow(force: boolean): void {
@@ -66,19 +71,24 @@ function paintRawWindow(force: boolean): void {
     topSpacer.style.height = "0px";
     bottomSpacer.style.height = "0px";
     windowEl.textContent = "";
+    windowEl.style.height = "0px";
     paintedStart = 0;
     paintedEnd = 0;
     return;
   }
   const win = computeConvVirtualWindow(elRaw.scrollTop, elRaw.clientHeight || 1, rawRows.length);
+  const expectedWinH = Math.max(0, win.end - win.start) * CONV_ROW_HEIGHT_PX;
   if (!force && win.start === paintedStart && win.end === paintedEnd) {
     topSpacer.style.height = `${win.paddingTop}px`;
     bottomSpacer.style.height = `${win.paddingBottom}px`;
+    windowEl.style.height = `${expectedWinH}px`;
     return;
   }
   topSpacer.style.height = `${win.paddingTop}px`;
   bottomSpacer.style.height = `${win.paddingBottom}px`;
   windowEl.textContent = rawRows.slice(win.start, win.end).join("\n");
+  // Lock window box to ideal row geometry so spacer+window never oscillates scrollHeight.
+  windowEl.style.height = `${expectedWinH}px`;
   paintedStart = win.start;
   paintedEnd = win.end;
 }
@@ -129,6 +139,6 @@ export function renderRawView(
   paintRawWindow(true);
 
   if (stick && (nearBottom || !sameStream || plan.mode === "replace")) {
-    elRaw.scrollTop = rawRows.length * CONV_ROW_HEIGHT_PX;
+    elRaw.scrollTop = elRaw.scrollHeight;
   }
 }

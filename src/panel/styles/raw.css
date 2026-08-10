@@ -29,11 +29,13 @@
   display: block;
   white-space: normal;
   word-break: normal;
+  overflow-anchor: none;
 }
 
 .raw-virtual-spacer {
   width: 100%;
   pointer-events: none;
+  overflow-anchor: none;
 }
 
 .raw-virtual-window {
@@ -46,5 +48,7 @@
   white-space: pre;
   word-break: normal;
   line-height: 18px;
-  overflow: visible;
+  overflow: hidden;
+  box-sizing: border-box;
+  overflow-anchor: none;
 }

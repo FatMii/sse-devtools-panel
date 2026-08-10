@@ -71,13 +71,19 @@ function disposeVirtualTextPane(): void {
 }
 
 function onVirtualScroll(): void {
-  if (activeVirtualPane) paintVirtualWindow(activeVirtualPane, false);
+  if (!activeVirtualPane) return;
+  const pinnedScrollTop = activeVirtualPane.root.scrollTop;
+  paintVirtualWindow(activeVirtualPane, false);
+  if (activeVirtualPane.root.scrollTop !== pinnedScrollTop) {
+    activeVirtualPane.root.scrollTop = pinnedScrollTop;
+  }
 }
 
 function paintVirtualWindow(pane: VirtualTextPane, force: boolean): void {
   if (pane.empty) {
     pane.topSpacer.style.height = "0px";
     pane.bottomSpacer.style.height = "0px";
+    pane.windowEl.style.height = "";
     pane.paintedStart = 0;
     pane.paintedEnd = 0;
     return;
@@ -87,14 +93,17 @@ function paintVirtualWindow(pane: VirtualTextPane, force: boolean): void {
     pane.root.clientHeight || 1,
     pane.rows.length,
   );
+  const expectedWinH = Math.max(0, win.end - win.start) * CONV_ROW_HEIGHT_PX;
   if (!force && win.start === pane.paintedStart && win.end === pane.paintedEnd) {
     pane.topSpacer.style.height = `${win.paddingTop}px`;
     pane.bottomSpacer.style.height = `${win.paddingBottom}px`;
+    pane.windowEl.style.height = `${expectedWinH}px`;
     return;
   }
   pane.topSpacer.style.height = `${win.paddingTop}px`;
   pane.bottomSpacer.style.height = `${win.paddingBottom}px`;
   pane.windowEl.textContent = pane.rows.slice(win.start, win.end).join("\n");
+  pane.windowEl.style.height = `${expectedWinH}px`;
   pane.paintedStart = win.start;
   pane.paintedEnd = win.end;
 }
@@ -138,7 +147,7 @@ function createVirtualTextPane(): VirtualTextPane {
     pane.rows = wrapTextToRows(pane.text, nextCols);
     pane.paintedStart = -1;
     paintVirtualWindow(pane, true);
-    if (near) pane.root.scrollTop = pane.rows.length * CONV_ROW_HEIGHT_PX;
+    if (near) pane.root.scrollTop = pane.root.scrollHeight;
   });
   pane.ro.observe(root);
   activeVirtualPane = pane;
@@ -173,7 +182,7 @@ function setVirtualText(pane: VirtualTextPane, nextText: string, showingEmpty: b
   pane.paintedStart = -1;
   paintVirtualWindow(pane, true);
   lastRenderedChannelText = nextText;
-  if (near) pane.root.scrollTop = pane.rows.length * CONV_ROW_HEIGHT_PX;
+  if (near) pane.root.scrollTop = pane.root.scrollHeight;
 }
 
 function buildConversationFingerprint(

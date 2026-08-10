@@ -104,11 +104,13 @@
   white-space: normal;
   word-break: normal;
   padding: 9px 11px;
+  overflow-anchor: none;
 }
 
 .conversation-virtual-spacer {
   width: 100%;
   pointer-events: none;
+  overflow-anchor: none;
 }
 
 .conversation-virtual-window {
@@ -121,7 +123,9 @@
   white-space: pre;
   word-break: normal;
   line-height: 18px;
-  overflow: visible;
+  overflow: hidden;
+  box-sizing: border-box;
+  overflow-anchor: none;
 }
 
 .conversation-virtual-window.is-empty {
