@@ -17,6 +17,8 @@
 </p>
 
 <p align="center">
+  <a href="https://chromewebstore.google.com/detail/sse-devtools-panel/kffpkefnkmabnkhklmnjkihiiclggnni"><img alt="Chrome Web Store" src="https://img.shields.io/chrome-web-store/v/kffpkefnkmabnkhklmnjkihiiclggnni?label=Chrome%20Web%20Store"></a>
+  &nbsp;
   <a href="https://github.com/FatMii/sse-devtools-panel/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/FatMii/sse-devtools-panel/actions/workflows/ci.yml/badge.svg"></a>
   &nbsp;
   <a href="./LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
@@ -24,6 +26,10 @@
   <a href="#"><img alt="Platform" src="https://img.shields.io/badge/Platform-Chromium%20DevTools-blue"></a>
   &nbsp;
   <a href="#"><img alt="Manifest" src="https://img.shields.io/badge/Manifest-V3-informational"></a>
+</p>
+
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/sse-devtools-panel/kffpkefnkmabnkhklmnjkihiiclggnni"><strong>Install from Chrome Web Store</strong></a>
 </p>
 
 ---
@@ -295,6 +301,10 @@ Conversation merges content by protocol profile. Currently supported:
 - A Chromium-based browser (Chrome / Edge / …)
 
 ### Install & load
+
+**Recommended:** install from the [Chrome Web Store](https://chromewebstore.google.com/detail/sse-devtools-panel/kffpkefnkmabnkhklmnjkihiiclggnni), then open your page → <kbd>F12</kbd> → **SSE DevTools** → **refresh the page** before triggering a stream.
+
+**From source** (development / local build):
 
 ```bash
 git clone https://github.com/FatMii/sse-devtools-panel.git
