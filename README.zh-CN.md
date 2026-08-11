@@ -17,6 +17,8 @@
 </p>
 
 <p align="center">
+  <a href="https://chromewebstore.google.com/detail/sse-devtools-panel/kffpkefnkmabnkhklmnjkihiiclggnni"><img alt="Chrome Web Store" src="https://img.shields.io/chrome-web-store/v/kffpkefnkmabnkhklmnjkihiiclggnni?label=Chrome%20Web%20Store"></a>
+  &nbsp;
   <a href="https://github.com/FatMii/sse-devtools-panel/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/FatMii/sse-devtools-panel/actions/workflows/ci.yml/badge.svg"></a>
   &nbsp;
   <a href="./LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
@@ -24,6 +26,10 @@
   <a href="#"><img alt="Platform" src="https://img.shields.io/badge/Platform-Chromium%20DevTools-blue"></a>
   &nbsp;
   <a href="#"><img alt="Manifest" src="https://img.shields.io/badge/Manifest-V3-informational"></a>
+</p>
+
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/sse-devtools-panel/kffpkefnkmabnkhklmnjkihiiclggnni"><strong>从 Chrome 应用商店安装</strong></a>
 </p>
 
 ---
@@ -321,6 +327,10 @@ Events、对话（正文 / 思考）、Raw 都用了虚拟滚动：屏幕外的�
 - Chromium 内核浏览器（Chrome / Edge 等）
 
 ### 安装并加载
+
+**推荐：** 从 [Chrome 应用商店](https://chromewebstore.google.com/detail/sse-devtools-panel/kffpkefnkmabnkhklmnjkihiiclggnni) 安装，然后打开目标页 → <kbd>F12</kbd> → **SSE DevTools** → **先刷新页面**再触发流式请求。
+
+**从源码加载**（开发 / 本地构建）：
 
 ```bash
 git clone https://github.com/FatMii/sse-devtools-panel.git
