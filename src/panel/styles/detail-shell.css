@@ -69,6 +69,46 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Subtabs (request / conversation) — same underline pattern as .tab */
+.request-subtab {
+  position: relative;
+  flex-shrink: 0;
+  height: 34px;
+  padding: 0 11px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .request-subtab:hover {
+    color: var(--text);
+    background: transparent;
+  }
+}
+
+.request-subtab:active:not(:disabled) {
+  transform: none;
+}
+
+.request-subtab.active {
+  color: var(--text);
+}
+
+.request-subtab.active::after {
+  content: "";
+  position: absolute;
+  right: 8px;
+  bottom: 0;
+  left: 8px;
+  height: 2px;
+  background: var(--accent);
+}
+
 .meta,
 .request-bar {
   display: flex;
