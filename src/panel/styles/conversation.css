@@ -69,21 +69,6 @@
   scrollbar-width: thin;
 }
 
-.conversation-subtabs .request-subtab {
-  flex-shrink: 0;
-  height: 34px;
-  padding: 0 11px;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-  border-bottom: 2px solid transparent;
-  margin-bottom: 0;
-}
-
-.conversation-subtabs .request-subtab.active {
-  color: var(--text);
-  border-bottom-color: var(--accent);
-}
-
 .conversation-pane {
   flex: 1;
   min-height: 0;

@@ -30,29 +30,6 @@
   scrollbar-width: thin;
 }
 
-.request-view .request-subtab {
-  flex-shrink: 0;
-  height: 34px;
-  padding: 0 11px;
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: 0;
-}
-
-.request-view .request-subtab:hover {
-  color: var(--text);
-}
-
-.request-view .request-subtab.active {
-  color: var(--text);
-  border-bottom-color: var(--accent);
-}
-
 .request-pane {
   display: flex;
   flex-direction: column;
