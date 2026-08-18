@@ -2,7 +2,12 @@
   "url": "https://www.qianwen.com/chat",
   "profile": "qwen-web",
   "vendorHint": "qwen",
-  "reasoningIncludes": ["user asked about weather", "based on search results"],
+  "reasoningIncludes": [
+    "user asked about weather",
+    "based on search results",
+    "Call the weather tool",
+    "Summarize the weather tool result"
+  ],
   "contentIncludes": ["today is partly cloudy"],
   "contentExcludes": ["I need to answer about weather"],
   "minTools": 1,
