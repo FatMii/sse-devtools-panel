@@ -183,6 +183,7 @@ const QWEN_WEB_MIME_TYPES = new Set([
   "multi_load/iframe",
   "bar/progress",
   "bar/iframe",
+  "bar/workflow",
   "signal/post",
   "paa/iframe",
 ]);

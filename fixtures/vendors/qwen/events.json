@@ -26,5 +26,17 @@
   {
     "event": "message",
     "data": "{\"error_msg\":\"\",\"error_code\":0,\"data\":{\"extra_info\":{\"agent_name\":\"AgentProxy\",\"scene\":\"deep_think_r1lite\",\"sse_end\":\"1\"},\"messages\":[{\"mime_type\":\"multi_load/iframe\",\"meta_data\":{\"multi_load\":[]},\"content\":\"[(deep_think)]\\n\\ntoday is partly cloudy, 26-33C.\",\"status\":\"complete\"}]}}"
+  },
+  {
+    "event": "message",
+    "data": "{\"error_msg\":\"\",\"error_code\":0,\"data\":{\"extra_info\":{\"agent_name\":\"AgentProxy\",\"scene\":\"qwen_expert\"},\"messages\":[{\"mime_type\":\"bar/workflow\",\"meta_data\":{\"multi_load\":[{\"type\":\"bar_thinking\",\"content\":{\"body\":\"Call the weather tool for tomorrow.\",\"title\":\"Look up city weather\",\"status\":\"processing\"},\"source_seq\":\"bar_thinking_1\"}]},\"content\":\"\",\"status\":\"processing\"}]}}"
+  },
+  {
+    "event": "message",
+    "data": "{\"error_msg\":\"\",\"error_code\":0,\"data\":{\"extra_info\":{\"agent_name\":\"AgentProxy\",\"scene\":\"qwen_expert\"},\"messages\":[{\"mime_type\":\"bar/workflow\",\"meta_data\":{\"multi_load\":[{\"type\":\"bar_thinking\",\"content\":{\"body\":\"Call the weather tool for tomorrow.\",\"title\":\"Look up city weather\",\"status\":\"complete\"},\"source_seq\":\"bar_thinking_1\"},{\"type\":\"bar_tool\",\"content\":{\"body\":\"\",\"title\":\"Use the weather tool to query the 1-day forecast\",\"icon_type\":\"ICON_WRENCH\",\"status\":\"complete\"},\"source_seq\":\"bar_tool_1\"}]},\"content\":\"\",\"status\":\"processing\"}]}}"
+  },
+  {
+    "event": "message",
+    "data": "{\"error_msg\":\"\",\"error_code\":0,\"data\":{\"extra_info\":{\"agent_name\":\"AgentProxy\",\"scene\":\"qwen_expert\"},\"messages\":[{\"mime_type\":\"bar/workflow\",\"meta_data\":{\"multi_load\":[{\"type\":\"bar_thinking\",\"content\":{\"body\":\"Call the weather tool for tomorrow.\",\"title\":\"Look up city weather\",\"status\":\"complete\"},\"source_seq\":\"bar_thinking_1\"},{\"type\":\"bar_tool\",\"content\":{\"body\":\"\",\"title\":\"Use the weather tool to query the 1-day forecast\",\"icon_type\":\"ICON_WRENCH\",\"status\":\"complete\"},\"source_seq\":\"bar_tool_1\"},{\"type\":\"bar_thinking\",\"content\":{\"body\":\"Summarize the weather tool result.\",\"title\":\"Summarize city weather\",\"status\":\"complete\"},\"source_seq\":\"bar_thinking_2\"}]},\"content\":\"\",\"status\":\"complete\"}]}}"
   }
 ]
