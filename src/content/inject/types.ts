@@ -11,3 +11,4 @@ export type PostChunk = (p: StreamChunkPayload) => void;
 export type PostEnd = (p: StreamEndPayload) => void;
 export type PostError = (p: StreamErrorPayload) => void;
 export type PostReconnect = (p: StreamReconnectPayload) => void;
+export type PostDiscard = (requestId: string) => void;
