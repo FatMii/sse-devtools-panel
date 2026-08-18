@@ -1,6 +1,6 @@
 import { classifyThrownError } from "../../shared/stream-close";
 import type { StreamKind } from "../../shared/types";
-import { resolveStreamKind } from "./detect";
+import { guessStreamKindFromRequest, resolveStreamKind } from "./detect";
 import {
   collectFetchRequestMeta,
   normalizeResponseHeaders,
@@ -8,7 +8,7 @@ import {
   resolveUrl,
 } from "./headers";
 import { captureFetchResponseBody, createConnectJsonSink, createFetchTextSink } from "./stream";
-import type { PostChunk, PostEnd, PostError, PostStart } from "./types";
+import type { PostChunk, PostDiscard, PostEnd, PostError, PostStart } from "./types";
 
 export function patchFetch(
   nextId: () => string,
@@ -16,6 +16,7 @@ export function patchFetch(
   postChunk: PostChunk,
   postEnd: PostEnd,
   postError: PostError,
+  postDiscard: PostDiscard,
 ): void {
   const originalFetch = window.fetch.bind(window);
 
@@ -53,6 +54,15 @@ export function patchFetch(
       announced = true;
     };
 
+    const pendingKind = guessStreamKindFromRequest({
+      requestHeaders: reqMeta.headers,
+      url,
+      requestPayloadPreview: reqMeta.payloadPreview,
+    });
+    if (pendingKind) {
+      announce({ streamKind: pendingKind });
+    }
+
     try {
       const response = await originalFetch(input, init);
 
@@ -64,6 +74,9 @@ export function patchFetch(
         requestPayloadPreview: reqMeta.payloadPreview,
       });
       if (!streamKind) {
+        if (announced) {
+          postDiscard(requestId);
+        }
         return response;
       }
 
