@@ -67,12 +67,17 @@ export interface StreamReconnectPayload {
   lastEventId?: string;
 }
 
+export interface StreamDiscardPayload {
+  requestId: string;
+}
+
 export type PageToExtensionMessage =
   | { source: typeof MESSAGE_SOURCE; type: "stream-start"; payload: StreamStartPayload }
   | { source: typeof MESSAGE_SOURCE; type: "stream-chunk"; payload: StreamChunkPayload }
   | { source: typeof MESSAGE_SOURCE; type: "stream-end"; payload: StreamEndPayload }
   | { source: typeof MESSAGE_SOURCE; type: "stream-error"; payload: StreamErrorPayload }
-  | { source: typeof MESSAGE_SOURCE; type: "stream-reconnect"; payload: StreamReconnectPayload };
+  | { source: typeof MESSAGE_SOURCE; type: "stream-reconnect"; payload: StreamReconnectPayload }
+  | { source: typeof MESSAGE_SOURCE; type: "stream-discard"; payload: StreamDiscardPayload };
 
 export type RelayMessage = PageToExtensionMessage & {
   tabId: number;
