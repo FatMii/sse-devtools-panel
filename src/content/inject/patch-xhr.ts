@@ -1,8 +1,8 @@
 import { classifyHttpStatus } from "../../shared/stream-close";
 import type { StreamCloseReason, StreamTransport } from "../../shared/types";
-import { resolveStreamKind } from "./detect";
+import { guessStreamKindFromRequest, resolveStreamKind } from "./detect";
 import { clipPayloadText, parseRawResponseHeaders, redactHeaderValue } from "./headers";
-import type { PostChunk, PostEnd, PostError, PostStart } from "./types";
+import type { PostChunk, PostDiscard, PostEnd, PostError, PostStart } from "./types";
 
 /**
  * Capture incremental XHR text bodies for SSE / NDJSON responses.
@@ -14,6 +14,7 @@ export function patchXhr(
   postChunk: PostChunk,
   postEnd: PostEnd,
   postError: PostError,
+  postDiscard: PostDiscard,
 ): void {
   const OriginalXHR = window.XMLHttpRequest;
 
@@ -25,6 +26,8 @@ export function patchXhr(
     let requestPayloadPreview: string | undefined;
     let requestPayloadTruncated: boolean | undefined;
     let requestId: string | null = null;
+    let startedAt: number | undefined;
+    let announced = false;
     let captured = false;
     let finished = false;
     let lastLen = 0;
@@ -78,6 +81,31 @@ export function patchXhr(
         requestPayloadPreview = "[payload]";
         requestPayloadTruncated = false;
       }
+
+      const pendingKind = guessStreamKindFromRequest({
+        requestHeaders: Object.keys(requestHeaders).length > 0 ? requestHeaders : undefined,
+        url,
+        requestPayloadPreview,
+      });
+      // Connect+JSON is binary — XHR cannot capture it; do not flash a pending row.
+      if (pendingKind && pendingKind !== "connect-json") {
+        requestId = nextId();
+        startedAt = Date.now();
+        announced = true;
+        postStart({
+          requestId,
+          url,
+          method,
+          requestHeaders:
+            Object.keys(requestHeaders).length > 0 ? { ...requestHeaders } : undefined,
+          requestPayloadPreview,
+          requestPayloadTruncated,
+          transport: "xhr" satisfies StreamTransport,
+          streamKind: pendingKind,
+          startedAt,
+        });
+      }
+
       return originalSend(body);
     }) as XMLHttpRequest["send"];
 
@@ -99,10 +127,18 @@ export function patchXhr(
         requestPayloadPreview,
       });
       // Connect+JSON is binary length-prefixed — XHR responseText corrupts frames.
-      if (!kind || kind === "connect-json") return;
+      if (!kind || kind === "connect-json") {
+        if (announced && requestId) {
+          postDiscard(requestId);
+          announced = false;
+          requestId = null;
+        }
+        return;
+      }
 
       captured = true;
-      requestId = nextId();
+      if (!requestId) requestId = nextId();
+      if (startedAt === undefined) startedAt = Date.now();
       lastLen = 0;
 
       let responseHeaders: Record<string, string> | undefined;
@@ -133,7 +169,7 @@ export function patchXhr(
         requestPayloadTruncated,
         transport: "xhr" satisfies StreamTransport,
         streamKind: kind,
-        startedAt: Date.now(),
+        startedAt,
       });
     };
 

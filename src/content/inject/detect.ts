@@ -110,3 +110,13 @@ export function resolveStreamKind(input: ResolveStreamKindInput): StreamKind | n
 
   return null;
 }
+
+/**
+ * Request-side guess for a pending Streams row (no response yet).
+ * Same rules as `resolveStreamKind` with a missing response Content-Type.
+ */
+export function guessStreamKindFromRequest(
+  input: Omit<ResolveStreamKindInput, "responseContentType">,
+): StreamKind | null {
+  return resolveStreamKind({ ...input, responseContentType: null });
+}

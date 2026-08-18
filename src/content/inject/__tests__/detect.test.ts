@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, it, expect } from "vitest";
 import {
   detectStreamKind,
+  guessStreamKindFromRequest,
   isGenericOrMissingContentType,
   payloadLooksLikeStreamTrue,
   resolveStreamKind,
@@ -99,5 +100,31 @@ describe("detect", () => {
       const kind = resolveStreamKind(c.input);
       assert(kind === c.expect, `mustCapture ${c.name}: got ${kind}, want ${c.expect}`);
     }
+  });
+
+  it("announces pending only from request-side stream hints", () => {
+    assert(existsSync(captureCasesPath), `missing ${captureCasesPath}`);
+    const cases = JSON.parse(readFileSync(captureCasesPath, "utf8")) as CaptureCasesFile;
+
+    for (const c of cases.mustIgnore) {
+      const { responseContentType: _ct, ...rest } = c.input;
+      const kind = guessStreamKindFromRequest(rest);
+      assert(kind === null, `pending mustIgnore ${c.name}: got ${kind}`);
+    }
+
+    for (const c of cases.mustCapture) {
+      const { responseContentType: _ct, ...rest } = c.input;
+      const kind = guessStreamKindFromRequest(rest);
+      assert(kind === c.expect, `pending mustCapture ${c.name}: got ${kind}, want ${c.expect}`);
+    }
+
+    assert(
+      guessStreamKindFromRequest({
+        url: "https://api.example.com/v1/users",
+        requestHeaders: { "content-type": "application/json", accept: "application/json" },
+        requestPayloadPreview: '{"name":"x"}',
+      }) === null,
+      "ordinary json post is not pending",
+    );
   });
 });
