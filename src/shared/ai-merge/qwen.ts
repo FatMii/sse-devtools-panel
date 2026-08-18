@@ -37,6 +37,14 @@ export function collapseCumulativeLines(text: string): string {
   return out.join("\n");
 }
 
+/** Short function name for `bar/workflow` tool chips; keep the human title in arguments.query. */
+export function qwenWorkflowToolName(title: string): string {
+  if (/天气|weather/i.test(title)) return "weather";
+  const used = title.match(/^使用(.+?)(?:工具)?[，,]/);
+  const extracted = used?.[1]?.trim();
+  return extracted || "tool";
+}
+
 export type QwenWebMergeState = {
   content: string;
   reasoning: string;
@@ -46,6 +54,8 @@ export type QwenWebMergeState = {
   snapshots: Map<string, string>;
   planCotLatest: string;
   deepThinkLatest: string;
+  /** `bar/workflow` thinking snapshots keyed by source_seq. */
+  workflowThinkBySeq: Map<string, string>;
 };
 
 export function createQwenWebMergeState(): QwenWebMergeState {
@@ -58,6 +68,7 @@ export function createQwenWebMergeState(): QwenWebMergeState {
     snapshots: new Map(),
     planCotLatest: "",
     deepThinkLatest: "",
+    workflowThinkBySeq: new Map(),
   };
 }
 
@@ -68,6 +79,7 @@ export function createQwenWebMergeState(): QwenWebMergeState {
  * - multi_load/iframe msg.content (after [(deep_think)] prefix) → content
  * - bar/progress cot query + result list → tools web_search
  * - bar/iframe sources + source_group_web → tools web_search
+ * - bar/workflow multi_load bar_thinking → reasoning; bar_tool → tools
  */
 export function pushQwenWeb(
   state: QwenWebMergeState,
@@ -221,6 +233,44 @@ export function pushQwenWeb(
         continue;
       }
 
+      if (mime === "bar/workflow") {
+        const md = isRecord(msg.meta_data) ? msg.meta_data : null;
+        const multiLoad = md && Array.isArray(md.multi_load) ? md.multi_load : [];
+        for (const item of multiLoad) {
+          if (!isRecord(item)) continue;
+          const seq = asString(item.source_seq) ?? String(item.type ?? "");
+          const bag = isRecord(item.content) ? item.content : null;
+          if (item.type === "bar_thinking" && bag) {
+            const title = asString(bag.title) ?? "";
+            const body = asString(bag.body) ?? "";
+            const text = [title, body].filter(Boolean).join("\n");
+            if (!text) continue;
+            const prev = state.workflowThinkBySeq.get(seq) ?? "";
+            if (text.length >= prev.length) {
+              state.workflowThinkBySeq.set(seq, text);
+              state.chunkCount++;
+            }
+          } else if (item.type === "bar_tool" && bag) {
+            const title = asString(bag.title) ?? "tool";
+            const body = asString(bag.body) ?? "";
+            const id = seq || title;
+            const name = qwenWorkflowToolName(title);
+            const argsObj: Record<string, string> = { query: title };
+            if (body) argsObj.body = body;
+            const args = JSON.stringify(argsObj);
+            const existing = state.tools.find((t) => t.id === id);
+            if (existing) {
+              existing.arguments = args;
+              existing.name = name;
+            } else {
+              state.tools.push({ index: state.tools.length, id, name, arguments: args });
+            }
+            state.chunkCount++;
+          }
+        }
+        continue;
+      }
+
       if (mime === "multi_load/iframe") {
         const md = isRecord(msg.meta_data) ? msg.meta_data : null;
         const multiLoad = md && Array.isArray(md.multi_load) ? md.multi_load : [];
@@ -278,6 +328,9 @@ export function snapshotQwenWeb(state: QwenWebMergeState): MergeChannelsResult {
   const reasoningParts: string[] = [];
   if (planCotCollapsed) reasoningParts.push(planCotCollapsed);
   if (state.deepThinkLatest) reasoningParts.push(state.deepThinkLatest);
+  for (const text of state.workflowThinkBySeq.values()) {
+    if (text) reasoningParts.push(text);
+  }
   state.reasoning = reasoningParts.join("\n\n");
 
   return {
