@@ -104,6 +104,53 @@
             <span class="tool-icon" data-icon="pause"></span>
             <span class="tool-label" data-i18n="pauseUi">Pause UI</span>
           </button>
+          <div class="menu" id="theme-menu">
+            <button
+              type="button"
+              class="tool-btn"
+              id="btn-theme-menu"
+              data-i18n-title="themeMenuTitle"
+              aria-haspopup="menu"
+              aria-expanded="false"
+              aria-controls="theme-menu-panel"
+            >
+              <span class="tool-icon" data-icon="moon"></span>
+              <span class="tool-label" data-i18n="themeMenu">Theme</span>
+              <span class="tool-caret" data-icon="caret"></span>
+            </button>
+            <div class="menu-panel menu-panel-end" id="theme-menu-panel" role="menu" hidden>
+              <button
+                type="button"
+                role="menuitemradio"
+                id="btn-theme-system"
+                data-theme-pref="system"
+                data-i18n="themeSystem"
+                data-i18n-title="themeSystemTitle"
+              >
+                Follow DevTools
+              </button>
+              <button
+                type="button"
+                role="menuitemradio"
+                id="btn-theme-light"
+                data-theme-pref="light"
+                data-i18n="themeLight"
+                data-i18n-title="themeLightTitle"
+              >
+                Light
+              </button>
+              <button
+                type="button"
+                role="menuitemradio"
+                id="btn-theme-night"
+                data-theme-pref="night"
+                data-i18n="themeNight"
+                data-i18n-title="themeNightTitle"
+              >
+                Night
+              </button>
+            </div>
+          </div>
           <button
             type="button"
             class="tool-btn danger tool-btn-danger"

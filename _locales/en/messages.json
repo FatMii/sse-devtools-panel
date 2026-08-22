@@ -383,6 +383,30 @@
   "resumeUiTitle": {
     "message": "Resume UI and flush buffered updates"
   },
+  "themeMenu": {
+    "message": "Theme"
+  },
+  "themeMenuTitle": {
+    "message": "Panel theme: follow DevTools, light, or night"
+  },
+  "themeSystem": {
+    "message": "Follow DevTools"
+  },
+  "themeSystemTitle": {
+    "message": "Match Chrome DevTools light/dark theme"
+  },
+  "themeLight": {
+    "message": "Light"
+  },
+  "themeLightTitle": {
+    "message": "Always use light theme"
+  },
+  "themeNight": {
+    "message": "Night"
+  },
+  "themeNightTitle": {
+    "message": "Always use night (dark) theme"
+  },
   "statsDialogTitle": {
     "message": "Statistics"
   },

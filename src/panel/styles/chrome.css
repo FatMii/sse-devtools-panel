@@ -41,10 +41,10 @@
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  border: 1px solid #8fc7a0;
+  border: 1px solid var(--toast-border);
   border-radius: var(--r-md);
   color: var(--text);
-  background: #eaf6ee;
+  background: var(--toast-bg);
   font-size: 11px;
   box-shadow: 0 8px 24px rgb(0 0 0 / 12%);
 }

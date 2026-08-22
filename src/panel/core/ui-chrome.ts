@@ -7,6 +7,8 @@ import {
   elExportMenuPanel,
   elMoreMenuBtn,
   elMoreMenuPanel,
+  elThemeMenuBtn,
+  elThemeMenuPanel,
   elPauseUi,
   elStatusbarCapture,
   elStatusbarSummary,
@@ -37,8 +39,10 @@ export function showToast(message: string): void {
 export function closeAllMenus(): void {
   if (elExportMenuPanel) elExportMenuPanel.hidden = true;
   if (elMoreMenuPanel) elMoreMenuPanel.hidden = true;
+  if (elThemeMenuPanel) elThemeMenuPanel.hidden = true;
   elExportMenuBtn?.setAttribute("aria-expanded", "false");
   elMoreMenuBtn?.setAttribute("aria-expanded", "false");
+  elThemeMenuBtn?.setAttribute("aria-expanded", "false");
 }
 
 export function toggleMenu(panel: HTMLDivElement | null, btn: HTMLButtonElement | null): void {

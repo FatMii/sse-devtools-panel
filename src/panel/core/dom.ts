@@ -93,3 +93,13 @@ export const elExportMenuPanel = document.getElementById(
 export const elMoreMenu = document.getElementById("more-menu") as HTMLDivElement | null;
 export const elMoreMenuBtn = document.getElementById("btn-more-menu") as HTMLButtonElement | null;
 export const elMoreMenuPanel = document.getElementById("more-menu-panel") as HTMLDivElement | null;
+export const elThemeMenu = document.getElementById("theme-menu") as HTMLDivElement | null;
+export const elThemeMenuBtn = document.getElementById("btn-theme-menu") as HTMLButtonElement | null;
+export const elThemeMenuPanel = document.getElementById(
+  "theme-menu-panel",
+) as HTMLDivElement | null;
+export const elThemeSystem = document.getElementById(
+  "btn-theme-system",
+) as HTMLButtonElement | null;
+export const elThemeLight = document.getElementById("btn-theme-light") as HTMLButtonElement | null;
+export const elThemeNight = document.getElementById("btn-theme-night") as HTMLButtonElement | null;

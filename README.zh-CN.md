@@ -116,6 +116,8 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 
 # 功能特性
 
+- **暗夜风格** — 工具栏可切换浅色 / 暗夜 / 跟随 DevTools 主题（偏好保存在 Chrome 同步存储；Options 页不受影响）
+
 <a name="流式捕获"></a>
 
 ## 🎣 流式捕获
