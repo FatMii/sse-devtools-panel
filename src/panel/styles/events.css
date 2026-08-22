@@ -146,7 +146,7 @@
 
 .col-event {
   width: var(--col-event-width);
-  color: #267339;
+  color: var(--json-string);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

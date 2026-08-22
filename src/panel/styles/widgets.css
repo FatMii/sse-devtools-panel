@@ -61,7 +61,7 @@
 }
 
 .json-key {
-  color: #0b68b7;
+  color: var(--json-key);
 }
 
 .json-brace,
@@ -74,19 +74,19 @@
 }
 
 .json-value.json-string {
-  color: #267339;
+  color: var(--json-string);
 }
 
 .json-value.json-number {
-  color: #9b5700;
+  color: var(--json-number);
 }
 
 .json-value.json-boolean {
-  color: #7a3fb0;
+  color: var(--json-literal);
 }
 
 .json-value.json-null {
-  color: #7a3fb0;
+  color: var(--json-literal);
 }
 
 .json-node.search-hidden {
@@ -98,7 +98,7 @@
 }
 
 .search-mark {
-  background: #ffe08a;
+  background: var(--search-mark-bg);
   color: inherit;
   padding: 0 1px;
   border-radius: 2px;
@@ -139,7 +139,7 @@
 }
 
 .app-dialog::backdrop {
-  background: rgb(29 38 51 / 28%);
+  background: var(--dialog-backdrop);
 }
 
 .app-dialog-header {

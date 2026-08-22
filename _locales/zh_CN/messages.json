@@ -383,6 +383,30 @@
   "resumeUiTitle": {
     "message": "恢复界面刷新并显示暂停期间的数据"
   },
+  "themeMenu": {
+    "message": "主题"
+  },
+  "themeMenuTitle": {
+    "message": "面板主题：跟随 DevTools、浅色或暗夜"
+  },
+  "themeSystem": {
+    "message": "跟随 DevTools"
+  },
+  "themeSystemTitle": {
+    "message": "与 Chrome DevTools 浅色/深色主题保持一致"
+  },
+  "themeLight": {
+    "message": "浅色"
+  },
+  "themeLightTitle": {
+    "message": "始终使用浅色主题"
+  },
+  "themeNight": {
+    "message": "暗夜"
+  },
+  "themeNightTitle": {
+    "message": "始终使用暗夜（深色）主题"
+  },
   "statsDialogTitle": {
     "message": "统计"
   },

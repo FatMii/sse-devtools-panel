@@ -1,5 +1,5 @@
 import "./panel.css";
-import { applyIcons } from "./core/icons";
+import { applyIcons, renderIcon, type IconName } from "./core/icons";
 import {
   PANEL_PORT,
   type RelayMessage,
@@ -20,6 +20,13 @@ import {
   t,
   uiLanguage,
 } from "../shared/i18n";
+import {
+  getActiveThemePreference,
+  initTheme,
+  onThemeChange,
+  setThemePreference,
+  type ThemePreference,
+} from "../shared/theme";
 import { stampReceivedAt } from "../shared/event-stamp";
 import { latestEventIdFromEvents } from "../shared/stream-close";
 import { SseParser, type ParsedSseEvent } from "../shared/sse-parser";
@@ -66,6 +73,12 @@ import {
   elMoreMenu,
   elMoreMenuBtn,
   elMoreMenuPanel,
+  elThemeMenu,
+  elThemeMenuBtn,
+  elThemeMenuPanel,
+  elThemeSystem,
+  elThemeLight,
+  elThemeNight,
   elDrawer,
   elDrawerClose,
   elDrawerPrev,
@@ -733,6 +746,11 @@ function setupActions(): void {
     toggleMenu(elMoreMenuPanel, elMoreMenuBtn);
   });
 
+  elThemeMenuBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleMenu(elThemeMenuPanel, elThemeMenuBtn);
+  });
+
   elExportMenuPanel?.addEventListener("click", () => {
     closeAllMenus();
   });
@@ -740,6 +758,18 @@ function setupActions(): void {
   elMoreMenuPanel?.addEventListener("click", () => {
     closeAllMenus();
   });
+
+  for (const btn of [elThemeSystem, elThemeLight, elThemeNight]) {
+    btn?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const pref = btn.dataset.themePref as ThemePreference | undefined;
+      if (pref !== "system" && pref !== "light" && pref !== "night") return;
+      void setThemePreference(pref).then(() => {
+        refreshThemeUi();
+        closeAllMenus();
+      });
+    });
+  }
 
   elExportJson.addEventListener("click", () => {
     exportSelectedStreamJson();
@@ -878,7 +908,8 @@ function setupActions(): void {
     const target = e.target as Node | null;
     if (
       (elExportMenu && target && elExportMenu.contains(target)) ||
-      (elMoreMenu && target && elMoreMenu.contains(target))
+      (elMoreMenu && target && elMoreMenu.contains(target)) ||
+      (elThemeMenu && target && elThemeMenu.contains(target))
     ) {
       return;
     }
@@ -978,6 +1009,26 @@ setupResizer();
 initEventsColumnResizers(document.getElementById("events-table") as HTMLTableElement);
 applyIcons();
 
+function themePreferenceIcon(pref: ThemePreference): IconName {
+  if (pref === "light") return "sun";
+  if (pref === "night") return "moon";
+  return "monitor";
+}
+
+function refreshThemeUi(): void {
+  const pref = getActiveThemePreference();
+  for (const btn of [elThemeSystem, elThemeLight, elThemeNight]) {
+    if (!btn) continue;
+    const active = btn.dataset.themePref === pref;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-checked", active ? "true" : "false");
+  }
+  const iconEl = elThemeMenuBtn?.querySelector(".tool-icon");
+  if (iconEl) {
+    iconEl.outerHTML = renderIcon(themePreferenceIcon(pref), "tool-icon");
+  }
+}
+
 function refreshLocaleUi(): void {
   document.documentElement.lang = uiLanguage();
   document.title = t("panelTitle");
@@ -992,12 +1043,18 @@ function refreshLocaleUi(): void {
     elStatusbarCapture.textContent = t("statusbarCaptureActive");
   }
   refreshStatusbarSummary();
+  refreshThemeUi();
   renderList();
   renderDetail();
 }
 
-void initI18n().then(() => {
+void initI18n().then(async () => {
   refreshLocaleUi();
+  await initTheme();
+  refreshThemeUi();
+  onThemeChange(() => {
+    refreshThemeUi();
+  });
   connect();
   onLocaleChange(() => {
     refreshLocaleUi();
