@@ -110,6 +110,8 @@ For many AI / product streams that is not enough. They are often not plain Event
 
 # Features
 
+- **Night theme** — toolbar switch for Light / Night / Follow DevTools (preference saved in Chrome sync; Options page unchanged)
+
 ## 🎣 Stream capture
 
 - **Transports** — streams started with `fetch`, `EventSource`, or `XHR`

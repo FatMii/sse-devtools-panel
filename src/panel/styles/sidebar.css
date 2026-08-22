@@ -131,7 +131,7 @@ select {
 .stream-item.active,
 .stream.active {
   background: var(--surface-selected);
-  border-color: #b7d3ee;
+  border-color: var(--stream-active-border);
 }
 
 .stream-item.active::before,
@@ -185,18 +185,18 @@ select {
 }
 
 .badge.fetch {
-  color: #2f6fad;
-  border-color: #9dbbd9;
+  color: var(--badge-fetch-fg);
+  border-color: var(--badge-fetch-border);
 }
 
 .badge.xhr {
-  color: #7a4fa3;
-  border-color: #c3a8db;
+  color: var(--badge-xhr-fg);
+  border-color: var(--badge-xhr-border);
 }
 
 .badge.eventsource {
-  color: #3f7a3a;
-  border-color: #a8c9a0;
+  color: var(--badge-eventsource-fg);
+  border-color: var(--badge-eventsource-border);
 }
 
 .badge.warn,
@@ -208,8 +208,8 @@ select {
 
 .badge.spec,
 .badge.reconnect {
-  color: #2f7fd1;
-  border-color: #9dc3e8;
+  color: var(--badge-spec-fg);
+  border-color: var(--badge-spec-border);
 }
 
 .badge.error {
@@ -220,7 +220,7 @@ select {
 .badge.origin,
 .badge.done {
   color: var(--accent-strong);
-  border-color: #9dbbd9;
+  border-color: var(--badge-origin-border);
 }
 
 .stream-status,
@@ -302,18 +302,19 @@ select {
   padding: 0 3px;
   font-size: 10px;
   line-height: 1.2;
-  color: #2f7fd1;
-  border: 1px solid #9dc3e8;
+  color: var(--event-spec-fg);
+  border: 1px solid var(--event-spec-border);
   border-radius: 2px;
   vertical-align: middle;
+  background: var(--event-spec-bg);
 }
 
 .drawer-spec-warnings {
   margin: 0 0 10px;
   padding: 8px 10px;
-  border: 1px solid color-mix(in srgb, #2f7fd1 35%, transparent);
+  border: 1px solid color-mix(in srgb, var(--event-spec-fg) 35%, transparent);
   border-radius: var(--r-md);
-  background: color-mix(in srgb, #2f7fd1 8%, transparent);
+  background: var(--event-spec-bg);
   font-size: 12px;
   line-height: 1.45;
 }

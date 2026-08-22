@@ -19,6 +19,30 @@
   --warning: #9a6700;
   --danger: #c33c30;
 
+  /* Component semantics */
+  --json-key: #0b68b7;
+  --json-string: #267339;
+  --json-number: #9b5700;
+  --json-literal: #7a3fb0;
+  --search-mark-bg: #ffe08a;
+  --toast-bg: #eaf6ee;
+  --toast-border: #8fc7a0;
+  --dialog-backdrop: rgb(29 38 51 / 28%);
+  --stream-active-border: #b7d3ee;
+  --badge-fetch-fg: #2f6fad;
+  --badge-fetch-border: #9dbbd9;
+  --badge-xhr-fg: #7a4fa3;
+  --badge-xhr-border: #c3a8db;
+  --badge-eventsource-fg: #3f7a3a;
+  --badge-eventsource-border: #a8c9a0;
+  --badge-spec-fg: #2f7fd1;
+  --badge-spec-border: #9dc3e8;
+  --badge-origin-border: #9dbbd9;
+  --event-spec-fg: #2f7fd1;
+  --event-spec-border: #9dc3e8;
+  --event-spec-bg: color-mix(in srgb, #2f7fd1 8%, transparent);
+  --brand-mark-fg: #fff;
+
   /* Typography */
   --mono: "Cascadia Code", "JetBrains Mono", Consolas, monospace;
   --sans: "Segoe UI Variable", "Noto Sans SC", "Microsoft YaHei UI", sans-serif;
@@ -68,6 +92,55 @@
   --success: var(--good);
   --warn: var(--warning);
   --error: var(--danger);
+}
+
+:root[data-theme="night"] {
+  color-scheme: dark;
+
+  --canvas: #1a2332;
+  --surface-1: #243044;
+  --surface-2: #2a3344;
+  --surface-hover: #2f3a4f;
+  --surface-selected: #1e3a5f;
+  --stroke: #3d4a5c;
+  --stroke-strong: #4f5d72;
+  --text: #e8edf4;
+  --text-muted: #9aa8b8;
+  --text-faint: #7d8a9a;
+  --accent: #4da3ff;
+  --accent-strong: #2f7fd1;
+  --accent-wash: #1a3050;
+  --good: #3ecf6e;
+  --warning: #e6b84d;
+  --danger: #f07167;
+
+  --json-key: #79c0ff;
+  --json-string: #7ee787;
+  --json-number: #f2cc60;
+  --json-literal: #d2a8ff;
+  --search-mark-bg: #5c4a12;
+  --toast-bg: #1e3a2f;
+  --toast-border: #3d6b52;
+  --dialog-backdrop: rgb(0 0 0 / 52%);
+  --stream-active-border: #2f4f72;
+  --badge-fetch-fg: #8ec5ff;
+  --badge-fetch-border: #3d5f82;
+  --badge-xhr-fg: #c9a8e8;
+  --badge-xhr-border: #5a4570;
+  --badge-eventsource-fg: #8fd48a;
+  --badge-eventsource-border: #3f6b3f;
+  --badge-spec-fg: #79c0ff;
+  --badge-spec-border: #3d5f82;
+  --badge-origin-border: #3d5f82;
+  --event-spec-fg: #79c0ff;
+  --event-spec-border: #3d5f82;
+  --event-spec-bg: color-mix(in srgb, var(--accent) 16%, transparent);
+  --brand-mark-fg: #e8edf4;
+
+  --shadow-toolbar: 0 1px 0 rgb(0 0 0 / 22%);
+  --shadow-menu: 0 8px 24px rgb(0 0 0 / 38%);
+  --shadow-drawer: -5px 0 18px rgb(0 0 0 / 28%);
+  --focus-ring: 2px solid color-mix(in srgb, var(--accent) 72%, black);
 }
 
 * {

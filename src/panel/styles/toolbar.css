@@ -33,7 +33,7 @@
   width: 20px;
   height: 20px;
   border-radius: var(--r-md);
-  color: #fff;
+  color: var(--brand-mark-fg);
   background: var(--accent);
   flex-shrink: 0;
   stroke: currentColor;
@@ -174,6 +174,20 @@
 
 .menu-panel button:hover {
   background: var(--surface-hover);
+}
+
+.menu-panel button.is-active {
+  color: var(--accent-strong);
+  background: var(--accent-wash);
+}
+
+.menu-panel button.is-active::before {
+  content: "✓";
+  display: inline-block;
+  width: 14px;
+  margin-right: 4px;
+  color: var(--accent);
+  font-size: 10px;
 }
 
 .menu-separator {
