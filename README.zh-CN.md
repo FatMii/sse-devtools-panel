@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/icons/sse-devtools-icon-512.png" alt="SSE DevTools Panel" width="160" height="160">
+  <img src="assets/icons/sse-devtools-logo.png" alt="SSE DevTools Panel" width="160" height="160">
 </p>
 
 <h1 align="center">SSE DevTools Panel</h1>
