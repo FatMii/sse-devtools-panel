@@ -1,8 +1,17 @@
 import { compileTextFilter } from "../../shared/text-filter";
+import { t } from "../../shared/i18n";
+import { formatApproxSize } from "../core/format";
 
 /**
  * Build an expandable JSON tree.
  */
+
+/** Collapse string leaf display past this many content characters (Network-like). */
+export const JSON_STRING_PREVIEW_CHARS = 120;
+
+export type JsonTreeCopyDetail = {
+  value: string;
+};
 
 export function tryParseJsonValue(text: string): { ok: true; value: unknown } | { ok: false } {
   const trimmed = text.trim();
@@ -28,6 +37,15 @@ export function tryParseJsonValue(text: string): { ok: true; value: unknown } | 
   }
 
   return { ok: false };
+}
+
+/** Format a JSON string leaf for collapsed display (quotes + truncated content). */
+export function formatCollapsedJsonString(
+  raw: string,
+  maxChars = JSON_STRING_PREVIEW_CHARS,
+): string {
+  if (raw.length <= maxChars) return JSON.stringify(raw);
+  return JSON.stringify(raw.slice(0, maxChars) + "…");
 }
 
 export function createJsonTree(
@@ -338,10 +356,14 @@ function renderLeaf(key: string | null, value: unknown, type: string, path: stri
     line.appendChild(document.createTextNode(": "));
   }
 
-  const valEl = document.createElement("span");
-  valEl.className = `json-value json-${type}`;
-  valEl.textContent = formatted;
-  line.appendChild(valEl);
+  if (type === "string" && typeof value === "string" && value.length > JSON_STRING_PREVIEW_CHARS) {
+    appendCollapsibleStringValue(line, value);
+  } else {
+    const valEl = document.createElement("span");
+    valEl.className = `json-value json-${type}`;
+    valEl.textContent = formatted;
+    line.appendChild(valEl);
+  }
 
   line.addEventListener("click", () => {
     setActiveLine(line);
@@ -365,6 +387,60 @@ function renderLeaf(key: string | null, value: unknown, type: string, path: stri
 
   row.appendChild(line);
   return row;
+}
+
+function appendCollapsibleStringValue(line: HTMLElement, raw: string): void {
+  const fullFormatted = JSON.stringify(raw);
+  const collapsedFormatted = formatCollapsedJsonString(raw);
+
+  const valEl = document.createElement("span");
+  valEl.className = "json-value json-string";
+  valEl.textContent = collapsedFormatted;
+
+  const meta = document.createElement("span");
+  meta.className = "json-string-meta";
+  meta.textContent = t("jsonStringSize", formatApproxSize(raw.length));
+
+  const toggleBtn = document.createElement("button");
+  toggleBtn.type = "button";
+  toggleBtn.className = "json-string-action";
+  toggleBtn.textContent = t("jsonShowMore");
+
+  const copyBtn = document.createElement("button");
+  copyBtn.type = "button";
+  copyBtn.className = "json-string-action";
+  copyBtn.textContent = t("jsonCopyValue");
+  copyBtn.title = t("jsonCopyValue");
+
+  let expanded = false;
+  const refresh = (): void => {
+    valEl.textContent = expanded ? fullFormatted : collapsedFormatted;
+    valEl.classList.toggle("is-expanded", expanded);
+    toggleBtn.textContent = expanded ? t("jsonShowLess") : t("jsonShowMore");
+  };
+
+  toggleBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    setActiveLine(line);
+    expanded = !expanded;
+    refresh();
+  });
+
+  copyBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    setActiveLine(line);
+    line.dispatchEvent(
+      new CustomEvent<JsonTreeCopyDetail>("json-tree-copy", {
+        bubbles: true,
+        detail: { value: raw },
+      }),
+    );
+  });
+
+  line.appendChild(valEl);
+  line.appendChild(meta);
+  line.appendChild(toggleBtn);
+  line.appendChild(copyBtn);
 }
 
 function toCopyValue(value: unknown, type: string): string {

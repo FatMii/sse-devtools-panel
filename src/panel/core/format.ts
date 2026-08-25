@@ -46,6 +46,14 @@ export function formatMetricMs(ms?: number): string {
   return `${Math.round(ms)} ms`;
 }
 
+/** Approximate size label for long string fields (char-count based). */
+export function formatApproxSize(charCount: number): string {
+  if (!Number.isFinite(charCount) || charCount < 0) return "0 B";
+  if (charCount < 1024) return `${Math.round(charCount)} B`;
+  if (charCount < 1024 * 1024) return `${(charCount / 1024).toFixed(1)} KB`;
+  return `${(charCount / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export function formatGapBinLabel(bin: HistogramBin): string {
   if (!Number.isFinite(bin.toMs)) {
     return bin.fromMs >= 1000 ? `≥${bin.fromMs / 1000}s` : `≥${bin.fromMs}ms`;

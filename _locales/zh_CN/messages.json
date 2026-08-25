@@ -857,6 +857,9 @@
   "jsonCopyPath": {
     "message": "复制路径"
   },
+  "jsonStringSize": {
+    "message": "约 $1"
+  },
   "exportMenu": {
     "message": "导出"
   },

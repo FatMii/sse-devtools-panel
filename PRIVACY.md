@@ -13,7 +13,7 @@ All of the following stays on the developer’s machine unless the developer exp
 - Streaming response bodies the page already receives (assembled raw text and parsed events).
 - Request metadata collected from the page when available: URL, method, status, Content-Type, transport.
 - Request and response headers after automatic redaction of common sensitive header names (for example `Authorization`, `Cookie`, and many `*token*` / `*api-key*` style headers). Redaction follows known naming patterns and may not cover every custom header name.
-- A text preview of the request body when available (capped; currently up to 256,000 characters). Truncation is indicated in the UI when applicable.
+- A text preview of the request body when available (capped; currently up to 256,000 characters). Truncation is indicated in the UI when applicable. Long string fields in the Parsed JSON view are abbreviated in the UI (Show more / Copy), similar to the Network panel.
 - Derived debugging views built from the above (Events, Timeline, Raw, Request, Conversation merge output for supported profiles).
 
 ### Stored on the device
