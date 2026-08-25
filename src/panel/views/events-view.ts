@@ -19,6 +19,7 @@ import {
   elTbody,
 } from "../core/dom";
 import { escapeHtml, formatTime, previewData } from "../core/format";
+import { copyText } from "../core/ui-chrome";
 import { applyTreeSearch, createJsonTree, tryParseJsonValue } from "../widgets/json-tree";
 import {
   getStreamSpecWarnings,
@@ -403,6 +404,12 @@ export function bindJsonTreeContextMenu(tree: HTMLElement): void {
   tree.addEventListener("json-tree-contextmenu", (event) => {
     const e = event as CustomEvent<{ x: number; y: number; path: string; copyValue?: string }>;
     showJsonTreeContextMenu(e.detail.x, e.detail.y, e.detail.path, e.detail.copyValue);
+  });
+  tree.addEventListener("json-tree-copy", (event) => {
+    const e = event as CustomEvent<{ value: string }>;
+    if (typeof e.detail?.value === "string") {
+      void copyText(e.detail.value, true);
+    }
   });
 }
 
