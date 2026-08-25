@@ -75,6 +75,37 @@
 
 .json-value.json-string {
   color: var(--json-string);
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.json-value.json-string.is-expanded {
+  display: inline;
+  max-width: 100%;
+}
+
+.json-string-meta {
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+  font-family: var(--sans);
+  flex-shrink: 0;
+}
+
+.json-string-action {
+  border: none;
+  background: transparent;
+  color: var(--accent-strong);
+  font: inherit;
+  font-family: var(--sans);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  padding: 0 2px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.json-string-action:hover {
+  text-decoration: underline;
 }
 
 .json-value.json-number {

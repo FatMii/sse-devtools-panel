@@ -846,16 +846,19 @@
     "message": "No request payload (GET/EventSource, or body unavailable)."
   },
   "jsonShowMore": {
-    "message": "show more"
+    "message": "Show more"
   },
   "jsonShowLess": {
-    "message": "show less"
+    "message": "Show less"
   },
   "jsonCopyValue": {
     "message": "Copy value"
   },
   "jsonCopyPath": {
     "message": "Copy path"
+  },
+  "jsonStringSize": {
+    "message": "~$1"
   },
   "exportMenu": {
     "message": "Export"
