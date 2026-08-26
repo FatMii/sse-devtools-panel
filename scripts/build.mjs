@@ -1,11 +1,36 @@
 import { build } from "vite";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { copyFileSync, mkdirSync, rmSync, existsSync, watch as fsWatch, cpSync } from "node:fs";
+import {
+  copyFileSync,
+  mkdirSync,
+  readdirSync,
+  rmSync,
+  existsSync,
+  statSync,
+  watch as fsWatch,
+} from "node:fs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
 const outDir = resolve(root, "dist");
+
+/**
+ * Recursive dir copy via copyFileSync.
+ * Avoids fs.cpSync, which can hard-crash (exit 3221226505 / 0xC0000409) on
+ * Windows when the project path contains non-ASCII characters (e.g. CJK).
+ * @param {string} src
+ * @param {string} dest
+ */
+function copyDirSync(src, dest) {
+  mkdirSync(dest, { recursive: true });
+  for (const name of readdirSync(src)) {
+    const from = resolve(src, name);
+    const to = resolve(dest, name);
+    if (statSync(from).isDirectory()) copyDirSync(from, to);
+    else copyFileSync(from, to);
+  }
+}
 
 /** @typedef {{ entry: string; outFile: string; format: 'es' | 'iife'; globalName?: string }} Entry */
 
@@ -93,7 +118,7 @@ function copyStatic() {
   );
   copyFileSync(resolve(root, "src/panel/panel.html"), resolve(outDir, "panel/panel.html"));
   copyFileSync(resolve(root, "src/options/options.html"), resolve(outDir, "options/options.html"));
-  cpSync(resolve(root, "_locales"), resolve(outDir, "_locales"), { recursive: true });
+  copyDirSync(resolve(root, "_locales"), resolve(outDir, "_locales"));
   // Extension + DevTools icons (generated from assets/icons)
   mkdirSync(resolve(outDir, "icons"), { recursive: true });
   for (const size of [16, 32, 48, 128]) {
