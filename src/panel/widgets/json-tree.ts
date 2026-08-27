@@ -393,6 +393,11 @@ function appendCollapsibleStringValue(line: HTMLElement, raw: string): void {
   const fullFormatted = JSON.stringify(raw);
   const collapsedFormatted = formatCollapsedJsonString(raw);
 
+  // Keep string + meta + actions in one inline flow so controls trail the
+  // last character (Network-panel style), instead of wrapping as flex siblings.
+  const group = document.createElement("span");
+  group.className = "json-string-group";
+
   const valEl = document.createElement("span");
   valEl.className = "json-value json-string";
   valEl.textContent = collapsedFormatted;
@@ -437,10 +442,11 @@ function appendCollapsibleStringValue(line: HTMLElement, raw: string): void {
     );
   });
 
-  line.appendChild(valEl);
-  line.appendChild(meta);
-  line.appendChild(toggleBtn);
-  line.appendChild(copyBtn);
+  group.appendChild(valEl);
+  group.appendChild(meta);
+  group.appendChild(toggleBtn);
+  group.appendChild(copyBtn);
+  line.appendChild(group);
 }
 
 function toCopyValue(value: unknown, type: string): string {
