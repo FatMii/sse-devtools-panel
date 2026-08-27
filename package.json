@@ -1,6 +1,6 @@
 {
   "name": "sse-devtools-panel",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "private": true,
   "license": "MIT",
   "description": "Chrome DevTools panel for debugging SSE / NDJSON / Connect+JSON streaming responses",
