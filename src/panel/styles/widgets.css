@@ -129,10 +129,6 @@
   display: none !important;
 }
 
-.json-node.search-match > .json-line {
-  background: color-mix(in srgb, var(--warning) 14%, transparent);
-}
-
 .search-mark {
   background: var(--search-mark-bg);
   color: inherit;
