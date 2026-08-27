@@ -18,6 +18,7 @@ import {
   elTableWrap,
   elTbody,
 } from "../core/dom";
+import { renderHighlightedText } from "../core/highlight-text";
 import { escapeHtml, formatTime, previewData } from "../core/format";
 import { copyText } from "../core/ui-chrome";
 import { applyTreeSearch, createJsonTree, tryParseJsonValue } from "../widgets/json-tree";
@@ -505,22 +506,7 @@ export function applyDrawerSearch(): void {
   }
 
   pre.classList.remove("search-no-match");
-  pre.textContent = "";
-  const ranges = filter.matchRanges(state.drawerEventData);
-  let cursor = 0;
-  for (const range of ranges) {
-    if (range.start > cursor) {
-      pre.appendChild(document.createTextNode(state.drawerEventData.slice(cursor, range.start)));
-    }
-    const mark = document.createElement("mark");
-    mark.className = "search-mark";
-    mark.textContent = state.drawerEventData.slice(range.start, range.end);
-    pre.appendChild(mark);
-    cursor = range.end;
-  }
-  if (cursor < state.drawerEventData.length) {
-    pre.appendChild(document.createTextNode(state.drawerEventData.slice(cursor)));
-  }
+  renderHighlightedText(pre, state.drawerEventData, filter);
 }
 
 export function closeDrawer(): void {

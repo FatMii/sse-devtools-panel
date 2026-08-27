@@ -1,6 +1,7 @@
-import { compileTextFilter } from "../../shared/text-filter";
+import { compileTextFilter, type TextFilter } from "../../shared/text-filter";
 import { t } from "../../shared/i18n";
 import { formatApproxSize } from "../core/format";
+import { renderHighlightedText } from "../core/highlight-text";
 
 /**
  * Build an expandable JSON tree.
@@ -70,6 +71,15 @@ type JsonTreeContextMenuDetail = {
   copyValue?: string;
 };
 
+type CollapsibleStringControl = {
+  fullFormatted: string;
+  collapsedFormatted: string;
+  isExpanded: () => boolean;
+  setExpanded: (next: boolean) => void;
+};
+
+const collapsibleStringControls = new WeakMap<HTMLElement, CollapsibleStringControl>();
+
 /**
  * Filter / highlight nodes by query (substring or RegExp). Returns match count.
  * Empty query clears filter and shows the full tree.
@@ -78,13 +88,17 @@ export function applyTreeSearch(root: HTMLElement, query: string): number {
   const nodes = Array.from(root.querySelectorAll<HTMLElement>(".json-node"));
   const filter = compileTextFilter(query);
 
+  clearInlineHighlights(root);
   for (const node of nodes) {
     node.classList.remove("search-hidden", "search-match");
   }
 
   if (filter.isEmpty) {
+    delete root.dataset.searchQuery;
     return 0;
   }
+
+  root.dataset.searchQuery = query;
 
   const matches = new Set<HTMLElement>();
   for (const node of nodes) {
@@ -115,7 +129,57 @@ export function applyTreeSearch(root: HTMLElement, query: string): number {
     }
   }
 
+  for (const match of matches) {
+    highlightMatchedNode(match, filter);
+  }
+
   return matches.size;
+}
+
+function clearInlineHighlights(root: HTMLElement): void {
+  for (const el of root.querySelectorAll<HTMLElement>(".json-key, .json-value, .json-preview")) {
+    const plain = el.dataset.plainText;
+    if (plain != null) {
+      el.textContent = plain;
+    }
+  }
+}
+
+function setPlainText(el: HTMLElement, text: string): void {
+  el.dataset.plainText = text;
+  el.textContent = text;
+}
+
+function highlightTextElement(el: HTMLElement, filter: TextFilter): void {
+  const text = el.dataset.plainText ?? el.textContent ?? "";
+  renderHighlightedText(el, text, filter);
+}
+
+function highlightMatchedNode(node: HTMLElement, filter: TextFilter): void {
+  const line = node.querySelector<HTMLElement>(":scope > .json-line, :scope > .json-toggle-line");
+  if (!line) return;
+
+  for (const keyEl of line.querySelectorAll<HTMLElement>(":scope > .json-key")) {
+    highlightTextElement(keyEl, filter);
+  }
+
+  const valEl = line.querySelector<HTMLElement>(".json-value");
+  if (valEl) {
+    const control = collapsibleStringControls.get(valEl);
+    if (control && !control.isExpanded()) {
+      const fullHits = filter.matchRanges(control.fullFormatted);
+      const collapsedHits = filter.matchRanges(control.collapsedFormatted);
+      if (fullHits.length > 0 && collapsedHits.length === 0) {
+        control.setExpanded(true);
+      }
+    }
+    highlightTextElement(valEl, filter);
+  }
+
+  const preview = line.querySelector<HTMLElement>(":scope > .json-preview");
+  if (preview && !preview.hidden) {
+    highlightTextElement(preview, filter);
+  }
 }
 
 function expandCollection(row: HTMLElement): void {
@@ -208,7 +272,7 @@ function renderCollection(
   if (key !== null) {
     const keyEl = document.createElement("span");
     keyEl.className = "json-key";
-    keyEl.textContent = key;
+    setPlainText(keyEl, key);
     head.appendChild(arrow);
     head.appendChild(keyEl);
     head.appendChild(document.createTextNode(": "));
@@ -218,7 +282,7 @@ function renderCollection(
 
   const preview = document.createElement("span");
   preview.className = "json-preview";
-  preview.textContent = collapsedPreview(type, entries.length);
+  setPlainText(preview, collapsedPreview(type, entries.length));
   if (expanded) preview.hidden = true;
 
   const openBrace = document.createElement("span");
@@ -351,7 +415,7 @@ function renderLeaf(key: string | null, value: unknown, type: string, path: stri
   if (key !== null) {
     const keyEl = document.createElement("span");
     keyEl.className = "json-key";
-    keyEl.textContent = key;
+    setPlainText(keyEl, key);
     line.appendChild(keyEl);
     line.appendChild(document.createTextNode(": "));
   }
@@ -361,7 +425,7 @@ function renderLeaf(key: string | null, value: unknown, type: string, path: stri
   } else {
     const valEl = document.createElement("span");
     valEl.className = `json-value json-${type}`;
-    valEl.textContent = formatted;
+    setPlainText(valEl, formatted);
     line.appendChild(valEl);
   }
 
@@ -400,7 +464,7 @@ function appendCollapsibleStringValue(line: HTMLElement, raw: string): void {
 
   const valEl = document.createElement("span");
   valEl.className = "json-value json-string";
-  valEl.textContent = collapsedFormatted;
+  setPlainText(valEl, collapsedFormatted);
 
   const meta = document.createElement("span");
   meta.className = "json-string-meta";
@@ -419,16 +483,38 @@ function appendCollapsibleStringValue(line: HTMLElement, raw: string): void {
 
   let expanded = false;
   const refresh = (): void => {
-    valEl.textContent = expanded ? fullFormatted : collapsedFormatted;
+    const text = expanded ? fullFormatted : collapsedFormatted;
+    setPlainText(valEl, text);
     valEl.classList.toggle("is-expanded", expanded);
     toggleBtn.textContent = expanded ? t("jsonShowLess") : t("jsonShowMore");
+
+    const tree = line.closest<HTMLElement>(".json-tree");
+    const activeQuery = tree?.dataset.searchQuery;
+    if (activeQuery) {
+      const filter = compileTextFilter(activeQuery);
+      if (!filter.isEmpty) {
+        highlightTextElement(valEl, filter);
+      }
+    }
   };
+
+  const setExpanded = (next: boolean): void => {
+    if (expanded === next) return;
+    expanded = next;
+    refresh();
+  };
+
+  collapsibleStringControls.set(valEl, {
+    fullFormatted,
+    collapsedFormatted,
+    isExpanded: () => expanded,
+    setExpanded,
+  });
 
   toggleBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     setActiveLine(line);
-    expanded = !expanded;
-    refresh();
+    setExpanded(!expanded);
   });
 
   copyBtn.addEventListener("click", (e) => {
