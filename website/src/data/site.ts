@@ -11,7 +11,8 @@ export const site = {
     githubReleases: "https://github.com/FatMii/sse-devtools-panel/releases/latest",
     docs: "https://github.com/FatMii/sse-devtools-panel#readme",
   },
-  offlineZipPath(version: string) {
-    return `/releases/sse-devtools-panel-v${version}.zip`;
+  offlineZipPath(version: string, baseUrl = "/") {
+    const base = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
+    return `${base}/releases/sse-devtools-panel-v${version}.zip`;
   },
 } as const;

@@ -2,19 +2,23 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import SiteNav from "../components/SiteNav.astro";
 import Hero from "../components/Hero.astro";
+import PainStrip from "../components/PainStrip.astro";
+import ProductPreview from "../components/ProductPreview.astro";
 import InstallSection from "../components/InstallSection.astro";
 import { site } from "../data/site";
 ---
 
 <BaseLayout>
   <SiteNav />
-  <main class="hero">
+  <main>
     <Hero />
+    <PainStrip />
+    <ProductPreview />
+    <InstallSection />
   </main>
-  <InstallSection />
   <footer class="site-footer">
     <p>
-      {site.name} · MIT License ·
+      {site.name} · MIT ·
       <a href={site.urls.github} target="_blank" rel="noreferrer">GitHub</a>
       · v{site.version}
     </p>
