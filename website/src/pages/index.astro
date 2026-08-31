@@ -1,0 +1,22 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteNav from "../components/SiteNav.astro";
+import Hero from "../components/Hero.astro";
+import InstallSection from "../components/InstallSection.astro";
+import { site } from "../data/site";
+---
+
+<BaseLayout>
+  <SiteNav />
+  <main class="hero">
+    <Hero />
+  </main>
+  <InstallSection />
+  <footer class="site-footer">
+    <p>
+      {site.name} · MIT License ·
+      <a href={site.urls.github} target="_blank" rel="noreferrer">GitHub</a>
+      · v{site.version}
+    </p>
+  </footer>
+</BaseLayout>
