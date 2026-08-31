@@ -3,6 +3,10 @@ node_modules
 .tmp-test
 .tmp-test-*
 .tmp-debug
+.release-staging
+website/node_modules
+website/dist
+website/.astro
 pnpm-lock.yaml
 *.png
 data
