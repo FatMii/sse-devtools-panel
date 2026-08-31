@@ -1,0 +1,99 @@
+---
+import { site } from "../data/site";
+---
+
+<section>
+  <div class="eyebrow"><span class="pulse"></span> Stream inspection, decoded</div>
+  <h1>Stop reading<br /><span>raw fragments.</span></h1>
+  <p class="lead">
+    在 Chrome DevTools 中捕获、还原并分析 SSE、NDJSON 与 AI 流式响应。看清每一个事件、停顿和工具调用。
+  </p>
+  <div class="chips">
+    <span class="chip">SSE / NDJSON / Connect+JSON</span>
+    <span class="chip">Timeline · Conversation</span>
+    <span class="chip">Chrome DevTools Panel</span>
+  </div>
+  <div class="actions">
+    <a class="button primary" href={site.urls.chromeStore} target="_blank" rel="noreferrer"
+      >Chrome 应用商店安装</a
+    >
+    <a class="button" href="#install-offline">下载离线包</a>
+  </div>
+  <p class="hint">
+    无法访问 Google 或 GitHub？可直接
+    <a href="#install-offline">下载离线安装包</a>
+    ，按下方步骤本地加载，无需科学上网。
+  </p>
+  <div class="proof">
+    <span><strong>MIT</strong> 开源</span>
+    <span><strong>本地</strong> 处理</span>
+    <span><strong>MV3</strong> 扩展</span>
+    <span
+      ><strong>v{site.version}</strong></span
+    >
+  </div>
+</section>
+
+<section class="preview-wrap" aria-label="SSE DevTools 面板预览">
+  <div class="browser-frame">
+    <div class="window-chrome">
+      <div class="window-dots"><span></span><span></span><span></span></div>
+      <div class="window-url">F12 → SSE DevTools · /v1/chat/completions</div>
+      <div class="window-badge">LIVE</div>
+    </div>
+    <div class="tool-tabs">
+      <span>Elements</span><span>Console</span><span>Network</span><span class="active">SSE DevTools</span>
+    </div>
+    <div class="workbench">
+      <aside class="streams">
+        <div class="pane-title">STREAMS <span style="color: var(--muted)">/ 3</span></div>
+        <div class="filter">Filter by URL…</div>
+        <div class="stream active">
+          <div class="stream-name">/v1/chat/completions</div>
+          <div class="stream-meta"><span>POST · fetch</span><b>● 42</b></div>
+        </div>
+        <div class="stream">
+          <div class="stream-name">/api/notifications</div>
+          <div class="stream-meta"><span>GET · eventsource</span><b>● 8</b></div>
+        </div>
+        <div class="stream">
+          <div class="stream-name">/agent/run?stream=true</div>
+          <div class="stream-meta"><span>POST · xhr</span><b>● 126</b></div>
+        </div>
+      </aside>
+      <div>
+        <div class="detail-tabs">
+          <span>Events</span><span>Request</span><span>Conversation</span><span class="active">Timeline</span><span
+            >Raw</span
+          >
+        </div>
+        <div class="metrics">
+          <div class="metric"><small>TTFT</small><b>184 ms</b></div>
+          <div class="metric"><small>Events</small><b>42</b></div>
+          <div class="metric"><small>Avg gap</small><b>36 ms</b></div>
+          <div class="metric"><small>Duration</small><b>3.8 s</b></div>
+        </div>
+        <div class="timeline">
+          <i class="tick" style="left: 2%; --h: 25px; --i: 1"></i>
+          <i class="tick" style="left: 8%; --h: 38px; --i: 2"></i>
+          <i class="tick" style="left: 13%; --h: 19px; --i: 3"></i>
+          <i class="tick" style="left: 20%; --h: 47px; --i: 4"></i>
+          <i class="tick" style="left: 28%; --h: 31px; --i: 5"></i>
+          <i class="tick" style="left: 35%; --h: 51px; --i: 6"></i>
+          <i class="tick" style="left: 42%; --h: 23px; --i: 7"></i>
+          <i class="tick" style="left: 49%; --h: 39px; --i: 8"></i>
+          <i class="tick" style="left: 58%; --h: 28px; --i: 9"></i>
+          <i class="tick" style="left: 67%; --h: 45px; --i: 10"></i>
+          <i class="tick warn" style="left: 85%; --h: 57px; --i: 11"></i>
+          <i class="tick" style="left: 93%; --h: 34px; --i: 12"></i>
+        </div>
+        <div class="events">
+          <div class="event"><span>#040</span><i>3.602s</i><code>delta · tool_calls[0]</code></div>
+          <div class="event"><span>#041</span><i>3.638s</i><code>delta · content</code></div>
+          <div class="event"><span>#042</span><i>3.801s</i><code>message · [DONE]</code></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="caption">Timeline highlights stalled intervals ≥ 250ms</div>
+</section>

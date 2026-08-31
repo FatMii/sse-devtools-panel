@@ -1,0 +1,66 @@
+---
+import "../styles/global.css";
+import { site } from "../data/site";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = site.name,
+  description = site.tagline,
+} = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+  </head>
+  <body>
+    <slot />
+    <script is:inline>
+      (function () {
+        var root = document.documentElement;
+        var storageKey = "sse-landing-theme";
+        var saved = localStorage.getItem(storageKey);
+        var initial =
+          saved ||
+          (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light");
+        root.dataset.theme = initial;
+
+        document.addEventListener("click", function (event) {
+          var target = event.target;
+          if (!(target instanceof HTMLElement)) return;
+          if (target.id !== "theme-toggle") return;
+          var next = root.dataset.theme === "dark" ? "light" : "dark";
+          root.dataset.theme = next;
+          localStorage.setItem(storageKey, next);
+          target.textContent = next === "dark" ? "☀ 浅色" : "🌙 夜间";
+        });
+
+        window.addEventListener("DOMContentLoaded", function () {
+          var toggle = document.getElementById("theme-toggle");
+          if (!toggle) return;
+          toggle.textContent = root.dataset.theme === "dark" ? "☀ 浅色" : "🌙 夜间";
+        });
+      })();
+    </script>
+  </body>
+</html>

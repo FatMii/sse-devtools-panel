@@ -1,0 +1,790 @@
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #edf2f7;
+  --bg-grid: rgba(37, 99, 235, 0.035);
+  --bg-glow: rgba(59, 130, 246, 0.08);
+  --nav-bg: rgba(255, 255, 255, 0.82);
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --surface-3: #f1f5f9;
+  --line: #d3dde8;
+  --line-strong: #b8c7d8;
+  --muted: #64748b;
+  --text: #152033;
+  --text-soft: #4b6078;
+  --text-faint: #7b8a9c;
+  --blue: #2563eb;
+  --accent: #3b82f6;
+  --accent-soft: #e8f1ff;
+  --accent-border: #c7dcff;
+  --btn-dark: #1e293b;
+  --chip-bg: rgba(255, 255, 255, 0.78);
+  --shadow: rgba(15, 23, 42, 0.08);
+  --shadow-strong: rgba(15, 23, 42, 0.12);
+  --preview-bg: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  --live-bg: #ecfdf3;
+  --live-text: #166534;
+  --live-border: #bbf7d0;
+  --stream-active: #e8f1ff;
+  --caption-bg: rgba(255, 255, 255, 0.92);
+  --red: #ef4444;
+  --amber: #b45309;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #12161c;
+  --bg-grid: rgba(112, 170, 255, 0.04);
+  --bg-glow: rgba(59, 130, 246, 0.12);
+  --nav-bg: rgba(18, 22, 28, 0.88);
+  --surface: #1a2030;
+  --surface-2: #151b27;
+  --surface-3: #202838;
+  --line: #334155;
+  --line-strong: #475569;
+  --muted: #94a3b8;
+  --text: #eef2f7;
+  --text-soft: #b8c5d6;
+  --text-faint: #8a97a8;
+  --blue: #70aaff;
+  --accent: #3b82f6;
+  --accent-soft: rgba(59, 130, 246, 0.14);
+  --accent-border: rgba(59, 130, 246, 0.28);
+  --btn-dark: #334155;
+  --chip-bg: rgba(26, 32, 48, 0.88);
+  --shadow: rgba(0, 0, 0, 0.24);
+  --shadow-strong: rgba(0, 0, 0, 0.36);
+  --preview-bg: linear-gradient(180deg, #1a2030 0%, #151b27 100%);
+  --live-bg: rgba(34, 197, 94, 0.12);
+  --live-text: #86efac;
+  --live-border: rgba(34, 197, 94, 0.28);
+  --stream-active: rgba(59, 130, 246, 0.18);
+  --caption-bg: rgba(26, 32, 48, 0.94);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 78% 18%, var(--bg-glow), transparent 34%),
+    linear-gradient(var(--bg-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px), var(--bg);
+  background-size:
+    auto,
+    28px 28px,
+    28px 28px,
+    auto;
+  font-family: Bahnschrift, "Segoe UI Variable", "Segoe UI", sans-serif;
+}
+
+a,
+button {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+code {
+  padding: 1px 5px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font:
+    12px "Cascadia Code",
+    Consolas,
+    monospace;
+}
+
+.site-nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 clamp(16px, 5.5vw, 80px);
+  background: var(--nav-bg);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand,
+.nav-actions {
+  display: flex;
+  align-items: center;
+}
+
+.brand {
+  gap: 11px;
+  font-weight: 650;
+}
+
+.brand-mark {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  color: #ffffff;
+  background: var(--accent);
+  border-radius: 8px;
+  font:
+    800 12px/1 "Cascadia Code",
+    monospace;
+  box-shadow: 0 10px 24px rgba(59, 130, 246, 0.24);
+}
+
+.nav-actions {
+  gap: 14px;
+  font-size: 13px;
+}
+
+.nav-actions a {
+  color: var(--muted);
+}
+
+.nav-actions a:hover {
+  color: var(--text);
+}
+
+.theme-toggle,
+.install-mini {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 12px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.install-mini {
+  color: #ffffff;
+  background: var(--btn-dark);
+  border-color: var(--btn-dark);
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 0.74fr) minmax(0, 1.26fr);
+  align-items: center;
+  gap: clamp(24px, 4vw, 64px);
+  min-height: calc(100vh - 68px);
+  padding: clamp(32px, 5vh, 72px) clamp(16px, 5.5vw, 80px);
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 22px;
+  padding: 6px 10px;
+  color: var(--blue);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+  font:
+    600 11px/1 "Cascadia Code",
+    Consolas,
+    monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pulse {
+  width: 7px;
+  height: 7px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+}
+
+h1 {
+  max-width: 640px;
+  font-size: clamp(40px, 5.1vw, 78px);
+  font-weight: 580;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+}
+
+h1 span {
+  color: var(--blue);
+}
+
+.lead {
+  max-width: 560px;
+  margin: 24px 0 26px;
+  color: var(--text-soft);
+  font-size: clamp(15px, 1.6vw, 17px);
+  line-height: 1.72;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+
+.chip {
+  padding: 7px 11px;
+  color: var(--muted);
+  background: var(--chip-bg);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font:
+    11px "Cascadia Code",
+    Consolas,
+    monospace;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 46px;
+  padding: 0 18px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+}
+
+.button.primary {
+  color: #ffffff;
+  background: var(--accent);
+  border-color: var(--accent);
+  font-weight: 700;
+  box-shadow: 0 12px 28px rgba(59, 130, 246, 0.22);
+}
+
+.button.primary::before {
+  content: "◉";
+  font-size: 13px;
+}
+
+.hint {
+  max-width: 560px;
+  margin-top: 14px;
+  color: var(--text-faint);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.hint a {
+  color: var(--blue);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.proof {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 28px;
+  color: var(--text-faint);
+  font:
+    12px/1.4 "Cascadia Code",
+    Consolas,
+    monospace;
+}
+
+.proof strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.preview-wrap {
+  position: relative;
+  min-width: 0;
+  padding: 18px 0 0 18px;
+}
+
+.preview-wrap::before {
+  content: "";
+  position: absolute;
+  inset: 8% 4% 0 0;
+  background: var(--preview-bg);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 0 28px 70px var(--shadow);
+}
+
+.browser-frame {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 30px 70px var(--shadow-strong);
+}
+
+.window-chrome {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  background: var(--surface-3);
+  border-bottom: 1px solid var(--line);
+}
+
+.window-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.window-dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--line);
+  border: 1px solid var(--line-strong);
+}
+
+.window-url {
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  padding: 0 10px;
+  overflow: hidden;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font:
+    11px/24px "Cascadia Code",
+    Consolas,
+    monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.window-badge {
+  padding: 4px 8px;
+  color: var(--live-text);
+  background: var(--live-bg);
+  border: 1px solid var(--live-border);
+  border-radius: 999px;
+  font:
+    10px "Cascadia Code",
+    Consolas,
+    monospace;
+}
+
+.tool-tabs {
+  height: 38px;
+  display: flex;
+  align-items: end;
+  gap: 22px;
+  padding: 0 14px;
+  overflow-x: auto;
+  background: var(--surface-3);
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font:
+    12px/37px "Segoe UI",
+    sans-serif;
+  white-space: nowrap;
+}
+
+.tool-tabs .active {
+  height: 38px;
+  color: var(--text);
+  border-bottom: 2px solid var(--blue);
+}
+
+.workbench {
+  height: 420px;
+  display: grid;
+  grid-template-columns: 205px 1fr;
+}
+
+.streams {
+  background: var(--surface-2);
+  border-right: 1px solid var(--line);
+}
+
+.pane-title {
+  height: 36px;
+  padding: 0 12px;
+  color: var(--text);
+  border-bottom: 1px solid var(--line);
+  font:
+    11px/36px "Cascadia Code",
+    monospace;
+}
+
+.filter {
+  margin: 10px;
+  padding: 7px 9px;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font:
+    11px "Segoe UI",
+    sans-serif;
+}
+
+.stream {
+  padding: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.stream.active {
+  background: var(--stream-active);
+  box-shadow: inset 2px 0 var(--blue);
+}
+
+.stream-name {
+  overflow: hidden;
+  color: var(--text);
+  font:
+    11px "Cascadia Code",
+    monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stream-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  color: var(--muted);
+  font:
+    10px "Cascadia Code",
+    monospace;
+}
+
+.stream-meta b {
+  color: var(--blue);
+}
+
+.detail-tabs {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 14px;
+  overflow-x: auto;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.detail-tabs .active {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.metric {
+  padding: 12px;
+  background: var(--surface);
+}
+
+.metric small {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font:
+    9px "Cascadia Code",
+    monospace;
+  text-transform: uppercase;
+}
+
+.metric b {
+  color: var(--text);
+  font:
+    500 16px "Cascadia Code",
+    monospace;
+}
+
+.timeline {
+  position: relative;
+  height: 78px;
+  margin: 22px 16px 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.timeline::before {
+  content: "";
+  position: absolute;
+  right: 13%;
+  bottom: -1px;
+  width: 10%;
+  height: 54px;
+  background: rgba(239, 68, 68, 0.08);
+  border-left: 1px dashed var(--red);
+}
+
+.tick {
+  position: absolute;
+  bottom: -3px;
+  width: 5px;
+  height: var(--h);
+  background: var(--blue);
+  border-radius: 3px 3px 0 0;
+}
+
+.tick.warn {
+  background: var(--red);
+}
+
+.events {
+  padding: 2px 16px 10px;
+  font:
+    10px/2.3 "Cascadia Code",
+    monospace;
+}
+
+.event {
+  display: grid;
+  grid-template-columns: 40px 74px 1fr;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.event i {
+  color: var(--amber);
+  font-style: normal;
+}
+
+.event code {
+  color: var(--blue);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: inherit;
+}
+
+.caption {
+  position: absolute;
+  right: 18px;
+  bottom: -10px;
+  z-index: 2;
+  padding: 10px 12px;
+  color: var(--text);
+  background: var(--caption-bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 10px 24px var(--shadow);
+  font:
+    11px "Cascadia Code",
+    Consolas,
+    monospace;
+}
+
+.install-section {
+  padding: 0 clamp(16px, 5.5vw, 80px) clamp(48px, 8vh, 96px);
+  border-top: 1px solid var(--line);
+}
+
+.install-head {
+  max-width: 760px;
+  margin: 0 auto 28px;
+  padding-top: clamp(40px, 6vh, 72px);
+  text-align: center;
+}
+
+.install-head p {
+  margin: 12px 0 0;
+  color: var(--text-soft);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.install-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.install-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 100%;
+  padding: 22px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 12px 30px var(--shadow);
+}
+
+.install-card.recommended {
+  border-color: var(--accent-border);
+  box-shadow: 0 16px 36px rgba(59, 130, 246, 0.12);
+}
+
+.install-tag {
+  width: max-content;
+  padding: 5px 8px;
+  color: var(--blue);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+  font:
+    600 10px "Cascadia Code",
+    Consolas,
+    monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.install-card h3 {
+  font-size: 20px;
+}
+
+.install-card p,
+.install-card li {
+  color: var(--text-soft);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.install-card ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.install-card li + li {
+  margin-top: 6px;
+}
+
+.install-card .button {
+  width: max-content;
+  margin-top: auto;
+}
+
+.install-note {
+  max-width: 1180px;
+  margin: 18px auto 0;
+  padding: 14px 16px;
+  color: var(--text-soft);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.install-note strong {
+  color: var(--text);
+}
+
+.site-footer {
+  padding: 24px clamp(16px, 5.5vw, 80px) 40px;
+  color: var(--text-faint);
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  text-align: center;
+}
+
+.site-footer a {
+  color: var(--blue);
+}
+
+@media (max-width: 960px) {
+  .hero {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .preview-wrap {
+    padding: 0;
+  }
+
+  .preview-wrap::before {
+    inset: 4% 0 0 0;
+  }
+
+  .caption {
+    position: static;
+    margin: 14px 0 0;
+  }
+
+  .install-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .workbench {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .streams {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .nav-actions a:not(.install-mini) {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .browser-frame {
+    animation: float-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .tick {
+    animation: arrive 0.45s ease-out both;
+    animation-delay: calc(var(--i) * 65ms);
+    transform-origin: bottom;
+  }
+
+  @keyframes float-in {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+  }
+
+  @keyframes arrive {
+    from {
+      opacity: 0;
+      transform: scaleY(0);
+    }
+  }
+}
