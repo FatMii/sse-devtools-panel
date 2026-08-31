@@ -3,12 +3,13 @@ import { site } from "../data/site";
 ---
 
 <nav class="site-nav">
-  <div class="brand"><span class="brand-mark">SSE</span> {site.name}</div>
+  <a class="brand" href={import.meta.env.BASE_URL}>
+    <span class="brand-mark">SSE</span>
+    <span class="brand-name">{site.name}</span>
+  </a>
   <div class="nav-actions">
-    <a href="#install">安装</a>
-    <a href={site.urls.docs} target="_blank" rel="noreferrer">Docs</a>
-    <a href={site.urls.github} target="_blank" rel="noreferrer">GitHub ↗</a>
-    <button class="theme-toggle" type="button" id="theme-toggle">🌙 夜间</button>
+    <a href={site.urls.github} target="_blank" rel="noreferrer">GitHub</a>
+    <button class="theme-toggle" type="button" id="theme-toggle">夜间</button>
     <a class="install-mini" href="#install">获取扩展</a>
   </div>
 </nav>

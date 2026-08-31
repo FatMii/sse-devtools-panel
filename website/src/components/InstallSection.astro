@@ -2,51 +2,32 @@
 import { site } from "../data/site";
 
 const zipName = `sse-devtools-panel-v${site.version}.zip`;
-const offlineZip = site.offlineZipPath(site.version);
+const offlineZip = site.offlineZipPath(site.version, import.meta.env.BASE_URL);
 ---
 
 <section class="install-section" id="install">
   <div class="install-head">
-    <h2>安装方式</h2>
-    <p>按你的网络环境选择。无法访问 Chrome 应用商店或 GitHub 时，推荐使用官网离线包。</p>
+    <h2>获取扩展</h2>
+    <p>选一种方式即可。国内网络推荐离线包。</p>
   </div>
-  <div class="install-grid">
-    <article class="install-card">
-      <span class="install-tag">Online</span>
+
+  <div class="install-paths">
+    <article class="install-path">
       <h3>Chrome 应用商店</h3>
-      <p>适合能正常访问 Google 服务的用户。安装后打开目标页，按 <code>F12</code> → SSE DevTools。</p>
-      <a class="button primary" href={site.urls.chromeStore} target="_blank" rel="noreferrer">前往 Chrome 商店</a>
+      <p>能访问 Google 时最方便，一键安装。</p>
+      <a class="button primary" href={site.urls.chromeStore} target="_blank" rel="noreferrer">前往商店安装</a>
     </article>
 
-    <article class="install-card recommended" id="install-offline">
-      <span class="install-tag">Recommended · Offline</span>
-      <h3>官网离线包</h3>
-      <p>无需访问 GitHub 或 Chrome 商店。下载已构建好的扩展包，解压后本地加载。</p>
-      <ul>
-        <li>下载 <code>{zipName}</code></li>
-        <li>解压到本地文件夹</li>
-        <li>打开 <code>chrome://extensions</code></li>
-        <li>开启「开发者模式」→「加载已解压的扩展程序」</li>
-        <li>选择解压后的 <code>dist/</code> 目录</li>
-      </ul>
-      <a class="button primary" href={offlineZip} download={zipName}>下载离线包 (.zip)</a>
+    <article class="install-path recommended" id="install-offline">
+      <h3>离线包 <span class="path-badge">国内推荐</span></h3>
+      <p>下载 zip → 解压 → <code>chrome://extensions</code> 开启开发者模式 → 加载已解压的 <code>dist/</code>。</p>
+      <a class="button primary" href={offlineZip} download={zipName}>下载 v{site.version} 离线包</a>
     </article>
+  </div>
 
-    <article class="install-card">
-      <span class="install-tag">Source</span>
-      <h3>GitHub / 源码构建</h3>
-      <p>适合开发者或需要自行构建的用户。若 GitHub 访问不稳定，可使用 Gitee 镜像或上方官网离线包。</p>
-      <ul>
-        <li><code>git clone</code> 仓库</li>
-        <li><code>pnpm i && pnpm build</code></li>
-        <li>在 <code>chrome://extensions</code> 加载 <code>dist/</code></li>
-      </ul>
-      <a class="button" href={site.urls.githubReleases} target="_blank" rel="noreferrer">GitHub Releases ↗</a>
-    </article>
-  </div>
-  <div class="install-note">
-    <strong>国内用户提示：</strong>
-    本站提供 Release 离线包直链（<code>{offlineZip}</code>）；也可同步到 Gitee Release 作为镜像。离线安装不会经过 Chrome
-    商店，Chrome 可能提示「未经过验证的扩展」，这是开发者模式加载的正常现象。扩展仅在本地处理流式数据，不上传页面内容。
-  </div>
+  <p class="install-foot">
+    开发者也可从
+    <a href={site.urls.githubReleases} target="_blank" rel="noreferrer">GitHub Releases</a>
+    获取源码自行构建。离线加载时 Chrome 可能提示「未验证扩展」，属开发者模式正常现象；数据仅本地处理。
+  </p>
 </section>

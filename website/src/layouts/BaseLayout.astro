@@ -52,13 +52,13 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
           var next = root.dataset.theme === "dark" ? "light" : "dark";
           root.dataset.theme = next;
           localStorage.setItem(storageKey, next);
-          target.textContent = next === "dark" ? "☀ 浅色" : "🌙 夜间";
+          target.textContent = next === "dark" ? "浅色" : "夜间";
         });
 
         window.addEventListener("DOMContentLoaded", function () {
           var toggle = document.getElementById("theme-toggle");
           if (!toggle) return;
-          toggle.textContent = root.dataset.theme === "dark" ? "☀ 浅色" : "🌙 夜间";
+          toggle.textContent = root.dataset.theme === "dark" ? "浅色" : "夜间";
         });
       })();
     </script>

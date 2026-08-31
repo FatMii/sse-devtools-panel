@@ -8,6 +8,7 @@ dist.zip
 .release-staging/
 website/node_modules/
 website/dist/
+.agents/
 *.local
 .DS_Store
 
