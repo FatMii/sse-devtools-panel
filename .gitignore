@@ -5,10 +5,13 @@ dist.zip
 .tmp-test/
 .tmp-test-*/
 .tmp-debug/
+.release-staging/
+website/node_modules/
+website/dist/
 *.local
 .DS_Store
 
 .cursor/
 
 # Local AI stream captures (may contain PII)
-data/
+/data/
