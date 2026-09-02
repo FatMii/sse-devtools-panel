@@ -44,3 +44,13 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Package offline release zip
+        run: pnpm release:zip
+
+      - name: Install website dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: website
+
+      - name: Build website
+        run: node scripts/build-website.mjs

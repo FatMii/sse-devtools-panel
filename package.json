@@ -19,7 +19,11 @@
     "lint:fix": "eslint src --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "demo": "node demo/server.mjs"
+    "demo": "node demo/server.mjs",
+    "release:zip": "node scripts/package-release.mjs",
+    "website:dev": "node scripts/sync-website-screenshots.mjs && pnpm --dir website dev",
+    "website:build": "pnpm build && pnpm release:zip && node scripts/build-website.mjs",
+    "website:preview": "pnpm --dir website preview"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

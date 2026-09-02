@@ -1,0 +1,31 @@
+---
+import { screenshotUrl } from "../i18n";
+
+interface Props {
+  title: string;
+  description: string;
+  image: string;
+  alt: string;
+  tags: readonly string[];
+  tagsAria: string;
+  reverse?: boolean;
+}
+
+const { title, description, image, alt, tags, tagsAria, reverse = false } = Astro.props;
+const src = screenshotUrl(image, import.meta.env.BASE_URL);
+---
+
+<article class:list={["spotlight", { reverse }]}>
+  <div class="spotlight-media">
+    <img src={src} alt={alt} width="1400" height="788" loading="lazy" decoding="async" />
+  </div>
+  <div class="spotlight-copy">
+    <ul class="tag-list" aria-label={tagsAria}>
+      {tags.map((tag) => (
+        <li class="tag">{tag}</li>
+      ))}
+    </ul>
+    <h3>{title}</h3>
+    <p>{description}</p>
+  </div>
+</article>
