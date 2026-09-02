@@ -1,38 +1,51 @@
 ---
 import "../styles/global.css";
+import type { Locale } from "../i18n";
+import {
+  getHtmlLang,
+  localeHomePath,
+  screenshotUrl,
+} from "../i18n";
 import { site } from "../data/site";
-import { screenshotUrl } from "../data/features";
 
 interface Props {
+  locale: Locale;
   title?: string;
   description?: string;
 }
 
-const {
-  title = site.name,
-  description = site.tagline,
-} = Astro.props;
+const { locale, title, description } = Astro.props;
 
+const pageTitle = title ?? site.name;
+const pageDescription = description ?? site.tagline;
+const htmlLang = getHtmlLang(locale);
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL(screenshotUrl("panel-overview.gif", import.meta.env.BASE_URL), Astro.site);
+const base = import.meta.env.BASE_URL;
+const zhUrl = new URL(localeHomePath("zh", base), Astro.site);
+const enUrl = new URL(localeHomePath("en", base), Astro.site);
 ---
 
 <!doctype html>
-<html lang="zh-CN" data-theme="light">
+<html lang={htmlLang} data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
-    <meta name="description" content={description} />
+    <title>{pageTitle}</title>
+    <meta name="description" content={pageDescription} />
     <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang="zh-CN" href={zhUrl} />
+    <link rel="alternate" hreflang="en" href={enUrl} />
+    <link rel="alternate" hreflang="x-default" href={zhUrl} />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
+    <meta property="og:locale" content={locale === "zh" ? "zh_CN" : "en_US"} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={ogImage} />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={title} />
-    <meta name="twitter:description" content={description} />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDescription} />
     <meta name="twitter:image" content={ogImage} />
   </head>
   <body>
@@ -49,6 +62,14 @@ const ogImage = new URL(screenshotUrl("panel-overview.gif", import.meta.env.BASE
             : "light");
         root.dataset.theme = initial;
 
+        function labelForTheme(theme) {
+          var toggle = document.getElementById("theme-toggle");
+          if (!toggle) return "";
+          var dark = toggle.getAttribute("data-label-dark") || "Dark";
+          var light = toggle.getAttribute("data-label-light") || "Light";
+          return theme === "dark" ? light : dark;
+        }
+
         document.addEventListener("click", function (event) {
           var target = event.target;
           if (!(target instanceof HTMLElement)) return;
@@ -56,13 +77,13 @@ const ogImage = new URL(screenshotUrl("panel-overview.gif", import.meta.env.BASE
           var next = root.dataset.theme === "dark" ? "light" : "dark";
           root.dataset.theme = next;
           localStorage.setItem(storageKey, next);
-          target.textContent = next === "dark" ? "浅色" : "夜间";
+          target.textContent = labelForTheme(next);
         });
 
         window.addEventListener("DOMContentLoaded", function () {
           var toggle = document.getElementById("theme-toggle");
           if (!toggle) return;
-          toggle.textContent = root.dataset.theme === "dark" ? "浅色" : "夜间";
+          toggle.textContent = labelForTheme(root.dataset.theme || "light");
         });
       })();
     </script>

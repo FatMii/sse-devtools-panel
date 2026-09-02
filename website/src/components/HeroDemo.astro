@@ -1,21 +1,28 @@
 ---
-import { heroDemo, screenshotUrl } from "../data/features";
+import type { Locale } from "../i18n";
+import { getTranslations, screenshotUrl } from "../i18n";
 
-const src = screenshotUrl(heroDemo.image, import.meta.env.BASE_URL);
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = getTranslations(locale);
+const src = screenshotUrl("panel-overview.gif", import.meta.env.BASE_URL);
 ---
 
-<section class="hero-demo" aria-label="产品演示">
+<section class="hero-demo" aria-label={t.heroDemo.ariaLabel}>
   <div class="hero-demo-wrap">
     <div class="browser-frame">
       <div class="window-chrome">
         <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
-        <div class="window-url">F12 → SSE DevTools · /v1/chat/completions</div>
+        <div class="window-url">{t.heroDemo.windowUrl}</div>
         <div class="window-badge">LIVE</div>
       </div>
       <img
         class="hero-demo-media"
         src={src}
-        alt={heroDemo.alt}
+        alt={t.heroDemo.imageAlt}
         width="1400"
         height="788"
         loading="eager"

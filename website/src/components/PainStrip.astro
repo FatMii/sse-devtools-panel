@@ -1,20 +1,26 @@
+---
+import type { Locale } from "../i18n";
+import { getTranslations } from "../i18n";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = getTranslations(locale);
+---
+
 <section class="pain-strip" aria-labelledby="pain-title">
-  <h2 id="pain-title" class="sr-only">为什么需要它</h2>
+  <h2 id="pain-title" class="sr-only">{t.pain.title}</h2>
   <ol class="pain-grid">
-    <li>
-      <span class="pain-num">01</span>
-      <strong>Network 不够用</strong>
-      <p>AI / 私有协议常是 NDJSON、Connect+JSON，EventStream Tab 帮不上忙。</p>
-    </li>
-    <li>
-      <span class="pain-num">02</span>
-      <strong>看不到节奏</strong>
-      <p>TTFT、chunk gap、卡顿与重连，在整请求耗时里看不见。</p>
-    </li>
-    <li>
-      <span class="pain-num">03</span>
-      <strong>对话难拼</strong>
-      <p>思考 / 正文 / 工具调用混在 raw 帧里，Conversation 自动分通道合并。</p>
-    </li>
+    {
+      t.pain.items.map((item, index) => (
+        <li>
+          <span class="pain-num">{String(index + 1).padStart(2, "0")}</span>
+          <strong>{item.title}</strong>
+          <p>{item.body}</p>
+        </li>
+      ))
+    }
   </ol>
 </section>

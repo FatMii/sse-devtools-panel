@@ -94,6 +94,25 @@ button,
   cursor: pointer;
 }
 
+.lang-switch {
+  padding: 6px 10px;
+  color: var(--text-soft);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.lang-switch:hover {
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--line-strong);
+}
+
 code {
   padding: 1px 5px;
   background: var(--surface);
@@ -885,7 +904,7 @@ code {
     order: unset;
   }
 
-  .nav-actions > a:not(.install-mini):not([href="#features"]) {
+  .nav-actions > a:not(.install-mini):not([href="#features"]):not(.lang-switch) {
     display: none;
   }
 }

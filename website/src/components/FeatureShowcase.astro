@@ -1,15 +1,23 @@
 ---
-import { showcaseItems, screenshotUrl } from "../data/features";
+import type { Locale } from "../i18n";
+import { getTranslations, screenshotUrl } from "../i18n";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = getTranslations(locale);
 ---
 
 <section class="feature-showcase" id="features" aria-labelledby="features-title">
   <div class="feature-showcase-head">
-    <h2 id="features-title">专为流式调试设计</h2>
-    <p>装完即用，在 DevTools 里看清 SSE / NDJSON 的每一步。</p>
+    <h2 id="features-title">{t.features.title}</h2>
+    <p>{t.features.subtitle}</p>
   </div>
   <ol class="feature-grid">
     {
-      showcaseItems.map((item) => (
+      t.features.items.map((item) => (
         <li class="feature-card">
           <span class="feature-num">{item.num}</span>
           <div class="feature-media">
@@ -24,7 +32,7 @@ import { showcaseItems, screenshotUrl } from "../data/features";
           </div>
           <h3>{item.title}</h3>
           <p>{item.description}</p>
-          <ul class="tag-list" aria-label={`${item.title} 相关能力`}>
+          <ul class="tag-list" aria-label={t.features.tagsAria(item.title)}>
             {item.tags.map((tag) => (
               <li class="tag">{tag}</li>
             ))}
