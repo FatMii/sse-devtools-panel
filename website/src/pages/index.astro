@@ -2,9 +2,13 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import SiteNav from "../components/SiteNav.astro";
 import Hero from "../components/Hero.astro";
+import HeroDemo from "../components/HeroDemo.astro";
 import PainStrip from "../components/PainStrip.astro";
-import ProductPreview from "../components/ProductPreview.astro";
+import FeatureShowcase from "../components/FeatureShowcase.astro";
+import FeatureSpotlight from "../components/FeatureSpotlight.astro";
+import FaqSection from "../components/FaqSection.astro";
 import InstallSection from "../components/InstallSection.astro";
+import { spotlightItems } from "../data/features";
 import { site } from "../data/site";
 ---
 
@@ -12,13 +16,31 @@ import { site } from "../data/site";
   <SiteNav />
   <main>
     <Hero />
+    <HeroDemo />
     <PainStrip />
-    <ProductPreview />
+    <FeatureShowcase />
+    <section class="spotlight-group" aria-label="更多能力">
+      {
+        spotlightItems.map((item, index) => (
+          <FeatureSpotlight
+            title={item.title}
+            description={item.description}
+            image={item.image}
+            alt={item.alt}
+            tags={item.tags}
+            reverse={index % 2 === 1}
+          />
+        ))
+      }
+    </section>
+    <FaqSection />
     <InstallSection />
   </main>
   <footer class="site-footer">
     <p>
       {site.name} · MIT ·
+      <a href={site.urls.docs} target="_blank" rel="noreferrer">README</a>
+      ·
       <a href={site.urls.github} target="_blank" rel="noreferrer">GitHub</a>
       · v{site.version}
     </p>

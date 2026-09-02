@@ -21,7 +21,7 @@
     "format:check": "prettier --check .",
     "demo": "node demo/server.mjs",
     "release:zip": "node scripts/package-release.mjs",
-    "website:dev": "pnpm --dir website dev",
+    "website:dev": "node scripts/sync-website-screenshots.mjs && pnpm --dir website dev",
     "website:build": "pnpm build && pnpm release:zip && node scripts/build-website.mjs",
     "website:preview": "pnpm --dir website preview"
   },

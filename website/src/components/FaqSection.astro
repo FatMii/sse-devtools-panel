@@ -1,0 +1,27 @@
+---
+import { faqItems } from "../data/features";
+import { site } from "../data/site";
+---
+
+<section class="faq-section" id="faq" aria-labelledby="faq-title">
+  <div class="faq-head">
+    <h2 id="faq-title">常见问题</h2>
+    <p>安装即用，无需长篇教程。更多细节见 GitHub README。</p>
+  </div>
+  <div class="faq-list">
+    {
+      faqItems.map((item) => (
+        <details class="faq-item">
+          <summary>{item.question}</summary>
+          <div class="faq-answer">
+            {"answerHtml" in item ? <p set:html={item.answerHtml} /> : <p>{item.answer}</p>}
+          </div>
+        </details>
+      ))
+    }
+  </div>
+  <p class="faq-foot">
+    更多功能说明与截图：
+    <a href={site.urls.docs} target="_blank" rel="noreferrer">GitHub README</a>
+  </p>
+</section>
