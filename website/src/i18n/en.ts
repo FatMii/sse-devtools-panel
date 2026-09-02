@@ -60,7 +60,8 @@ export const en: UI = {
       {
         num: "02",
         title: "See stream rhythm",
-        description: "TTFT, chunk gaps, and stalls at a glance—no more guessing from Network timing.",
+        description:
+          "TTFT, chunk gaps, and stalls at a glance—no more guessing from Network timing.",
         image: "tab-timeline.png",
         alt: "Timeline tab visualizing event gaps and stalls",
         tags: ["Timeline", "TTFT"],
@@ -80,7 +81,8 @@ export const en: UI = {
     items: [
       {
         title: "Open F12 and debug",
-        description: "No proxy or code changes—debug SSE / NDJSON streams directly in the DevTools panel.",
+        description:
+          "No proxy or code changes—debug SSE / NDJSON streams directly in the DevTools panel.",
         image: "main-workbench.png",
         alt: "SSE DevTools main workbench",
         tags: ["DevTools", "MV3"],

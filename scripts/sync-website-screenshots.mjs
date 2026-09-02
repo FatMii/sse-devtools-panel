@@ -38,4 +38,6 @@ for (const file of files) {
   copied += 1;
 }
 
-console.log(`[sync-website-screenshots] Copied ${copied}/${files.length} → website/public/screenshots/`);
+console.log(
+  `[sync-website-screenshots] Copied ${copied}/${files.length} → website/public/screenshots/`,
+);
