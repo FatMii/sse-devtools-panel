@@ -43,12 +43,12 @@ Run `pnpm build` before `release:zip` if `dist/` is missing or stale.
 
 ## Structure
 
-| Path                    | Role                              |
-| ----------------------- | --------------------------------- |
-| `src/pages/index.astro` | Chinese landing (`/`)              |
-| `src/pages/en/index.astro` | English landing (`/en/`)        |
-| `src/i18n/`             | zh / en UI strings                |
-| `src/components/`       | Nav, hero, features, install      |
-| `src/styles/global.css` | Light / dark theme tokens         |
-| `public/screenshots/`   | README screenshots (synced)       |
-| `public/releases/`      | Offline zip artifacts (generated) |
+| Path                       | Role                              |
+| -------------------------- | --------------------------------- |
+| `src/pages/index.astro`    | Chinese landing (`/`)             |
+| `src/pages/en/index.astro` | English landing (`/en/`)          |
+| `src/i18n/`                | zh / en UI strings                |
+| `src/components/`          | Nav, hero, features, install      |
+| `src/styles/global.css`    | Light / dark theme tokens         |
+| `public/screenshots/`      | README screenshots (synced)       |
+| `public/releases/`         | Offline zip artifacts (generated) |

@@ -1,8 +1,7 @@
 export type Locale = "zh" | "en";
 
 export type FaqItem =
-  | { question: string; answer: string }
-  | { question: string; answerHtml: string };
+  { question: string; answer: string } | { question: string; answerHtml: string };
 
 export interface UI {
   meta: {
@@ -33,16 +32,41 @@ export interface UI {
   };
   pain: {
     title: string;
-    items: [{ title: string; body: string }, { title: string; body: string }, { title: string; body: string }];
+    items: [
+      { title: string; body: string },
+      { title: string; body: string },
+      { title: string; body: string },
+    ];
   };
   features: {
     title: string;
     subtitle: string;
     tagsAria: (title: string) => string;
     items: [
-      { num: string; title: string; description: string; image: string; alt: string; tags: string[] },
-      { num: string; title: string; description: string; image: string; alt: string; tags: string[] },
-      { num: string; title: string; description: string; image: string; alt: string; tags: string[] },
+      {
+        num: string;
+        title: string;
+        description: string;
+        image: string;
+        alt: string;
+        tags: string[];
+      },
+      {
+        num: string;
+        title: string;
+        description: string;
+        image: string;
+        alt: string;
+        tags: string[];
+      },
+      {
+        num: string;
+        title: string;
+        description: string;
+        image: string;
+        alt: string;
+        tags: string[];
+      },
     ];
   };
   spotlight: {
