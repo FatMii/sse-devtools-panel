@@ -15,4 +15,5 @@ const env = {
   SITE_BASE: process.env.SITE_BASE ?? "/sse-devtools-panel",
 };
 
+execSync("node scripts/sync-website-screenshots.mjs", { cwd: root, stdio: "inherit" });
 execSync("pnpm build", { cwd: websiteDir, stdio: "inherit", env });

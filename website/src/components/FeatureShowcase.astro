@@ -1,0 +1,36 @@
+---
+import { showcaseItems, screenshotUrl } from "../data/features";
+---
+
+<section class="feature-showcase" id="features" aria-labelledby="features-title">
+  <div class="feature-showcase-head">
+    <h2 id="features-title">专为流式调试设计</h2>
+    <p>装完即用，在 DevTools 里看清 SSE / NDJSON 的每一步。</p>
+  </div>
+  <ol class="feature-grid">
+    {
+      showcaseItems.map((item) => (
+        <li class="feature-card">
+          <span class="feature-num">{item.num}</span>
+          <div class="feature-media">
+            <img
+              src={screenshotUrl(item.image, import.meta.env.BASE_URL)}
+              alt={item.alt}
+              width="1200"
+              height="675"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+          <h3>{item.title}</h3>
+          <p>{item.description}</p>
+          <ul class="tag-list" aria-label={`${item.title} 相关能力`}>
+            {item.tags.map((tag) => (
+              <li class="tag">{tag}</li>
+            ))}
+          </ul>
+        </li>
+      ))
+    }
+  </ol>
+</section>

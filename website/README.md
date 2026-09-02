@@ -7,10 +7,13 @@ Static marketing site built with [Astro](https://astro.build). SSG output for SE
 From repo root:
 
 ```bash
-pnpm website:dev       # http://localhost:4321/ (local dev, base path /)
+pnpm website:dev       # sync screenshots + http://localhost:4321/ (local dev, base path /)
 pnpm website:build     # build extension zip + Astro site for GitHub Pages
 pnpm release:zip       # package dist/ → website/public/releases/*.zip
 ```
+
+`website:dev` and `website:build` run `scripts/sync-website-screenshots.mjs` to copy
+`docs/assets/screenshots/` into `website/public/screenshots/` before Astro builds.
 
 GitHub Pages production URL uses base path `/sse-devtools-panel`:
 https://fatmii.github.io/sse-devtools-panel/
@@ -43,6 +46,8 @@ Run `pnpm build` before `release:zip` if `dist/` is missing or stale.
 | Path                    | Role                              |
 | ----------------------- | --------------------------------- |
 | `src/pages/index.astro` | Landing page                      |
-| `src/components/`       | Nav, hero, install section        |
+| `src/components/`       | Nav, hero, features, install      |
+| `src/data/features.ts`  | Showcase / spotlight / FAQ copy   |
 | `src/styles/global.css` | Light / dark theme tokens         |
+| `public/screenshots/`   | README screenshots (synced)       |
 | `public/releases/`      | Offline zip artifacts (generated) |

@@ -1,0 +1,26 @@
+---
+import { heroDemo, screenshotUrl } from "../data/features";
+
+const src = screenshotUrl(heroDemo.image, import.meta.env.BASE_URL);
+---
+
+<section class="hero-demo" aria-label="产品演示">
+  <div class="hero-demo-wrap">
+    <div class="browser-frame">
+      <div class="window-chrome">
+        <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div class="window-url">F12 → SSE DevTools · /v1/chat/completions</div>
+        <div class="window-badge">LIVE</div>
+      </div>
+      <img
+        class="hero-demo-media"
+        src={src}
+        alt={heroDemo.alt}
+        width="1400"
+        height="788"
+        loading="eager"
+        decoding="async"
+      />
+    </div>
+  </div>
+</section>
