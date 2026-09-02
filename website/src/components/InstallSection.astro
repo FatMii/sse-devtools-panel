@@ -1,33 +1,48 @@
 ---
+import type { Locale } from "../i18n";
+import { getTranslations } from "../i18n";
 import { site } from "../data/site";
 
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = getTranslations(locale);
 const zipName = `sse-devtools-panel-v${site.version}.zip`;
 const offlineZip = site.offlineZipPath(site.version, import.meta.env.BASE_URL);
 ---
 
 <section class="install-section" id="install">
   <div class="install-head">
-    <h2>获取扩展</h2>
-    <p>选一种方式即可。国内网络推荐离线包。</p>
+    <h2>{t.install.title}</h2>
+    <p>{t.install.subtitle}</p>
   </div>
 
   <div class="install-paths">
     <article class="install-path">
-      <h3>Chrome 应用商店</h3>
-      <p>能访问 Google 时最方便，一键安装。</p>
-      <a class="button primary" href={site.urls.chromeStore} target="_blank" rel="noreferrer">前往商店安装</a>
+      <h3>{t.install.storeTitle}</h3>
+      <p>{t.install.storeBody}</p>
+      <a class="button primary" href={site.urls.chromeStore} target="_blank" rel="noreferrer">
+        {t.install.storeCta}
+      </a>
     </article>
 
     <article class="install-path recommended" id="install-offline">
-      <h3>离线包 <span class="path-badge">国内推荐</span></h3>
-      <p>下载 zip → 解压 → <code>chrome://extensions</code> 开启开发者模式 → 加载已解压的 <code>dist/</code>。</p>
-      <a class="button primary" href={offlineZip} download={zipName}>下载 v{site.version} 离线包</a>
+      <h3>
+        {t.install.offlineTitle}
+        <span class="path-badge">{t.install.offlineBadge}</span>
+      </h3>
+      <p set:html={t.install.offlineBody} />
+      <a class="button primary" href={offlineZip} download={zipName}>
+        {t.install.offlineCta(site.version)}
+      </a>
     </article>
   </div>
 
   <p class="install-foot">
-    开发者也可从
-    <a href={site.urls.githubReleases} target="_blank" rel="noreferrer">GitHub Releases</a>
-    获取源码自行构建。离线加载时 Chrome 可能提示「未验证扩展」，属开发者模式正常现象；数据仅本地处理。
+    {t.install.footPrefix}
+    <a href={site.urls.githubReleases} target="_blank" rel="noreferrer">{t.install.footReleases}</a>
+    {t.install.footSuffix}
   </p>
 </section>

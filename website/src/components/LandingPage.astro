@@ -1,0 +1,58 @@
+---
+import type { Locale } from "../i18n";
+import { getTranslations } from "../i18n";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteNav from "./SiteNav.astro";
+import Hero from "./Hero.astro";
+import HeroDemo from "./HeroDemo.astro";
+import PainStrip from "./PainStrip.astro";
+import FeatureShowcase from "./FeatureShowcase.astro";
+import FeatureSpotlight from "./FeatureSpotlight.astro";
+import FaqSection from "./FaqSection.astro";
+import InstallSection from "./InstallSection.astro";
+import { docsUrl } from "../i18n";
+import { site } from "../data/site";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = getTranslations(locale);
+---
+
+<BaseLayout locale={locale} title={t.meta.title} description={t.meta.description}>
+  <SiteNav locale={locale} />
+  <main>
+    <Hero locale={locale} />
+    <HeroDemo locale={locale} />
+    <PainStrip locale={locale} />
+    <FeatureShowcase locale={locale} />
+    <section class="spotlight-group" aria-label={t.spotlight.ariaLabel}>
+      {
+        t.spotlight.items.map((item, index) => (
+          <FeatureSpotlight
+            title={item.title}
+            description={item.description}
+            image={item.image}
+            alt={item.alt}
+            tags={item.tags}
+            tagsAria={t.features.tagsAria(item.title)}
+            reverse={index % 2 === 1}
+          />
+        ))
+      }
+    </section>
+    <FaqSection locale={locale} />
+    <InstallSection locale={locale} />
+  </main>
+  <footer class="site-footer">
+    <p>
+      {site.name} · MIT ·
+      <a href={docsUrl(locale)} target="_blank" rel="noreferrer">{t.footer.readme}</a>
+      ·
+      <a href={site.urls.github} target="_blank" rel="noreferrer">GitHub</a>
+      · v{site.version}
+    </p>
+  </footer>
+</BaseLayout>

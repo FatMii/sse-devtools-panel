@@ -1,16 +1,23 @@
 ---
-import { faqItems } from "../data/features";
-import { site } from "../data/site";
+import type { Locale } from "../i18n";
+import { docsUrl, getTranslations } from "../i18n";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = getTranslations(locale);
 ---
 
 <section class="faq-section" id="faq" aria-labelledby="faq-title">
   <div class="faq-head">
-    <h2 id="faq-title">常见问题</h2>
-    <p>安装即用，无需长篇教程。更多细节见 GitHub README。</p>
+    <h2 id="faq-title">{t.faq.title}</h2>
+    <p>{t.faq.subtitle}</p>
   </div>
   <div class="faq-list">
     {
-      faqItems.map((item) => (
+      t.faq.items.map((item) => (
         <details class="faq-item">
           <summary>{item.question}</summary>
           <div class="faq-answer">
@@ -21,7 +28,7 @@ import { site } from "../data/site";
     }
   </div>
   <p class="faq-foot">
-    更多功能说明与截图：
-    <a href={site.urls.docs} target="_blank" rel="noreferrer">GitHub README</a>
+    {t.faq.footPrefix}
+    <a href={docsUrl(locale)} target="_blank" rel="noreferrer">{t.faq.footLink}</a>
   </p>
 </section>
