@@ -1,0 +1,28 @@
+---
+import type { Locale } from "../i18n";
+import { getTranslations } from "../i18n";
+import { site } from "../data/site";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = getTranslations(locale);
+---
+
+<section class="hero-focus" aria-labelledby="hero-title">
+  <p class="eyebrow">{t.hero.eyebrow}</p>
+  <h1 id="hero-title">{t.hero.title}</h1>
+  <p class="lead">{t.hero.lead}</p>
+  <div class="actions">
+    <a class="button primary" href="#install">{t.hero.ctaInstall}</a>
+    <a class="button" href={site.urls.github} target="_blank" rel="noreferrer">GitHub</a>
+  </div>
+  <ul class="proof" aria-label={t.hero.proofLabel}>
+    <li><strong>MIT</strong> {t.hero.proofOpenSource}</li>
+    <li><strong>{locale === "zh" ? "本地" : "Local"}</strong> {t.hero.proofLocal}</li>
+    <li><strong>MV3</strong> {t.hero.proofExtension}</li>
+    <li>v{site.version}</li>
+  </ul>
+</section>

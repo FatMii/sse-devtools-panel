@@ -1,0 +1,26 @@
+---
+import type { Locale } from "../i18n";
+import { getTranslations } from "../i18n";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = getTranslations(locale);
+---
+
+<section class="pain-strip" aria-labelledby="pain-title">
+  <h2 id="pain-title" class="sr-only">{t.pain.title}</h2>
+  <ol class="pain-grid">
+    {
+      t.pain.items.map((item, index) => (
+        <li>
+          <span class="pain-num">{String(index + 1).padStart(2, "0")}</span>
+          <strong>{item.title}</strong>
+          <p>{item.body}</p>
+        </li>
+      ))
+    }
+  </ol>
+</section>

@@ -1,0 +1,34 @@
+---
+import type { Locale } from "../i18n";
+import { docsUrl, getTranslations } from "../i18n";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = getTranslations(locale);
+---
+
+<section class="faq-section" id="faq" aria-labelledby="faq-title">
+  <div class="faq-head">
+    <h2 id="faq-title">{t.faq.title}</h2>
+    <p>{t.faq.subtitle}</p>
+  </div>
+  <div class="faq-list">
+    {
+      t.faq.items.map((item) => (
+        <details class="faq-item">
+          <summary>{item.question}</summary>
+          <div class="faq-answer">
+            {"answerHtml" in item ? <p set:html={item.answerHtml} /> : <p>{item.answer}</p>}
+          </div>
+        </details>
+      ))
+    }
+  </div>
+  <p class="faq-foot">
+    {t.faq.footPrefix}
+    <a href={docsUrl(locale)} target="_blank" rel="noreferrer">{t.faq.footLink}</a>
+  </p>
+</section>

@@ -1,0 +1,44 @@
+---
+import type { Locale } from "../i18n";
+import { getTranslations, screenshotUrl } from "../i18n";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = getTranslations(locale);
+---
+
+<section class="feature-showcase" id="features" aria-labelledby="features-title">
+  <div class="feature-showcase-head">
+    <h2 id="features-title">{t.features.title}</h2>
+    <p>{t.features.subtitle}</p>
+  </div>
+  <ol class="feature-grid">
+    {
+      t.features.items.map((item) => (
+        <li class="feature-card">
+          <span class="feature-num">{item.num}</span>
+          <div class="feature-media">
+            <img
+              src={screenshotUrl(item.image, import.meta.env.BASE_URL)}
+              alt={item.alt}
+              width="1200"
+              height="675"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+          <h3>{item.title}</h3>
+          <p>{item.description}</p>
+          <ul class="tag-list" aria-label={t.features.tagsAria(item.title)}>
+            {item.tags.map((tag) => (
+              <li class="tag">{tag}</li>
+            ))}
+          </ul>
+        </li>
+      ))
+    }
+  </ol>
+</section>

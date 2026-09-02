@@ -1,0 +1,37 @@
+---
+import type { Locale } from "../i18n";
+import { getTranslations, switchLocalePath } from "../i18n";
+import { site } from "../data/site";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = getTranslations(locale);
+const langHref = switchLocalePath(locale, import.meta.env.BASE_URL);
+---
+
+<nav class="site-nav">
+  <a class="brand" href={import.meta.env.BASE_URL}>
+    <span class="brand-mark">SSE</span>
+    <span class="brand-name">{site.name}</span>
+  </a>
+  <div class="nav-actions">
+    <a href="#features">{t.nav.features}</a>
+    <a class="lang-switch" href={langHref} lang={locale === "zh" ? "en" : "zh-CN"} hreflang={locale === "zh" ? "en" : "zh-CN"}>
+      {t.nav.switchLang}
+    </a>
+    <a href={site.urls.github} target="_blank" rel="noreferrer">GitHub</a>
+    <button
+      class="theme-toggle"
+      type="button"
+      id="theme-toggle"
+      data-label-dark={t.nav.themeDark}
+      data-label-light={t.nav.themeLight}
+    >
+      {t.nav.themeDark}
+    </button>
+    <a class="install-mini" href="#install">{t.nav.install}</a>
+  </div>
+</nav>
