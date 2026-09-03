@@ -59,6 +59,7 @@
   - [🌐 国际化与设置](#-国际化与设置)
 - [界面截图](#界面截图)
   - [主界面](#主界面)
+  - [暗夜风格](#暗夜风格)
   - [工具栏与更多菜单](#工具栏与更多菜单)
   - [Demo 页联调](#demo-页联调)
 - [已支持的 AI Web 厂商](#已支持的-ai-web-厂商)
@@ -196,6 +197,12 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
   <img width="1200" alt="对话 工具 · 网页搜索" src="docs/assets/screenshots/tab-conversation-tools.png">
 </p>
 
+DeepSeek 网页示例 — 推流过程中 Conversation 合并思考 / 正文 / 搜索：
+
+<p align="center">
+  <img width="1200" alt="DeepSeek 对话" src="docs/assets/screenshots/deepseek-conversation.gif">
+</p>
+
 ## ⏱ Timeline
 
 用时间轴看这条流「什么时候到、中间卡了多久」：
@@ -207,6 +214,12 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 
 <p align="center">
   <img width="1200" alt="Timeline Tab" src="docs/assets/screenshots/tab-timeline.png">
+</p>
+
+DeepSeek 流在时间轴上 — 回复生成时的到达节奏与卡顿：
+
+<p align="center">
+  <img width="1200" alt="DeepSeek 时间轴" src="docs/assets/screenshots/deepseek-timeline.gif">
 </p>
 
 ## 📄 Raw
@@ -276,6 +289,14 @@ Events、对话（正文 / 思考）、Raw 都用了虚拟滚动：屏幕外的�
   <img width="1400" alt="主界面" src="docs/assets/screenshots/main-workbench.png">
 </p>
 
+## 暗夜风格
+
+同一套工作台在暗夜主题下的样子 — 工具栏可切换浅色 / 暗夜 / 跟随 DevTools。
+
+<p align="center">
+  <img width="1400" alt="暗夜风格主界面" src="docs/assets/chrome-web-store/05-night.png">
+</p>
+
 ## 工具栏与更多菜单
 
 常用操作放在顶栏：导入、导出、存档、Stats、暂停、清空；Anomalies、Spec、全局搜索、设置放在「更多」里。
@@ -290,6 +311,12 @@ Events、对话（正文 / 思考）、Raw 都用了虚拟滚动：屏幕外的�
 
 <p align="center">
   <img width="1000" alt="Demo 页" src="docs/assets/screenshots/demo-page.png">
+</p>
+
+**Fetch SSE 10k** — 压测长流，观察 Events 在虚拟滚动下是否仍流畅：
+
+<p align="center">
+  <img width="1200" alt="Demo 页 Fetch SSE 10k" src="docs/assets/screenshots/demo-page-10k.gif">
 </p>
 
 ---
