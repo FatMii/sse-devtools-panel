@@ -17,6 +17,10 @@ const files = [
   "tab-conversation-content.png",
   "main-workbench.png",
   "virtual-scrolling.gif",
+  "deepseek-conversation.gif",
+  "night-theme.png",
+  "tab-request.png",
+  "dialog-stats.png",
 ];
 
 if (!fs.existsSync(sourceDir)) {
