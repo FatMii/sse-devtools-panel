@@ -1,0 +1,20 @@
+---
+/**
+ * Medium-style click-to-zoom for landing screenshots / GIFs.
+ * Mark targets with data-zoomable on <img>.
+ */
+---
+
+<script>
+  import mediumZoom from "medium-zoom";
+
+  const theme = document.documentElement.dataset.theme;
+  const background =
+    theme === "dark" ? "rgba(11, 18, 32, 0.92)" : "rgba(243, 246, 250, 0.94)";
+
+  mediumZoom("[data-zoomable]", {
+    margin: 24,
+    background,
+    scrollOffset: 40,
+  });
+</script>

@@ -2,16 +2,16 @@ import http from "node:http";
 
 const PORT = 8765;
 const DEFAULT_CHUNKS = [
-  "你好",
-  "，欢迎来到",
-  " SSE DevTools Panel。",
-  "这是一个",
-  "用于调试",
-  "SSE / NDJSON / Connect+JSON",
-  "流式响应的",
-  "Chrome DevTools",
-  "扩展演示。",
-  "很高兴见到你！",
+  "Hello",
+  ", welcome to",
+  " SSE DevTools Panel.",
+  " This is a",
+  " Chrome DevTools",
+  " extension demo",
+  " for debugging",
+  " SSE / NDJSON / Connect+JSON",
+  " streaming responses.",
+  " Nice to meet you!",
 ];
 
 /**
@@ -176,27 +176,32 @@ function writeNdjsonStream(res, count, intervalMs) {
 }
 
 const DEMO_HTML = `<!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SSE DevTools · Demo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --ink: #10221f;
-      --ink-soft: #24363a;
-      --paper: #eef3f0;
-      --paper-2: #e2ebe6;
-      --signal: #0b7f6b;
-      --signal-deep: #065f51;
-      --mute: #5c6f6a;
-      --line: rgba(16, 34, 31, 0.12);
-      --feed: #0d1716;
-      --feed-text: #c8ddd6;
-      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --bg: #f3f6fa;
+      --surface: #ffffff;
+      --surface-2: #f7f9fc;
+      --line: #d7e0ea;
+      --line-strong: #b8c7d8;
+      --muted: #64748b;
+      --text: #0f172a;
+      --text-soft: #475569;
+      --blue: #1d4ed8;
+      --accent: #2563eb;
+      --accent-soft: #e8f0ff;
+      --shadow: rgba(15, 23, 42, 0.08);
+      --shadow-strong: rgba(15, 23, 42, 0.14);
+      --font-sans: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+      --font-mono: "IBM Plex Mono", Consolas, monospace;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     * { box-sizing: border-box; }
@@ -207,38 +212,13 @@ const DEMO_HTML = `<!DOCTYPE html>
     }
 
     body {
-      color: var(--ink);
-      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      color: var(--text);
+      font-family: var(--font-sans);
+      line-height: 1.5;
       background:
-        radial-gradient(1200px 700px at 12% -10%, rgba(11, 127, 107, 0.18), transparent 55%),
-        radial-gradient(900px 600px at 90% 10%, rgba(16, 34, 31, 0.08), transparent 50%),
-        linear-gradient(165deg, #f7faf8 0%, var(--paper) 42%, var(--paper-2) 100%);
+        radial-gradient(ellipse 70% 40% at 50% -10%, rgba(37, 99, 235, 0.12), transparent 55%),
+        var(--bg);
       overflow-x: hidden;
-    }
-
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      opacity: 0.45;
-      background-image:
-        linear-gradient(var(--line) 1px, transparent 1px),
-        linear-gradient(90deg, var(--line) 1px, transparent 1px);
-      background-size: 48px 48px;
-      mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, #000 20%, transparent 75%);
-    }
-
-    body::after {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background: repeating-linear-gradient(
-        -18deg,
-        transparent 0 14px,
-        rgba(11, 127, 107, 0.03) 14px 15px
-      );
     }
 
     .shell {
@@ -248,52 +228,64 @@ const DEMO_HTML = `<!DOCTYPE html>
       margin: 0 auto;
       padding: clamp(2.5rem, 8vh, 5.5rem) 0 3rem;
       display: grid;
-      gap: 1.75rem;
+      gap: 1.25rem;
+    }
+
+    .eyebrow {
+      margin: 0;
+      color: var(--blue);
+      font: 600 12px/1.2 var(--font-mono);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      animation: rise 0.55s var(--ease) both;
     }
 
     .brand {
-      font-family: "Bricolage Grotesque", sans-serif;
-      font-optical-sizing: auto;
-      font-weight: 700;
-      font-size: clamp(2.75rem, 7.5vw, 4.35rem);
-      line-height: 1.08;
-      letter-spacing: -0.015em;
       margin: 0;
-      max-width: 14ch;
-      animation: rise 0.7s var(--ease) both;
+      font-size: clamp(2rem, 4.8vw, 3.25rem);
+      font-weight: 800;
+      line-height: 1.12;
+      letter-spacing: -0.045em;
+      max-width: 16ch;
+      animation: rise 0.55s var(--ease) 0.06s both;
     }
 
     .brand span {
-      display: block;
-      color: var(--signal-deep);
+      color: var(--accent);
     }
 
     .lead {
       margin: 0;
-      max-width: 36rem;
-      color: var(--mute);
-      font-size: 0.95rem;
-      line-height: 1.55;
-      animation: rise 0.7s var(--ease) 0.08s both;
+      max-width: 40rem;
+      color: var(--text-soft);
+      font-size: 1.05rem;
+      line-height: 1.6;
+      animation: rise 0.55s var(--ease) 0.1s both;
     }
 
     .actions {
       display: flex;
       flex-wrap: wrap;
       gap: 0.75rem;
-      animation: rise 0.7s var(--ease) 0.16s both;
+      margin-top: 0.35rem;
+      animation: rise 0.55s var(--ease) 0.14s both;
     }
 
     button {
       appearance: none;
-      border: 1px solid transparent;
-      border-radius: 4px;
-      padding: 0.85rem 1.15rem;
-      font: inherit;
-      font-size: 0.9rem;
-      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.7rem 1.1rem;
+      background: var(--surface);
+      color: var(--text);
+      font: 600 0.9rem/1.2 var(--font-sans);
       cursor: pointer;
-      transition: transform 180ms var(--ease), background 180ms var(--ease), border-color 180ms var(--ease);
+      box-shadow: 0 1px 2px var(--shadow);
+      transition: transform 180ms var(--ease), background 180ms var(--ease), border-color 180ms var(--ease), box-shadow 180ms var(--ease);
     }
 
     button:disabled {
@@ -302,24 +294,21 @@ const DEMO_HTML = `<!DOCTYPE html>
     }
 
     button.primary {
-      background: var(--signal);
-      color: #f4fffb;
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.25);
     }
 
     button.primary:hover:not(:disabled) {
-      background: var(--signal-deep);
+      background: var(--blue);
       transform: translateY(-1px);
     }
 
-    button.ghost {
-      background: transparent;
-      color: var(--ink-soft);
-      border-color: rgba(16, 34, 31, 0.22);
-    }
-
     button.ghost:hover:not(:disabled) {
-      border-color: var(--signal);
-      color: var(--signal-deep);
+      border-color: var(--accent);
+      color: var(--blue);
+      background: var(--accent-soft);
       transform: translateY(-1px);
     }
 
@@ -328,22 +317,22 @@ const DEMO_HTML = `<!DOCTYPE html>
       align-items: center;
       gap: 0.55rem;
       min-height: 1.25rem;
-      color: var(--mute);
-      font-size: 0.8rem;
+      color: var(--muted);
+      font: 500 0.8rem/1.3 var(--font-mono);
       letter-spacing: 0.02em;
-      animation: rise 0.7s var(--ease) 0.22s both;
+      animation: rise 0.55s var(--ease) 0.18s both;
     }
 
     .status .dot {
       width: 0.55rem;
       height: 0.55rem;
       border-radius: 50%;
-      background: #9aaea8;
+      background: var(--line-strong);
     }
 
     .status.is-live .dot {
-      background: var(--signal);
-      box-shadow: 0 0 0 0 rgba(11, 127, 107, 0.45);
+      background: var(--accent);
+      box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.45);
       animation: pulse 1.4s ease-out infinite;
     }
 
@@ -353,31 +342,29 @@ const DEMO_HTML = `<!DOCTYPE html>
       max-height: min(52vh, 480px);
       overflow: auto;
       padding: 1.1rem 1.2rem;
-      border-radius: 6px;
-      border: 1px solid rgba(13, 23, 22, 0.35);
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 28%),
-        var(--feed);
-      color: var(--feed-text);
-      font-size: 0.8rem;
-      line-height: 1.55;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: 0 8px 24px var(--shadow);
+      font: 0.8rem/1.55 var(--font-mono);
       white-space: pre-wrap;
       word-break: break-word;
-      animation: rise 0.7s var(--ease) 0.28s both;
+      animation: rise 0.55s var(--ease) 0.22s both;
     }
 
     .feed:empty::before {
       content: "Waiting for stream…\\AOpen F12 → SSE DevTools, refresh this page, then start a stream.";
       white-space: pre-wrap;
-      color: rgba(200, 221, 214, 0.45);
+      color: var(--muted);
     }
 
     .hint {
       margin: 0;
-      color: var(--mute);
-      font-size: 0.75rem;
+      color: var(--muted);
+      font-size: 0.8rem;
       line-height: 1.5;
-      animation: rise 0.7s var(--ease) 0.34s both;
+      animation: rise 0.55s var(--ease) 0.26s both;
     }
 
     @keyframes rise {
@@ -386,9 +373,9 @@ const DEMO_HTML = `<!DOCTYPE html>
     }
 
     @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(11, 127, 107, 0.45); }
-      70% { box-shadow: 0 0 0 10px rgba(11, 127, 107, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(11, 127, 107, 0); }
+      0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.45); }
+      70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
     }
 
     @media (max-width: 560px) {
@@ -407,8 +394,9 @@ const DEMO_HTML = `<!DOCTYPE html>
 </head>
 <body>
   <main class="shell">
-    <h1 class="brand">SSE DevTools<span>Panel</span></h1>
-    <p class="lead">Local stream playground. Load the extension, open DevTools → SSE DevTools, refresh this page, then try each transport.</p>
+    <p class="eyebrow">Local playground</p>
+    <h1 class="brand">SSE DevTools <span>Panel</span></h1>
+    <p class="lead">Load the extension, open DevTools → SSE DevTools, refresh this page, then try each transport.</p>
     <div class="actions">
       <button id="go-fetch" class="primary" type="button">Fetch SSE</button>
       <button id="go-es" class="ghost" type="button">EventSource</button>

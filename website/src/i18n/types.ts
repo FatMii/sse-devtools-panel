@@ -71,10 +71,13 @@ export interface UI {
   };
   spotlight: {
     ariaLabel: string;
-    items: [
-      { title: string; description: string; image: string; alt: string; tags: string[] },
-      { title: string; description: string; image: string; alt: string; tags: string[] },
-    ];
+    items: Array<{
+      title: string;
+      description: string;
+      image: string;
+      alt: string;
+      tags: string[];
+    }>;
   };
   faq: {
     title: string;
