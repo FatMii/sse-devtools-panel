@@ -1,6 +1,7 @@
 ---
 import type { Locale } from "../i18n";
 import { getTranslations, screenshotUrl } from "../i18n";
+import SkeletonImage from "./SkeletonImage.astro";
 
 interface Props {
   locale: Locale;
@@ -19,14 +20,13 @@ const src = screenshotUrl("panel-overview.gif", import.meta.env.BASE_URL);
         <div class="window-url">{t.heroDemo.windowUrl}</div>
         <div class="window-badge">LIVE</div>
       </div>
-      <img
+      <SkeletonImage
         class="hero-demo-media"
         src={src}
         alt={t.heroDemo.imageAlt}
-        width="1400"
-        height="788"
+        width={1400}
+        height={788}
         loading="eager"
-        decoding="async"
       />
     </div>
   </div>

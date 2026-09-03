@@ -14,6 +14,9 @@ importers:
       medium-zoom:
         specifier: ^1.1.0
         version: 1.1.0
+      sync-skeleton:
+        specifier: ^1.0.2
+        version: 1.0.2
 
 packages:
 
@@ -1403,6 +1406,9 @@ packages:
     resolution: {integrity: sha512-bkxnTg1kSU0guhIBmibA6UUhrQmPVA1XsQLN+ylCd+UWzbnLkySOcXpyk1mrl05f+pcaCx2eHb+sp6BgMZWX+Q==}
     engines: {node: '>=16'}
     hasBin: true
+
+  sync-skeleton@1.0.2:
+    resolution: {integrity: sha512-xBbGue205RHDHmdUk+8L3AVnfV1a/53ljZsYm9YFZCsKOmTL6Xc6y/d+vd8bEjFI2JM5AbtD3XrgEyTgGbXNcg==}
 
   tiny-inflate@1.0.3:
     resolution: {integrity: sha512-pkY1fj1cKHb2seWDy0B16HeWyczlJA9/WW3u3c4z/NiWDsO3DOU5D7nhTLE9CF0yXv/QZFY7sEJmj24dK+Rrqw==}
@@ -3263,6 +3269,8 @@ snapshots:
       csso: 5.0.5
       picocolors: 1.1.1
       sax: 1.6.1
+
+  sync-skeleton@1.0.2: {}
 
   tiny-inflate@1.0.3: {}
 

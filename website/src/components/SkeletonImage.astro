@@ -1,0 +1,35 @@
+---
+interface Props {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+  class?: string;
+  loading?: "lazy" | "eager";
+  zoomable?: boolean;
+}
+
+const {
+  src,
+  alt,
+  width,
+  height,
+  class: className = "",
+  loading = "lazy",
+  zoomable = false,
+} = Astro.props;
+---
+
+<div class="skeleton-media" style={`aspect-ratio: ${width} / ${height}`}>
+  <div class="loading-skeleton skeleton-media-shimmer" aria-hidden="true"></div>
+  <img
+    class:list={["skeleton-media-img", className]}
+    src={src}
+    alt={alt}
+    width={width}
+    height={height}
+    loading={loading}
+    decoding="async"
+    data-zoomable={zoomable ? true : undefined}
+  />
+</div>

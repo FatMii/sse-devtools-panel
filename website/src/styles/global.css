@@ -575,6 +575,50 @@ img[data-zoomable] {
   cursor: zoom-in;
 }
 
+/* sync-skeleton theme tokens (https://sync-skeleton.dev) */
+:root,
+[data-theme="light"] {
+  --skeleton-base-color: #e8eef6;
+  --skeleton-highlight-color: #f7fafc;
+  --skeleton-radius: 10px;
+}
+
+[data-theme="dark"] {
+  --skeleton-base-color-dark: #1c273b;
+  --skeleton-highlight-color-dark: #2a364c;
+}
+
+.skeleton-media {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.skeleton-media-shimmer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  transition: opacity 0.28s ease;
+}
+
+.skeleton-media-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
+
+.skeleton-media.is-loaded .skeleton-media-img {
+  opacity: 1;
+}
+
+.skeleton-media.is-loaded .skeleton-media-shimmer {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* medium-zoom: overlay above sticky nav (docs omit default z-index) */
 .medium-zoom-overlay,
 .medium-zoom-image--opened {

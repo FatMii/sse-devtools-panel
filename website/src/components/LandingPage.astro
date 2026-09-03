@@ -11,6 +11,7 @@ import FeatureSpotlight from "./FeatureSpotlight.astro";
 import FaqSection from "./FaqSection.astro";
 import InstallSection from "./InstallSection.astro";
 import MediaZoom from "./MediaZoom.astro";
+import SkeletonMediaInit from "./SkeletonMediaInit.astro";
 import { docsUrl } from "../i18n";
 import { site } from "../data/site";
 
@@ -57,4 +58,5 @@ const t = getTranslations(locale);
     </p>
   </footer>
   <MediaZoom />
+  <SkeletonMediaInit />
 </BaseLayout>
