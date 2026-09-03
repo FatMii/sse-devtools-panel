@@ -31,16 +31,16 @@ export const en: UI = {
     title: "Why you need it",
     items: [
       {
-        title: "Network is not enough",
-        body: "AI and private protocols often use NDJSON or Connect+JSON—the EventStream tab won't help.",
+        title: "Network does not cover these streams",
+        body: "The EventStream tab is built for standard SSE. Many AI streams use fetch + NDJSON / Connect+JSON, so Network mostly shows a whole Response body without a per-event view.",
       },
       {
-        title: "Timing is invisible",
-        body: "TTFT, chunk gaps, stalls, and reconnects are hidden inside total request duration.",
+        title: "Only total request duration",
+        body: "First-byte delay, chunk gaps, stalls, and reconnects stay buried inside total request time—Network does not call them out.",
       },
       {
-        title: "Conversation is hard to piece together",
-        body: "Thinking, content, and tool calls mix in raw frames—Conversation merges them by channel.",
+        title: "Chat is scattered in raw frames",
+        body: "Thinking, content, and tool calls mix in raw data, so you have to reassemble a reply by hand—Conversation merges them by channel.",
       },
     ],
   },
@@ -59,9 +59,9 @@ export const en: UI = {
       },
       {
         num: "02",
-        title: "See stream rhythm",
+        title: "See stream timing",
         description:
-          "TTFT, chunk gaps, and stalls at a glance—no more guessing from Network timing.",
+          "Timeline and Stats mark first byte, gaps, and stalls—clearer than Network total duration alone.",
         image: "tab-timeline.png",
         alt: "Timeline tab visualizing event gaps and stalls",
         tags: ["Timeline", "TTFT"],
@@ -88,11 +88,12 @@ export const en: UI = {
         tags: ["DevTools", "MV3"],
       },
       {
-        title: "Import, export, and search",
-        description: "Virtual scrolling for heavy streams, global search, and session archives.",
+        title: "Smooth scrolling on long streams",
+        description:
+          "Events, Conversation, and Raw use virtual scrolling—only on-screen rows render, so heavy streams stay responsive.",
         image: "virtual-scrolling.gif",
         alt: "Virtual scrolling demo with many events",
-        tags: ["Export", "Search"],
+        tags: ["Virtual scroll", "Events", "Raw"],
       },
     ],
   },

@@ -81,14 +81,14 @@ Chrome Network already has an [EventStream](https://developer.chrome.com/docs/de
 
 For many AI / product streams that is not enough. They are often not plain EventSource, and common pain points are:
 
-- Most use **`fetch` + custom SSE / NDJSON / Connect+JSON**. Network often shows hard-to-read Response fragments, or an empty / useless EventStream tab
-- **No in-stream timing** (TTFT, chunk gaps, stall distribution, reconnect markers)
-- **AI chats are hard to read**: thinking / content / tool calls / search sources mixed in raw frames and need manual stitching
+- Most use **`fetch` + custom SSE / NDJSON / Connect+JSON**. The EventStream tab is built for standard SSE, so Network mostly shows a whole Response body without a per-event view
+- **Only total request duration** — first-byte delay, chunk gaps, stalls, and reconnects are not called out on their own
+- **Chat is scattered in raw frames** — thinking / content / tool calls mix in raw data, so you reassemble a reply by hand
 
 | Scenario                                         | Chrome Network                                       | SSE DevTools Panel                                |
 | ------------------------------------------------ | ---------------------------------------------------- | ------------------------------------------------- |
 | Standard SSE (EventSource / some fetch)          | EventStream tab on the request                       | Same view, plus filters, JSON tree, export        |
-| AI / private protocols (NDJSON, Connect+JSON, …) | Mostly raw fragments; hard to reassemble into a chat | Profile detection + **Conversation** channels     |
+| AI / vendor protocols (NDJSON, Connect+JSON, …)  | Mostly a whole Response body                         | Profile detection + **Conversation** channels     |
 | In-stream timing & stalls                        | Mostly whole-request duration                        | Timeline + Stats (TTFT / gap / events·s)          |
 | Spec & anomalies                                 | No targeted scan                                     | SSE Spec warnings · Anomalies                     |
 | Web search / tool results                        | Buried in raw                                        | Normalized `web_search` cards (queries + sources) |
