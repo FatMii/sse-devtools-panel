@@ -69,7 +69,7 @@ html {
 
 body {
   margin: 0;
-  min-width: 960px;
+  min-width: 400px;
   color: var(--text);
   background:
     radial-gradient(ellipse 70% 40% at 50% -10%, rgba(37, 99, 235, 0.12), transparent 55%),
