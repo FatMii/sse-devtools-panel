@@ -1,0 +1,33 @@
+---
+/**
+ * Reveal SkeletonImage slots once <img> finishes loading.
+ * Shimmer animation comes from sync-skeleton.
+ */
+---
+
+<script>
+  function bindSkeletonMedia(root: ParentNode = document) {
+    root.querySelectorAll(".skeleton-media:not([data-skeleton-bound])").forEach((wrap) => {
+      if (!(wrap instanceof HTMLElement)) return;
+      wrap.dataset.skeletonBound = "1";
+
+      const img = wrap.querySelector("img.skeleton-media-img");
+      if (!(img instanceof HTMLImageElement)) return;
+
+      const done = () => {
+        wrap.classList.add("is-loaded");
+      };
+
+      if (img.complete && img.naturalWidth > 0) {
+        done();
+        return;
+      }
+
+      img.addEventListener("load", done, { once: true });
+      img.addEventListener("error", done, { once: true });
+    });
+  }
+
+  bindSkeletonMedia();
+  document.addEventListener("astro:page-load", () => bindSkeletonMedia());
+</script>

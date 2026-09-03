@@ -1,6 +1,7 @@
 ---
 import type { Locale } from "../i18n";
 import { getTranslations, screenshotUrl } from "../i18n";
+import SkeletonImage from "./SkeletonImage.astro";
 
 interface Props {
   locale: Locale;
@@ -21,14 +22,12 @@ const t = getTranslations(locale);
         <li class="feature-card">
           <span class="feature-num">{item.num}</span>
           <div class="feature-media">
-            <img
+            <SkeletonImage
               src={screenshotUrl(item.image, import.meta.env.BASE_URL)}
               alt={item.alt}
-              data-zoomable
-              width="1200"
-              height="675"
-              loading="lazy"
-              decoding="async"
+              width={1200}
+              height={675}
+              zoomable
             />
           </div>
           <h3>{item.title}</h3>

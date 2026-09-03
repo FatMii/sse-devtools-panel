@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "astro": "^5.7.10",
-    "medium-zoom": "^1.1.0"
+    "medium-zoom": "^1.1.0",
+    "sync-skeleton": "^1.0.2"
   }
 }
