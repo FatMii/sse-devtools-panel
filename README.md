@@ -59,6 +59,7 @@
   - [🌐 i18n & settings](#-i18n--settings)
 - [Screenshots](#screenshots)
   - [Main workbench](#main-workbench)
+  - [Night theme](#night-theme)
   - [Toolbar & More menu](#toolbar--more-menu)
   - [Demo page](#demo-page)
 - [Supported AI web vendors](#supported-ai-web-vendors)
@@ -184,6 +185,12 @@ Merge stream fragments into a readable conversation, split by channel:
   <img width="1200" alt="Conversation tools · web search" src="docs/assets/screenshots/tab-conversation-tools.png">
 </p>
 
+DeepSeek web example — Conversation merges thinking / content / search while the page streams:
+
+<p align="center">
+  <img width="1200" alt="DeepSeek conversation" src="docs/assets/screenshots/deepseek-conversation.gif">
+</p>
+
 ## ⏱ Timeline
 
 Use the timeline to see when events arrived and how long gaps lasted:
@@ -195,6 +202,12 @@ Use the timeline to see when events arrived and how long gaps lasted:
 
 <p align="center">
   <img width="1200" alt="Timeline tab" src="docs/assets/screenshots/tab-timeline.png">
+</p>
+
+DeepSeek stream on the timeline — arrival cadence and stalls while the reply is still coming in:
+
+<p align="center">
+  <img width="1200" alt="DeepSeek timeline" src="docs/assets/screenshots/deepseek-timeline.gif">
 </p>
 
 ## 📄 Raw
@@ -254,6 +267,14 @@ Pick a stream in the sidebar; switch Events / Request / Conversation / Timeline 
   <img width="1400" alt="Main workbench" src="docs/assets/screenshots/main-workbench.png">
 </p>
 
+## Night theme
+
+Same workbench in Night — switch Light / Night / Follow DevTools from the toolbar.
+
+<p align="center">
+  <img width="1400" alt="Night theme workbench" src="docs/assets/chrome-web-store/05-night.png">
+</p>
+
 ## Toolbar & More menu
 
 Common actions live in the top bar: import, export, archives, Stats, pause, clear. Anomalies, Spec, global search, and settings are under **More**.
@@ -268,6 +289,12 @@ The local demo can start an SSE stream in one click, so you can confirm the exte
 
 <p align="center">
   <img width="1000" alt="Demo page" src="docs/assets/screenshots/demo-page.png">
+</p>
+
+**Fetch SSE 10k** — stress a long stream and watch Events stay responsive with virtual scrolling:
+
+<p align="center">
+  <img width="1200" alt="Demo page Fetch SSE 10k" src="docs/assets/screenshots/demo-page-10k.gif">
 </p>
 
 ---
