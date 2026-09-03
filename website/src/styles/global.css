@@ -69,6 +69,7 @@ html {
 
 body {
   margin: 0;
+  min-width: 960px;
   color: var(--text);
   background:
     radial-gradient(ellipse 70% 40% at 50% -10%, rgba(37, 99, 235, 0.12), transparent 55%),
@@ -568,6 +569,16 @@ code {
   color: var(--text-soft);
   font-size: 15px;
   line-height: 1.7;
+}
+
+img[data-zoomable] {
+  cursor: zoom-in;
+}
+
+/* medium-zoom: overlay above sticky nav (docs omit default z-index) */
+.medium-zoom-overlay,
+.medium-zoom-image--opened {
+  z-index: 100;
 }
 
 /* —— FAQ —— */

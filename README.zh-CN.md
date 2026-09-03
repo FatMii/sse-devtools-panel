@@ -59,6 +59,7 @@
   - [🌐 国际化与设置](#-国际化与设置)
 - [界面截图](#界面截图)
   - [主界面](#主界面)
+  - [暗夜风格](#暗夜风格)
   - [工具栏与更多菜单](#工具栏与更多菜单)
   - [Demo 页联调](#demo-页联调)
 - [已支持的 AI Web 厂商](#已支持的-ai-web-厂商)
@@ -82,14 +83,14 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 
 但对很多 AI / 业务流不够用。它们通常不是单纯的 EventSource，常见问题是：
 
-- 多用 **`fetch` + 自定义 SSE / NDJSON / Connect+JSON**，Network 里经常只剩难读的 Response 碎片，或 EventStream Tab 空白 / 帮不上忙
-- **看不到流内节奏**（TTFT、chunk gap、卡顿分布、重连标记）
-- **AI 对话难读**：思考 / 正文 / 工具调用 / 搜索来源混在原始帧里，需要人工拼
+- 多用 **`fetch` + 自定义 SSE / NDJSON / Connect+JSON**。EventStream Tab 面向标准 SSE，这类流在 Network 里多半只能看整段 Response，缺少按事件拆开的视图
+- **只有整段耗时**：首包延迟、chunk 间隔、卡顿和重连，都不会单独标出
+- **对话散落在原始帧里**：思考 / 正文 / 工具调用混在 raw 数据中，要自己对照才能读完一轮回复
 
 | 场景                                          | Chrome Network             | SSE DevTools Panel                        |
 | --------------------------------------------- | -------------------------- | ----------------------------------------- |
 | 标准 SSE（EventSource / 部分 fetch）          | 请求详情有 EventStream Tab | 同样可看，并带过滤、JSON 树、导出         |
-| AI / 私有协议（NDJSON、Connect+JSON、厂商帧） | 多半是原文碎片，难拼成对话 | Profile 识别 + **对话**分通道合并         |
+| AI / 厂商协议（NDJSON、Connect+JSON 等）      | 多半是整段 Response 原文   | Profile 识别 + **对话**分通道合并         |
 | 流内时序与卡顿                                | 基本只有整请求耗时         | Timeline + Stats（TTFT / gap / events·s） |
 | 规范与异常                                    | 无针对性扫描               | SSE Spec 告警 · Anomalies                 |
 | 网页搜索等工具结果                            | 埋在 raw 里                | 归一成 `web_search` 卡片（查询 + 来源）   |
@@ -196,6 +197,12 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
   <img width="1200" alt="对话 工具 · 网页搜索" src="docs/assets/screenshots/tab-conversation-tools.png">
 </p>
 
+DeepSeek 网页示例 — 推流过程中 Conversation 合并思考 / 正文 / 搜索：
+
+<p align="center">
+  <img width="1200" alt="DeepSeek 对话" src="docs/assets/screenshots/deepseek-conversation.gif">
+</p>
+
 ## ⏱ Timeline
 
 用时间轴看这条流「什么时候到、中间卡了多久」：
@@ -207,6 +214,12 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 
 <p align="center">
   <img width="1200" alt="Timeline Tab" src="docs/assets/screenshots/tab-timeline.png">
+</p>
+
+DeepSeek 流在时间轴上 — 回复生成时的到达节奏与卡顿：
+
+<p align="center">
+  <img width="1200" alt="DeepSeek 时间轴" src="docs/assets/screenshots/deepseek-timeline.gif">
 </p>
 
 ## 📄 Raw
@@ -276,6 +289,14 @@ Events、对话（正文 / 思考）、Raw 都用了虚拟滚动：屏幕外的�
   <img width="1400" alt="主界面" src="docs/assets/screenshots/main-workbench.png">
 </p>
 
+## 暗夜风格
+
+同一套工作台在暗夜主题下的样子 — 工具栏可切换浅色 / 暗夜 / 跟随 DevTools。
+
+<p align="center">
+  <img width="1400" alt="暗夜风格主界面" src="docs/assets/chrome-web-store/05-night.png">
+</p>
+
 ## 工具栏与更多菜单
 
 常用操作放在顶栏：导入、导出、存档、Stats、暂停、清空；Anomalies、Spec、全局搜索、设置放在「更多」里。
@@ -290,6 +311,12 @@ Events、对话（正文 / 思考）、Raw 都用了虚拟滚动：屏幕外的�
 
 <p align="center">
   <img width="1000" alt="Demo 页" src="docs/assets/screenshots/demo-page.png">
+</p>
+
+**Fetch SSE 10k** — 压测长流，观察 Events 在虚拟滚动下是否仍流畅：
+
+<p align="center">
+  <img width="1200" alt="Demo 页 Fetch SSE 10k" src="docs/assets/screenshots/demo-page-10k.gif">
 </p>
 
 ---
