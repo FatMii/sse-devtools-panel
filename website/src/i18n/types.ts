@@ -19,7 +19,7 @@ export interface UI {
     eyebrow: string;
     title: string;
     lead: string;
-    ctaInstall: string;
+    ctaDemo: string;
     proofLabel: string;
     proofOpenSource: string;
     proofLocal: string;
