@@ -24,7 +24,7 @@ export const en: UI = {
   },
   heroDemo: {
     ariaLabel: "Product demo",
-    windowUrl: "F12 → SSE DevTools · /v1/chat/completions",
+    windowUrl: "F12 → SSE DevTools · /api/stream",
     imageAlt: "SSE DevTools Panel overview: Streams list, Timeline, and event details",
   },
   pain: {

@@ -24,7 +24,7 @@ export const zh: UI = {
   },
   heroDemo: {
     ariaLabel: "产品演示",
-    windowUrl: "F12 → SSE DevTools · /v1/chat/completions",
+    windowUrl: "F12 → SSE DevTools · /api/stream",
     imageAlt: "SSE DevTools Panel 面板总览：Streams 列表、Timeline 与事件详情",
   },
   pain: {

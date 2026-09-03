@@ -10,6 +10,7 @@ import FeatureShowcase from "./FeatureShowcase.astro";
 import FeatureSpotlight from "./FeatureSpotlight.astro";
 import FaqSection from "./FaqSection.astro";
 import InstallSection from "./InstallSection.astro";
+import MediaZoom from "./MediaZoom.astro";
 import { docsUrl } from "../i18n";
 import { site } from "../data/site";
 
@@ -55,4 +56,5 @@ const t = getTranslations(locale);
       · v{site.version}
     </p>
   </footer>
+  <MediaZoom />
 </BaseLayout>
