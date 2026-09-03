@@ -87,13 +87,13 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 - **只有整段耗时**：首包延迟、chunk 间隔、卡顿和重连，都不会单独标出
 - **对话散落在原始帧里**：思考 / 正文 / 工具调用混在 raw 数据中，要自己对照才能读完一轮回复
 
-| 场景                                          | Chrome Network             | SSE DevTools Panel                        |
-| --------------------------------------------- | -------------------------- | ----------------------------------------- |
-| 标准 SSE（EventSource / 部分 fetch）          | 请求详情有 EventStream Tab | 同样可看，并带过滤、JSON 树、导出         |
-| AI / 厂商协议（NDJSON、Connect+JSON 等）      | 多半是整段 Response 原文   | Profile 识别 + **对话**分通道合并         |
-| 流内时序与卡顿                                | 基本只有整请求耗时         | Timeline + Stats（TTFT / gap / events·s） |
-| 规范与异常                                    | 无针对性扫描               | SSE Spec 告警 · Anomalies                 |
-| 网页搜索等工具结果                            | 埋在 raw 里                | 归一成 `web_search` 卡片（查询 + 来源）   |
+| 场景                                     | Chrome Network             | SSE DevTools Panel                        |
+| ---------------------------------------- | -------------------------- | ----------------------------------------- |
+| 标准 SSE（EventSource / 部分 fetch）     | 请求详情有 EventStream Tab | 同样可看，并带过滤、JSON 树、导出         |
+| AI / 厂商协议（NDJSON、Connect+JSON 等） | 多半是整段 Response 原文   | Profile 识别 + **对话**分通道合并         |
+| 流内时序与卡顿                           | 基本只有整请求耗时         | Timeline + Stats（TTFT / gap / events·s） |
+| 规范与异常                               | 无针对性扫描               | SSE Spec 告警 · Anomalies                 |
+| 网页搜索等工具结果                       | 埋在 raw 里                | 归一成 `web_search` 卡片（查询 + 来源）   |
 
 ---
 
