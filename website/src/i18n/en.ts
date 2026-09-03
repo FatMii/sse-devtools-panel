@@ -88,12 +88,44 @@ export const en: UI = {
         tags: ["DevTools", "MV3"],
       },
       {
+        title: "Real AI chats, merged live",
+        description:
+          "On sites like DeepSeek, thinking, content, and search merge into channels while the stream runs—no reading raw frames by hand.",
+        image: "deepseek-conversation.gif",
+        alt: "DeepSeek page with Conversation merge demo",
+        tags: ["Conversation", "DeepSeek", "AI Web"],
+      },
+      {
         title: "Smooth scrolling on long streams",
         description:
           "Events, Conversation, and Raw use virtual scrolling—only on-screen rows render, so heavy streams stay responsive.",
         image: "virtual-scrolling.gif",
         alt: "Virtual scrolling demo with many events",
         tags: ["Virtual scroll", "Events", "Raw"],
+      },
+      {
+        title: "Night theme for late debugging",
+        description:
+          "Switch Light / Night / Follow DevTools from the toolbar; preference syncs with Chrome for comfortable night work.",
+        image: "night-theme.png",
+        alt: "SSE DevTools night theme workbench",
+        tags: ["Night", "Theme"],
+      },
+      {
+        title: "Request context at a glance",
+        description:
+          "Inspect method, status, Content-Type, and headers in Request—sensitive fields are redacted so you can compare with the stream safely.",
+        image: "tab-request.png",
+        alt: "Request tab showing headers and basics",
+        tags: ["Request", "Headers"],
+      },
+      {
+        title: "Stats for stream health",
+        description:
+          "First-byte delay, duration, avg / max gap, and events per second in one place—pair with Anomalies / Spec when something looks off.",
+        image: "dialog-stats.png",
+        alt: "Stats dialog with stream performance metrics",
+        tags: ["Stats", "Anomalies"],
       },
     ],
   },
