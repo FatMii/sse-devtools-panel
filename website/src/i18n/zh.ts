@@ -14,9 +14,9 @@ export const zh: UI = {
   },
   hero: {
     eyebrow: "Chrome DevTools · SSE / NDJSON",
-    title: "别再对着原始碎片猜流式响应了",
-    lead: "在 F12 里直接看事件、对话与时间线。支持 fetch / EventSource / XHR，以及常见 AI 网页协议。",
-    ctaInstall: "获取扩展",
+    title: "在 DevTools 里看懂 SSE 流",
+    lead: "告别流式碎片，自动捕获网页 SSE / NDJSON 流——解析、可视化，一个面板全看清。",
+    ctaDemo: "查看演示",
     proofLabel: "产品要点",
     proofOpenSource: "开源",
     proofLocal: "处理，不上云",

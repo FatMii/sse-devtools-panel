@@ -14,9 +14,9 @@ export const en: UI = {
   },
   hero: {
     eyebrow: "Chrome DevTools · SSE / NDJSON",
-    title: "Stop guessing streaming responses from raw fragments",
-    lead: "Inspect events, conversation, and timeline right in F12. Supports fetch / EventSource / XHR and common AI web protocols.",
-    ctaInstall: "Get extension",
+    title: "Understand SSE streams in DevTools",
+    lead: "Leave raw fragments behind—capture SSE / NDJSON from the page, parse and visualize in one panel.",
+    ctaDemo: "See demo",
     proofLabel: "Product highlights",
     proofOpenSource: "open source",
     proofLocal: "local processing",

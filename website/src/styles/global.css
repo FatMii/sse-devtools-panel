@@ -94,25 +94,6 @@ button,
   cursor: pointer;
 }
 
-.lang-switch {
-  padding: 6px 10px;
-  color: var(--text-soft);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  transition:
-    color 0.2s ease,
-    border-color 0.2s ease,
-    background 0.2s ease;
-}
-
-.lang-switch:hover {
-  color: var(--text);
-  background: var(--surface);
-  border-color: var(--line-strong);
-}
-
 code {
   padding: 1px 5px;
   background: var(--surface);
@@ -179,17 +160,49 @@ code {
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   font-size: 13px;
 }
 
-.nav-actions > a:not(.install-mini) {
+.nav-links,
+.nav-util {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-links > a,
+.nav-util .lang-switch {
   color: var(--muted);
   transition: color 0.2s ease;
 }
 
-.nav-actions > a:not(.install-mini):hover {
+.nav-links > a:hover,
+.nav-util .lang-switch:hover {
   color: var(--text);
+}
+
+.nav-util {
+  padding: 0 10px;
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+
+.lang-switch {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.lang-switch:hover {
+  background: var(--surface);
+  border-color: var(--line-strong);
 }
 
 .theme-toggle,
@@ -199,24 +212,35 @@ code {
   justify-content: center;
   min-height: 36px;
   padding: 0 12px;
-  color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--line);
   border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
   transition:
     background 0.2s ease,
-    border-color 0.2s ease;
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-.theme-toggle:hover,
-.install-mini:hover {
+.theme-toggle {
+  color: var(--text-soft);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.theme-toggle:hover {
   border-color: var(--line-strong);
 }
 
 .install-mini {
   color: #fff;
-  background: var(--btn-dark);
-  border-color: var(--btn-dark);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.22);
+}
+
+.install-mini:hover {
+  background: var(--blue);
+  border-color: var(--blue);
 }
 
 .theme-toggle:focus-visible,
@@ -249,6 +273,7 @@ code {
   font-weight: 800;
   line-height: 1.12;
   letter-spacing: -0.045em;
+  white-space: nowrap;
 }
 
 .lead {
@@ -904,8 +929,23 @@ code {
     order: unset;
   }
 
-  .nav-actions > a:not(.install-mini):not([href="#features"]):not(.lang-switch) {
+  .nav-links .nav-github {
     display: none;
+  }
+
+  .nav-util {
+    padding: 0 8px;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-focus h1 {
+    white-space: normal;
+  }
+
+  .nav-util {
+    border-left: 0;
+    padding-left: 0;
   }
 }
 
