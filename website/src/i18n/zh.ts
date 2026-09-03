@@ -31,16 +31,16 @@ export const zh: UI = {
     title: "为什么需要它",
     items: [
       {
-        title: "Network 不够用",
-        body: "AI / 私有协议常是 NDJSON、Connect+JSON，EventStream Tab 帮不上忙。",
+        title: "Network 覆盖不到这类流",
+        body: "EventStream Tab 面向标准 SSE。很多 AI 流走 fetch + NDJSON / Connect+JSON，Network 多半只能看整段 Response，缺少按事件拆开的视图。",
       },
       {
-        title: "看不到节奏",
-        body: "TTFT、chunk gap、卡顿与重连，在整请求耗时里看不见。",
+        title: "只有整段耗时",
+        body: "首包延迟、chunk 间隔、卡顿和重连，都藏在「整请求耗时」里，Network 不会单独标出来。",
       },
       {
-        title: "对话难拼",
-        body: "思考 / 正文 / 工具调用混在 raw 帧里，Conversation 自动分通道合并。",
+        title: "对话散落在原始帧里",
+        body: "思考、正文、工具调用混在 raw 数据中，要自己对照才能读完一轮回复；Conversation 会按通道自动合并。",
       },
     ],
   },
@@ -59,8 +59,8 @@ export const zh: UI = {
       },
       {
         num: "02",
-        title: "看见流的节奏",
-        description: "TTFT、chunk gap、卡顿一眼可见，不用猜 Network 耗时。",
+        title: "看清推流时序",
+        description: "Timeline / Stats 标出首包、间隔与卡顿，比只看 Network 整段耗时更直观。",
         image: "tab-timeline.png",
         alt: "Timeline 标签页：事件间隔与卡顿可视化",
         tags: ["Timeline", "TTFT"],
@@ -86,11 +86,11 @@ export const zh: UI = {
         tags: ["DevTools", "MV3"],
       },
       {
-        title: "导入导出与搜索",
-        description: "大流量虚拟滚动、全局搜索、会话归档，长连接调试也不卡。",
+        title: "长流也能顺畅滚动",
+        description: "Events / 对话 / Raw 使用虚拟滚动：事件再多也只渲染可见区域，长连接调试不卡顿。",
         image: "virtual-scrolling.gif",
         alt: "虚拟滚动演示：大量事件仍流畅浏览",
-        tags: ["Export", "Search"],
+        tags: ["Virtual scroll", "Events", "Raw"],
       },
     ],
   },

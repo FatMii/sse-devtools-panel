@@ -83,14 +83,14 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 
 但对很多 AI / 业务流不够用。它们通常不是单纯的 EventSource，常见问题是：
 
-- 多用 **`fetch` + 自定义 SSE / NDJSON / Connect+JSON**，Network 里经常只剩难读的 Response 碎片，或 EventStream Tab 空白 / 帮不上忙
-- **看不到流内节奏**（TTFT、chunk gap、卡顿分布、重连标记）
-- **AI 对话难读**：思考 / 正文 / 工具调用 / 搜索来源混在原始帧里，需要人工拼
+- 多用 **`fetch` + 自定义 SSE / NDJSON / Connect+JSON**。EventStream Tab 面向标准 SSE，这类流在 Network 里多半只能看整段 Response，缺少按事件拆开的视图
+- **只有整段耗时**：首包延迟、chunk 间隔、卡顿和重连，都不会单独标出
+- **对话散落在原始帧里**：思考 / 正文 / 工具调用混在 raw 数据中，要自己对照才能读完一轮回复
 
 | 场景                                          | Chrome Network             | SSE DevTools Panel                        |
 | --------------------------------------------- | -------------------------- | ----------------------------------------- |
 | 标准 SSE（EventSource / 部分 fetch）          | 请求详情有 EventStream Tab | 同样可看，并带过滤、JSON 树、导出         |
-| AI / 私有协议（NDJSON、Connect+JSON、厂商帧） | 多半是原文碎片，难拼成对话 | Profile 识别 + **对话**分通道合并         |
+| AI / 厂商协议（NDJSON、Connect+JSON 等）      | 多半是整段 Response 原文   | Profile 识别 + **对话**分通道合并         |
 | 流内时序与卡顿                                | 基本只有整请求耗时         | Timeline + Stats（TTFT / gap / events·s） |
 | 规范与异常                                    | 无针对性扫描               | SSE Spec 告警 · Anomalies                 |
 | 网页搜索等工具结果                            | 埋在 raw 里                | 归一成 `web_search` 卡片（查询 + 来源）   |
