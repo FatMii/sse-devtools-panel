@@ -87,35 +87,40 @@ export const zh: UI = {
       },
       {
         title: "真实站点对话也能拼好",
-        description: "DeepSeek 等 AI 网页推流时，思考 / 正文 / 搜索会按通道合并，不必对着 raw 帧硬读。",
+        description:
+          "DeepSeek 等 AI 网页推流时，思考 / 正文 / 搜索会按通道合并，不必对着 raw 帧硬读。",
         image: "deepseek-conversation.gif",
         alt: "DeepSeek 网页与 Conversation 合并演示",
         tags: ["Conversation", "DeepSeek", "AI Web"],
       },
       {
         title: "长流也能顺畅滚动",
-        description: "Events / 对话 / Raw 使用虚拟滚动：事件再多也只渲染可见区域，长连接调试不卡顿。",
+        description:
+          "Events / 对话 / Raw 使用虚拟滚动：事件再多也只渲染可见区域，长连接调试不卡顿。",
         image: "virtual-scrolling.gif",
         alt: "虚拟滚动演示：大量事件仍流畅浏览",
         tags: ["Virtual scroll", "Events", "Raw"],
       },
       {
         title: "暗夜主题护眼",
-        description: "工具栏切换浅色 / 暗夜 / 跟随 DevTools，偏好保存在 Chrome 同步，夜间调试更舒服。",
+        description:
+          "工具栏切换浅色 / 暗夜 / 跟随 DevTools，偏好保存在 Chrome 同步，夜间调试更舒服。",
         image: "night-theme.png",
         alt: "SSE DevTools 暗夜主题界面",
         tags: ["Night", "Theme"],
       },
       {
         title: "请求上下文一眼清",
-        description: "Request 查看方法、状态、Content-Type 与头信息，敏感字段自动脱敏，对照流内容更方便。",
+        description:
+          "Request 查看方法、状态、Content-Type 与头信息，敏感字段自动脱敏，对照流内容更方便。",
         image: "tab-request.png",
         alt: "Request 标签页：请求头与基础信息",
         tags: ["Request", "Headers"],
       },
       {
         title: "Stats 看清流健康度",
-        description: "首包延迟、总时长、平均 / 最大间隔、每秒事件数一屏汇总；也可配合 Anomalies / Spec 排查异常。",
+        description:
+          "首包延迟、总时长、平均 / 最大间隔、每秒事件数一屏汇总；也可配合 Anomalies / Spec 排查异常。",
         image: "dialog-stats.png",
         alt: "Stats 对话框：流式性能指标",
         tags: ["Stats", "Anomalies"],
