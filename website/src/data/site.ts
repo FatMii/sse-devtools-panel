@@ -5,6 +5,7 @@ export const site = {
   tagline: "SSE / EventSource / NDJSON debugger for Chrome DevTools",
   version: manifest.version,
   urls: {
+    website: "https://fatmii.github.io/sse-devtools-panel/",
     chromeStore:
       "https://chromewebstore.google.com/detail/sse-devtools-panel/kffpkefnkmabnkhklmnjkihiiclggnni",
     github: "https://github.com/FatMii/sse-devtools-panel",

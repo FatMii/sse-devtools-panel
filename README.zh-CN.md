@@ -17,6 +17,8 @@
 </p>
 
 <p align="center">
+  <a href="https://fatmii.github.io/sse-devtools-panel/"><img alt="Website" src="https://img.shields.io/badge/Website-GitHub%20Pages-1d4ed8"></a>
+  &nbsp;
   <a href="https://chromewebstore.google.com/detail/sse-devtools-panel/kffpkefnkmabnkhklmnjkihiiclggnni"><img alt="Chrome Web Store" src="https://img.shields.io/chrome-web-store/v/kffpkefnkmabnkhklmnjkihiiclggnni?label=Chrome%20Web%20Store"></a>
   &nbsp;
   <a href="https://github.com/FatMii/sse-devtools-panel/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/FatMii/sse-devtools-panel/actions/workflows/ci.yml/badge.svg"></a>
@@ -29,6 +31,8 @@
 </p>
 
 <p align="center">
+  <a href="https://fatmii.github.io/sse-devtools-panel/"><strong>官方网站</strong></a>
+  ·
   <a href="https://chromewebstore.google.com/detail/sse-devtools-panel/kffpkefnkmabnkhklmnjkihiiclggnni"><strong>从 Chrome 应用商店安装</strong></a>
 </p>
 
