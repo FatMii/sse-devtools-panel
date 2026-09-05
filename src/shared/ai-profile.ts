@@ -89,11 +89,6 @@ const VENDOR_HOST_RULES: Array<{ hint: AiVendorHint; test: (host: string) => boo
   { hint: "anthropic", test: (h) => h.includes("anthropic.com") || h.includes("claude") },
 ];
 
-/** Common ACP-over-HTTP session SSE path: GET …/api/agents/:id/events */
-const ACP_EVENTS_PATH = /\/api\/agents\/[^/]+\/events(?:\?|$)/i;
-
-const ACP_SSE_EVENTS = new Set(["snapshot", "update", "stream-alive", "taken-over"]);
-
 const DOUBAO_WEB_EVENTS = new Set([
   "SSE_HEARTBEAT",
   "SSE_ACK",
@@ -123,17 +118,10 @@ const KIMI_GENERIC_EVENT_NAMES = new Set(["message", "delta"]);
 export function vendorHintFromUrl(url: string | undefined): AiVendorHint {
   if (!url) return "unknown";
   let host: string;
-  let pathWithQuery: string;
   try {
-    const u = new URL(url, "https://dummy.local");
-    host = u.hostname.toLowerCase();
-    pathWithQuery = `${u.pathname}${u.search}`;
+    host = new URL(url, "https://dummy.local").hostname.toLowerCase();
   } catch {
     host = url.toLowerCase();
-    pathWithQuery = url;
-  }
-  if (ACP_EVENTS_PATH.test(pathWithQuery) || ACP_EVENTS_PATH.test(url)) {
-    return "acp";
   }
   for (const rule of VENDOR_HOST_RULES) {
     if (rule.test(host)) return rule.hint;
@@ -344,43 +332,29 @@ function isAcpJsonRpcSessionUpdate(value: unknown): boolean {
 }
 
 /**
- * Agent Client Protocol (ACP) over HTTP session SSE.
- *
- * Shapes:
- * - `event: update` → JSON-RPC batch of `session/update` notifications
- * - `event: snapshot` → `{ sessionId, version, updates: SessionUpdate[] }`
- * - bare JSON-RPC `session/update` (single or batch)
+ * True ACP protocol payloads only (no URL / SSE event-name / proprietary envelopes):
+ * - JSON-RPC notification `session/update` (single or batch)
+ * - SessionUpdate object (`sessionUpdate` discriminator)
  */
-export function isAcpWireChunk(value: unknown, eventName?: string): boolean {
-  if (eventName === "snapshot") {
-    return (
-      isRecord(value) && Array.isArray(value.updates) && value.updates.some(isAcpSessionUpdate)
-    );
-  }
-  if (eventName === "update") {
-    return Array.isArray(value) && value.some(isAcpJsonRpcSessionUpdate);
-  }
-  // stream-alive / taken-over are ACP session-SSE control frames but carry no chat payload.
-  if (
-    eventName &&
-    ACP_SSE_EVENTS.has(eventName) &&
-    eventName !== "snapshot" &&
-    eventName !== "update"
-  ) {
-    return false;
-  }
-
+export function isAcpProtocolPayload(value: unknown): boolean {
   if (Array.isArray(value)) {
     return value.some((item) => isAcpJsonRpcSessionUpdate(item) || isAcpSessionUpdate(item));
   }
-
   if (isAcpJsonRpcSessionUpdate(value)) return true;
+  return isAcpSessionUpdate(value);
+}
 
+/**
+ * Wire chunk that the ACP merger may consume.
+ * Includes protocol payloads plus wrappers that embed SessionUpdate lists
+ * (e.g. a snapshot frame with `updates: SessionUpdate[]`).
+ */
+export function isAcpWireChunk(value: unknown, _eventName?: string): boolean {
+  if (isAcpProtocolPayload(value)) return true;
   if (isRecord(value) && Array.isArray(value.updates)) {
     return value.updates.some(isAcpSessionUpdate);
   }
-
-  return isAcpSessionUpdate(value);
+  return false;
 }
 
 function collectReasoningFields(value: unknown, into: Set<string>): void {
@@ -442,7 +416,6 @@ export function detectAiProfile(
       kimiHits += 2;
     }
     if (ev.event === "speech_type") yuanbaoHits += 2;
-    if (ev.event === "snapshot" || ev.event === "update") acpHits += 2;
 
     const parsed = tryParseJson(ev.data);
     if (parsed == null) continue;
@@ -474,9 +447,9 @@ export function detectAiProfile(
       yuanbaoHits++;
       reasoningFields.add("deepSearch");
     }
-    if (isAcpWireChunk(parsed, ev.event)) {
+    if (isAcpProtocolPayload(parsed)) {
       acpHits++;
-      reasoningFields.add("session/update");
+      reasoningFields.add("sessionUpdate");
     }
     if (
       isAnthropicChunk(parsed) ||
@@ -521,11 +494,6 @@ export function detectAiProfile(
   // Prefer yuanbao-web on Yuanbao/Hunyuan hosts when deepSearch frames are present.
   if (vendorHint === "yuanbao" && yuanbaoHits >= 2 && yuanbaoHits >= openaiHits) {
     profile = "yuanbao-web";
-  }
-
-  // Prefer ACP when URL or payload looks like session SSE with session/update.
-  if (vendorHint === "acp" && acpHits >= 1 && acpHits >= openaiHits) {
-    profile = "acp";
   }
 
   let resolvedVendor = vendorHint;

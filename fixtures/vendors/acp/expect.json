@@ -1,5 +1,5 @@
 {
-  "url": "http://127.0.0.1:4004/api/agents/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee/events",
+  "url": "https://example.test/any-stream",
   "profile": "acp",
   "vendorHint": "acp",
   "reasoningIncludes": ["plan the reply", "[plan]", "read the file", "reply"],
