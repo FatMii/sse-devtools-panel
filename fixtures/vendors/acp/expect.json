@@ -1,0 +1,11 @@
+{
+  "url": "http://127.0.0.1:4004/api/agents/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee/events",
+  "profile": "acp",
+  "vendorHint": "acp",
+  "reasoningIncludes": ["plan the reply", "[plan]", "read the file", "reply"],
+  "contentIncludes": ["Hello ", "from ACP"],
+  "contentExcludes": ["plan the reply", "[plan]"],
+  "minTools": 1,
+  "toolName": "Read",
+  "finishReason": "end_turn"
+}

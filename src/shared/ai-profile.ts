@@ -9,6 +9,7 @@ export type AiProfile =
   | "qwen-web"
   | "chatglm-web"
   | "yuanbao-web"
+  | "acp"
   | "anthropic"
   | "generic";
 
@@ -24,6 +25,7 @@ export type AiVendorHint =
   | "baichuan"
   | "openai"
   | "anthropic"
+  | "acp"
   | "unknown";
 
 export interface AiProfileResult {
@@ -87,6 +89,11 @@ const VENDOR_HOST_RULES: Array<{ hint: AiVendorHint; test: (host: string) => boo
   { hint: "anthropic", test: (h) => h.includes("anthropic.com") || h.includes("claude") },
 ];
 
+/** Common ACP-over-HTTP session SSE path: GET …/api/agents/:id/events */
+const ACP_EVENTS_PATH = /\/api\/agents\/[^/]+\/events(?:\?|$)/i;
+
+const ACP_SSE_EVENTS = new Set(["snapshot", "update", "stream-alive", "taken-over"]);
+
 const DOUBAO_WEB_EVENTS = new Set([
   "SSE_HEARTBEAT",
   "SSE_ACK",
@@ -116,10 +123,17 @@ const KIMI_GENERIC_EVENT_NAMES = new Set(["message", "delta"]);
 export function vendorHintFromUrl(url: string | undefined): AiVendorHint {
   if (!url) return "unknown";
   let host: string;
+  let pathWithQuery: string;
   try {
-    host = new URL(url, "https://dummy.local").hostname.toLowerCase();
+    const u = new URL(url, "https://dummy.local");
+    host = u.hostname.toLowerCase();
+    pathWithQuery = `${u.pathname}${u.search}`;
   } catch {
     host = url.toLowerCase();
+    pathWithQuery = url;
+  }
+  if (ACP_EVENTS_PATH.test(pathWithQuery) || ACP_EVENTS_PATH.test(url)) {
+    return "acp";
   }
   for (const rule of VENDOR_HOST_RULES) {
     if (rule.test(host)) return rule.hint;
@@ -315,6 +329,60 @@ function isAnthropicChunk(value: unknown): boolean {
   );
 }
 
+function isAcpSessionUpdate(value: unknown): boolean {
+  return isRecord(value) && typeof value.sessionUpdate === "string";
+}
+
+function isAcpJsonRpcSessionUpdate(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    value.jsonrpc === "2.0" &&
+    value.method === "session/update" &&
+    isRecord(value.params) &&
+    isAcpSessionUpdate(value.params.update)
+  );
+}
+
+/**
+ * Agent Client Protocol (ACP) over HTTP session SSE.
+ *
+ * Shapes:
+ * - `event: update` → JSON-RPC batch of `session/update` notifications
+ * - `event: snapshot` → `{ sessionId, version, updates: SessionUpdate[] }`
+ * - bare JSON-RPC `session/update` (single or batch)
+ */
+export function isAcpWireChunk(value: unknown, eventName?: string): boolean {
+  if (eventName === "snapshot") {
+    return (
+      isRecord(value) && Array.isArray(value.updates) && value.updates.some(isAcpSessionUpdate)
+    );
+  }
+  if (eventName === "update") {
+    return Array.isArray(value) && value.some(isAcpJsonRpcSessionUpdate);
+  }
+  // stream-alive / taken-over are ACP session-SSE control frames but carry no chat payload.
+  if (
+    eventName &&
+    ACP_SSE_EVENTS.has(eventName) &&
+    eventName !== "snapshot" &&
+    eventName !== "update"
+  ) {
+    return false;
+  }
+
+  if (Array.isArray(value)) {
+    return value.some((item) => isAcpJsonRpcSessionUpdate(item) || isAcpSessionUpdate(item));
+  }
+
+  if (isAcpJsonRpcSessionUpdate(value)) return true;
+
+  if (isRecord(value) && Array.isArray(value.updates)) {
+    return value.updates.some(isAcpSessionUpdate);
+  }
+
+  return isAcpSessionUpdate(value);
+}
+
 function collectReasoningFields(value: unknown, into: Set<string>): void {
   if (!isRecord(value)) return;
   if (Array.isArray(value.choices)) {
@@ -359,6 +427,7 @@ export function detectAiProfile(
   let chatglmHits = 0;
   let yuanbaoHits = 0;
   let anthropicHits = 0;
+  let acpHits = 0;
   const sampleLimit = Math.min(events.length, 80);
 
   for (let i = 0; i < sampleLimit; i++) {
@@ -373,6 +442,7 @@ export function detectAiProfile(
       kimiHits += 2;
     }
     if (ev.event === "speech_type") yuanbaoHits += 2;
+    if (ev.event === "snapshot" || ev.event === "update") acpHits += 2;
 
     const parsed = tryParseJson(ev.data);
     if (parsed == null) continue;
@@ -404,6 +474,10 @@ export function detectAiProfile(
       yuanbaoHits++;
       reasoningFields.add("deepSearch");
     }
+    if (isAcpWireChunk(parsed, ev.event)) {
+      acpHits++;
+      reasoningFields.add("session/update");
+    }
     if (
       isAnthropicChunk(parsed) ||
       ev.event.startsWith("content_block") ||
@@ -421,6 +495,7 @@ export function detectAiProfile(
     { profile: "qwen-web", score: qwenHits },
     { profile: "chatglm-web", score: chatglmHits },
     { profile: "yuanbao-web", score: yuanbaoHits },
+    { profile: "acp", score: acpHits },
     { profile: "anthropic", score: anthropicHits },
   ];
   scores.sort((a, b) => b.score - a.score);
@@ -448,6 +523,11 @@ export function detectAiProfile(
     profile = "yuanbao-web";
   }
 
+  // Prefer ACP when URL or payload looks like session SSE with session/update.
+  if (vendorHint === "acp" && acpHits >= 1 && acpHits >= openaiHits) {
+    profile = "acp";
+  }
+
   let resolvedVendor = vendorHint;
   if (profile === "deepseek-web") resolvedVendor = "deepseek";
   else if (profile === "doubao-web") resolvedVendor = "doubao-web";
@@ -455,7 +535,9 @@ export function detectAiProfile(
   else if (profile === "qwen-web") resolvedVendor = "qwen";
   else if (profile === "chatglm-web") resolvedVendor = "chatglm";
   else if (profile === "yuanbao-web") resolvedVendor = "yuanbao";
-  else if (
+  else if (profile === "acp") {
+    resolvedVendor = "acp";
+  } else if (
     profile === "openai-compatible" &&
     vendorHint === "unknown" &&
     reasoningFields.has("reasoning_content")

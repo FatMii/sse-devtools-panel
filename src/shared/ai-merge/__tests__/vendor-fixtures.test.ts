@@ -7,7 +7,15 @@ import { conversationHasContent, mergeAiConversation } from "../index";
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../../../");
 const vendorsRoot = resolve(repoRoot, "fixtures/vendors");
 
-const REQUIRED_VENDORS = ["deepseek", "doubao", "kimi", "qwen", "chatglm", "yuanbao"] as const;
+const REQUIRED_VENDORS = [
+  "deepseek",
+  "doubao",
+  "kimi",
+  "qwen",
+  "chatglm",
+  "yuanbao",
+  "acp",
+] as const;
 
 type FixtureEvent = { data: string; event?: string };
 

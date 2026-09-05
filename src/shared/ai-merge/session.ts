@@ -43,6 +43,7 @@ import {
   snapshotYuanbaoWeb,
   type YuanbaoWebMergeState,
 } from "./yuanbao";
+import { createAcpMergeState, pushAcp, snapshotAcp, type AcpMergeState } from "./acp";
 
 type EventLike = Pick<SseEvent, "data" | "event">;
 
@@ -53,7 +54,8 @@ type VendorState =
   | { profile: "kimi-web"; state: KimiWebMergeState }
   | { profile: "qwen-web"; state: QwenWebMergeState }
   | { profile: "chatglm-web"; state: ChatglmWebMergeState }
-  | { profile: "yuanbao-web"; state: YuanbaoWebMergeState };
+  | { profile: "yuanbao-web"; state: YuanbaoWebMergeState }
+  | { profile: "acp"; state: AcpMergeState };
 
 function emptyChannelsResult(): MergeChannelsResult {
   return {
@@ -79,6 +81,8 @@ function createVendor(profile: AiProfile): VendorState | null {
       return { profile, state: createChatglmWebMergeState() };
     case "yuanbao-web":
       return { profile, state: createYuanbaoWebMergeState() };
+    case "acp":
+      return { profile, state: createAcpMergeState() };
     default:
       return null;
   }
@@ -107,6 +111,9 @@ function pushVendor(vendor: VendorState, events: ReadonlyArray<EventLike>): void
     case "yuanbao-web":
       pushYuanbaoWeb(vendor.state, events);
       break;
+    case "acp":
+      pushAcp(vendor.state, events);
+      break;
   }
 }
 
@@ -127,6 +134,8 @@ function snapshotVendor(vendor: VendorState | null): MergeChannelsResult {
       return snapshotChatglmWeb(vendor.state);
     case "yuanbao-web":
       return snapshotYuanbaoWeb(vendor.state);
+    case "acp":
+      return snapshotAcp(vendor.state);
   }
 }
 
