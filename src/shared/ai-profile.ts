@@ -332,29 +332,27 @@ function isAcpJsonRpcSessionUpdate(value: unknown): boolean {
 }
 
 /**
- * True ACP protocol payloads only (no URL / SSE event-name / proprietary envelopes):
+ * True ACP protocol payloads (no URL / SSE event-name heuristics):
  * - JSON-RPC notification `session/update` (single or batch)
  * - SessionUpdate object (`sessionUpdate` discriminator)
+ * - A list of SessionUpdates under `updates` (coalesced replay / snapshot *body* —
+ *   the SessionUpdates are protocol; an SSE event name like `snapshot` is not)
  */
 export function isAcpProtocolPayload(value: unknown): boolean {
   if (Array.isArray(value)) {
     return value.some((item) => isAcpJsonRpcSessionUpdate(item) || isAcpSessionUpdate(item));
   }
   if (isAcpJsonRpcSessionUpdate(value)) return true;
-  return isAcpSessionUpdate(value);
-}
-
-/**
- * Wire chunk that the ACP merger may consume.
- * Includes protocol payloads plus wrappers that embed SessionUpdate lists
- * (e.g. a snapshot frame with `updates: SessionUpdate[]`).
- */
-export function isAcpWireChunk(value: unknown, _eventName?: string): boolean {
-  if (isAcpProtocolPayload(value)) return true;
+  if (isAcpSessionUpdate(value)) return true;
   if (isRecord(value) && Array.isArray(value.updates)) {
     return value.updates.some(isAcpSessionUpdate);
   }
   return false;
+}
+
+/** Wire chunk the ACP merger may consume — same shapes as protocol detection. */
+export function isAcpWireChunk(value: unknown, _eventName?: string): boolean {
+  return isAcpProtocolPayload(value);
 }
 
 function collectReasoningFields(value: unknown, into: Set<string>): void {
