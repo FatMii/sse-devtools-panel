@@ -62,6 +62,38 @@
   gap: var(--space-3);
 }
 
+.request-section-title-row .request-view-toggle {
+  margin-left: auto;
+}
+
+.request-payload-copy {
+  flex-shrink: 0;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  padding: 3px 8px;
+  cursor: pointer;
+  transition:
+    color var(--duration-ui) var(--ease-out),
+    background-color var(--duration-ui) var(--ease-out),
+    border-color var(--duration-ui) var(--ease-out);
+}
+
+.request-payload-copy:hover:not(:disabled) {
+  color: var(--accent-strong);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--stroke));
+  background: var(--accent-wash);
+}
+
+.request-payload-copy:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .request-section-title {
   color: var(--text-muted);
   font-size: var(--text-xs);
@@ -182,6 +214,29 @@
 
 .request-payload-content {
   min-height: 0;
+  min-width: 0;
+  width: 100%;
+}
+
+/* Parsed JSON tree: same chrome as Source pane / Network payload viewer. */
+.request-payload-content:has(.json-tree) {
+  padding: 6px 8px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  max-height: min(60vh, 520px);
+  overflow: auto;
+}
+
+.request-payload-content .json-tree {
+  width: 100%;
+  min-width: max-content;
+  font-size: var(--text-base);
+  line-height: 1.5;
+}
+
+.request-payload-content .request-headers-table {
+  width: 100%;
 }
 
 .request-payload-text {
@@ -195,6 +250,6 @@
   line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
-  max-height: 420px;
+  max-height: min(60vh, 520px);
   overflow: auto;
 }

@@ -836,6 +836,12 @@
   "requestPayloadSource": {
     "message": "Source"
   },
+  "requestBodyCopy": {
+    "message": "Copy"
+  },
+  "requestBodyCopyTitle": {
+    "message": "Copy request payload"
+  },
   "requestBodyHint": {
     "message": "Best-effort preview from the page request body (up to 256KB)."
   },

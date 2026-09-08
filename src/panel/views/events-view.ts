@@ -371,14 +371,7 @@ export function showContextMenu(x: number, y: number, data: string): void {
   if (elMenuCopyData) elMenuCopyData.hidden = false;
   if (elMenuCopyJsonValue) elMenuCopyJsonValue.hidden = true;
   if (elMenuCopyJsonPath) elMenuCopyJsonPath.hidden = true;
-  elContextMenu.hidden = false;
-  const pad = 4;
-  const menuW = elContextMenu.offsetWidth || 140;
-  const menuH = elContextMenu.offsetHeight || 36;
-  const left = Math.min(x, window.innerWidth - menuW - pad);
-  const top = Math.min(y, window.innerHeight - menuH - pad);
-  elContextMenu.style.left = `${Math.max(pad, left)}px`;
-  elContextMenu.style.top = `${Math.max(pad, top)}px`;
+  positionContextMenu(x, y);
 }
 
 export function showJsonTreeContextMenu(x: number, y: number, path: string, value?: string): void {
@@ -386,9 +379,14 @@ export function showJsonTreeContextMenu(x: number, y: number, path: string, valu
   if (elMenuCopyData) elMenuCopyData.hidden = true;
   if (elMenuCopyJsonValue) elMenuCopyJsonValue.hidden = value == null;
   if (elMenuCopyJsonPath) elMenuCopyJsonPath.hidden = false;
+  positionContextMenu(x, y);
+}
+
+function positionContextMenu(x: number, y: number): void {
   elContextMenu.hidden = false;
-  const pad = 4;
-  const menuW = elContextMenu.offsetWidth || 180;
+  // Measure after unhide so width reflects currently visible items.
+  const pad = 8;
+  const menuW = Math.max(elContextMenu.offsetWidth || 0, 180);
   const menuH = elContextMenu.offsetHeight || 72;
   const left = Math.min(x, window.innerWidth - menuW - pad);
   const top = Math.min(y, window.innerHeight - menuH - pad);

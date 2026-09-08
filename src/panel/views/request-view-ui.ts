@@ -18,6 +18,8 @@ let requestViewFingerprint = "";
 
 export type RenderRequestOptions = {
   onBindJsonTreeContextMenu: (tree: HTMLElement) => void;
+  copyText: (text: string, notify?: boolean) => Promise<void>;
+  onShowPayloadContextMenu: (x: number, y: number, data: string) => void;
 };
 
 export function resetRequestViewState(): void {
@@ -291,6 +293,18 @@ export function renderRequest(
   sourceBtn.textContent = t("requestPayloadSource");
   viewToggle.append(parsedBtn, sourceBtn);
   bodyTitleRow.appendChild(viewToggle);
+
+  const copyBtn = document.createElement("button");
+  copyBtn.type = "button";
+  copyBtn.className = "request-payload-copy";
+  copyBtn.textContent = t("requestBodyCopy");
+  copyBtn.title = t("requestBodyCopyTitle");
+  copyBtn.disabled = !payload;
+  copyBtn.addEventListener("click", () => {
+    if (!payload) return;
+    void options.copyText(payload, true);
+  });
+  bodyTitleRow.appendChild(copyBtn);
   bodySection.appendChild(bodyTitleRow);
 
   const bodyHint = document.createElement("div");
@@ -318,6 +332,10 @@ export function renderRequest(
       const pre = document.createElement("pre");
       pre.className = "request-payload-text";
       pre.textContent = payload;
+      pre.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+        options.onShowPayloadContextMenu(e.clientX, e.clientY, payload);
+      });
       bodyContent.appendChild(pre);
       return;
     }
@@ -335,6 +353,10 @@ export function renderRequest(
     const pre = document.createElement("pre");
     pre.className = "request-payload-text";
     pre.textContent = payload;
+    pre.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      options.onShowPayloadContextMenu(e.clientX, e.clientY, payload);
+    });
     bodyContent.appendChild(pre);
   };
 

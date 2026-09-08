@@ -387,6 +387,7 @@ function renderCollection(
       x: e.clientX,
       y: e.clientY,
       path,
+      copyValue: toCopyValue(value, type),
     });
   });
 
