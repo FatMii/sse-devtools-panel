@@ -441,12 +441,16 @@
       <span id="toast-text"></span>
     </div>
 
-    <div id="row-context-menu" class="context-menu" hidden>
-      <button type="button" data-action="copy-data" data-i18n="copyData">Copy Data</button>
-      <button type="button" data-action="copy-json-value" data-i18n="jsonCopyValue">
+    <div id="row-context-menu" class="context-menu" role="menu" hidden>
+      <button type="button" role="menuitem" data-action="copy-data" data-i18n="copyData">
+        Copy Data
+      </button>
+      <button type="button" role="menuitem" data-action="copy-json-value" data-i18n="jsonCopyValue">
         Copy value
       </button>
-      <button type="button" data-action="copy-json-path" data-i18n="jsonCopyPath">Copy path</button>
+      <button type="button" role="menuitem" data-action="copy-json-path" data-i18n="jsonCopyPath">
+        Copy path
+      </button>
     </div>
 
     <dialog id="app-dialog" class="app-dialog">

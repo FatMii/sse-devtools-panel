@@ -8,6 +8,8 @@ dist.zip
 .release-staging/
 website/node_modules/
 website/dist/
+website/public/screenshots/*
+!website/public/screenshots/.gitkeep
 .agents/
 *.local
 .DS_Store
