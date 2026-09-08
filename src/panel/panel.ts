@@ -142,6 +142,7 @@ import {
   navigateDrawer,
   renderEvents,
   selectEventByIndex,
+  showContextMenu,
   updateDrawerNavButtons,
   bindJsonTreeContextMenu,
 } from "./views/events-view";
@@ -664,7 +665,11 @@ function renderTimelineForSelection(record: StreamRecord | undefined): void {
 }
 
 function renderRequestForSelection(record: StreamRecord | undefined): void {
-  renderRequest(record, { onBindJsonTreeContextMenu: bindJsonTreeContextMenu });
+  renderRequest(record, {
+    onBindJsonTreeContextMenu: bindJsonTreeContextMenu,
+    copyText,
+    onShowPayloadContextMenu: showContextMenu,
+  });
 }
 
 function renderConversationForSelection(record: StreamRecord | undefined): void {
@@ -904,8 +909,12 @@ function setupActions(): void {
   });
 
   document.addEventListener("click", (e) => {
-    hideContextMenu();
     const target = e.target as Node | null;
+    const inContextMenu = Boolean(target && elContextMenu.contains(target));
+    // Menu item handler owns dismiss; don't clear payload mid-action.
+    if (!inContextMenu) {
+      hideContextMenu();
+    }
     if (
       (elExportMenu && target && elExportMenu.contains(target)) ||
       (elMoreMenu && target && elMoreMenu.contains(target)) ||
