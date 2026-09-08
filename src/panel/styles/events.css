@@ -284,6 +284,13 @@ body.is-resizing {
   font: var(--text-sm) / 1.65 var(--mono);
 }
 
+.drawer-body .json-tree {
+  width: 100%;
+  min-width: max-content;
+  font-size: var(--text-base);
+  line-height: 1.5;
+}
+
 .event-body-text {
   margin: 0;
   padding: 2px 4px;
@@ -297,11 +304,13 @@ body.is-resizing {
 .context-menu {
   position: fixed;
   z-index: 1000;
-  min-width: 140px;
-  padding: 4px;
+  /* Network Soft Context Menu: wider than toolbar chip menus so labels breathe. */
+  min-width: 180px;
+  max-width: min(320px, calc(100vw - 16px));
+  padding: var(--space-1) 0;
   background: var(--surface-1);
-  border: 1px solid var(--stroke);
-  border-radius: var(--r-md);
+  border: 1px solid var(--stroke-strong);
+  border-radius: var(--r-sm);
   box-shadow: var(--shadow-menu);
 }
 
@@ -311,14 +320,32 @@ body.is-resizing {
 
 .context-menu button {
   display: block;
-  width: 100%;
+  width: calc(100% - 8px);
+  margin: 0 4px;
   text-align: left;
   border: none;
   border-radius: var(--r-sm);
   background: transparent;
-  padding: 6px 10px;
+  color: var(--text);
+  font: var(--text-base) / 1.35 var(--sans);
+  padding: 5px 10px;
+  white-space: nowrap;
+  cursor: default;
 }
 
-.context-menu button:hover {
-  background: var(--surface-hover);
+/* Author `display: block` otherwise overrides the HTML hidden attribute. */
+.context-menu button[hidden] {
+  display: none !important;
+}
+
+.context-menu button:hover,
+.context-menu button:focus-visible {
+  background: var(--accent);
+  color: #fff;
+  outline: none;
+}
+
+.context-menu button:active {
+  background: var(--accent-strong);
+  color: #fff;
 }

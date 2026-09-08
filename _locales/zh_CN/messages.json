@@ -836,6 +836,12 @@
   "requestPayloadSource": {
     "message": "原始文本"
   },
+  "requestBodyCopy": {
+    "message": "复制"
+  },
+  "requestBodyCopyTitle": {
+    "message": "复制请求体原文"
+  },
   "requestBodyHint": {
     "message": "从页面请求体尽力采集的预览（上限 256KB）。"
   },
