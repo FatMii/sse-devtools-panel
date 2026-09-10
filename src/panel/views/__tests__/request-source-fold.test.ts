@@ -2,10 +2,7 @@
  * @vitest-environment happy-dom
  */
 import { describe, expect, it } from "vitest";
-import {
-  createCollapsibleSourceText,
-  REQUEST_SOURCE_PREVIEW_CHARS,
-} from "../request-source-fold";
+import { createCollapsibleSourceText, REQUEST_SOURCE_PREVIEW_CHARS } from "../request-source-fold";
 
 describe("createCollapsibleSourceText", () => {
   it("renders short payloads without fold controls", () => {

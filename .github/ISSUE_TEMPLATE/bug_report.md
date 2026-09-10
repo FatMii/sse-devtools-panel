@@ -13,7 +13,7 @@ A clear description of what went wrong.
 
 - Chrome version:
 - OS:
-- Extension build: (commit SHA or `v1.2.3` / local `dist`)
+- Extension build: (commit SHA or `v1.2.4` / local `dist`)
 
 ## Steps to reproduce
 
@@ -27,8 +27,8 @@ A clear description of what went wrong.
 
 ## Does the local demo reproduce it?
 
-- [ ] Yes (`pnpm demo` â†?http://127.0.0.1:8765)
-- [ ] No (only on site: â€?
+- [ ] Yes (`pnpm demo` ï¿½?http://127.0.0.1:8765)
+- [ ] No (only on site: ï¿½?
 - [ ] Not tried
 
 ## Extra
