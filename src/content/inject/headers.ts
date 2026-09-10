@@ -19,8 +19,12 @@ export function resolveMethod(input: RequestInfo | URL, init?: RequestInit): str
 export const SENSITIVE_HEADER_RE =
   /^(authorization|proxy-authorization|cookie|set-cookie|authentication|x-authentication|x-amz-security-token|x-goog-api-key)$|^(?:x-)?(?:api[_-]?key|auth[_-]?token|access[_-]?token|id[_-]?token|private[_-]?token|session[_-]?token|csrf[_-]?token|xsrf[_-]?token)$|(?:^|-)(?:api[_-]?key|access[_-]?token|auth[_-]?token|id[_-]?token|private[_-]?token|session[_-]?token|csrf|xsrf|secret|password)(?:-|$)/i;
 
-/** Max chars kept for request/response payload previews. */
-export const MAX_PAYLOAD_PREVIEW = 256_000;
+/**
+ * Soft ceiling for request payload text kept in the extension.
+ * Normal AI bodies stay intact; only pathological sizes are clipped.
+ * Display folding (Show more / Copy) is separate — see Request Source UI.
+ */
+export const MAX_PAYLOAD_PREVIEW = 8_000_000;
 
 export function isSensitiveHeaderName(name: string): boolean {
   return SENSITIVE_HEADER_RE.test(name.trim());

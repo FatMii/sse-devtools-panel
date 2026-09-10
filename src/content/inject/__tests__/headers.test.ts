@@ -1,11 +1,33 @@
 import { describe, it, expect } from "vitest";
-import { isSensitiveHeaderName, normalizeHeaders, redactHeaderValue } from "../headers";
+import {
+  clipPayloadText,
+  isSensitiveHeaderName,
+  MAX_PAYLOAD_PREVIEW,
+  normalizeHeaders,
+  redactHeaderValue,
+} from "../headers";
 
 function assert(cond: unknown, msg: string): asserts cond {
   expect(cond, msg).toBeTruthy();
 }
 
 describe("headers", () => {
+  it("keeps typical large payloads intact under the soft ceiling", () => {
+    const mid = "x".repeat(512_000);
+    const clipped = clipPayloadText(mid);
+    expect(clipped.truncated).toBe(false);
+    expect(clipped.preview).toBe(mid);
+    expect(MAX_PAYLOAD_PREVIEW).toBe(8_000_000);
+  });
+
+  it("clips only when exceeding the soft ceiling", () => {
+    const huge = "y".repeat(MAX_PAYLOAD_PREVIEW + 10);
+    const clipped = clipPayloadText(huge);
+    expect(clipped.truncated).toBe(true);
+    expect(clipped.preview.length).toBe(MAX_PAYLOAD_PREVIEW);
+    expect(clipped.preview).toBe(huge.slice(0, MAX_PAYLOAD_PREVIEW));
+  });
+
   it("matches previous script coverage", () => {
     for (const name of [
       "Authorization",

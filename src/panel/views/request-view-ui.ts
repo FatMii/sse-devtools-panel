@@ -10,6 +10,7 @@ import type { StreamRecord } from "../../shared/types";
 import { elRequestBody, elRequestPlaceholder } from "../core/dom";
 import { closeReasonLabel, escapeHtml, transportLabel } from "../core/format";
 import { createJsonTree, tryParseJsonValue } from "../widgets/json-tree";
+import { createCollapsibleSourceText } from "./request-source-fold";
 
 let requestPane: "headers" | "payload" = "headers";
 let requestPayloadView: "parsed" | "source" = "parsed";
@@ -329,14 +330,11 @@ export function renderRequest(
       return;
     }
     if (requestPayloadView === "source") {
-      const pre = document.createElement("pre");
-      pre.className = "request-payload-text";
-      pre.textContent = payload;
-      pre.addEventListener("contextmenu", (e) => {
-        e.preventDefault();
-        options.onShowPayloadContextMenu(e.clientX, e.clientY, payload);
-      });
-      bodyContent.appendChild(pre);
+      bodyContent.appendChild(
+        createCollapsibleSourceText(payload, {
+          onContextMenu: options.onShowPayloadContextMenu,
+        }),
+      );
       return;
     }
     const parsed = tryParseJsonValue(payload);
@@ -350,14 +348,11 @@ export function renderRequest(
       bodyContent.appendChild(createNameValueTable(formPairs));
       return;
     }
-    const pre = document.createElement("pre");
-    pre.className = "request-payload-text";
-    pre.textContent = payload;
-    pre.addEventListener("contextmenu", (e) => {
-      e.preventDefault();
-      options.onShowPayloadContextMenu(e.clientX, e.clientY, payload);
-    });
-    bodyContent.appendChild(pre);
+    bodyContent.appendChild(
+      createCollapsibleSourceText(payload, {
+        onContextMenu: options.onShowPayloadContextMenu,
+      }),
+    );
   };
 
   parsedBtn.addEventListener("click", () => {
