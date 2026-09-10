@@ -274,8 +274,6 @@ code {
   font-weight: 800;
   line-height: 1.12;
   letter-spacing: -0.045em;
-  /* letter-spacing also applies after the last glyph; cancel it so text-align:center is optical. */
-  margin-inline-end: 0.045em;
   white-space: nowrap;
 }
 
