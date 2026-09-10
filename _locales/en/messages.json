@@ -843,19 +843,31 @@
     "message": "Copy request payload"
   },
   "requestBodyHint": {
-    "message": "Best-effort preview from the page request body (up to 256KB)."
+    "message": "Request body preview. Long text folds by default — expand or copy."
   },
   "requestBodyTruncatedHint": {
-    "message": "Payload truncated at 256KB for memory safety."
+    "message": "Payload truncated at the extension soft limit (~8MB)."
   },
   "requestBodyEmpty": {
     "message": "No request payload (GET/EventSource, or body unavailable)."
+  },
+  "requestSourceShowMore": {
+    "message": "Show more"
+  },
+  "requestSourceShowLess": {
+    "message": "Show less"
+  },
+  "requestSourceExpandLagTitle": {
+    "message": "Large payload — expanding may lag or freeze this panel"
   },
   "jsonShowMore": {
     "message": "Show more"
   },
   "jsonShowLess": {
     "message": "Show less"
+  },
+  "jsonExpandLagTitle": {
+    "message": "Large value — expanding may lag or freeze this panel"
   },
   "jsonCopyValue": {
     "message": "Copy value"

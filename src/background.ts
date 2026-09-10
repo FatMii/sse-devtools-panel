@@ -12,7 +12,8 @@ const panelPorts = new Map<number, Set<chrome.runtime.Port>>();
 const attachingTabs = new Set<number>();
 
 const BUFFER_MAX_MESSAGES = 2_000;
-const BUFFER_MAX_BYTES = 4 * 1024 * 1024;
+/** Room for a few large request payloads while the panel is closed. */
+const BUFFER_MAX_BYTES = 16 * 1024 * 1024;
 
 type BufferedRelayMessage = { type: string; byteSize: number; relay: RelayMessage };
 
