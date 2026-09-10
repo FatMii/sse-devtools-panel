@@ -274,7 +274,8 @@ code {
   font-weight: 800;
   line-height: 1.12;
   letter-spacing: -0.045em;
-  white-space: nowrap;
+  /* Allow wrap: English title is wider than the 720px hero; nowrap overflow looks left-aligned. */
+  text-wrap: balance;
 }
 
 .lead {
@@ -994,10 +995,6 @@ img[data-zoomable] {
 }
 
 @media (max-width: 640px) {
-  .hero-focus h1 {
-    white-space: normal;
-  }
-
   .nav-util {
     border-left: 0;
     padding-left: 0;
