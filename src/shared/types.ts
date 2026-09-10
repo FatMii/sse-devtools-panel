@@ -32,9 +32,9 @@ export interface StreamStartPayload {
   requestHeaders?: Record<string, string>;
   /** Redacted response headers (best effort). */
   responseHeaders?: Record<string, string>;
-  /** Text preview of request payload (best effort, truncated). */
+  /** Text preview of request payload (best effort; soft-capped only for huge bodies). */
   requestPayloadPreview?: string;
-  /** Whether payload preview was truncated. */
+  /** Whether payload preview hit the extension soft size ceiling. */
   requestPayloadTruncated?: boolean;
   transport: StreamTransport;
   streamKind: StreamKind;

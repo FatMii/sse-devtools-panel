@@ -475,6 +475,7 @@ function appendCollapsibleStringValue(line: HTMLElement, raw: string): void {
   toggleBtn.type = "button";
   toggleBtn.className = "json-string-action";
   toggleBtn.textContent = t("jsonShowMore");
+  toggleBtn.title = t("jsonExpandLagTitle");
 
   const copyBtn = document.createElement("button");
   copyBtn.type = "button";
@@ -488,6 +489,7 @@ function appendCollapsibleStringValue(line: HTMLElement, raw: string): void {
     setPlainText(valEl, text);
     valEl.classList.toggle("is-expanded", expanded);
     toggleBtn.textContent = expanded ? t("jsonShowLess") : t("jsonShowMore");
+    toggleBtn.title = expanded ? "" : t("jsonExpandLagTitle");
 
     const tree = line.closest<HTMLElement>(".json-tree");
     const activeQuery = tree?.dataset.searchQuery;
