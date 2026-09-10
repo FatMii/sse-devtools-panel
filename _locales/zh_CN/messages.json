@@ -843,19 +843,31 @@
     "message": "复制请求体原文"
   },
   "requestBodyHint": {
-    "message": "从页面请求体尽力采集的预览（上限 256KB）。"
+    "message": "请求体预览。过长默认折叠，可展开或复制。"
   },
   "requestBodyTruncatedHint": {
-    "message": "请求体预览已截断至 256KB（内存保护）。"
+    "message": "请求体已达到扩展软上限（约 8MB）并被截断。"
   },
   "requestBodyEmpty": {
     "message": "无请求体（GET/EventSource，或请求体不可用）。"
+  },
+  "requestSourceShowMore": {
+    "message": "展开"
+  },
+  "requestSourceShowLess": {
+    "message": "收起"
+  },
+  "requestSourceExpandLagTitle": {
+    "message": "内容较大，展开后可能导致面板卡顿"
   },
   "jsonShowMore": {
     "message": "展开"
   },
   "jsonShowLess": {
     "message": "收起"
+  },
+  "jsonExpandLagTitle": {
+    "message": "内容较大，展开后可能导致面板卡顿"
   },
   "jsonCopyValue": {
     "message": "复制值"
