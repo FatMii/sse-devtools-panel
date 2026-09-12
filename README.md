@@ -316,6 +316,7 @@ Conversation merges content by protocol profile. Currently supported:
 | `qwen-web`          | Qwen web                | Plan thinking / deep thinking / search             |
 | `chatglm-web`       | ChatGLM / Zhipu Qingyan | Thinking / content / search results                |
 | `yuanbao-web`       | Tencent Yuanbao         | Deep-search thinking + sources                     |
+| `acp`               | ACP-over-HTTP SSE       | `session/update` → content / thinking / tools      |
 | `anthropic`         | Anthropic-style SSE     | Profile detection only — no Conversation merge yet |
 | `generic`           | Unrecognized            | Events / Timeline / Raw still work                 |
 

@@ -1,0 +1,11 @@
+{
+  "url": "https://example.test/any-stream",
+  "profile": "acp",
+  "vendorHint": "acp",
+  "reasoningIncludes": ["plan the reply", "[plan]", "read the file", "reply"],
+  "contentIncludes": ["Hello ", "from ACP"],
+  "contentExcludes": ["plan the reply", "[plan]"],
+  "minTools": 1,
+  "toolName": "Read",
+  "finishReason": "end_turn"
+}

@@ -68,6 +68,9 @@ export {
   mergeYuanbaoWeb,
 } from "./yuanbao";
 
+export type { AcpMergeState } from "./acp";
+export { createAcpMergeState, pushAcp, snapshotAcp, mergeAcp, extractAcpText } from "./acp";
+
 export {
   ConversationMergeSession,
   getConversationMergeSession,
