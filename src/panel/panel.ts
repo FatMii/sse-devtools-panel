@@ -1044,7 +1044,7 @@ function refreshLocaleUi(): void {
   applyDomI18n();
   setUiPaused(state.uiPaused, pauseHooks);
   if (elStatusbarLocale) {
-    const version = chrome.runtime.getManifest?.().version ?? "1.2.5";
+    const version = chrome.runtime.getManifest?.().version ?? "1.2.4";
     elStatusbarLocale.textContent =
       getActiveLocale() === "zh_CN" ? `中文 · ${version}` : `EN · ${version}`;
   }
