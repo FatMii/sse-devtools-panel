@@ -92,7 +92,7 @@ import {
   elResizer,
   elEvents,
 } from "./core/dom";
-import { escapeHtml, formatDuration, closeReasonLabel } from "./core/format";
+import { escapeHtml, formatDuration, formatTime, closeReasonLabel } from "./core/format";
 import { computeStreamMetrics } from "./features/stream-metrics";
 import {
   clearStreamAnomalyCaches,
@@ -463,6 +463,11 @@ function renderStreamMeta(record: StreamRecord | undefined): void {
     typeof record.endedAt === "number"
       ? record.endedAt - record.startedAt
       : Date.now() - record.startedAt;
+  const timeChip =
+    typeof record.endedAt === "number" && Number.isFinite(record.endedAt)
+      ? `${formatTime(record.startedAt)} → ${formatTime(record.endedAt)}`
+      : t("metaStarted", formatTime(record.startedAt));
+  bits.push(`<span class="meta-chip">${escapeHtml(timeChip)}</span>`);
   if (Number.isFinite(durationMs) && durationMs >= 0) {
     bits.push(`<span class="meta-chip">${escapeHtml(formatDuration(durationMs))}</span>`);
   }
@@ -954,7 +959,7 @@ function setupActions(): void {
 }
 
 function setupSidebarResizer(): void {
-  const SIDEBAR_MIN = 180;
+  const SIDEBAR_MIN = 265;
   const SIDEBAR_MAX = 640;
 
   const readSidebarWidth = (): number => {

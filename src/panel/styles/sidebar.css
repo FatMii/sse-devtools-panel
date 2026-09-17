@@ -7,7 +7,7 @@
 .sidebar {
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  min-width: 265px;
   min-height: 0;
   background: var(--surface-1);
 }
@@ -103,6 +103,7 @@ select {
   overflow: auto;
   list-style: none;
   flex: 1;
+  min-width: 265px;
 }
 
 .stream-item,
@@ -145,7 +146,16 @@ select {
   background: var(--accent-strong);
 }
 
+.stream-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
 .stream-path {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   color: var(--text);
   font-family: var(--mono);
@@ -160,15 +170,41 @@ select {
   margin-right: 6px;
 }
 
+.stream-when-start,
+.stream-when-end {
+  flex: 0 0 auto;
+  font: 10px/1.2 var(--mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.stream-when-start {
+  color: var(--text-muted);
+}
+
+.stream-when-end {
+  color: var(--text-faint);
+}
+
 .stream-meta {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 4px;
   margin-top: 5px;
+  min-width: 0;
   color: var(--text-faint);
   font: 10px var(--mono);
   font-variant-numeric: tabular-nums;
+}
+
+.stream-meta-trail {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex: 0 0 auto;
+  max-width: 100%;
 }
 
 .badge {
@@ -228,8 +264,8 @@ select {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  margin-left: auto;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .stream-status i,
