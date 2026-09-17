@@ -27,6 +27,13 @@ export function formatTime(ts: number): string {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`;
 }
 
+/** Compact wall clock for dense sidebar rows (no milliseconds). */
+export function formatTimeShort(ts: number): string {
+  const d = new Date(ts);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
 export function previewData(data: string): string {
   const oneLine = data.replace(/\s+/g, " ").trim();
   if (oneLine.length <= DATA_PREVIEW_LEN) return oneLine;

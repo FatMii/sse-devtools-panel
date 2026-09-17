@@ -687,6 +687,50 @@
       }
     }
   },
+  "metaStarted": {
+    "message": "开始：$TIME$",
+    "placeholders": {
+      "time": {
+        "content": "$1",
+        "example": "14:32:01.435"
+      }
+    }
+  },
+  "metaEnded": {
+    "message": "结束：$TIME$",
+    "placeholders": {
+      "time": {
+        "content": "$1",
+        "example": "14:32:08.120"
+      }
+    }
+  },
+  "streamTimeTooltipLive": {
+    "message": "开始：$START$",
+    "placeholders": {
+      "start": {
+        "content": "$1",
+        "example": "14:32:01.435"
+      }
+    }
+  },
+  "streamTimeTooltipDone": {
+    "message": "开始：$START$ · 结束：$END$ · 时长：$DUR$",
+    "placeholders": {
+      "start": {
+        "content": "$1",
+        "example": "14:32:01.435"
+      },
+      "end": {
+        "content": "$2",
+        "example": "14:32:08.120"
+      },
+      "dur": {
+        "content": "$3",
+        "example": "6.7 s"
+      }
+    }
+  },
   "reconnectBadgeTitle": {
     "message": "EventSource 重连 $COUNT$ 次",
     "placeholders": {
