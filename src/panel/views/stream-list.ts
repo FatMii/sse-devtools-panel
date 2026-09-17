@@ -4,6 +4,9 @@ import { elEmpty, elList } from "../core/dom";
 import {
   closeReasonLabel,
   escapeHtml,
+  formatDuration,
+  formatTime,
+  formatTimeShort,
   originLabel,
   shortPath,
   streamStatusShort,
@@ -38,7 +41,18 @@ export function streamItemFingerprint(s: StreamRecord): string {
     String(s.reconnectCount ?? 0),
     s.lastEventId ?? "",
     s.errorMessage ?? "",
+    String(s.startedAt),
+    String(s.endedAt ?? ""),
   ].join("|");
+}
+
+function streamTimeTooltip(s: StreamRecord): string {
+  const start = formatTime(s.startedAt);
+  if (typeof s.endedAt === "number" && Number.isFinite(s.endedAt)) {
+    const dur = formatDuration(Math.max(0, s.endedAt - s.startedAt));
+    return t("streamTimeTooltipDone", [start, formatTime(s.endedAt), dur]);
+  }
+  return t("streamTimeTooltipLive", start);
 }
 
 export function renderList(): void {
@@ -90,8 +104,20 @@ export function renderList(): void {
         s.transport === "fetch" || s.transport === "xhr" || s.transport === "eventsource"
           ? s.transport
           : "";
+      const tip = escapeHtml(streamTimeTooltip(s));
+      const endHtml =
+        typeof s.endedAt === "number" && Number.isFinite(s.endedAt)
+          ? `<time class="stream-when-end" datetime="${new Date(s.endedAt).toISOString()}" title="${tip}">${escapeHtml(
+              formatTimeShort(s.endedAt),
+            )}</time>`
+          : "";
       li.innerHTML = `
-        <div class="stream-path"><span class="method">${escapeHtml(s.method)}</span>${escapeHtml(shortPath(s.url))}</div>
+        <div class="stream-head">
+          <div class="stream-path" title="${escapeHtml(s.url)}"><span class="method">${escapeHtml(s.method)}</span>${escapeHtml(shortPath(s.url))}</div>
+          <time class="stream-when-start" datetime="${new Date(s.startedAt).toISOString()}" title="${tip}">${escapeHtml(
+            formatTimeShort(s.startedAt),
+          )}</time>
+        </div>
         <div class="stream-meta">
           <span class="badge ${transportClass}">${escapeHtml(transportLabel(s.transport))}</span>
           ${
@@ -117,7 +143,10 @@ export function renderList(): void {
           }
           <span>${s.status != null ? `HTTP ${s.status}` : "—"}</span>
           <span>${escapeHtml(t("eventsCount", String(s.events.length)))}</span>
-          <span class="status ${s.streamStatus}"><i></i>${escapeHtml(streamStatusShort(s.streamStatus))}</span>
+          <span class="stream-meta-trail">
+            <span class="status ${s.streamStatus}"><i></i>${escapeHtml(streamStatusShort(s.streamStatus))}</span>
+            ${endHtml}
+          </span>
         </div>
       `;
     }
