@@ -9,6 +9,7 @@ export type AiProfile =
   | "qwen-web"
   | "chatglm-web"
   | "yuanbao-web"
+  | "acp"
   | "anthropic"
   | "generic";
 
@@ -24,6 +25,7 @@ export type AiVendorHint =
   | "baichuan"
   | "openai"
   | "anthropic"
+  | "acp"
   | "unknown";
 
 export interface AiProfileResult {
@@ -315,6 +317,44 @@ function isAnthropicChunk(value: unknown): boolean {
   );
 }
 
+function isAcpSessionUpdate(value: unknown): boolean {
+  return isRecord(value) && typeof value.sessionUpdate === "string";
+}
+
+function isAcpJsonRpcSessionUpdate(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    value.jsonrpc === "2.0" &&
+    value.method === "session/update" &&
+    isRecord(value.params) &&
+    isAcpSessionUpdate(value.params.update)
+  );
+}
+
+/**
+ * True ACP protocol payloads (no URL / SSE event-name heuristics):
+ * - JSON-RPC notification `session/update` (single or batch)
+ * - SessionUpdate object (`sessionUpdate` discriminator)
+ * - A list of SessionUpdates under `updates` (coalesced replay / snapshot *body* —
+ *   the SessionUpdates are protocol; an SSE event name like `snapshot` is not)
+ */
+export function isAcpProtocolPayload(value: unknown): boolean {
+  if (Array.isArray(value)) {
+    return value.some((item) => isAcpJsonRpcSessionUpdate(item) || isAcpSessionUpdate(item));
+  }
+  if (isAcpJsonRpcSessionUpdate(value)) return true;
+  if (isAcpSessionUpdate(value)) return true;
+  if (isRecord(value) && Array.isArray(value.updates)) {
+    return value.updates.some(isAcpSessionUpdate);
+  }
+  return false;
+}
+
+/** Wire chunk the ACP merger may consume — same shapes as protocol detection. */
+export function isAcpWireChunk(value: unknown, _eventName?: string): boolean {
+  return isAcpProtocolPayload(value);
+}
+
 function collectReasoningFields(value: unknown, into: Set<string>): void {
   if (!isRecord(value)) return;
   if (Array.isArray(value.choices)) {
@@ -359,6 +399,7 @@ export function detectAiProfile(
   let chatglmHits = 0;
   let yuanbaoHits = 0;
   let anthropicHits = 0;
+  let acpHits = 0;
   const sampleLimit = Math.min(events.length, 80);
 
   for (let i = 0; i < sampleLimit; i++) {
@@ -404,6 +445,10 @@ export function detectAiProfile(
       yuanbaoHits++;
       reasoningFields.add("deepSearch");
     }
+    if (isAcpProtocolPayload(parsed)) {
+      acpHits++;
+      reasoningFields.add("sessionUpdate");
+    }
     if (
       isAnthropicChunk(parsed) ||
       ev.event.startsWith("content_block") ||
@@ -421,6 +466,7 @@ export function detectAiProfile(
     { profile: "qwen-web", score: qwenHits },
     { profile: "chatglm-web", score: chatglmHits },
     { profile: "yuanbao-web", score: yuanbaoHits },
+    { profile: "acp", score: acpHits },
     { profile: "anthropic", score: anthropicHits },
   ];
   scores.sort((a, b) => b.score - a.score);
@@ -455,7 +501,9 @@ export function detectAiProfile(
   else if (profile === "qwen-web") resolvedVendor = "qwen";
   else if (profile === "chatglm-web") resolvedVendor = "chatglm";
   else if (profile === "yuanbao-web") resolvedVendor = "yuanbao";
-  else if (
+  else if (profile === "acp") {
+    resolvedVendor = "acp";
+  } else if (
     profile === "openai-compatible" &&
     vendorHint === "unknown" &&
     reasoningFields.has("reasoning_content")

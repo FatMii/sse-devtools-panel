@@ -331,17 +331,18 @@ Events、对话（正文 / 思考）、Raw 都用了虚拟滚动：屏幕外的�
 
 对话视图会按协议类型合并内容。当前已适配：
 
-| Profile             | 典型站点 / 形态      | 说明                           |
-| ------------------- | -------------------- | ------------------------------ |
-| `openai-compatible` | 各类 OpenAI 兼容 API | 正文 / 思考 / 工具调用         |
-| `deepseek-web`      | DeepSeek 网页        | 思考 + 正文；支持搜索工具      |
-| `doubao-web`        | 豆包网页             | 思考与正文拆分；搜索结果去重   |
-| `kimi-web`          | Kimi                 | 思考 / 正文 / 搜索             |
-| `qwen-web`          | 通义千问网页         | 计划思考 / 深度思考 / 搜索     |
-| `chatglm-web`       | 智谱清言 / ChatGLM   | 思考 / 正文 / 搜索结果         |
-| `yuanbao-web`       | 腾讯元宝             | 深度搜索思考 + 来源            |
-| `anthropic`         | Anthropic 风格 SSE   | 仅协议识别 — 对话合并尚未实现  |
-| `generic`           | 未识别               | 仍可看 Events / Timeline / Raw |
+| Profile             | 典型站点 / 形态      | 说明                                  |
+| ------------------- | -------------------- | ------------------------------------- |
+| `openai-compatible` | 各类 OpenAI 兼容 API | 正文 / 思考 / 工具调用                |
+| `deepseek-web`      | DeepSeek 网页        | 思考 + 正文；支持搜索工具             |
+| `doubao-web`        | 豆包网页             | 思考与正文拆分；搜索结果去重          |
+| `kimi-web`          | Kimi                 | 思考 / 正文 / 搜索                    |
+| `qwen-web`          | 通义千问网页         | 计划思考 / 深度思考 / 搜索            |
+| `chatglm-web`       | 智谱清言 / ChatGLM   | 思考 / 正文 / 搜索结果                |
+| `yuanbao-web`       | 腾讯元宝             | 深度搜索思考 + 来源                   |
+| `acp`               | ACP-over-HTTP SSE    | `session/update` → 内容 / 思考 / 工具 |
+| `anthropic`         | Anthropic 风格 SSE   | 仅协议识别 — 对话合并尚未实现         |
+| `generic`           | 未识别               | 仍可看 Events / Timeline / Raw        |
 
 > 各站协议常变。若对话视图为空或工具卡不对，请导出 Raw 或 JSON 并注明 URL。  
 > 未列出的站点：有真实样本后再适配。  
