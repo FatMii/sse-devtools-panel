@@ -5,13 +5,13 @@
 <h1 align="center">SSE DevTools Panel</h1>
 
 <p align="center">
-  <em>SSE / EventSource / NDJSON debugger for Chrome DevTools</em>
+  <em>SSE / EventSource / NDJSON debugger for Chromium DevTools (Chrome &amp; Edge)</em>
 </p>
 
 <p align="center"><a href="./README.zh-CN.md">中文</a></p>
 
 <p align="center">
-  <strong>A Chrome extension to debug SSE / EventSource / NDJSON streams in DevTools.</strong><br/>
+  <strong>A Chromium extension to debug SSE / EventSource / NDJSON streams in DevTools.</strong><br/>
   After install, open F12 → SSE DevTools to inspect events, conversation, timeline, and global search.<br/>
   Built for long-lived streams such as AI chats, notifications, and progress updates.
 </p>
@@ -20,6 +20,8 @@
   <a href="https://fatmii.github.io/sse-devtools-panel/"><img alt="Website" src="https://img.shields.io/badge/Website-GitHub%20Pages-1d4ed8"></a>
   &nbsp;
   <a href="https://chromewebstore.google.com/detail/sse-devtools-panel/kffpkefnkmabnkhklmnjkihiiclggnni"><img alt="Chrome Web Store" src="https://img.shields.io/chrome-web-store/v/kffpkefnkmabnkhklmnjkihiiclggnni?label=Chrome%20Web%20Store"></a>
+  &nbsp;
+  <a href="https://microsoftedge.microsoft.com/addons/detail/sse-devtools-panel/jmdceeplcpkajkiaiankkabblekdehmf"><img alt="Edge Add-ons" src="https://img.shields.io/badge/Microsoft%20Edge-Get%20it-0078D7"></a>
   &nbsp;
   <a href="https://github.com/FatMii/sse-devtools-panel/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/FatMii/sse-devtools-panel/actions/workflows/ci.yml/badge.svg"></a>
   &nbsp;
@@ -34,6 +36,8 @@
   <a href="https://fatmii.github.io/sse-devtools-panel/"><strong>Website</strong></a>
   ·
   <a href="https://chromewebstore.google.com/detail/sse-devtools-panel/kffpkefnkmabnkhklmnjkihiiclggnni"><strong>Install from Chrome Web Store</strong></a>
+  ·
+  <a href="https://microsoftedge.microsoft.com/addons/detail/sse-devtools-panel/jmdceeplcpkajkiaiankkabblekdehmf"><strong>Install from Edge Add-ons</strong></a>
 </p>
 
 ---
@@ -335,7 +339,7 @@ Conversation merges content by protocol profile. Currently supported:
 
 ### Install & load
 
-**Recommended:** install from the [Chrome Web Store](https://chromewebstore.google.com/detail/sse-devtools-panel/kffpkefnkmabnkhklmnjkihiiclggnni), then open your page → <kbd>F12</kbd> → **SSE DevTools** → **refresh the page** before triggering a stream.
+**Recommended:** install from the [Chrome Web Store](https://chromewebstore.google.com/detail/sse-devtools-panel/kffpkefnkmabnkhklmnjkihiiclggnni) or [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/sse-devtools-panel/jmdceeplcpkajkiaiankkabblekdehmf), then open your page → <kbd>F12</kbd> → **SSE DevTools** → **refresh the page** before triggering a stream.
 
 **From source** (development / local build):
 
@@ -346,7 +350,7 @@ pnpm i
 pnpm build
 ```
 
-1. Open `chrome://extensions` and enable **Developer mode**
+1. Open `chrome://extensions` or `edge://extensions` and enable **Developer mode**
 2. **Load unpacked** → select the repo’s **`dist/`** folder
 3. Open the target site → <kbd>F12</kbd> → **SSE DevTools**
 4. **Refresh the page**, then trigger a streaming API (the extension must be active at page load)

@@ -4,7 +4,7 @@
   "private": true,
   "license": "MIT",
   "homepage": "https://fatmii.github.io/sse-devtools-panel/",
-  "description": "Chrome DevTools panel for debugging SSE / NDJSON / Connect+JSON streaming responses",
+  "description": "Chromium (Chrome/Edge) DevTools panel for debugging SSE / NDJSON / Connect+JSON streaming responses",
   "type": "module",
   "packageManager": "pnpm@10.13.1",
   "engines": {

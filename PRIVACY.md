@@ -2,7 +2,7 @@
 
 Last updated: 2026-08-08
 
-SSE DevTools Panel ("the Extension") is a Chrome DevTools extension for debugging streaming responses (SSE, EventSource, NDJSON, and Connect+JSON).
+SSE DevTools Panel ("the Extension") is a Chromium DevTools extension (Chrome and Microsoft Edge) for debugging streaming responses (SSE, EventSource, NDJSON, and Connect+JSON).
 
 ## Data we handle
 

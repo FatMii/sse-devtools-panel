@@ -11,7 +11,7 @@ A clear description of what went wrong.
 
 ## Environment
 
-- Chrome version:
+- Chrome / Edge version:
 - OS:
 - Extension build: (commit SHA or `v1.2.5` / local `dist`)
 

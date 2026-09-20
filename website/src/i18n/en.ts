@@ -3,7 +3,7 @@ import type { UI } from "./types";
 export const en: UI = {
   meta: {
     title: "SSE DevTools Panel",
-    description: "SSE / EventSource / NDJSON debugger for Chrome DevTools",
+    description: "SSE / EventSource / NDJSON debugger for Chromium DevTools (Chrome & Edge)",
   },
   nav: {
     features: "Features",
@@ -13,7 +13,7 @@ export const en: UI = {
     switchLang: "中文",
   },
   hero: {
-    eyebrow: "Chrome DevTools · SSE / NDJSON",
+    eyebrow: "Chrome & Edge DevTools · SSE / NDJSON",
     title: "Understand SSE streams in DevTools",
     lead: "Leave raw fragments behind—capture SSE / NDJSON from the page, parse and visualize in one panel.",
     ctaDemo: "See demo",
@@ -159,19 +159,22 @@ export const en: UI = {
   },
   install: {
     title: "Get the extension",
-    subtitle: "Pick one path. Use the offline zip if the Web Store is unreachable.",
+    subtitle: "Pick one path. Use the offline zip if the store is unreachable.",
     storeTitle: "Chrome Web Store",
     storeBody: "Easiest when you can access Google—one-click install.",
-    storeCta: "Install from store",
+    storeCta: "Install from Chrome",
+    edgeTitle: "Microsoft Edge Add-ons",
+    edgeBody: "One-click install for Edge users from the official Add-ons store.",
+    edgeCta: "Install from Edge",
     offlineTitle: "Offline zip",
     offlineBadge: "No store needed",
     offlineBody:
-      "Download zip → extract → open <code>chrome://extensions</code> → enable Developer mode → Load unpacked <code>dist/</code>.",
+      "Download zip → extract → open <code>chrome://extensions</code> or <code>edge://extensions</code> → enable Developer mode → Load unpacked <code>dist/</code>.",
     offlineCta: (version) => `Download v${version} offline zip`,
     footPrefix: "Developers can also build from",
     footReleases: "GitHub Releases",
     footSuffix:
-      ". Chrome may warn about an unverified extension in developer mode; all data stays on your machine.",
+      ". The browser may warn about an unverified extension in developer mode; all data stays on your machine.",
   },
   footer: {
     readme: "README",

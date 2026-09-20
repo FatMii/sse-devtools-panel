@@ -92,6 +92,9 @@ export interface UI {
     storeTitle: string;
     storeBody: string;
     storeCta: string;
+    edgeTitle: string;
+    edgeBody: string;
+    edgeCta: string;
     offlineTitle: string;
     offlineBadge: string;
     offlineBody: string;

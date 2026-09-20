@@ -811,9 +811,9 @@ img[data-zoomable] {
 
 .install-paths {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
-  max-width: 880px;
+  max-width: 1080px;
   margin: 0 auto;
 }
 

@@ -2,12 +2,14 @@ import manifest from "../../../manifest.json";
 
 export const site = {
   name: "SSE DevTools Panel",
-  tagline: "SSE / EventSource / NDJSON debugger for Chrome DevTools",
+  tagline: "SSE / EventSource / NDJSON debugger for Chromium DevTools (Chrome & Edge)",
   version: manifest.version,
   urls: {
     website: "https://fatmii.github.io/sse-devtools-panel/",
     chromeStore:
       "https://chromewebstore.google.com/detail/sse-devtools-panel/kffpkefnkmabnkhklmnjkihiiclggnni",
+    edgeStore:
+      "https://microsoftedge.microsoft.com/addons/detail/sse-devtools-panel/jmdceeplcpkajkiaiankkabblekdehmf",
     github: "https://github.com/FatMii/sse-devtools-panel",
     githubReleases: "https://github.com/FatMii/sse-devtools-panel/releases/latest",
   },

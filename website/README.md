@@ -32,9 +32,11 @@ pnpm preview
 
 `website/public/releases/sse-devtools-panel-v{version}.zip`
 
-The zip contains a top-level `dist/` folder. Users extract it and load that folder via `chrome://extensions` → Developer mode → Load unpacked.
+The zip contains a top-level `dist/` folder. Users extract it and load that folder via `chrome://extensions` or `edge://extensions` → Developer mode → Load unpacked.
 
 Run `pnpm build` before `release:zip` if `dist/` is missing or stale.
+
+Store install (no sideload): [Chrome Web Store](https://chromewebstore.google.com/detail/sse-devtools-panel/kffpkefnkmabnkhklmnjkihiiclggnni) · [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/sse-devtools-panel/jmdceeplcpkajkiaiankkabblekdehmf).
 
 ## Deploy
 
