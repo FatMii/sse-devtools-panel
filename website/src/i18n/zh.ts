@@ -3,7 +3,8 @@ import type { UI } from "./types";
 export const zh: UI = {
   meta: {
     title: "SSE DevTools Panel",
-    description: "面向 Chromium DevTools（Chrome / Edge）的 SSE / EventSource / NDJSON 流式调试扩展",
+    description:
+      "面向 Chromium DevTools（Chrome / Edge）的 SSE / EventSource / NDJSON 流式调试扩展",
   },
   nav: {
     features: "功能",
