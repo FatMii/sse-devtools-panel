@@ -3,7 +3,7 @@ import type { UI } from "./types";
 export const zh: UI = {
   meta: {
     title: "SSE DevTools Panel",
-    description: "Chrome DevTools 里的 SSE / EventSource / NDJSON 流式调试扩展",
+    description: "面向 Chromium DevTools（Chrome / Edge）的 SSE / EventSource / NDJSON 流式调试扩展",
   },
   nav: {
     features: "功能",
@@ -13,7 +13,7 @@ export const zh: UI = {
     switchLang: "EN",
   },
   hero: {
-    eyebrow: "Chrome DevTools · SSE / NDJSON",
+    eyebrow: "Chrome & Edge DevTools · SSE / NDJSON",
     title: "在 DevTools 里看懂 SSE 流",
     lead: "告别流式碎片，自动捕获网页 SSE / NDJSON 流——解析、可视化，一个面板全看清。",
     ctaDemo: "查看演示",
@@ -160,16 +160,19 @@ export const zh: UI = {
     subtitle: "选一种方式即可。国内网络推荐离线包。",
     storeTitle: "Chrome 应用商店",
     storeBody: "能访问 Google 时最方便，一键安装。",
-    storeCta: "前往商店安装",
+    storeCta: "前往 Chrome 安装",
+    edgeTitle: "Microsoft Edge 加载项",
+    edgeBody: "Edge 用户可从官方加载项商店一键安装。",
+    edgeCta: "前往 Edge 安装",
     offlineTitle: "离线包",
     offlineBadge: "国内推荐",
     offlineBody:
-      "下载 zip → 解压 → <code>chrome://extensions</code> 开启开发者模式 → 加载已解压的 <code>dist/</code>。",
+      "下载 zip → 解压 → <code>chrome://extensions</code> 或 <code>edge://extensions</code> 开启开发者模式 → 加载已解压的 <code>dist/</code>。",
     offlineCta: (version) => `下载 v${version} 离线包`,
     footPrefix: "开发者也可从",
     footReleases: "GitHub Releases",
     footSuffix:
-      "获取源码自行构建。离线加载时 Chrome 可能提示「未验证扩展」，属开发者模式正常现象；数据仅本地处理。",
+      "获取源码自行构建。离线加载时浏览器可能提示「未验证扩展」，属开发者模式正常现象；数据仅本地处理。",
   },
   footer: {
     readme: "README",

@@ -10,7 +10,7 @@ pnpm build
 pnpm demo          # http://127.0.0.1:8765
 ```
 
-Load the unpacked extension from `dist/` in `chrome://extensions` (Developer mode). Open DevTools → **SSE DevTools**, then **refresh** the page before capturing streams.
+Load the unpacked extension from `dist/` in `chrome://extensions` or `edge://extensions` (Developer mode). Open DevTools → **SSE DevTools**, then **refresh** the page before capturing streams.
 
 Useful scripts:
 
@@ -52,7 +52,7 @@ CI (GitHub Actions) runs `format:check` + `lint` + `test` + `typecheck` + `build
 
 Use the Bug report issue template. Include:
 
-- Chrome version
+- Chrome / Edge version
 - Steps to reproduce
 - Whether the local demo reproduces it
 - Screenshots or exported JSON if useful

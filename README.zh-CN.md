@@ -5,13 +5,13 @@
 <h1 align="center">SSE DevTools Panel</h1>
 
 <p align="center">
-  <em>SSE / EventSource / NDJSON debugger for Chrome DevTools</em>
+  <em>面向 Chromium DevTools（Chrome / Edge）的 SSE / EventSource / NDJSON 调试扩展</em>
 </p>
 
 <p align="center"><a href="./README.md">English</a></p>
 
 <p align="center">
-  <strong>Chrome 扩展：在 DevTools 里调试网页的 SSE / EventSource / NDJSON 流。</strong><br/>
+  <strong>Chromium 扩展：在 DevTools 里调试网页的 SSE / EventSource / NDJSON 流。</strong><br/>
   安装后打开 F12 → SSE DevTools：事件列表、对话、时间线与全局搜索，都能在面板里直接看。<br/>
   适合 AI 对话、通知推送、进度上报等长连接场景。
 </p>
@@ -20,6 +20,8 @@
   <a href="https://fatmii.github.io/sse-devtools-panel/"><img alt="Website" src="https://img.shields.io/badge/Website-GitHub%20Pages-1d4ed8"></a>
   &nbsp;
   <a href="https://chromewebstore.google.com/detail/sse-devtools-panel/kffpkefnkmabnkhklmnjkihiiclggnni"><img alt="Chrome Web Store" src="https://img.shields.io/chrome-web-store/v/kffpkefnkmabnkhklmnjkihiiclggnni?label=Chrome%20Web%20Store"></a>
+  &nbsp;
+  <a href="https://microsoftedge.microsoft.com/addons/detail/sse-devtools-panel/jmdceeplcpkajkiaiankkabblekdehmf"><img alt="Edge Add-ons" src="https://img.shields.io/badge/Microsoft%20Edge-Get%20it-0078D7"></a>
   &nbsp;
   <a href="https://github.com/FatMii/sse-devtools-panel/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/FatMii/sse-devtools-panel/actions/workflows/ci.yml/badge.svg"></a>
   &nbsp;
@@ -34,6 +36,8 @@
   <a href="https://fatmii.github.io/sse-devtools-panel/"><strong>官方网站</strong></a>
   ·
   <a href="https://chromewebstore.google.com/detail/sse-devtools-panel/kffpkefnkmabnkhklmnjkihiiclggnni"><strong>从 Chrome 应用商店安装</strong></a>
+  ·
+  <a href="https://microsoftedge.microsoft.com/addons/detail/sse-devtools-panel/jmdceeplcpkajkiaiankkabblekdehmf"><strong>从 Edge 加载项安装</strong></a>
 </p>
 
 ---
@@ -361,7 +365,7 @@ Events、对话（正文 / 思考）、Raw 都用了虚拟滚动：屏幕外的�
 
 ### 安装并加载
 
-**推荐：** 从 [Chrome 应用商店](https://chromewebstore.google.com/detail/sse-devtools-panel/kffpkefnkmabnkhklmnjkihiiclggnni) 安装，然后打开目标页 → <kbd>F12</kbd> → **SSE DevTools** → **先刷新页面**再触发流式请求。
+**推荐：** 从 [Chrome 应用商店](https://chromewebstore.google.com/detail/sse-devtools-panel/kffpkefnkmabnkhklmnjkihiiclggnni) 或 [Microsoft Edge 加载项](https://microsoftedge.microsoft.com/addons/detail/sse-devtools-panel/jmdceeplcpkajkiaiankkabblekdehmf) 安装，然后打开目标页 → <kbd>F12</kbd> → **SSE DevTools** → **先刷新页面**再触发流式请求。
 
 **从源码加载**（开发 / 本地构建）：
 
@@ -372,7 +376,7 @@ pnpm i
 pnpm build
 ```
 
-1. 打开 `chrome://extensions`，开启「开发者模式」
+1. 打开 `chrome://extensions` 或 `edge://extensions`，开启「开发者模式」
 2. 「加载已解压的扩展程序」→ 选择仓库里的 **`dist/`**
 3. 打开目标站点 → <kbd>F12</kbd> → **SSE DevTools**
 4. **刷新页面**后再触发流式接口（扩展需在页面加载时生效）
