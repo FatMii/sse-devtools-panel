@@ -357,6 +357,188 @@ code {
   font-weight: 600;
 }
 
+.proof a {
+  color: var(--blue);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.maintained-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 18px;
+  padding: 6px 12px;
+  color: var(--live-text);
+  background: var(--live-bg);
+  border: 1px solid var(--live-border);
+  border-radius: 999px;
+  font: 600 12px/1.2 var(--font-mono);
+  letter-spacing: 0.02em;
+}
+
+.maintained-sep {
+  opacity: 0.55;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55);
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pulse-dot {
+    animation: pulse-glow 1.8s ease-out infinite;
+  }
+}
+
+@keyframes pulse-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+/* —— What's new / release pulse —— */
+.pulse {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: clamp(48px, 8vh, 88px) clamp(16px, 5vw, 72px);
+}
+
+.pulse-head {
+  margin: 0 auto 20px;
+  text-align: center;
+}
+
+.pulse-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--live-text);
+  font: 600 12px/1.2 var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pulse-latest {
+  padding: clamp(20px, 3vw, 28px);
+  background:
+    linear-gradient(135deg, var(--accent-soft), transparent 55%),
+    var(--surface);
+  border: 1px solid var(--accent-border);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px var(--shadow);
+}
+
+.pulse-latest-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin-bottom: 10px;
+  color: var(--text-faint);
+  font: 12px/1.3 var(--font-mono);
+}
+
+.pulse-version {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  color: var(--live-text);
+  background: var(--live-bg);
+  border: 1px solid var(--live-border);
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.pulse-latest h3 {
+  margin: 0;
+  font-size: clamp(1.2rem, 2.4vw, 1.45rem);
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.pulse-latest > p {
+  margin: 10px 0 0;
+  color: var(--text-soft);
+  line-height: 1.65;
+}
+
+.pulse-latest-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.pulse-timeline {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pulse-item {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.pulse-item:hover {
+  border-color: var(--accent-border);
+  box-shadow: 0 10px 24px var(--shadow);
+  transform: translateY(-1px);
+}
+
+.pulse-item-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.pulse-item-version {
+  color: var(--blue);
+  font: 600 12px/1.2 var(--font-mono);
+}
+
+.pulse-item-title {
+  color: var(--text);
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.pulse-item-blurb {
+  color: var(--text-soft);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.pulse-item time {
+  color: var(--text-faint);
+  font: 12px/1.2 var(--font-mono);
+  white-space: nowrap;
+}
+
 /* —— Pain strip —— */
 .pain-strip {
   padding: 0 clamp(16px, 5vw, 72px) clamp(40px, 7vh, 72px);
@@ -1023,6 +1205,10 @@ img[data-zoomable] {
   }
   .hero-focus > *:nth-child(6) {
     animation-delay: 0.22s;
+  }
+
+  .hero-focus > *:nth-child(7) {
+    animation-delay: 0.26s;
   }
 
   .browser-frame {

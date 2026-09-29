@@ -10,6 +10,7 @@ export const en: UI = {
   },
   nav: {
     features: "Features",
+    whatsNew: "What's new",
     install: "Get extension",
     themeDark: "Dark",
     themeLight: "Light",
@@ -24,6 +25,12 @@ export const en: UI = {
     proofOpenSource: "open source",
     proofLocal: "local processing",
     proofExtension: "extension",
+    maintained: "Actively maintained",
+  },
+  pulse: {
+    live: "Actively shipping",
+    changelogCta: "Read the Changelog",
+    releasesCta: "GitHub Releases",
   },
   heroDemo: {
     ariaLabel: "Product demo",
@@ -181,5 +188,6 @@ export const en: UI = {
   },
   footer: {
     readme: "README",
+    changelog: "Changelog",
   },
 };

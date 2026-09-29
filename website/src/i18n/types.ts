@@ -11,6 +11,7 @@ export interface UI {
   };
   nav: {
     features: string;
+    whatsNew: string;
     install: string;
     themeDark: string;
     themeLight: string;
@@ -25,6 +26,12 @@ export interface UI {
     proofOpenSource: string;
     proofLocal: string;
     proofExtension: string;
+    maintained: string;
+  };
+  pulse: {
+    live: string;
+    changelogCta: string;
+    releasesCta: string;
   };
   heroDemo: {
     ariaLabel: string;
@@ -106,5 +113,6 @@ export interface UI {
   };
   footer: {
     readme: string;
+    changelog: string;
   };
 }
