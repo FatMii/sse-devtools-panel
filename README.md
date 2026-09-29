@@ -25,6 +25,8 @@
   &nbsp;
   <a href="https://github.com/FatMii/sse-devtools-panel/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/FatMii/sse-devtools-panel/actions/workflows/ci.yml/badge.svg"></a>
   &nbsp;
+  <a href="./CHANGELOG.md"><img alt="Changelog" src="https://img.shields.io/badge/Changelog-Keep%20a%20Changelog-blue"></a>
+  &nbsp;
   <a href="./LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
   &nbsp;
   <a href="#"><img alt="Platform" src="https://img.shields.io/badge/Platform-Chromium%20DevTools-blue"></a>
@@ -34,6 +36,8 @@
 
 <p align="center">
   <a href="https://fatmii.github.io/sse-devtools-panel/"><strong>Website</strong></a>
+  ·
+  <a href="./CHANGELOG.md"><strong>Changelog</strong></a>
   ·
   <a href="https://chromewebstore.google.com/detail/sse-devtools-panel/kffpkefnkmabnkhklmnjkihiiclggnni"><strong>Install from Chrome Web Store</strong></a>
   ·
@@ -77,6 +81,7 @@
 - [30-second demo](#30-second-demo)
 - [Development](#development)
 - [Limitations](#limitations)
+- [Changelog](#changelog)
 - [Contributing](#contributing)
 - [Acknowledgments](#acknowledgments)
 - [License](#license)
@@ -417,6 +422,12 @@ pnpm format:check && pnpm lint && pnpm test && pnpm typecheck && pnpm build
 - How we decide a response is a stream: first check the response `Content-Type` for real stream types (`text/event-stream`, NDJSON, Connect+JSON). Many AI gateways mislabel or omit it — the body is still SSE, but the header says `application/json` / `text/plain`, or there is no `Content-Type` at all. In those cases we also look at the request: `Accept: text/event-stream`, a JSON body with `"stream": true`, or `?stream=true` on the URL. The demo button **Fetch SSE (JSON CT)** is that case (JSON response header + `stream: true` in the body). Ordinary JSON APIs without those hints are still ignored. If the request already has those stream hints, a row appears in the Streams list immediately while the response is still pending; a provisional row is removed if the response turns out not to be a stream
 - Conversation depends on each site’s private protocol and may need updates after site changes
 - If the SSE panel opens after a stream already started, the background service worker replays a recent buffer (up to ~2 000 messages / ~4 MB per tab). Older traffic may be dropped when the cap is hit; an extension service-worker restart can still clear the buffer
+
+---
+
+# Changelog
+
+Release history lives in [CHANGELOG.md](./CHANGELOG.md) (Keep a Changelog). Tagged builds and offline zips are on [GitHub Releases](https://github.com/FatMii/sse-devtools-panel/releases).
 
 ---
 

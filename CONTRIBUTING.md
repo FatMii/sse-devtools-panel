@@ -65,3 +65,12 @@ Use the Feature request template. Describe the problem first, then the proposed 
 
 - Current tests cover shared parsers / export / spec / timing / request-view / close / AI merge helpers, and required samples under `fixtures/vendors/`. They do **not** fully cover the DevTools panel UI or every inject edge case.
 - AI Conversation merge is implemented for several Web profiles (see README vendor matrix). Anthropic is detected as a profile but Conversation merge is not implemented yet. Deeper ReadableStream hooks (`pipeThrough` / `pipeTo`) remain out of scope until we have a confirmed miss-capture case.
+
+## Releases (maintainers)
+
+When cutting a version:
+
+1. Update [CHANGELOG.md](./CHANGELOG.md) (Keep a Changelog).
+2. Bump `package.json` / `manifest.json` (and the panel version fallback) as usual.
+3. Refresh `website/src/data/releases.ts` so the site “What's new” pulse stays current.
+4. Tag and publish a GitHub Release with the offline zip.
