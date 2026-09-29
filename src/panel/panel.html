@@ -18,6 +18,7 @@
             type="button"
             class="tool-btn"
             id="btn-import-json"
+            data-tour="import"
             data-i18n-title="importJsonTitle"
           >
             <span class="tool-icon" data-icon="import"></span>
@@ -193,6 +194,26 @@
                 Spec
               </button>
               <div class="menu-separator" role="separator" aria-hidden="true"></div>
+              <div class="menu-panel-group" data-tour="more-help">
+                <button
+                  type="button"
+                  role="menuitem"
+                  id="btn-replay-tour"
+                  data-i18n="replayTour"
+                  data-i18n-title="replayTourTitle"
+                >
+                  Show guided tour
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  id="btn-load-tour-sample"
+                  data-i18n="loadTourSample"
+                  data-i18n-title="loadTourSampleTitle"
+                >
+                  Load sample stream
+                </button>
+              </div>
               <button
                 type="button"
                 role="menuitem"
@@ -210,7 +231,7 @@
       <input id="import-file" type="file" accept="application/json,.json" hidden />
 
       <div class="workbench">
-        <aside class="sidebar">
+        <aside class="sidebar" data-tour="streams">
           <div class="filter-box">
             <div class="input-wrap">
               <span class="input-icon" data-icon="search"></span>
@@ -256,18 +277,23 @@
         <section class="detail">
           <div class="detail-nav">
             <div class="tabs">
-              <button type="button" class="tab active" data-tab="events">
+              <button type="button" class="tab active" data-tab="events" data-tour="tab-events">
                 <span data-i18n="tabEvents">Events</span>
                 <span class="tab-count" id="tab-count-events" hidden></span>
               </button>
-              <button type="button" class="tab" data-tab="request">
+              <button type="button" class="tab" data-tab="request" data-tour="tab-request">
                 <span data-i18n="tabRequest">Request</span>
               </button>
-              <button type="button" class="tab" data-tab="conversation">
+              <button
+                type="button"
+                class="tab"
+                data-tab="conversation"
+                data-tour="tab-conversation"
+              >
                 <span data-i18n="tabConversation">Conversation</span>
                 <span class="tab-count" id="tab-count-conversation" hidden></span>
               </button>
-              <button type="button" class="tab" data-tab="timeline">
+              <button type="button" class="tab" data-tab="timeline" data-tour="tab-timeline">
                 <span data-i18n="tabTimeline">Timeline</span>
               </button>
               <button type="button" class="tab" data-tab="raw">

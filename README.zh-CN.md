@@ -469,6 +469,7 @@ pnpm format:check && pnpm lint && pnpm test && pnpm typecheck && pnpm build
 # 致谢
 
 - **界面图标** — 改编自 [Lucide](https://lucide.dev)（[ISC](https://lucide.dev/license)）。新增图标请同样使用 Lucide，见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
+- **新手引导** — [driver.js](https://driverjs.com)（[MIT](https://github.com/kamranahmedse/driver.js/blob/master/license)）。
 - **运行平台** — 基于 Chromium DevTools 扩展能力。
 - **协议参考** — SSE 对照 [HTML Living Standard](https://html.spec.whatwg.org/multipage/server-sent-events.html)；Connect+JSON 对照 [Connect 协议](https://connectrpc.com/docs/protocol)。
 

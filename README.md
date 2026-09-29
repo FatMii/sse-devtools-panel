@@ -433,6 +433,7 @@ For vendor adaptations, please include a real sample so we can match protocol ch
 # Acknowledgments
 
 - **UI icons** — adapted from [Lucide](https://lucide.dev) ([ISC](https://lucide.dev/license)). New icons should also come from Lucide; see [CONTRIBUTING.md](./CONTRIBUTING.md).
+- **Onboarding tour** — [driver.js](https://driverjs.com) ([MIT](https://github.com/kamranahmedse/driver.js/blob/master/license)).
 - **Platform** — built as a Chromium DevTools extension.
 - **Protocols** — SSE follows the [HTML Living Standard](https://html.spec.whatwg.org/multipage/server-sent-events.html); Connect+JSON framing follows the [Connect protocol](https://connectrpc.com/docs/protocol).
 
