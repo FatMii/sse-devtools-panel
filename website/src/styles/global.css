@@ -432,9 +432,7 @@ code {
 
 .pulse-latest {
   padding: clamp(20px, 3vw, 28px);
-  background:
-    linear-gradient(135deg, var(--accent-soft), transparent 55%),
-    var(--surface);
+  background: linear-gradient(135deg, var(--accent-soft), transparent 55%), var(--surface);
   border: 1px solid var(--accent-border);
   border-radius: 16px;
   box-shadow: 0 16px 40px var(--shadow);
