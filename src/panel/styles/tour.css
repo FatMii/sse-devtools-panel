@@ -1,0 +1,121 @@
+/* Theme tweaks on top of driver.js defaults — match panel tokens. */
+.driver-popover.sse-tour-popover {
+  background: var(--surface-1);
+  color: var(--text);
+  border: 1px solid var(--stroke-strong);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgb(15 23 35 / 22%);
+  font-family: var(--sans);
+}
+
+.driver-popover.sse-tour-popover .driver-popover-title {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 650;
+  padding-right: 28px;
+}
+
+.driver-popover.sse-tour-popover .driver-popover-description {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.driver-popover.sse-tour-popover .driver-popover-progress-text {
+  color: var(--text-faint);
+}
+
+/* Close (×): reset panel button chrome; keep glyph centered in hover hit-area. */
+.driver-popover.sse-tour-popover .driver-popover-close-btn {
+  all: unset;
+  box-sizing: border-box;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  width: 28px;
+  height: 28px;
+  /* Logs showed computed display:block → × left-aligned (dx≈-5). Force flex. */
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-faint);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  outline: none;
+  box-shadow: none;
+  transform: none;
+}
+
+.driver-popover.sse-tour-popover .driver-popover-close-btn:hover,
+.driver-popover.sse-tour-popover .driver-popover-close-btn:focus,
+.driver-popover.sse-tour-popover .driver-popover-close-btn:focus-visible,
+.driver-popover.sse-tour-popover .driver-popover-close-btn:active {
+  color: var(--text);
+  background: var(--surface-2);
+  border: 0;
+  outline: none;
+  box-shadow: none;
+  transform: none;
+}
+
+.driver-popover.sse-tour-popover .driver-popover-footer-btn {
+  border-radius: 8px;
+  border: 1px solid var(--stroke);
+  background: var(--surface-2);
+  color: var(--text);
+  font-weight: 600;
+  padding: 6px 10px;
+}
+
+.driver-popover.sse-tour-popover .driver-popover-footer-btn:hover,
+.driver-popover.sse-tour-popover .driver-popover-footer-btn:focus,
+.driver-popover.sse-tour-popover .driver-popover-footer-btn:focus-visible {
+  background: var(--surface-hover);
+  outline: none;
+}
+
+.driver-popover.sse-tour-popover .driver-popover-next-btn {
+  border-color: var(--accent-strong);
+  background: var(--accent);
+  color: #fff;
+}
+
+.driver-popover.sse-tour-popover .driver-popover-next-btn:hover,
+.driver-popover.sse-tour-popover .driver-popover-next-btn:focus,
+.driver-popover.sse-tour-popover .driver-popover-next-btn:focus-visible {
+  background: var(--accent-strong);
+  outline: none;
+}
+
+.driver-popover.sse-tour-popover .driver-popover-arrow-side-left {
+  border-left-color: var(--surface-1);
+}
+
+.driver-popover.sse-tour-popover .driver-popover-arrow-side-right {
+  border-right-color: var(--surface-1);
+}
+
+.driver-popover.sse-tour-popover .driver-popover-arrow-side-top {
+  border-top-color: var(--surface-1);
+}
+
+.driver-popover.sse-tour-popover .driver-popover-arrow-side-bottom {
+  border-bottom-color: var(--surface-1);
+}
+
+html[data-theme="night"] .driver-popover.sse-tour-popover {
+  box-shadow: 0 12px 32px rgb(0 0 0 / 45%);
+}
+
+html[data-theme="night"] .driver-popover.sse-tour-popover .driver-popover-close-btn:hover,
+html[data-theme="night"] .driver-popover.sse-tour-popover .driver-popover-close-btn:focus,
+html[data-theme="night"] .driver-popover.sse-tour-popover .driver-popover-close-btn:focus-visible {
+  background: var(--surface-hover);
+}

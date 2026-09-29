@@ -45,6 +45,14 @@ export function closeAllMenus(): void {
   elThemeMenuBtn?.setAttribute("aria-expanded", "false");
 }
 
+/** Open More menu (used by onboarding tour). Closes other menus first. */
+export function openMoreMenu(): void {
+  if (!elMoreMenuPanel || !elMoreMenuBtn) return;
+  closeAllMenus();
+  elMoreMenuPanel.hidden = false;
+  elMoreMenuBtn.setAttribute("aria-expanded", "true");
+}
+
 export function toggleMenu(panel: HTMLDivElement | null, btn: HTMLButtonElement | null): void {
   if (!panel || !btn) return;
   const willOpen = panel.hidden;
