@@ -10,6 +10,7 @@ export const zh: UI = {
   },
   nav: {
     features: "功能",
+    whatsNew: "更新动态",
     install: "获取扩展",
     themeDark: "夜间",
     themeLight: "浅色",
@@ -24,6 +25,12 @@ export const zh: UI = {
     proofOpenSource: "开源",
     proofLocal: "处理，不上云",
     proofExtension: "扩展",
+    maintained: "持续维护中",
+  },
+  pulse: {
+    live: "活跃维护",
+    changelogCta: "查看 Changelog",
+    releasesCta: "GitHub Releases",
   },
   heroDemo: {
     ariaLabel: "产品演示",
@@ -179,5 +186,6 @@ export const zh: UI = {
   },
   footer: {
     readme: "README",
+    changelog: "Changelog",
   },
 };

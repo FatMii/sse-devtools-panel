@@ -13,6 +13,7 @@ export const site = {
       "https://microsoftedge.microsoft.com/addons/detail/sse-devtools-panel/jmdceeplcpkajkiaiankkabblekdehmf",
     github: "https://github.com/FatMii/sse-devtools-panel",
     githubReleases: "https://github.com/FatMii/sse-devtools-panel/releases/latest",
+    changelog: "https://github.com/FatMii/sse-devtools-panel/blob/main/CHANGELOG.md",
   },
   offlineZipPath(version: string, baseUrl = "/") {
     const base = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;

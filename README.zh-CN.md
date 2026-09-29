@@ -25,6 +25,8 @@
   &nbsp;
   <a href="https://github.com/FatMii/sse-devtools-panel/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/FatMii/sse-devtools-panel/actions/workflows/ci.yml/badge.svg"></a>
   &nbsp;
+  <a href="./CHANGELOG.md"><img alt="Changelog" src="https://img.shields.io/badge/Changelog-Keep%20a%20Changelog-blue"></a>
+  &nbsp;
   <a href="./LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
   &nbsp;
   <a href="#"><img alt="Platform" src="https://img.shields.io/badge/Platform-Chromium%20DevTools-blue"></a>
@@ -34,6 +36,8 @@
 
 <p align="center">
   <a href="https://fatmii.github.io/sse-devtools-panel/"><strong>官方网站</strong></a>
+  ·
+  <a href="./CHANGELOG.md"><strong>更新日志</strong></a>
   ·
   <a href="https://chromewebstore.google.com/detail/sse-devtools-panel/kffpkefnkmabnkhklmnjkihiiclggnni"><strong>从 Chrome 应用商店安装</strong></a>
   ·
@@ -77,6 +81,7 @@
 - [30 秒 Demo](#30-秒-demo)
 - [开发](#开发)
 - [限制](#限制)
+- [更新日志](#更新日志)
 - [参与贡献](#参与贡献)
 - [致谢](#致谢)
 - [开源协议](#开源协议)
@@ -449,6 +454,14 @@ pnpm format:check && pnpm lint && pnpm test && pnpm typecheck && pnpm build
 - 扩展怎么判断「这是一条要抓的流」：先看响应头有没有正经流类型（如 `Content-Type: text/event-stream` / NDJSON / Connect+JSON）。很多 AI 网关会标错或干脆不标——响应仍是 SSE 正文，但写成 `application/json`、`text/plain`，或响应头里根本没有 `Content-Type`。这时会再看请求是否像在要流：例如 `Accept: text/event-stream`、POST body 含 `"stream": true`、URL 带 `?stream=true`。Demo 里的 **Fetch SSE (JSON CT)** 就是「响应标成 JSON、请求 body 带 stream:true」这种。普通查用户资料一类的 JSON 接口没有这些提示，仍然不会进侧栏。若请求侧已有上述流式线索，响应还在 pending 时就会先出现在 Streams 列表；确认不是流后会把这条预创建行移除
 - 对话视图依赖各站私有协议，站点改版后可能需要重新适配
 - 若流已开始后再打开 SSE 面板，background 会回放该 tab 的近期缓冲（约 2000 条 / 4MB 上限）；超限会丢最旧数据，扩展 Service Worker 被回收后缓冲也会清空
+
+---
+
+<a name="更新日志"></a>
+
+# 更新日志
+
+版本变更见 [CHANGELOG.md](./CHANGELOG.md)（Keep a Changelog）。带离线包的打 tag 发布见 [GitHub Releases](https://github.com/FatMii/sse-devtools-panel/releases)。
 
 ---
 

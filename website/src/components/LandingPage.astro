@@ -10,6 +10,7 @@ import FeatureShowcase from "./FeatureShowcase.astro";
 import FeatureSpotlight from "./FeatureSpotlight.astro";
 import FaqSection from "./FaqSection.astro";
 import InstallSection from "./InstallSection.astro";
+import WhatsNew from "./WhatsNew.astro";
 import MediaZoom from "./MediaZoom.astro";
 import SkeletonMediaInit from "./SkeletonMediaInit.astro";
 import { docsUrl } from "../i18n";
@@ -50,6 +51,7 @@ const t = getTranslations(locale);
         ))
       }
     </section>
+    <WhatsNew locale={locale} />
     <FaqSection locale={locale} />
     <InstallSection locale={locale} />
   </main>
@@ -57,6 +59,8 @@ const t = getTranslations(locale);
     <p>
       {site.name} · MIT ·
       <a href={docsUrl(locale)} target="_blank" rel="noreferrer">{t.footer.readme}</a>
+      ·
+      <a href={site.urls.changelog} target="_blank" rel="noreferrer">{t.footer.changelog}</a>
       ·
       <a href={site.urls.github} target="_blank" rel="noreferrer">GitHub</a>
       · v{site.version}
