@@ -13,6 +13,12 @@ const t = getTranslations(locale);
 
 <section class="hero-focus" aria-labelledby="hero-title">
   <p class="eyebrow">{t.hero.eyebrow}</p>
+  <p class="maintained-badge">
+    <span class="pulse-dot" aria-hidden="true"></span>
+    <span>{t.hero.maintained}</span>
+    <span class="maintained-sep" aria-hidden="true">·</span>
+    <span>v{site.version}</span>
+  </p>
   <h1 id="hero-title">{t.hero.title}</h1>
   <p class="lead">{t.hero.lead}</p>
   <div class="actions">
@@ -23,6 +29,6 @@ const t = getTranslations(locale);
     <li><strong>MIT</strong> {t.hero.proofOpenSource}</li>
     <li><strong>{locale === "zh" ? "本地" : "Local"}</strong> {t.hero.proofLocal}</li>
     <li><strong>MV3</strong> {t.hero.proofExtension}</li>
-    <li>v{site.version}</li>
+    <li><a href="#whats-new">{t.nav.whatsNew}</a></li>
   </ul>
 </section>

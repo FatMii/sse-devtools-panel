@@ -1,0 +1,63 @@
+---
+import type { Locale } from "../i18n";
+import { getTranslations } from "../i18n";
+import { formatReleaseDate, releasePulse } from "../data/releases";
+import { site } from "../data/site";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = getTranslations(locale);
+const lang = locale === "zh" ? "zh" : "en";
+const latest = releasePulse.items[0]!;
+---
+
+<section class="pulse" id="whats-new" aria-labelledby="pulse-title">
+  <div class="pulse-head">
+    <div class="pulse-live" id="pulse-title">
+      <span class="pulse-dot" aria-hidden="true"></span>
+      <span class="pulse-live-label">{t.pulse.live}</span>
+    </div>
+  </div>
+
+  <article class="pulse-latest">
+    <div class="pulse-latest-meta">
+      <span class="pulse-version">v{latest.version}</span>
+      <time datetime={latest.date}>{formatReleaseDate(latest.date, lang)}</time>
+    </div>
+    <h3>{latest.title[lang]}</h3>
+    <p>{latest.blurb[lang]}</p>
+    <div class="pulse-latest-actions">
+      <a class="button primary" href={site.urls.changelog} target="_blank" rel="noreferrer"
+        >{t.pulse.changelogCta}</a
+      >
+      <a class="button" href={site.urls.githubReleases} target="_blank" rel="noreferrer"
+        >{t.pulse.releasesCta}</a
+      >
+    </div>
+  </article>
+
+  <ol class="pulse-timeline">
+    {
+      releasePulse.items.slice(1).map((item) => (
+        <li>
+          <a
+            class="pulse-item"
+            href={`${site.urls.github}/releases/tag/v${item.version}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <div class="pulse-item-top">
+              <span class="pulse-item-version">v{item.version}</span>
+              <time datetime={item.date}>{formatReleaseDate(item.date, lang)}</time>
+            </div>
+            <span class="pulse-item-title">{item.title[lang]}</span>
+            <span class="pulse-item-blurb">{item.blurb[lang]}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ol>
+</section>
