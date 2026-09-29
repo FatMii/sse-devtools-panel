@@ -7,6 +7,7 @@ export interface UI {
   meta: {
     title: string;
     description: string;
+    keywords: string;
   };
   nav: {
     features: string;

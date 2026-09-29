@@ -2,7 +2,8 @@ import manifest from "../../../manifest.json";
 
 export const site = {
   name: "SSE DevTools Panel",
-  tagline: "SSE / EventSource / NDJSON debugger for Chromium DevTools (Chrome & Edge)",
+  tagline:
+    "SSE DevTools Panel — SSE / EventSource / NDJSON debugger for Chromium DevTools (Chrome & Edge)",
   version: manifest.version,
   urls: {
     website: "https://fatmii.github.io/sse-devtools-panel/",

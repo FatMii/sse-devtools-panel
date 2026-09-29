@@ -3,6 +3,7 @@ import "../styles/global.css";
 import "sync-skeleton/skeleton.css";
 import type { Locale } from "../i18n";
 import {
+  assetUrl,
   getHtmlLang,
   localeHomePath,
   screenshotUrl,
@@ -13,18 +14,63 @@ interface Props {
   locale: Locale;
   title?: string;
   description?: string;
+  keywords?: string;
 }
 
-const { locale, title, description } = Astro.props;
+const { locale, title, description, keywords } = Astro.props;
 
 const pageTitle = title ?? site.name;
 const pageDescription = description ?? site.tagline;
+const pageKeywords =
+  keywords ??
+  "SSE DevTools Panel, SSE debugger, EventSource, NDJSON, Chrome DevTools, Edge DevTools";
 const htmlLang = getHtmlLang(locale);
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL(screenshotUrl("panel-overview.gif", import.meta.env.BASE_URL), Astro.site);
 const base = import.meta.env.BASE_URL;
+const favicon = assetUrl("favicon.png", base);
+const favicon48 = assetUrl("favicon-48.png", base);
+const favicon32 = assetUrl("favicon-32.png", base);
+const appleTouchIcon = assetUrl("apple-touch-icon.png", base);
 const zhUrl = new URL(localeHomePath("zh", base), Astro.site);
 const enUrl = new URL(localeHomePath("en", base), Astro.site);
+const ogLocale = locale === "zh" ? "zh_CN" : "en_US";
+const ogLocaleAlt = locale === "zh" ? "en_US" : "zh_CN";
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${site.urls.website}#website`,
+      name: site.name,
+      url: site.urls.website,
+      description: pageDescription,
+      inLanguage: [getHtmlLang("zh"), getHtmlLang("en")],
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": `${site.urls.website}#app`,
+      name: site.name,
+      applicationCategory: "DeveloperApplication",
+      operatingSystem: "Chrome, Edge",
+      description: pageDescription,
+      url: site.urls.website,
+      downloadUrl: site.urls.chromeStore,
+      softwareVersion: site.version,
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "USD",
+      },
+      author: {
+        "@type": "Organization",
+        name: "FatMii",
+        url: site.urls.github,
+      },
+    },
+  ],
+};
 ---
 
 <!doctype html>
@@ -32,26 +78,35 @@ const enUrl = new URL(localeHomePath("en", base), Astro.site);
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/png" href={`${base}favicon.png`} />
-    <link rel="icon" type="image/png" sizes="48x48" href={`${base}favicon-48.png`} />
-    <link rel="icon" type="image/png" sizes="32x32" href={`${base}favicon-32.png`} />
-    <link rel="apple-touch-icon" sizes="180x180" href={`${base}apple-touch-icon.png`} />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="theme-color" content="#2563eb" />
+    <link rel="icon" type="image/png" href={favicon} />
+    <link rel="icon" type="image/png" sizes="48x48" href={favicon48} />
+    <link rel="icon" type="image/png" sizes="32x32" href={favicon32} />
+    <link rel="apple-touch-icon" sizes="180x180" href={appleTouchIcon} />
     <title>{pageTitle}</title>
     <meta name="description" content={pageDescription} />
+    <meta name="keywords" content={pageKeywords} />
+    <meta name="author" content="FatMii" />
     <link rel="canonical" href={canonical} />
     <link rel="alternate" hreflang="zh-CN" href={zhUrl} />
     <link rel="alternate" hreflang="en" href={enUrl} />
     <link rel="alternate" hreflang="x-default" href={zhUrl} />
     <meta property="og:type" content="website" />
-    <meta property="og:locale" content={locale === "zh" ? "zh_CN" : "en_US"} />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:locale" content={ogLocale} />
+    <meta property="og:locale:alternate" content={ogLocaleAlt} />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={pageDescription} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={ogImage} />
+    <meta property="og:image:alt" content={`${site.name} panel overview`} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={pageDescription} />
     <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image:alt" content={`${site.name} panel overview`} />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
   </head>
   <body>
     <slot />

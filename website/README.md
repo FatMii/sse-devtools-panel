@@ -15,7 +15,7 @@ pnpm release:zip       # package dist/ → website/public/releases/*.zip
 `website:dev` and `website:build` run `scripts/sync-website-screenshots.mjs` to copy
 `docs/assets/screenshots/` into `website/public/screenshots/` before Astro builds.
 
-GitHub Pages production URL uses base path `/sse-devtools-panel`:
+GitHub Pages production URL uses base path `/sse-devtools-panel/` (trailing slash):
 https://fatmii.github.io/sse-devtools-panel/
 
 From `website/`:

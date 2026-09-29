@@ -50,7 +50,7 @@ jobs:
       - name: Build extension, offline zip, and website
         env:
           SITE_URL: https://fatmii.github.io/sse-devtools-panel
-          SITE_BASE: /sse-devtools-panel
+          SITE_BASE: /sse-devtools-panel/
         run: pnpm website:build
 
       - name: Upload Pages artifact

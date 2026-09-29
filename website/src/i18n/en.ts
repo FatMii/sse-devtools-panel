@@ -2,8 +2,11 @@ import type { UI } from "./types";
 
 export const en: UI = {
   meta: {
-    title: "SSE DevTools Panel",
-    description: "SSE / EventSource / NDJSON debugger for Chromium DevTools (Chrome & Edge)",
+    title: "SSE DevTools Panel — SSE / EventSource / NDJSON Debugger for Chrome & Edge",
+    description:
+      "SSE DevTools Panel is a Chromium DevTools extension for Chrome and Edge. Capture, parse, and visualize SSE / EventSource / NDJSON streams—timeline, conversation merge, and event-level debugging.",
+    keywords:
+      "SSE DevTools Panel, SSE debugger, EventSource, NDJSON, Chrome DevTools, Edge DevTools, streaming debug, AI chat stream, Server-Sent Events",
   },
   nav: {
     features: "Features",

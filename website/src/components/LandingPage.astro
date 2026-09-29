@@ -23,7 +23,12 @@ const { locale } = Astro.props;
 const t = getTranslations(locale);
 ---
 
-<BaseLayout locale={locale} title={t.meta.title} description={t.meta.description}>
+<BaseLayout
+  locale={locale}
+  title={t.meta.title}
+  description={t.meta.description}
+  keywords={t.meta.keywords}
+>
   <SiteNav locale={locale} />
   <main>
     <Hero locale={locale} />

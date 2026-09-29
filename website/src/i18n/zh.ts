@@ -2,9 +2,11 @@ import type { UI } from "./types";
 
 export const zh: UI = {
   meta: {
-    title: "SSE DevTools Panel",
+    title: "SSE DevTools Panel — Chrome / Edge 的 SSE / EventSource / NDJSON 流式调试扩展",
     description:
-      "面向 Chromium DevTools（Chrome / Edge）的 SSE / EventSource / NDJSON 流式调试扩展",
+      "SSE DevTools Panel 是面向 Chromium DevTools（Chrome / Edge）的 SSE / EventSource / NDJSON 流式调试扩展。自动捕获网页流、按事件解析与可视化，支持 Timeline、对话合并与长流调试。",
+    keywords:
+      "SSE DevTools Panel, SSE 调试, EventSource, NDJSON, Chrome DevTools, Edge DevTools, 流式调试, AI 对话流, Server-Sent Events",
   },
   nav: {
     features: "功能",
