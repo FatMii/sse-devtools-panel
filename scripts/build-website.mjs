@@ -12,7 +12,8 @@ const websiteDir = path.join(root, "website");
 const env = {
   ...process.env,
   SITE_URL: process.env.SITE_URL ?? "https://fatmii.github.io/sse-devtools-panel",
-  SITE_BASE: process.env.SITE_BASE ?? "/sse-devtools-panel",
+  // Trailing slash required so `${BASE_URL}favicon.png` resolves under the Pages subpath.
+  SITE_BASE: process.env.SITE_BASE ?? "/sse-devtools-panel/",
 };
 
 execSync("node scripts/sync-website-screenshots.mjs", { cwd: root, stdio: "inherit" });

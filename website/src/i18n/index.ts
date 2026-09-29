@@ -38,3 +38,9 @@ export function screenshotUrl(file: string, baseUrl = "/"): string {
   const base = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
   return `${base}screenshots/${file}`;
 }
+
+/** Join a site-relative asset path to Astro `base` (always trailing-slash safe). */
+export function assetUrl(file: string, baseUrl = "/"): string {
+  const base = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  return `${base}${file.replace(/^\//, "")}`;
+}
