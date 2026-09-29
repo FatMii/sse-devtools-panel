@@ -1039,5 +1039,78 @@
   },
   "openSettingsTitle": {
     "message": "打开语言设置"
+  },
+  "replayTour": {
+    "message": "查看引导"
+  },
+  "replayTourTitle": {
+    "message": "重新播放首次使用引导"
+  },
+  "loadTourSample": {
+    "message": "加载样例流"
+  },
+  "loadTourSampleTitle": {
+    "message": "导入内置演示流，体验 Conversation"
+  },
+  "tourStepLabel": {
+    "message": "第 $CURRENT$ / $TOTAL$ 步",
+    "placeholders": {
+      "CURRENT": { "content": "$1", "example": "1" },
+      "TOTAL": { "content": "$2", "example": "7" }
+    }
+  },
+  "tourStep1Title": {
+    "message": "流会出现在这里"
+  },
+  "tourStep1Body": {
+    "message": "请先刷新页面，再触发 SSE / NDJSON 请求。捕获到的流会显示在左侧列表。"
+  },
+  "tourStep2Title": {
+    "message": "也可以导入捕获文件"
+  },
+  "tourStep2Body": {
+    "message": "暂时没有实时流？可在这里导入 JSON 导出。之后也可从 More 菜单加载内置样例。"
+  },
+  "tourStep3Title": {
+    "message": "查看事件"
+  },
+  "tourStep3Body": {
+    "message": "选中一条流后，打开 Events 可浏览每个分片，并支持筛选与详情抽屉。"
+  },
+  "tourStep4Title": {
+    "message": "请求上下文"
+  },
+  "tourStep4Body": {
+    "message": "Request 可看方法、状态、请求头与 body 预览，方便和 Network 面板对照。"
+  },
+  "tourStep5Title": {
+    "message": "Conversation 合并 AI 回复"
+  },
+  "tourStep5Body": {
+    "message": "对支持的 AI 协议，Conversation 会把思考与正文拼成可读通道。"
+  },
+  "tourStep6Title": {
+    "message": "Timeline 看推流节奏"
+  },
+  "tourStep6Body": {
+    "message": "Timeline 标出首包延迟、间隔与卡顿；旁边还有 Raw 看原文。"
+  },
+  "tourStep7Title": {
+    "message": "More 里可重看引导"
+  },
+  "tourStep7Body": {
+    "message": "之后从这里可重新播放本引导，也可加载样例流试一遍，不必等真实推流。"
+  },
+  "tourNext": {
+    "message": "知道了"
+  },
+  "tourSkip": {
+    "message": "跳过"
+  },
+  "tourFinish": {
+    "message": "完成"
+  },
+  "toastTourSampleLoaded": {
+    "message": "已加载样例流"
   }
 }

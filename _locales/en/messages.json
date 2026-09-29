@@ -1039,5 +1039,78 @@
   },
   "openSettingsTitle": {
     "message": "Open language settings"
+  },
+  "replayTour": {
+    "message": "Show guided tour"
+  },
+  "replayTourTitle": {
+    "message": "Replay the first-run panel tour"
+  },
+  "loadTourSample": {
+    "message": "Load sample stream"
+  },
+  "loadTourSampleTitle": {
+    "message": "Import a built-in demo stream to try Conversation"
+  },
+  "tourStepLabel": {
+    "message": "Step $CURRENT$ of $TOTAL$",
+    "placeholders": {
+      "CURRENT": { "content": "$1", "example": "1" },
+      "TOTAL": { "content": "$2", "example": "7" }
+    }
+  },
+  "tourStep1Title": {
+    "message": "Streams appear here"
+  },
+  "tourStep1Body": {
+    "message": "Refresh the page first, then trigger an SSE / NDJSON request. Captured streams show up in this sidebar."
+  },
+  "tourStep2Title": {
+    "message": "Import a capture anytime"
+  },
+  "tourStep2Body": {
+    "message": "No live stream yet? Import a JSON export here. You can also load a built-in sample later from More."
+  },
+  "tourStep3Title": {
+    "message": "Inspect events"
+  },
+  "tourStep3Body": {
+    "message": "Select a stream, then open Events to browse each chunk with filters and a detail drawer."
+  },
+  "tourStep4Title": {
+    "message": "Request context"
+  },
+  "tourStep4Body": {
+    "message": "Request shows method, status, headers, and payload preview—handy when comparing with the Network panel."
+  },
+  "tourStep5Title": {
+    "message": "Conversation merges AI replies"
+  },
+  "tourStep5Body": {
+    "message": "For supported AI protocols, Conversation rebuilds thinking and content into readable channels."
+  },
+  "tourStep6Title": {
+    "message": "Timeline for stream rhythm"
+  },
+  "tourStep6Body": {
+    "message": "Timeline highlights first-byte delay, gaps, and stalls. Raw is next to it when you need the original text."
+  },
+  "tourStep7Title": {
+    "message": "Replay the tour from More"
+  },
+  "tourStep7Body": {
+    "message": "Come back here anytime to replay this guide, or load a sample stream without waiting on a live page."
+  },
+  "tourNext": {
+    "message": "Got it"
+  },
+  "tourSkip": {
+    "message": "Skip"
+  },
+  "tourFinish": {
+    "message": "Finish"
+  },
+  "toastTourSampleLoaded": {
+    "message": "Sample stream loaded"
   }
 }

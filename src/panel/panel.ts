@@ -1,3 +1,4 @@
+import "driver.js/dist/driver.css";
 import "./panel.css";
 import { applyIcons, renderIcon, type IconName } from "./core/icons";
 import {
@@ -107,6 +108,7 @@ import {
   closeAllMenus,
   closeAppDialog,
   copyText,
+  openMoreMenu,
   refreshStatusbarSummary,
   setUiPaused,
   showToast,
@@ -121,6 +123,13 @@ import {
   saveSelectedStreamArchive,
   type ExportImportHooks,
 } from "./features/export-import";
+import {
+  maybeStartOnboardingTour,
+  refreshTourI18n,
+  startOnboardingTour,
+  type OnboardingTourHooks,
+} from "./features/onboarding-tour";
+import { buildTourSampleRecord } from "./features/tour-sample";
 import {
   showAnomaliesDialog,
   showArchivesDialog,
@@ -655,6 +664,35 @@ function activateTab(tab: ActiveTab): void {
   document.getElementById(`view-${tab}`)?.classList.add("active");
 }
 
+function loadTourSampleStream(): void {
+  addStaticStream(buildTourSampleRecord(), exportHooks);
+  activateTab("conversation");
+  const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
+  renderConversationForSelection(record);
+  showToast(t("toastTourSampleLoaded"));
+}
+
+function getTourHooks(): OnboardingTourHooks {
+  return {
+    activateTab: (tab) => {
+      activateTab(tab);
+      const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
+      if (tab === "events") {
+        if (record) renderEvents(record, false);
+        else clearEventsView();
+      } else if (tab === "request") {
+        renderRequestForSelection(record);
+      } else if (tab === "conversation") {
+        renderConversationForSelection(record);
+      } else if (tab === "timeline") {
+        renderTimelineForSelection(record);
+      }
+    },
+    openMoreMenu,
+    closeMenus: closeAllMenus,
+  };
+}
+
 function jumpToSelectedEventFromTimeline(eventIndex: number): void {
   const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
   if (!record) return;
@@ -855,6 +893,14 @@ function setupActions(): void {
 
   document.getElementById("btn-settings")?.addEventListener("click", () => {
     void chrome.runtime.openOptionsPage();
+  });
+
+  document.getElementById("btn-replay-tour")?.addEventListener("click", () => {
+    startOnboardingTour(getTourHooks());
+  });
+
+  document.getElementById("btn-load-tour-sample")?.addEventListener("click", () => {
+    loadTourSampleStream();
   });
 
   elDrawerClose.addEventListener("click", () => {
@@ -1060,6 +1106,7 @@ function refreshLocaleUi(): void {
   refreshThemeUi();
   renderList();
   renderDetail();
+  refreshTourI18n();
 }
 
 void initI18n().then(async () => {
@@ -1072,5 +1119,9 @@ void initI18n().then(async () => {
   connect();
   onLocaleChange(() => {
     refreshLocaleUi();
+  });
+  // Defer one frame so layout has settled before measuring tour targets.
+  requestAnimationFrame(() => {
+    void maybeStartOnboardingTour(getTourHooks());
   });
 });
