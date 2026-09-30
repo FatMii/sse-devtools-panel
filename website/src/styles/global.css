@@ -780,10 +780,13 @@ img[data-zoomable] {
   position: absolute;
   inset: 0;
   z-index: 1;
+  pointer-events: none;
   transition: opacity 0.28s ease;
 }
 
 .skeleton-media-img {
+  position: relative;
+  z-index: 2;
   display: block;
   width: 100%;
   height: auto;
@@ -797,13 +800,15 @@ img[data-zoomable] {
 
 .skeleton-media.is-loaded .skeleton-media-shimmer {
   opacity: 0;
-  pointer-events: none;
 }
 
-/* medium-zoom: overlay above sticky nav (docs omit default z-index) */
-.medium-zoom-overlay,
-.medium-zoom-image--opened {
+/* medium-zoom clones leave .skeleton-media.is-loaded, so restore visibility */
+.medium-zoom-overlay {
   z-index: 100;
+}
+.medium-zoom-image--opened {
+  z-index: 101;
+  opacity: 1;
 }
 
 /* —— FAQ —— */

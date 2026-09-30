@@ -8,13 +8,39 @@
 <script>
   import mediumZoom from "medium-zoom";
 
-  const theme = document.documentElement.dataset.theme;
-  const background =
-    theme === "dark" ? "rgba(11, 18, 32, 0.92)" : "rgba(243, 246, 250, 0.94)";
+  let zoom = null;
 
-  mediumZoom("[data-zoomable]", {
-    margin: 24,
-    background,
-    scrollOffset: 40,
+  function backgroundForTheme() {
+    const theme = document.documentElement.dataset.theme;
+    return theme === "dark"
+      ? "rgba(11, 18, 32, 0.92)"
+      : "rgba(15, 23, 42, 0.72)";
+  }
+
+  function attachZoom() {
+    const targets = Array.from(
+      document.querySelectorAll("[data-zoomable]:not(.medium-zoom-image)"),
+    );
+    if (!targets.length) return;
+
+    if (!zoom) {
+      zoom = mediumZoom(targets, {
+        margin: 24,
+        background: backgroundForTheme(),
+        scrollOffset: 40,
+      });
+      return;
+    }
+
+    zoom.attach(targets);
+    zoom.update({ background: backgroundForTheme() });
+  }
+
+  attachZoom();
+  document.addEventListener("astro:page-load", attachZoom);
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement) || target.id !== "theme-toggle") return;
+    if (zoom) zoom.update({ background: backgroundForTheme() });
   });
 </script>
