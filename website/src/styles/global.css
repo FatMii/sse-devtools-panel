@@ -867,11 +867,16 @@ code {
   border-left: 1px solid var(--line);
 }
 
-.spotlight-media img {
+.spotlight-media img,
+.spotlight-media video {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.demo-clip-video {
+  background: var(--surface-2);
 }
 
 .spotlight-copy {

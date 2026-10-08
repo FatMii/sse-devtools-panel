@@ -24,7 +24,8 @@
     "release:zip": "node scripts/package-release.mjs",
     "website:dev": "node scripts/sync-website-screenshots.mjs && pnpm --dir website dev",
     "website:build": "pnpm build && pnpm release:zip && node scripts/build-website.mjs",
-    "website:preview": "pnpm --dir website preview"
+    "website:preview": "pnpm --dir website preview",
+    "website:encode-media": "pnpm --dir website exec node ../scripts/encode-website-media.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -42,7 +43,8 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "esbuild"
+      "esbuild",
+      "ffmpeg-static"
     ]
   },
   "dependencies": {

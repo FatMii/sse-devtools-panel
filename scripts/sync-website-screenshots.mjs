@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 /**
  * Copy README screenshot assets into website/public/screenshots for static hosting.
+ * Encoded demo clips (*.webm / *.mp4 / *-poster.jpg) are produced by
+ * `scripts/encode-website-media.mjs` (run from `build-website.mjs` / `pnpm website:encode-media`).
+ * This sync only copies stills + source GIFs and does not overwrite encoded clips.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -40,6 +43,24 @@ for (const file of files) {
   }
   fs.copyFileSync(from, to);
   copied += 1;
+}
+
+const clips = [
+  "panel-overview.webm",
+  "panel-overview.mp4",
+  "panel-overview-poster.jpg",
+  "deepseek-conversation.webm",
+  "deepseek-conversation.mp4",
+  "deepseek-conversation-poster.jpg",
+  "virtual-scrolling.webm",
+  "virtual-scrolling.mp4",
+  "virtual-scrolling-poster.jpg",
+];
+const missingClips = clips.filter((f) => !fs.existsSync(path.join(targetDir, f)));
+if (missingClips.length) {
+  console.warn(
+    `[sync-website-screenshots] Missing encoded clips (run: node scripts/encode-website-media.mjs): ${missingClips.join(", ")}`,
+  );
 }
 
 console.log(

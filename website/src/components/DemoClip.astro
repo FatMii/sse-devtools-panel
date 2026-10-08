@@ -1,0 +1,65 @@
+---
+/**
+ * Autoplaying muted demo clip (WebM + MP4) with poster.
+ * Prefer encoded video over giant GIFs for website delivery.
+ */
+interface Props {
+  stem: string;
+  alt: string;
+  width: number;
+  height: number;
+  class?: string;
+  /** When true, do not fetch media until near viewport. */
+  defer?: boolean;
+  eager?: boolean;
+}
+
+import { screenshotUrl } from "../i18n";
+
+const {
+  stem,
+  alt,
+  width,
+  height,
+  class: className = "",
+  defer = false,
+  eager = false,
+} = Astro.props;
+
+const base = import.meta.env.BASE_URL;
+const webm = screenshotUrl(`${stem}.webm`, base);
+const mp4 = screenshotUrl(`${stem}.mp4`, base);
+const poster = screenshotUrl(`${stem}-poster.jpg`, base);
+---
+
+<div
+  class:list={["skeleton-media", "demo-clip", { "is-deferred": defer }]}
+  style={`aspect-ratio: ${width} / ${height}`}
+  data-defer={defer ? "1" : undefined}
+  data-demo-clip="1"
+>
+  <div class="loading-skeleton skeleton-media-shimmer" aria-hidden="true"></div>
+  <video
+    class:list={["skeleton-media-img", "demo-clip-video", className]}
+    width={width}
+    height={height}
+    poster={poster}
+    muted
+    playsinline
+    loop
+    autoplay
+    preload={eager ? "auto" : "none"}
+    aria-label={alt}
+    data-webm={defer ? webm : undefined}
+    data-mp4={defer ? mp4 : undefined}
+  >
+    {
+      !defer && (
+        <>
+          <source src={webm} type="video/webm" />
+          <source src={mp4} type="video/mp4" />
+        </>
+      )
+    }
+  </video>
+</div>
