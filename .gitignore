@@ -10,6 +10,10 @@ website/node_modules/
 website/dist/
 website/public/screenshots/*
 !website/public/screenshots/.gitkeep
+# Encoded demo clips ship with the site (GIF sources stay in docs/).
+!website/public/screenshots/*.webm
+!website/public/screenshots/*.mp4
+!website/public/screenshots/*-poster.jpg
 .agents/
 *.local
 .DS_Store
