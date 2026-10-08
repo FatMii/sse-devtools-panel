@@ -79,7 +79,8 @@ const jsonLd = {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
-    <meta name="theme-color" content="#2563eb" />
+    <meta name="theme-color" content="#1d4ed8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)" />
     <link rel="icon" type="image/png" href={favicon} />
     <link rel="icon" type="image/png" sizes="48x48" href={favicon48} />
     <link rel="icon" type="image/png" sizes="32x32" href={favicon32} />
@@ -138,12 +139,43 @@ const jsonLd = {
           root.dataset.theme = next;
           localStorage.setItem(storageKey, next);
           target.textContent = labelForTheme(next);
+          target.setAttribute("aria-label", labelForTheme(next === "dark" ? "light" : "dark") || next);
         });
+
+        function initReveal() {
+          var nodes = document.querySelectorAll(".reveal");
+          if (!nodes.length) return;
+          if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            nodes.forEach(function (el) {
+              el.classList.add("is-in");
+            });
+            return;
+          }
+          if (!("IntersectionObserver" in window)) {
+            nodes.forEach(function (el) {
+              el.classList.add("is-in");
+            });
+            return;
+          }
+          var io = new IntersectionObserver(
+            function (entries) {
+              entries.forEach(function (entry) {
+                if (!entry.isIntersecting) return;
+                entry.target.classList.add("is-in");
+                io.unobserve(entry.target);
+              });
+            },
+            { rootMargin: "0px 0px -8% 0px", threshold: 0.12 }
+          );
+          nodes.forEach(function (el) {
+            io.observe(el);
+          });
+        }
 
         window.addEventListener("DOMContentLoaded", function () {
           var toggle = document.getElementById("theme-toggle");
-          if (!toggle) return;
-          toggle.textContent = labelForTheme(root.dataset.theme || "light");
+          if (toggle) toggle.textContent = labelForTheme(root.dataset.theme || "light");
+          initReveal();
         });
       })();
     </script>

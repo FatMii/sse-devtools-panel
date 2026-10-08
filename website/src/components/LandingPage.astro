@@ -4,7 +4,6 @@ import { getTranslations } from "../i18n";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import SiteNav from "./SiteNav.astro";
 import Hero from "./Hero.astro";
-import HeroDemo from "./HeroDemo.astro";
 import PainStrip from "./PainStrip.astro";
 import FeatureShowcase from "./FeatureShowcase.astro";
 import FeatureSpotlight from "./FeatureSpotlight.astro";
@@ -33,12 +32,15 @@ const t = getTranslations(locale);
   <SiteNav locale={locale} />
   <main>
     <Hero locale={locale} />
-    <HeroDemo locale={locale} />
-    <PainStrip locale={locale} />
-    <FeatureShowcase locale={locale} />
-    <section class="spotlight-group" aria-label={t.spotlight.ariaLabel}>
+    <div class="reveal">
+      <PainStrip locale={locale} />
+    </div>
+    <div class="reveal">
+      <FeatureShowcase locale={locale} />
+    </div>
+    <section class="spotlight-group reveal" aria-label={t.spotlight.ariaLabel}>
       {
-        t.spotlight.items.map((item, index) => (
+        t.spotlight.items.map((item) => (
           <FeatureSpotlight
             title={item.title}
             description={item.description}
@@ -46,24 +48,27 @@ const t = getTranslations(locale);
             alt={item.alt}
             tags={item.tags}
             tagsAria={t.features.tagsAria(item.title)}
-            reverse={index % 2 === 1}
           />
         ))
       }
     </section>
-    <WhatsNew locale={locale} />
-    <FaqSection locale={locale} />
-    <InstallSection locale={locale} />
+    <div class="reveal">
+      <WhatsNew locale={locale} />
+    </div>
+    <div class="reveal">
+      <FaqSection locale={locale} />
+    </div>
+    <div class="reveal">
+      <InstallSection locale={locale} />
+    </div>
   </main>
   <footer class="site-footer">
     <p>
-      {site.name} · MIT ·
+      <span>{site.name}</span>
+      <span>MIT</span>
       <a href={docsUrl(locale)} target="_blank" rel="noreferrer">{t.footer.readme}</a>
-      ·
       <a href={site.urls.changelog} target="_blank" rel="noreferrer">{t.footer.changelog}</a>
-      ·
       <a href={site.urls.github} target="_blank" rel="noreferrer">GitHub</a>
-      · v{site.version}
     </p>
   </footer>
   <MediaZoom />

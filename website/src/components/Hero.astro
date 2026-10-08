@@ -1,7 +1,7 @@
 ---
 import type { Locale } from "../i18n";
-import { getTranslations } from "../i18n";
-import { site } from "../data/site";
+import { getTranslations, screenshotUrl } from "../i18n";
+import SkeletonImage from "./SkeletonImage.astro";
 
 interface Props {
   locale: Locale;
@@ -9,26 +9,45 @@ interface Props {
 
 const { locale } = Astro.props;
 const t = getTranslations(locale);
+const src = screenshotUrl("panel-overview.gif", import.meta.env.BASE_URL);
 ---
 
-<section class="hero-focus" aria-labelledby="hero-title">
-  <p class="eyebrow">{t.hero.eyebrow}</p>
-  <p class="maintained-badge">
-    <span class="pulse-dot" aria-hidden="true"></span>
-    <span>{t.hero.maintained}</span>
-    <span class="maintained-sep" aria-hidden="true">·</span>
-    <span>v{site.version}</span>
-  </p>
-  <h1 id="hero-title">{t.hero.title}</h1>
-  <p class="lead">{t.hero.lead}</p>
-  <div class="actions">
-    <a class="button primary" href="#demo">{t.hero.ctaDemo}</a>
-    <a class="button" href={site.urls.github} target="_blank" rel="noreferrer">GitHub</a>
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero-copy">
+    <p class="maintained-badge">
+      <span class="pulse-dot" aria-hidden="true"></span>
+      <span>{t.hero.maintained}</span>
+    </p>
+    <h1 id="hero-title">{t.hero.title}</h1>
+    <p class="lead">{t.hero.lead}</p>
+    <div class="actions">
+      <a class="button primary" href="#install">{t.nav.install}</a>
+      <a class="button" href="#demo">{t.hero.ctaDemo}</a>
+    </div>
+    <ul class="proof" aria-label={t.hero.proofLabel}>
+      <li><strong>MIT</strong> {t.hero.proofOpenSource}</li>
+      <li><strong>{locale === "zh" ? "本地" : "Local"}</strong> {t.hero.proofLocal}</li>
+      <li><strong>MV3</strong> {t.hero.proofExtension}</li>
+      <li><a href="#whats-new">{t.nav.whatsNew}</a></li>
+    </ul>
   </div>
-  <ul class="proof" aria-label={t.hero.proofLabel}>
-    <li><strong>MIT</strong> {t.hero.proofOpenSource}</li>
-    <li><strong>{locale === "zh" ? "本地" : "Local"}</strong> {t.hero.proofLocal}</li>
-    <li><strong>MV3</strong> {t.hero.proofExtension}</li>
-    <li><a href="#whats-new">{t.nav.whatsNew}</a></li>
-  </ul>
+
+  <div class="hero-visual" id="demo" aria-label={t.heroDemo.ariaLabel}>
+    <div class="browser-frame">
+      <div class="window-chrome">
+        <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div class="window-url">{t.heroDemo.windowUrl}</div>
+        <div class="window-badge">LIVE</div>
+      </div>
+      <SkeletonImage
+        class="hero-demo-media"
+        src={src}
+        alt={t.heroDemo.imageAlt}
+        width={1400}
+        height={788}
+        loading="eager"
+        zoomable
+      />
+    </div>
+  </div>
 </section>

@@ -12,11 +12,11 @@ interface Props {
   reverse?: boolean;
 }
 
-const { title, description, image, alt, tags, tagsAria, reverse = false } = Astro.props;
+const { title, description, image, alt, tags, tagsAria } = Astro.props;
 const src = screenshotUrl(image, import.meta.env.BASE_URL);
 ---
 
-<article class:list={["spotlight", { reverse }]}>
+<article class="spotlight">
   <div class="spotlight-media">
     <SkeletonImage src={src} alt={alt} width={1400} height={788} zoomable />
   </div>

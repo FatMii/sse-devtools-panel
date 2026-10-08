@@ -19,7 +19,7 @@ export const en: UI = {
   hero: {
     eyebrow: "Chrome & Edge DevTools · SSE / NDJSON",
     title: "Understand SSE streams in DevTools",
-    lead: "Leave raw fragments behind—capture SSE / NDJSON from the page, parse and visualize in one panel.",
+    lead: "Capture page SSE / NDJSON, parse events, and visualize the full stream in one DevTools panel.",
     ctaDemo: "See demo",
     proofLabel: "Product highlights",
     proofOpenSource: "open source",
