@@ -18,7 +18,9 @@ const targetDir = path.join(root, "website", "public", "screenshots");
 const clips = ["panel-overview", "deepseek-conversation", "virtual-scrolling"];
 
 if (!ffmpeg || !fs.existsSync(ffmpeg)) {
-  console.error("[encode-website-media] ffmpeg-static binary missing. Run: pnpm --filter sse-devtools-panel-website i");
+  console.error(
+    "[encode-website-media] ffmpeg-static binary missing. Run: pnpm --filter sse-devtools-panel-website i",
+  );
   process.exit(1);
 }
 
@@ -95,9 +97,7 @@ for (const name of clips) {
 
   run(["-y", "-i", gif, "-vframes", "1", "-q:v", "2", poster]);
 
-  console.log(
-    `  gif ${kb(gif)} → webm ${kb(webm)}, mp4 ${kb(mp4)}, poster ${kb(poster)}`,
-  );
+  console.log(`  gif ${kb(gif)} → webm ${kb(webm)}, mp4 ${kb(mp4)}, poster ${kb(poster)}`);
 }
 
 console.log("[encode-website-media] done");
