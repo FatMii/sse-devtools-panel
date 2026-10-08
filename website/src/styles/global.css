@@ -726,9 +726,7 @@ code {
   gap: 24px 28px;
   align-items: center;
   padding: 22px;
-  background:
-    linear-gradient(120deg, var(--accent-soft), transparent 52%),
-    var(--surface);
+  background: linear-gradient(120deg, var(--accent-soft), transparent 52%), var(--surface);
   border-color: var(--accent-border);
 }
 
@@ -844,9 +842,7 @@ code {
 }
 
 .spotlight:nth-child(1) {
-  background:
-    linear-gradient(120deg, var(--accent-soft), transparent 50%),
-    var(--surface);
+  background: linear-gradient(120deg, var(--accent-soft), transparent 50%), var(--surface);
 }
 
 .spotlight:nth-child(6) .spotlight-media {
@@ -984,9 +980,7 @@ img[data-zoomable] {
 
 .pulse-latest {
   padding: clamp(22px, 3vw, 32px);
-  background:
-    linear-gradient(135deg, var(--accent-soft), transparent 55%),
-    var(--surface);
+  background: linear-gradient(135deg, var(--accent-soft), transparent 55%), var(--surface);
   border: 1px solid var(--accent-border);
   border-radius: var(--radius);
   box-shadow: 0 20px 48px var(--shadow);
@@ -1227,9 +1221,7 @@ img[data-zoomable] {
 
 .install-path.recommended {
   border-color: var(--accent-border);
-  background:
-    linear-gradient(165deg, var(--accent-soft), transparent 55%),
-    var(--surface);
+  background: linear-gradient(165deg, var(--accent-soft), transparent 55%), var(--surface);
   box-shadow: 0 16px 40px var(--glow);
 }
 
