@@ -17,4 +17,9 @@ const env = {
 };
 
 execSync("node scripts/sync-website-screenshots.mjs", { cwd: root, stdio: "inherit" });
+// Demo clips are gitignored; encode from docs GIFs so Pages always ships WebM/MP4.
+execSync("pnpm --dir website exec node ../scripts/encode-website-media.mjs", {
+  cwd: root,
+  stdio: "inherit",
+});
 execSync("pnpm build", { cwd: websiteDir, stdio: "inherit", env });

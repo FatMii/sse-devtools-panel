@@ -6,6 +6,9 @@ interface Props {
   height: number;
   class?: string;
   loading?: "lazy" | "eager";
+  fetchpriority?: "high" | "low" | "auto";
+  /** Defer network fetch until near viewport (stronger than loading=lazy). */
+  defer?: boolean;
   zoomable?: boolean;
 }
 
@@ -16,19 +19,27 @@ const {
   height,
   class: className = "",
   loading = "lazy",
+  fetchpriority = "auto",
+  defer = false,
   zoomable = false,
 } = Astro.props;
 ---
 
-<div class="skeleton-media" style={`aspect-ratio: ${width} / ${height}`}>
+<div
+  class:list={["skeleton-media", { "is-deferred": defer }]}
+  style={`aspect-ratio: ${width} / ${height}`}
+  data-defer={defer ? "1" : undefined}
+>
   <div class="loading-skeleton skeleton-media-shimmer" aria-hidden="true"></div>
   <img
     class:list={["skeleton-media-img", className]}
-    src={src}
+    src={defer ? undefined : src}
+    data-src={defer ? src : undefined}
     alt={alt}
     width={width}
     height={height}
-    loading={loading}
+    loading={defer ? "lazy" : loading}
+    fetchpriority={fetchpriority === "auto" ? undefined : fetchpriority}
     decoding="async"
     data-zoomable={zoomable ? true : undefined}
   />

@@ -1,31 +1,129 @@
 ---
 /**
- * Reveal SkeletonImage slots once <img> finishes loading.
- * Shimmer animation comes from sync-skeleton.
+ * Reveal SkeletonImage / DemoClip slots once media finishes loading.
+ * Deferred media (data-src / data-webm) only fetch when near the viewport.
  */
 ---
 
 <script>
+  function markLoaded(wrap: HTMLElement) {
+    wrap.classList.add("is-loaded");
+  }
+
+  function bindImage(wrap: HTMLElement, img: HTMLImageElement) {
+    const done = () => markLoaded(wrap);
+    if (img.complete && img.naturalWidth > 0) {
+      done();
+      return;
+    }
+    img.addEventListener("load", done, { once: true });
+    img.addEventListener("error", done, { once: true });
+  }
+
+  function bindVideo(wrap: HTMLElement, video: HTMLVideoElement) {
+    const done = () => {
+      markLoaded(wrap);
+      void video.play().catch(() => {});
+    };
+    if (video.readyState >= 2) {
+      done();
+      return;
+    }
+    video.addEventListener("loadeddata", done, { once: true });
+    video.addEventListener("error", () => markLoaded(wrap), { once: true });
+  }
+
+  function activateDeferredImage(wrap: HTMLElement, img: HTMLImageElement) {
+    const src = img.dataset.src;
+    if (!src || img.getAttribute("src")) return;
+    img.src = src;
+    img.removeAttribute("data-src");
+    wrap.classList.remove("is-deferred");
+    bindImage(wrap, img);
+  }
+
+  function activateDeferredVideo(wrap: HTMLElement, video: HTMLVideoElement) {
+    if (video.querySelector("source")) return;
+    const webm = video.dataset.webm;
+    const mp4 = video.dataset.mp4;
+    if (webm) {
+      const s = document.createElement("source");
+      s.src = webm;
+      s.type = "video/webm";
+      video.appendChild(s);
+    }
+    if (mp4) {
+      const s = document.createElement("source");
+      s.src = mp4;
+      s.type = "video/mp4";
+      video.appendChild(s);
+    }
+    video.removeAttribute("data-webm");
+    video.removeAttribute("data-mp4");
+    wrap.classList.remove("is-deferred");
+    video.load();
+    bindVideo(wrap, video);
+  }
+
   function bindSkeletonMedia(root: ParentNode = document) {
-    root.querySelectorAll(".skeleton-media:not([data-skeleton-bound])").forEach((wrap) => {
-      if (!(wrap instanceof HTMLElement)) return;
-      wrap.dataset.skeletonBound = "1";
+    const deferred: HTMLElement[] = [];
 
-      const img = wrap.querySelector("img.skeleton-media-img");
-      if (!(img instanceof HTMLImageElement)) return;
+    root.querySelectorAll(".skeleton-media:not([data-skeleton-bound])").forEach((node) => {
+      if (!(node instanceof HTMLElement)) return;
+      node.dataset.skeletonBound = "1";
 
-      const done = () => {
-        wrap.classList.add("is-loaded");
-      };
-
-      if (img.complete && img.naturalWidth > 0) {
-        done();
+      const video = node.querySelector("video.demo-clip-video");
+      if (video instanceof HTMLVideoElement) {
+        if (node.dataset.defer === "1" && (video.dataset.webm || video.dataset.mp4)) {
+          deferred.push(node);
+          return;
+        }
+        bindVideo(node, video);
         return;
       }
 
-      img.addEventListener("load", done, { once: true });
-      img.addEventListener("error", done, { once: true });
+      const img = node.querySelector("img.skeleton-media-img");
+      if (!(img instanceof HTMLImageElement)) return;
+
+      if (node.dataset.defer === "1" && img.dataset.src) {
+        deferred.push(node);
+        return;
+      }
+
+      bindImage(node, img);
     });
+
+    if (!deferred.length) return;
+
+    const activate = (wrap: HTMLElement) => {
+      const video = wrap.querySelector("video.demo-clip-video");
+      if (video instanceof HTMLVideoElement) {
+        activateDeferredVideo(wrap, video);
+        return;
+      }
+      const img = wrap.querySelector("img.skeleton-media-img");
+      if (img instanceof HTMLImageElement) activateDeferredImage(wrap, img);
+    };
+
+    if (!("IntersectionObserver" in window)) {
+      deferred.forEach(activate);
+      return;
+    }
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const wrap = entry.target;
+          if (!(wrap instanceof HTMLElement)) return;
+          activate(wrap);
+          io.unobserve(wrap);
+        });
+      },
+      { rootMargin: "160px 0px", threshold: 0.01 }
+    );
+
+    deferred.forEach((wrap) => io.observe(wrap));
   }
 
   bindSkeletonMedia();

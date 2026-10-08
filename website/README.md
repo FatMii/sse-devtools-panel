@@ -15,6 +15,13 @@ pnpm release:zip       # package dist/ → website/public/releases/*.zip
 `website:dev` and `website:build` run `scripts/sync-website-screenshots.mjs` to copy
 `docs/assets/screenshots/` into `website/public/screenshots/` before Astro builds.
 
+Demo motion on the marketing site uses encoded **WebM/MP4** (plus poster JPG), not raw GIFs.
+`pnpm website:build` encodes them automatically. Regenerate locally after updating source GIFs:
+
+```bash
+pnpm website:encode-media
+```
+
 GitHub Pages production URL uses base path `/sse-devtools-panel/` (trailing slash):
 https://fatmii.github.io/sse-devtools-panel/
 
