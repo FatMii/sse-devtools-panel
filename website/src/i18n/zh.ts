@@ -19,7 +19,7 @@ export const zh: UI = {
   hero: {
     eyebrow: "Chrome & Edge DevTools · SSE / NDJSON",
     title: "在 DevTools 里看懂 SSE 流",
-    lead: "告别流式碎片，自动捕获网页 SSE / NDJSON 流——解析、可视化，一个面板全看清。",
+    lead: "自动捕获网页 SSE / NDJSON，按事件解析与可视化，一个面板看清整条流。",
     ctaDemo: "查看演示",
     proofLabel: "产品要点",
     proofOpenSource: "开源",

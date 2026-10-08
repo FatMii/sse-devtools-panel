@@ -19,8 +19,8 @@ const langHref = switchLocalePath(locale, import.meta.env.BASE_URL);
   </a>
   <div class="nav-actions">
     <div class="nav-links">
-      <a href="#features">{t.nav.features}</a>
-      <a href="#whats-new">{t.nav.whatsNew}</a>
+      <a class="nav-features" href="#features">{t.nav.features}</a>
+      <a class="nav-whats-new" href="#whats-new">{t.nav.whatsNew}</a>
       <a class="nav-github" href={site.urls.github} target="_blank" rel="noreferrer">GitHub</a>
     </div>
     <div class="nav-util">
@@ -38,10 +38,14 @@ const langHref = switchLocalePath(locale, import.meta.env.BASE_URL);
         id="theme-toggle"
         data-label-dark={t.nav.themeDark}
         data-label-light={t.nav.themeLight}
+        aria-label={t.nav.themeDark}
       >
         {t.nav.themeDark}
       </button>
     </div>
-    <a class="install-mini" href="#install">{t.nav.install}</a>
+    <a class="install-mini" href="#install">
+      <span class="install-mini-full">{t.nav.install}</span>
+      <span class="install-mini-short">{locale === "zh" ? "安装" : "Install"}</span>
+    </a>
   </div>
 </nav>
