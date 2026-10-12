@@ -99,7 +99,7 @@ import {
   clearStreamAnomalyCaches,
   invalidateStreamAnomalyCache,
 } from "./features/stream-anomalies";
-import { renderTimeline } from "./views/timeline-view";
+import { renderTimeline, resetTimelineView } from "./views/timeline-view";
 import { renderRequest, resetRequestViewState } from "./views/request-view-ui";
 import { renderConversation, resetConversationView } from "./views/conversation-view";
 import { renderRawView, resetRawView } from "./views/raw-view";
@@ -772,6 +772,7 @@ function setupActions(): void {
     resetRequestViewState();
     resetConversationView();
     resetRawView();
+    resetTimelineView();
     state.selectedId = null;
     state.selectedEventIndex = null;
     state.streamsUrlFilterQuery = "";

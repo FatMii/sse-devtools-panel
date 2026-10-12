@@ -39,6 +39,50 @@ type HistOptions = {
 /** Selected histogram bin index within the current render; -1 = none. */
 let activeHistBinIndex = -1;
 
+type ArrivalTrackHandle = {
+  wrap: HTMLElement;
+  axis: HTMLElement;
+  update: (next: ArrivalTrackInput) => void;
+  paint: () => void;
+  disconnect: () => void;
+};
+
+type TimelineShell = {
+  requestId: string;
+  kpiRow: HTMLElement;
+  track: ArrivalTrackHandle;
+  histHost: HTMLElement;
+  insightsHost: HTMLElement;
+};
+
+let timelineShell: TimelineShell | null = null;
+let timelineRaf = 0;
+let timelinePending: { record: StreamRecord; options: RenderTimelineOptions } | null = null;
+
+export function resetTimelineView(): void {
+  cancelTimelineRender();
+  teardownTimelineShell();
+  hideTimelineTooltip();
+  activeHistBinIndex = -1;
+  elTimelinePlaceholder.hidden = false;
+  elTimelinePlaceholder.textContent = t("noStreamSelected");
+  elTimelineBody.hidden = true;
+  elTimelineBody.replaceChildren();
+}
+
+function cancelTimelineRender(): void {
+  if (timelineRaf) {
+    cancelAnimationFrame(timelineRaf);
+    timelineRaf = 0;
+  }
+  timelinePending = null;
+}
+
+function teardownTimelineShell(): void {
+  timelineShell?.track.disconnect();
+  timelineShell = null;
+}
+
 export function createGapHistogramSvg(
   bins: HistogramBin[],
   histOptions?: HistOptions,
@@ -196,30 +240,42 @@ export function renderTimeline(
   options: RenderTimelineOptions,
 ): void {
   if (!record) {
+    cancelTimelineRender();
+    teardownTimelineShell();
     hideTimelineTooltip();
     activeHistBinIndex = -1;
     elTimelinePlaceholder.hidden = false;
     elTimelinePlaceholder.textContent = t("noStreamSelected");
     elTimelineBody.hidden = true;
-    elTimelineBody.innerHTML = "";
+    elTimelineBody.replaceChildren();
     return;
   }
 
   if (record.events.length === 0) {
+    cancelTimelineRender();
+    teardownTimelineShell();
     hideTimelineTooltip();
     activeHistBinIndex = -1;
     elTimelinePlaceholder.hidden = false;
     elTimelinePlaceholder.textContent = t("noEventsYet");
     elTimelineBody.hidden = true;
-    elTimelineBody.innerHTML = "";
+    elTimelineBody.replaceChildren();
     return;
   }
 
+  timelinePending = { record, options };
+  if (timelineRaf) return;
+  timelineRaf = requestAnimationFrame(() => {
+    timelineRaf = 0;
+    const job = timelinePending;
+    timelinePending = null;
+    if (job) applyTimelineRender(job.record, job.options);
+  });
+}
+
+function applyTimelineRender(record: StreamRecord, options: RenderTimelineOptions): void {
   elTimelinePlaceholder.hidden = true;
   elTimelineBody.hidden = false;
-  elTimelineBody.innerHTML = "";
-  hideTimelineTooltip();
-  activeHistBinIndex = -1;
 
   const origin = record.startedAt;
   const marks = buildTimelineMarks(record.events, origin);
@@ -234,22 +290,61 @@ export function renderTimeline(
   const durationMs = metrics.durationMs ?? spanMs;
   const maxGapMs = gaps.length > 0 ? Math.max(...gaps.map((g) => g.gapMs)) : undefined;
   const maxGapSlow = isStallGapMs(maxGapMs);
+  const kpiInput: KpiRowInput = {
+    eventCount: record.events.length,
+    eventsPerSec: metrics.eventsPerSec,
+    durationMs,
+    ttftMs: metrics.ttftMs,
+    maxGapMs,
+    maxGapSlow,
+    reconnectCount: reconnects.length,
+    lastReconnectOffsetMs:
+      reconnects.length > 0
+        ? Math.max(0, reconnects[reconnects.length - 1].at - origin)
+        : undefined,
+  };
+  const trackInput: ArrivalTrackInput = {
+    marks,
+    reconnects,
+    spanMs,
+    originMs: origin,
+    selectedEventIndex: options.selectedEventIndex,
+    onJumpToEvent: options.onJumpToEvent,
+  };
+  const insights = buildTimelineInsights({
+    gaps,
+    events: record.events,
+    reconnects,
+    originMs: origin,
+  });
 
-  elTimelineBody.appendChild(
-    buildKpiRow({
-      eventCount: record.events.length,
-      eventsPerSec: metrics.eventsPerSec,
-      durationMs,
-      ttftMs: metrics.ttftMs,
-      maxGapMs,
-      maxGapSlow,
-      reconnectCount: reconnects.length,
-      lastReconnectOffsetMs:
-        reconnects.length > 0
-          ? Math.max(0, reconnects[reconnects.length - 1].at - origin)
-          : undefined,
-    }),
-  );
+  const sameStream = timelineShell?.requestId === record.requestId;
+  if (!sameStream || !timelineShell || !elTimelineBody.contains(timelineShell.kpiRow)) {
+    hideTimelineTooltip();
+    activeHistBinIndex = -1;
+    rebuildTimelineShell(record.requestId, kpiInput, trackInput, gaps, insights, options);
+    return;
+  }
+
+  updateKpiRow(timelineShell.kpiRow, kpiInput);
+  timelineShell.track.update(trackInput);
+  timelineShell.track.paint();
+  fillHistHost(timelineShell.histHost, gaps, options);
+  fillInsightsHost(timelineShell.insightsHost, insights, options);
+}
+
+function rebuildTimelineShell(
+  requestId: string,
+  kpiInput: KpiRowInput,
+  trackInput: ArrivalTrackInput,
+  gaps: GapSample[],
+  insights: TimelineInsight[],
+  options: RenderTimelineOptions,
+): void {
+  teardownTimelineShell();
+  elTimelineBody.replaceChildren();
+
+  const kpiRow = buildKpiRow(kpiInput);
 
   const trackSection = document.createElement("section");
   trackSection.className = "timeline-section";
@@ -266,17 +361,8 @@ export function renderTimeline(
   trackHead.append(trackTitleBlock, buildLegend());
   trackSection.appendChild(trackHead);
 
-  const trackMount = buildArrivalTrackCanvas({
-    marks,
-    reconnects,
-    spanMs,
-    originMs: origin,
-    selectedEventIndex: options.selectedEventIndex,
-    onJumpToEvent: options.onJumpToEvent,
-  });
-  trackSection.append(trackMount.wrap, trackMount.axis);
-  elTimelineBody.appendChild(trackSection);
-  trackMount.paint();
+  const track = buildArrivalTrackCanvas(trackInput);
+  trackSection.append(track.wrap, track.axis);
 
   const histSection = document.createElement("section");
   histSection.className = "timeline-section";
@@ -286,29 +372,66 @@ export function renderTimeline(
   const histHint = document.createElement("div");
   histHint.className = "timeline-section-hint";
   histHint.textContent = t("timelineGapHistogramHint", String(TIMELINE_HOT_GAP_MS));
-  histSection.append(histTitle, histHint);
+  const histHost = document.createElement("div");
+  histHost.className = "timeline-hist-host";
+  histSection.append(histTitle, histHint, histHost);
+
+  const insightsSection = document.createElement("section");
+  insightsSection.className = "timeline-section timeline-insights";
+  const insightsTitle = document.createElement("div");
+  insightsTitle.className = "timeline-section-title";
+  insightsTitle.textContent = t("timelineInsights");
+  const insightsHint = document.createElement("div");
+  insightsHint.className = "timeline-section-hint";
+  insightsHint.textContent = t("timelineInsightsHint");
+  const insightsHost = document.createElement("div");
+  insightsHost.className = "timeline-insights-host";
+  insightsSection.append(insightsTitle, insightsHint, insightsHost);
+
+  elTimelineBody.append(kpiRow, trackSection, histSection, insightsSection);
+  timelineShell = { requestId, kpiRow, track, histHost, insightsHost };
+
+  fillHistHost(histHost, gaps, options);
+  fillInsightsHost(insightsHost, insights, options);
+  track.paint();
+}
+
+function fillHistHost(host: HTMLElement, gaps: GapSample[], options: RenderTimelineOptions): void {
+  host.replaceChildren();
   if (gaps.length === 0) {
     const empty = document.createElement("div");
     empty.className = "timeline-meta";
     empty.textContent = t("timelineGapHistogramEmpty");
-    histSection.appendChild(empty);
-  } else {
-    histSection.appendChild(
-      createGapHistogramSvg(buildGapHistogram(gaps), {
-        gaps,
-        onJumpToEvent: options.onJumpToEvent,
-      }),
-    );
+    host.appendChild(empty);
+    return;
   }
-  elTimelineBody.appendChild(histSection);
+  host.appendChild(
+    createGapHistogramSvg(buildGapHistogram(gaps), {
+      gaps,
+      onJumpToEvent: options.onJumpToEvent,
+    }),
+  );
+}
 
-  const insights = buildTimelineInsights({
-    gaps,
-    events: record.events,
-    reconnects,
-    originMs: origin,
-  });
-  elTimelineBody.appendChild(buildInsightsSection(insights, options));
+function fillInsightsHost(
+  host: HTMLElement,
+  insights: TimelineInsight[],
+  options: RenderTimelineOptions,
+): void {
+  host.replaceChildren();
+  if (insights.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "timeline-meta";
+    empty.textContent = t("timelineInsightsEmpty");
+    host.appendChild(empty);
+    return;
+  }
+  const list = document.createElement("div");
+  list.className = "timeline-insight-list";
+  for (const insight of insights) {
+    list.appendChild(buildInsightButton(insight, options));
+  }
+  host.appendChild(list);
 }
 
 const ARRIVAL_TRACK_CSS_H = 88;
@@ -324,11 +447,10 @@ type ArrivalTrackInput = {
   onJumpToEvent: (eventIndex: number) => void;
 };
 
-function buildArrivalTrackCanvas(input: ArrivalTrackInput): {
-  wrap: HTMLElement;
-  axis: HTMLElement;
-  paint: () => void;
-} {
+function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle {
+  let input = initial;
+  let marksByIndex = new Map(initial.marks.map((m) => [m.index, m]));
+
   const wrap = document.createElement("div");
   wrap.className = "timeline-track-canvas-wrap";
   const canvas = document.createElement("canvas");
@@ -344,14 +466,18 @@ function buildArrivalTrackCanvas(input: ArrivalTrackInput): {
   const axisEnd = document.createElement("span");
   axis.append(axisStart, axisMid, axisEnd);
 
-  const marksByIndex = new Map(input.marks.map((m) => [m.index, m]));
   let plotLayout = { padL: ARRIVAL_PAD_L, plotW: 1, cssW: 1 };
 
-  const paint = (): void => {
+  const paintFrame = (): void => {
     drawArrivalTrack(canvas, input, plotLayout);
     axisStart.textContent = "0";
     axisMid.textContent = formatMetricMs(input.spanMs / 2);
     axisEnd.textContent = formatMetricMs(input.spanMs);
+  };
+
+  const paint = (): void => {
+    plotLayout = measureArrivalPlot(canvas);
+    paintFrame();
   };
 
   const resolvePlotX = (clientX: number): number | null => {
@@ -394,7 +520,6 @@ function buildArrivalTrackCanvas(input: ArrivalTrackInput): {
   });
 
   const ro = new ResizeObserver(() => {
-    plotLayout = measureArrivalPlot(canvas);
     paint();
   });
   ro.observe(wrap);
@@ -402,9 +527,13 @@ function buildArrivalTrackCanvas(input: ArrivalTrackInput): {
   return {
     wrap,
     axis,
-    paint: () => {
-      plotLayout = measureArrivalPlot(canvas);
-      paint();
+    update: (next) => {
+      input = next;
+      marksByIndex = new Map(next.marks.map((m) => [m.index, m]));
+    },
+    paint,
+    disconnect: () => {
+      ro.disconnect();
     },
   };
 }
@@ -534,37 +663,6 @@ function drawArrivalTrack(
   }
 }
 
-function buildInsightsSection(
-  insights: TimelineInsight[],
-  options: RenderTimelineOptions,
-): HTMLElement {
-  const section = document.createElement("section");
-  section.className = "timeline-section timeline-insights";
-  const title = document.createElement("div");
-  title.className = "timeline-section-title";
-  title.textContent = t("timelineInsights");
-  const hint = document.createElement("div");
-  hint.className = "timeline-section-hint";
-  hint.textContent = t("timelineInsightsHint");
-  section.append(title, hint);
-
-  if (insights.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = "timeline-meta";
-    empty.textContent = t("timelineInsightsEmpty");
-    section.appendChild(empty);
-    return section;
-  }
-
-  const list = document.createElement("div");
-  list.className = "timeline-insight-list";
-  for (const insight of insights) {
-    list.appendChild(buildInsightButton(insight, options));
-  }
-  section.appendChild(list);
-  return section;
-}
-
 function buildInsightButton(
   insight: TimelineInsight,
   options: RenderTimelineOptions,
@@ -624,21 +722,21 @@ function buildKpiRow(input: KpiRowInput): HTMLElement {
   row.className = "timeline-kpi-row";
   row.setAttribute("role", "group");
   row.setAttribute("aria-label", t("timelineKpiAria"));
-
   row.append(
-    kpiCard(t("timelineKpiEvents"), String(input.eventCount), {
+    kpiCard("events", t("timelineKpiEvents"), String(input.eventCount), {
       sub:
         typeof input.eventsPerSec === "number"
           ? t("timelineKpiEventsSub", String(input.eventsPerSec))
           : t("timelineKpiDash"),
     }),
-    kpiCard(t("timelineKpiDuration"), formatMetricMs(input.durationMs), {
+    kpiCard("duration", t("timelineKpiDuration"), formatMetricMs(input.durationMs), {
       sub:
         typeof input.ttftMs === "number"
           ? t("timelineKpiDurationSub", formatMetricMs(input.ttftMs))
           : t("timelineKpiDash"),
     }),
     kpiCard(
+      "maxGap",
       t("timelineKpiMaxGap"),
       typeof input.maxGapMs === "number" ? formatMetricMs(input.maxGapMs) : t("timelineKpiDash"),
       {
@@ -648,7 +746,7 @@ function buildKpiRow(input: KpiRowInput): HTMLElement {
           : t("timelineKpiMaxGapOk", String(TIMELINE_STALL_MS)),
       },
     ),
-    kpiCard(t("timelineKpiReconnects"), String(input.reconnectCount), {
+    kpiCard("reconnects", t("timelineKpiReconnects"), String(input.reconnectCount), {
       sub:
         typeof input.lastReconnectOffsetMs === "number"
           ? t("timelineKpiReconnectsSub", `+${formatMetricMs(input.lastReconnectOffsetMs)}`)
@@ -658,13 +756,62 @@ function buildKpiRow(input: KpiRowInput): HTMLElement {
   return row;
 }
 
+function updateKpiRow(row: HTMLElement, input: KpiRowInput): void {
+  setKpiCard(row, "events", String(input.eventCount), {
+    sub:
+      typeof input.eventsPerSec === "number"
+        ? t("timelineKpiEventsSub", String(input.eventsPerSec))
+        : t("timelineKpiDash"),
+  });
+  setKpiCard(row, "duration", formatMetricMs(input.durationMs), {
+    sub:
+      typeof input.ttftMs === "number"
+        ? t("timelineKpiDurationSub", formatMetricMs(input.ttftMs))
+        : t("timelineKpiDash"),
+  });
+  setKpiCard(
+    row,
+    "maxGap",
+    typeof input.maxGapMs === "number" ? formatMetricMs(input.maxGapMs) : t("timelineKpiDash"),
+    {
+      alert: input.maxGapSlow,
+      sub: input.maxGapSlow
+        ? t("timelineKpiMaxGapSlow", String(TIMELINE_STALL_MS))
+        : t("timelineKpiMaxGapOk", String(TIMELINE_STALL_MS)),
+    },
+  );
+  setKpiCard(row, "reconnects", String(input.reconnectCount), {
+    sub:
+      typeof input.lastReconnectOffsetMs === "number"
+        ? t("timelineKpiReconnectsSub", `+${formatMetricMs(input.lastReconnectOffsetMs)}`)
+        : t("timelineKpiDash"),
+  });
+}
+
+function setKpiCard(
+  row: HTMLElement,
+  key: string,
+  value: string,
+  options: { sub: string; alert?: boolean },
+): void {
+  const card = row.querySelector<HTMLElement>(`[data-kpi="${key}"]`);
+  if (!card) return;
+  card.classList.toggle("is-alert", Boolean(options.alert));
+  const valueEl = card.querySelector(".timeline-kpi-value");
+  const subEl = card.querySelector(".timeline-kpi-sub");
+  if (valueEl) valueEl.textContent = value;
+  if (subEl) subEl.textContent = options.sub;
+}
+
 function kpiCard(
+  key: string,
   label: string,
   value: string,
   options: { sub: string; alert?: boolean },
 ): HTMLElement {
   const card = document.createElement("div");
   card.className = `timeline-kpi${options.alert ? " is-alert" : ""}`;
+  card.dataset.kpi = key;
   const labelEl = document.createElement("div");
   labelEl.className = "timeline-kpi-label";
   labelEl.textContent = label;
