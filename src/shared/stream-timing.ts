@@ -6,7 +6,7 @@ export type GapSample = {
   gapMs: number;
 };
 
-export type TimelineInsight =
+export type TimingInsight =
   | {
       kind: "stall";
       /** 1-based rank among listed stalls (1 = longest). */
@@ -34,10 +34,10 @@ export type HistogramBin = {
   count: number;
 };
 
-export type TimelineMark = {
+export type TimingMark = {
   index: number;
   event: string;
-  /** Offset from timeline origin (ms) */
+  /** Offset from timing origin (ms) */
   offsetMs: number;
   /** Gap from previous event; undefined for first */
   gapFromPrevMs?: number;
@@ -47,21 +47,21 @@ export type TimelineMark = {
 export const DEFAULT_GAP_BIN_EDGES_MS = [0, 10, 25, 50, 100, 250, 500, 1000] as const;
 
 /** Gap ≥ this is a stall (red tick / KPI alert). */
-export const TIMELINE_STALL_MS = 400;
+export const TIMING_STALL_MS = 400;
 
 /** Histogram bins with fromMs ≥ this are "hot" (longer stalls). */
-export const TIMELINE_HOT_GAP_MS = 400;
+export const TIMING_HOT_GAP_MS = 400;
 
 /** Longest-waits list shows the top N waits by duration. */
-export const TIMELINE_WATERFALL_LIMIT = 10;
+export const TIMING_WATERFALL_LIMIT = 10;
 
 /** Gaps ≥ this use the strongest waterfall bar tone. */
-export const TIMELINE_WATERFALL_SEVERE_MS = 1000;
+export const TIMING_WATERFALL_SEVERE_MS = 1000;
 
 /** Max stall chips pinned on the arrival track. */
-export const TIMELINE_ANOMALY_STALL_LIMIT = 5;
+export const TIMING_ANOMALY_STALL_LIMIT = 5;
 
-export type TimelineAnomaly =
+export type TimingAnomaly =
   | {
       kind: "stall";
       offsetMs: number;
@@ -79,28 +79,28 @@ export type TimelineAnomaly =
  * Pin notable stalls / reconnects on the arrival track.
  * Stalls are capped; reconnects stay complete (usually few).
  */
-export function buildTimelineAnomalies(input: {
-  marks: Array<Pick<TimelineMark, "index" | "offsetMs" | "gapFromPrevMs">>;
+export function buildTimingAnomalies(input: {
+  marks: Array<Pick<TimingMark, "index" | "offsetMs" | "gapFromPrevMs">>;
   reconnects: StreamReconnectMark[];
   originMs: number;
   events: Array<Pick<SseEvent, "index" | "receivedAt" | "id">>;
   stallLimit?: number;
-}): TimelineAnomaly[] {
-  const stallLimit = input.stallLimit ?? TIMELINE_ANOMALY_STALL_LIMIT;
+}): TimingAnomaly[] {
+  const stallLimit = input.stallLimit ?? TIMING_ANOMALY_STALL_LIMIT;
 
   const stallMarks = input.marks
     .filter((m) => isStallGapMs(m.gapFromPrevMs))
     .sort((a, b) => (b.gapFromPrevMs ?? 0) - (a.gapFromPrevMs ?? 0))
     .slice(0, Math.max(0, stallLimit));
 
-  const stalls: TimelineAnomaly[] = stallMarks.map((m) => ({
+  const stalls: TimingAnomaly[] = stallMarks.map((m) => ({
     kind: "stall",
     offsetMs: m.offsetMs,
     gapMs: m.gapFromPrevMs ?? 0,
     jumpIndex: m.index,
   }));
 
-  const reconnects: TimelineAnomaly[] = [...input.reconnects]
+  const reconnects: TimingAnomaly[] = [...input.reconnects]
     .sort((a, b) => a.reconnectCount - b.reconnectCount)
     .map((reconnect) => ({
       kind: "reconnect" as const,
@@ -115,23 +115,23 @@ export function buildTimelineAnomalies(input: {
 export type WaterfallBarKind = "severe" | "stall" | "ok";
 
 export function waterfallBarKind(gapMs: number): WaterfallBarKind {
-  if (!Number.isFinite(gapMs) || gapMs < TIMELINE_STALL_MS) return "ok";
-  if (gapMs >= TIMELINE_WATERFALL_SEVERE_MS) return "severe";
+  if (!Number.isFinite(gapMs) || gapMs < TIMING_STALL_MS) return "ok";
+  if (gapMs >= TIMING_WATERFALL_SEVERE_MS) return "severe";
   return "stall";
 }
 
 export function isStallGapMs(gapMs: number | undefined | null): boolean {
-  return typeof gapMs === "number" && Number.isFinite(gapMs) && gapMs >= TIMELINE_STALL_MS;
+  return typeof gapMs === "number" && Number.isFinite(gapMs) && gapMs >= TIMING_STALL_MS;
 }
 
 export function isHotGapBinFromMs(fromMs: number): boolean {
-  return Number.isFinite(fromMs) && fromMs >= TIMELINE_HOT_GAP_MS;
+  return Number.isFinite(fromMs) && fromMs >= TIMING_HOT_GAP_MS;
 }
 
 /** True if the bin range overlaps hot/stall waits (includes open-ended last bin). */
 export function isHotGapBin(bin: Pick<HistogramBin, "fromMs" | "toMs">): boolean {
-  if (bin.fromMs >= TIMELINE_HOT_GAP_MS) return true;
-  return bin.toMs > TIMELINE_HOT_GAP_MS;
+  if (bin.fromMs >= TIMING_HOT_GAP_MS) return true;
+  return bin.toMs > TIMING_HOT_GAP_MS;
 }
 
 export function gapsInBin(
@@ -188,14 +188,14 @@ export function buildGapHistogram(
   return bins;
 }
 
-export function buildTimelineMarks(
+export function buildTimingMarks(
   events: Array<Pick<SseEvent, "index" | "event" | "receivedAt">>,
   originMs?: number,
-): TimelineMark[] {
+): TimingMark[] {
   if (events.length === 0) return [];
   const origin = originMs ?? events[0].receivedAt;
   return events.map((ev, i) => {
-    const mark: TimelineMark = {
+    const mark: TimingMark = {
       index: ev.index,
       event: ev.event,
       offsetMs: Math.max(0, ev.receivedAt - origin),
@@ -208,7 +208,7 @@ export function buildTimelineMarks(
   });
 }
 
-export function timelineSpanMs(marks: Array<Pick<TimelineMark, "offsetMs">>): number {
+export function timingSpanMs(marks: Array<Pick<TimingMark, "offsetMs">>): number {
   if (marks.length === 0) return 0;
   let max = 0;
   for (const m of marks) {
@@ -250,17 +250,17 @@ export function findNearestEventIndex(
  * Ranked waits + reconnects for the silence waterfall.
  * Order: stalls by gap desc, then reconnects by count desc.
  */
-export function buildTimelineInsights(input: {
+export function buildTimingInsights(input: {
   gaps: GapSample[];
   events: Array<Pick<SseEvent, "index" | "event" | "receivedAt" | "id">>;
   reconnects: StreamReconnectMark[];
   originMs: number;
   stallLimit?: number;
-}): TimelineInsight[] {
-  const stallLimit = input.stallLimit ?? TIMELINE_WATERFALL_LIMIT;
+}): TimingInsight[] {
+  const stallLimit = input.stallLimit ?? TIMING_WATERFALL_LIMIT;
   const byIndex = new Map(input.events.map((ev) => [ev.index, ev]));
   const stalls = largestGaps(input.gaps, stallLimit).map((gap, i) => {
-    const insight: TimelineInsight = {
+    const insight: TimingInsight = {
       kind: "stall",
       rank: i + 1,
       afterIndex: gap.afterIndex,
@@ -274,7 +274,7 @@ export function buildTimelineInsights(input: {
   const reconnects = [...input.reconnects]
     .sort((a, b) => b.reconnectCount - a.reconnectCount)
     .map((reconnect) => {
-      const insight: TimelineInsight = {
+      const insight: TimingInsight = {
         kind: "reconnect",
         reconnectCount: reconnect.reconnectCount,
         offsetMs: Math.max(0, reconnect.at - input.originMs),
@@ -296,7 +296,7 @@ export type ArrivalLodBucket = {
 
 /** Pixel-column LOD for the arrival track (one bucket ≈ one CSS pixel). */
 export function aggregateArrivalLod(
-  marks: Array<Pick<TimelineMark, "index" | "offsetMs" | "gapFromPrevMs">>,
+  marks: Array<Pick<TimingMark, "index" | "offsetMs" | "gapFromPrevMs">>,
   plotWidthPx: number,
   viewStartMs = 0,
   viewEndMs?: number,
@@ -343,7 +343,7 @@ export type ArrivalWaitSeries = {
  * wait whose interval overlaps that bucket. Y unit is milliseconds (not events/s).
  */
 export function buildArrivalWaitSeries(
-  marks: Array<Pick<TimelineMark, "offsetMs" | "gapFromPrevMs">>,
+  marks: Array<Pick<TimingMark, "offsetMs" | "gapFromPrevMs">>,
   viewStartMs: number,
   viewEndMs: number,
   bucketCount: number,
@@ -373,23 +373,23 @@ export function buildArrivalWaitSeries(
 }
 
 /** Visible time window on the arrival track (offsets from stream origin). */
-export type TimelineViewWindow = {
+export type TimingViewWindow = {
   startMs: number;
   endMs: number;
 };
 
 /** Smallest arrival-track window; lower = allow deeper zoom-in. */
-export const TIMELINE_MIN_VIEW_MS = 50;
+export const TIMING_MIN_VIEW_MS = 50;
 
-export function fitTimelineView(spanMs: number): TimelineViewWindow {
+export function fitTimingView(spanMs: number): TimingViewWindow {
   return { startMs: 0, endMs: Math.max(1, spanMs) };
 }
 
-export function clampTimelineView(
-  view: TimelineViewWindow,
+export function clampTimingView(
+  view: TimingViewWindow,
   spanMs: number,
-  minWindowMs = TIMELINE_MIN_VIEW_MS,
-): TimelineViewWindow {
+  minWindowMs = TIMING_MIN_VIEW_MS,
+): TimingViewWindow {
   const span = Math.max(1, spanMs);
   const minWin = Math.min(span, Math.max(1, minWindowMs));
   const windowMs = Math.min(span, Math.max(minWin, view.endMs - view.startMs));
@@ -407,39 +407,39 @@ export function clampTimelineView(
 }
 
 /** Zoom around an anchor ratio within the current window (0 = left, 1 = right). */
-export function zoomTimelineView(
-  view: TimelineViewWindow,
+export function zoomTimingView(
+  view: TimingViewWindow,
   spanMs: number,
   factor: number,
   anchorRatio = 0.5,
-  minWindowMs = TIMELINE_MIN_VIEW_MS,
-): TimelineViewWindow {
+  minWindowMs = TIMING_MIN_VIEW_MS,
+): TimingViewWindow {
   const cur = Math.max(1, view.endMs - view.startMs);
   const ratio = Math.min(1, Math.max(0, anchorRatio));
   const anchor = view.startMs + ratio * cur;
   const nextWindow = Math.min(Math.max(spanMs, 1), Math.max(minWindowMs, cur * factor));
   const startMs = anchor - ratio * nextWindow;
-  return clampTimelineView({ startMs, endMs: startMs + nextWindow }, spanMs, minWindowMs);
+  return clampTimingView({ startMs, endMs: startMs + nextWindow }, spanMs, minWindowMs);
 }
 
-export function panTimelineView(
-  view: TimelineViewWindow,
+export function panTimingView(
+  view: TimingViewWindow,
   spanMs: number,
   deltaMs: number,
-  minWindowMs = TIMELINE_MIN_VIEW_MS,
-): TimelineViewWindow {
-  return clampTimelineView(
+  minWindowMs = TIMING_MIN_VIEW_MS,
+): TimingViewWindow {
+  return clampTimingView(
     { startMs: view.startMs + deltaMs, endMs: view.endMs + deltaMs },
     spanMs,
     minWindowMs,
   );
 }
 
-/** Session narrative phases along the arrival timeline (canvas band fill). */
-export type TimelinePhaseKind = "ttft" | "steady" | "stall" | "done";
+/** Session narrative phases along the arrival timing (canvas band fill). */
+export type TimingPhaseKind = "ttft" | "steady" | "stall" | "done";
 
-export type TimelinePhaseSegment = {
-  kind: TimelinePhaseKind;
+export type TimingPhaseSegment = {
+  kind: TimingPhaseKind;
   startMs: number;
   endMs: number;
 };
@@ -449,17 +449,17 @@ export type TimelinePhaseSegment = {
  * TTFT covers [0, first event] (connect wait is included; no separate connect probe).
  * Trailing time after the last event is `done` only when `ended` is true.
  */
-export function buildTimelinePhases(input: {
-  marks: Array<Pick<TimelineMark, "offsetMs" | "gapFromPrevMs">>;
+export function buildTimingPhases(input: {
+  marks: Array<Pick<TimingMark, "offsetMs" | "gapFromPrevMs">>;
   spanMs: number;
   ended?: boolean;
   stallMs?: number;
-}): TimelinePhaseSegment[] {
+}): TimingPhaseSegment[] {
   const spanMs = Math.max(1, input.spanMs);
-  const stallMs = input.stallMs ?? TIMELINE_STALL_MS;
+  const stallMs = input.stallMs ?? TIMING_STALL_MS;
   const ended = Boolean(input.ended);
   const marks = input.marks;
-  const raw: TimelinePhaseSegment[] = [];
+  const raw: TimingPhaseSegment[] = [];
 
   if (marks.length === 0) {
     raw.push({ kind: ended ? "done" : "ttft", startMs: 0, endMs: spanMs });
@@ -490,8 +490,8 @@ export function buildTimelinePhases(input: {
   return mergeAdjacentPhases(raw);
 }
 
-function mergeAdjacentPhases(segments: TimelinePhaseSegment[]): TimelinePhaseSegment[] {
-  const out: TimelinePhaseSegment[] = [];
+function mergeAdjacentPhases(segments: TimingPhaseSegment[]): TimingPhaseSegment[] {
+  const out: TimingPhaseSegment[] = [];
   for (const seg of segments) {
     if (seg.endMs <= seg.startMs) continue;
     const prev = out[out.length - 1];
@@ -506,7 +506,7 @@ function mergeAdjacentPhases(segments: TimelinePhaseSegment[]): TimelinePhaseSeg
 
 /** Map a plot-local X coordinate to the nearest in-view mark index. */
 export function hitTestArrivalMark(
-  marks: Array<Pick<TimelineMark, "index" | "offsetMs">>,
+  marks: Array<Pick<TimingMark, "index" | "offsetMs">>,
   plotX: number,
   plotWidthPx: number,
   viewStartMs: number,
@@ -531,29 +531,29 @@ export function hitTestArrivalMark(
 }
 
 /** Preferred lane order when those event types are present. */
-export const TIMELINE_LANE_PREFERRED_TYPES = ["message", "delta", "ping", "error"] as const;
+export const TIMING_LANE_PREFERRED_TYPES = ["message", "delta", "ping", "error"] as const;
 
 /** Cap swimlane rows so exotic streams stay readable. */
-export const TIMELINE_LANE_MAX = 8;
+export const TIMING_LANE_MAX = 8;
 
 /** Empty / blank SSE `event:` fields render as the default message type. */
-export function normalizeTimelineEventType(event: string | undefined | null): string {
+export function normalizeTimingEventType(event: string | undefined | null): string {
   const raw = typeof event === "string" ? event.trim() : "";
   return raw.length > 0 ? raw : "message";
 }
 
 /**
  * Distinct event types for swimlanes: preferred types first (if present),
- * then remaining by frequency (desc) / name. Capped at TIMELINE_LANE_MAX.
+ * then remaining by frequency (desc) / name. Capped at TIMING_LANE_MAX.
  */
-export function collectTimelineLaneTypes(
-  marks: Array<Pick<TimelineMark, "event">>,
-  preferred: readonly string[] = TIMELINE_LANE_PREFERRED_TYPES,
-  maxLanes = TIMELINE_LANE_MAX,
+export function collectTimingLaneTypes(
+  marks: Array<Pick<TimingMark, "event">>,
+  preferred: readonly string[] = TIMING_LANE_PREFERRED_TYPES,
+  maxLanes = TIMING_LANE_MAX,
 ): string[] {
   const counts = new Map<string, number>();
   for (const m of marks) {
-    const type = normalizeTimelineEventType(m.event);
+    const type = normalizeTimingEventType(m.event);
     counts.set(type, (counts.get(type) ?? 0) + 1);
   }
   if (counts.size === 0) return [];
@@ -575,8 +575,8 @@ export function collectTimelineLaneTypes(
 }
 
 /** Hit-test within one event-type lane (same X mapping as the arrival track). */
-export function hitTestTimelineLaneMark(
-  marks: Array<Pick<TimelineMark, "index" | "offsetMs" | "event">>,
+export function hitTestTimingLaneMark(
+  marks: Array<Pick<TimingMark, "index" | "offsetMs" | "event">>,
   eventType: string,
   plotX: number,
   plotWidthPx: number,
@@ -584,7 +584,7 @@ export function hitTestTimelineLaneMark(
   viewEndMs: number,
   maxDistancePx = 16,
 ): number | null {
-  const filtered = marks.filter((m) => normalizeTimelineEventType(m.event) === eventType);
+  const filtered = marks.filter((m) => normalizeTimingEventType(m.event) === eventType);
   return hitTestArrivalMark(
     filtered,
     plotX,

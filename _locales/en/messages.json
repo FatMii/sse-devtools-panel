@@ -65,8 +65,8 @@
   "tabEvents": {
     "message": "Events"
   },
-  "tabTimeline": {
-    "message": "Timeline"
+  "tabTiming": {
+    "message": "Timing"
   },
   "tabRequest": {
     "message": "Request"
@@ -512,13 +512,13 @@
   "statsSelectedEventsPerSec": {
     "message": "events/s"
   },
-  "timelineKpiAria": {
-    "message": "Timeline summary metrics"
+  "timingKpiAria": {
+    "message": "Timing summary metrics"
   },
-  "timelineKpiEvents": {
+  "timingKpiEvents": {
     "message": "Events"
   },
-  "timelineKpiEventsSub": {
+  "timingKpiEventsSub": {
     "message": "$RATE$ /s",
     "placeholders": {
       "rate": {
@@ -527,10 +527,10 @@
       }
     }
   },
-  "timelineKpiDuration": {
+  "timingKpiDuration": {
     "message": "Duration"
   },
-  "timelineKpiDurationSub": {
+  "timingKpiDurationSub": {
     "message": "TTFT $TTFT$",
     "placeholders": {
       "ttft": {
@@ -539,10 +539,10 @@
       }
     }
   },
-  "timelineKpiMaxGap": {
+  "timingKpiMaxGap": {
     "message": "Max gap"
   },
-  "timelineKpiMaxGapOk": {
+  "timingKpiMaxGapOk": {
     "message": "Threshold $MS$ ms",
     "placeholders": {
       "ms": {
@@ -551,7 +551,7 @@
       }
     }
   },
-  "timelineKpiMaxGapSlow": {
+  "timingKpiMaxGapSlow": {
     "message": "Threshold $MS$ ms · long wait",
     "placeholders": {
       "ms": {
@@ -560,10 +560,10 @@
       }
     }
   },
-  "timelineKpiReconnects": {
+  "timingKpiReconnects": {
     "message": "Reconnects"
   },
-  "timelineKpiReconnectsSub": {
+  "timingKpiReconnectsSub": {
     "message": "Last $OFFSET$",
     "placeholders": {
       "offset": {
@@ -572,16 +572,16 @@
       }
     }
   },
-  "timelineKpiDash": {
+  "timingKpiDash": {
     "message": "—"
   },
-  "timelineLegendAria": {
-    "message": "Timeline legend"
+  "timingLegendAria": {
+    "message": "Timing legend"
   },
-  "timelineLegendNormal": {
+  "timingLegendNormal": {
     "message": "Normal"
   },
-  "timelineLegendStall": {
+  "timingLegendStall": {
     "message": "Long wait ≥$MS$ms",
     "placeholders": {
       "ms": {
@@ -590,10 +590,10 @@
       }
     }
   },
-  "timelineLegendWait": {
+  "timingLegendWait": {
     "message": "Wait over time (ms)"
   },
-  "timelineAnomalyStall": {
+  "timingAnomalyStall": {
     "message": "Stall $GAP$",
     "placeholders": {
       "gap": {
@@ -602,7 +602,7 @@
       }
     }
   },
-  "timelineAnomalyReconnect": {
+  "timingAnomalyReconnect": {
     "message": "Reconnect #$COUNT$",
     "placeholders": {
       "count": {
@@ -611,22 +611,22 @@
       }
     }
   },
-  "timelineLaneArrival": {
+  "timingLaneArrival": {
     "message": "Arrival"
   },
-  "timelineLaneWait": {
+  "timingLaneWait": {
     "message": "Wait"
   },
-  "timelineLegendReconnect": {
+  "timingLegendReconnect": {
     "message": "Reconnect"
   },
-  "timelineLegendSelected": {
+  "timingLegendSelected": {
     "message": "Selected"
   },
-  "timelineTrackTitle": {
-    "message": "Event arrival timeline"
+  "timingTrackTitle": {
+    "message": "Event arrival"
   },
-  "timelineTrackHintTop": {
+  "timingTrackHintTop": {
     "message": "Top: arrival ticks (red ≥$MS$ms).",
     "placeholders": {
       "ms": {
@@ -635,37 +635,37 @@
       }
     }
   },
-  "timelineTrackHintBottom": {
+  "timingTrackHintBottom": {
     "message": "Bottom: wait over time (ms), same unit as Max gap."
   },
-  "timelineTrackHintAction": {
+  "timingTrackHintAction": {
     "message": "Click to open in Events."
   },
-  "timelineZoomIn": {
+  "timingZoomIn": {
     "message": "Zoom in"
   },
-  "timelineZoomOut": {
+  "timingZoomOut": {
     "message": "Zoom out"
   },
-  "timelineZoomFit": {
+  "timingZoomFit": {
     "message": "Fit"
   },
-  "timelineTrackNavHint": {
+  "timingTrackNavHint": {
     "message": "Scroll to zoom · drag track or minimap to pan · Fit resets the full range."
   },
-  "timelineTrackTipsAria": {
-    "message": "Timeline tips"
+  "timingTrackTipsAria": {
+    "message": "Timing tips"
   },
-  "timelineGapHistogram": {
+  "timingGapHistogram": {
     "message": "Wait-time distribution between events"
   },
-  "timelineGapHistogramTipsAria": {
+  "timingGapHistogramTipsAria": {
     "message": "Wait distribution tips"
   },
-  "timelineGapHistogramHintAxes": {
+  "timingGapHistogramHintAxes": {
     "message": "X-axis: wait between two events. Y-axis: how often."
   },
-  "timelineGapHistogramHintHot": {
+  "timingGapHistogramHintHot": {
     "message": "Yellow (≥$MS$ms).",
     "placeholders": {
       "ms": {
@@ -674,16 +674,16 @@
       }
     }
   },
-  "timelineGapHistogramHintAction": {
+  "timingGapHistogramHintAction": {
     "message": "Click a bar to jump to its longest wait."
   },
-  "timelineGapBinTipAction": {
+  "timingGapBinTipAction": {
     "message": "Click to jump to the longest wait in this range"
   },
-  "timelineGapBinTipEmpty": {
+  "timingGapBinTipEmpty": {
     "message": "No waits in this range"
   },
-  "timelineTickTipMain": {
+  "timingTickTipMain": {
     "message": "#$INDEX$ · $EVENT$ · wait $GAP$",
     "placeholders": {
       "index": {
@@ -700,7 +700,7 @@
       }
     }
   },
-  "timelineTickTipMainFirst": {
+  "timingTickTipMainFirst": {
     "message": "#$INDEX$ · $EVENT$ · first event",
     "placeholders": {
       "index": {
@@ -713,7 +713,7 @@
       }
     }
   },
-  "timelineTickTipWaitMain": {
+  "timingTickTipWaitMain": {
     "message": "Wait ≈ $WAIT$",
     "placeholders": {
       "wait": {
@@ -722,7 +722,7 @@
       }
     }
   },
-  "timelineTickTipNearestEvent": {
+  "timingTickTipNearestEvent": {
     "message": "Nearby event #$INDEX$ · $EVENT$",
     "placeholders": {
       "index": {
@@ -735,22 +735,22 @@
       }
     }
   },
-  "timelineTickTipStall": {
+  "timingTickTipStall": {
     "message": "Long wait"
   },
-  "timelineTickTipAction": {
+  "timingTickTipAction": {
     "message": "Click to open in Events"
   },
-  "timelineGapHistogramX": {
+  "timingGapHistogramX": {
     "message": "Wait between events →"
   },
-  "timelineGapHistogramY": {
+  "timingGapHistogramY": {
     "message": "Times"
   },
-  "timelineGapHistogramEmpty": {
+  "timingGapHistogramEmpty": {
     "message": "Need at least 2 events to show wait distribution."
   },
-  "timelineGapBinTitle": {
+  "timingGapBinTitle": {
     "message": "$RANGE$: $COUNT$ waits",
     "placeholders": {
       "range": {
@@ -763,7 +763,7 @@
       }
     }
   },
-  "timelineWaitRank": {
+  "timingWaitRank": {
     "message": "Longest waits (Top $N$)",
     "placeholders": {
       "n": {
@@ -772,19 +772,19 @@
       }
     }
   },
-  "timelineWaitRankTipsAria": {
+  "timingWaitRankTipsAria": {
     "message": "Longest waits tips"
   },
-  "timelineWaitRankHintSort": {
+  "timingWaitRankHintSort": {
     "message": "Sorted by wait duration (bar length ∝ duration), then reconnects."
   },
-  "timelineWaitRankHintAction": {
+  "timingWaitRankHintAction": {
     "message": "Click a row to open in Events."
   },
-  "timelineWaitRankEmpty": {
+  "timingWaitRankEmpty": {
     "message": "No long waits or reconnects yet."
   },
-  "timelineWaitRankReconnect": {
+  "timingWaitRankReconnect": {
     "message": "Reconnect #$COUNT$",
     "placeholders": {
       "count": {
@@ -793,25 +793,25 @@
       }
     }
   },
-  "timelineLanesTitle": {
+  "timingLanesTitle": {
     "message": "By event type"
   },
-  "timelineLanesTipsAria": {
+  "timingLanesTipsAria": {
     "message": "By event type tips"
   },
-  "timelineLanesHintRows": {
+  "timingLanesHintRows": {
     "message": "One row per SSE event type (message / delta / ping / \u2026)."
   },
-  "timelineLanesHintFilter": {
+  "timingLanesHintFilter": {
     "message": "Click a button above to show or hide that type."
   },
-  "timelineLanesHintAction": {
+  "timingLanesHintAction": {
     "message": "Aligned with the arrival track window. Click a tick to open in Events."
   },
-  "timelineLanesEmpty": {
+  "timingLanesEmpty": {
     "message": "No events to show by type yet."
   },
-  "timelineLanesFilterAria": {
+  "timingLanesFilterAria": {
     "message": "Filter event type $TYPE$",
     "placeholders": {
       "type": {
@@ -1330,10 +1330,10 @@
     "message": "For supported AI protocols, Conversation rebuilds thinking and content into readable channels."
   },
   "tourStep6Title": {
-    "message": "Timeline for stream rhythm"
+    "message": "Timing for stream rhythm"
   },
   "tourStep6Body": {
-    "message": "Timeline highlights first-byte delay, gaps, and long waits. Raw is next to it when you need the original text."
+    "message": "Timing shows arrival density, waits, and stalls. Scroll to zoom, then click a mark to open Events. Raw is next to it when you need the original text."
   },
   "tourStep7Title": {
     "message": "Replay the tour from More"

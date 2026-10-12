@@ -3,46 +3,46 @@ import {
   aggregateArrivalLod,
   buildArrivalWaitSeries,
   buildGapHistogram,
-  buildTimelineAnomalies,
-  buildTimelineInsights,
-  buildTimelineMarks,
-  buildTimelinePhases,
-  clampTimelineView,
+  buildTimingAnomalies,
+  buildTimingInsights,
+  buildTimingMarks,
+  buildTimingPhases,
+  clampTimingView,
   collectEventGaps,
-  collectTimelineLaneTypes,
-  fitTimelineView,
+  collectTimingLaneTypes,
+  fitTimingView,
   gapsInBin,
   hitTestArrivalMark,
-  hitTestTimelineLaneMark,
+  hitTestTimingLaneMark,
   isHotGapBin,
   isStallGapMs,
   largestGaps,
-  normalizeTimelineEventType,
-  panTimelineView,
-  TIMELINE_HOT_GAP_MS,
-  TIMELINE_STALL_MS,
-  TIMELINE_WATERFALL_LIMIT,
-  timelineSpanMs,
+  normalizeTimingEventType,
+  panTimingView,
+  TIMING_HOT_GAP_MS,
+  TIMING_STALL_MS,
+  TIMING_WATERFALL_LIMIT,
+  timingSpanMs,
   waterfallBarKind,
-  zoomTimelineView,
+  zoomTimingView,
   type GapSample,
   type HistogramBin,
-  type TimelineAnomaly,
-  type TimelineInsight,
-  type TimelineMark,
-  type TimelinePhaseKind,
-  type TimelinePhaseSegment,
-  type TimelineViewWindow,
+  type TimingAnomaly,
+  type TimingInsight,
+  type TimingMark,
+  type TimingPhaseKind,
+  type TimingPhaseSegment,
+  type TimingViewWindow,
 } from "../../shared/stream-timing";
 import type { SseEvent, StreamReconnectMark, StreamRecord } from "../../shared/types";
-import { elTimelineBody, elTimelinePlaceholder } from "../core/dom";
+import { elTimingBody, elTimingPlaceholder } from "../core/dom";
 import { formatGapBinLabel, formatMetricMs } from "../core/format";
 import { ensureStreamMetrics } from "../features/stream-metrics";
 
 /** Re-export for callers; single source of truth is stream-timing. */
-export { TIMELINE_STALL_MS, TIMELINE_HOT_GAP_MS };
+export { TIMING_STALL_MS, TIMING_HOT_GAP_MS };
 
-export type RenderTimelineOptions = {
+export type RenderTimingOptions = {
   selectedEventIndex: number | null;
   onJumpToEvent: (eventIndex: number) => void;
 };
@@ -61,8 +61,8 @@ type ArrivalTrackHandle = {
   toolbar: HTMLElement;
   legend: HTMLElement;
   minimap: HTMLElement;
-  getView: () => TimelineViewWindow;
-  onViewChange: (cb: (view: TimelineViewWindow) => void) => () => void;
+  getView: () => TimingViewWindow;
+  onViewChange: (cb: (view: TimingViewWindow) => void) => () => void;
   update: (next: ArrivalTrackInput) => void;
   paint: () => void;
   disconnect: () => void;
@@ -71,11 +71,11 @@ type ArrivalTrackHandle = {
 type LanesHandle = {
   root: HTMLElement;
   update: (input: LanesInput) => void;
-  setView: (view: TimelineViewWindow) => void;
+  setView: (view: TimingViewWindow) => void;
   disconnect: () => void;
 };
 
-type TimelineShell = {
+type TimingShell = {
   requestId: string;
   kpiRow: HTMLElement;
   track: ArrivalTrackHandle;
@@ -85,24 +85,24 @@ type TimelineShell = {
   unsubView: () => void;
 };
 
-let timelineShell: TimelineShell | null = null;
-let timelineRaf = 0;
-let timelinePending: { record: StreamRecord; options: RenderTimelineOptions } | null = null;
+let timingShell: TimingShell | null = null;
+let timingRaf = 0;
+let timingPending: { record: StreamRecord; options: RenderTimingOptions } | null = null;
 /** Enabled lane types; reset on stream change. */
 let laneFilterOn = new Set<string>();
 /** Types already offered to the filter UI (so new types default on). */
 let laneTypesSeen = new Set<string>();
 
-export function resetTimelineView(): void {
-  cancelTimelineRender();
-  teardownTimelineShell();
-  hideTimelineTooltip();
+export function resetTimingView(): void {
+  cancelTimingRender();
+  teardownTimingShell();
+  hideTimingTooltip();
   activeHistBinIndex = -1;
   resetLaneFilterState();
-  elTimelinePlaceholder.hidden = false;
-  elTimelinePlaceholder.textContent = t("noStreamSelected");
-  elTimelineBody.hidden = true;
-  elTimelineBody.replaceChildren();
+  elTimingPlaceholder.hidden = false;
+  elTimingPlaceholder.textContent = t("noStreamSelected");
+  elTimingBody.hidden = true;
+  elTimingBody.replaceChildren();
 }
 
 function resetLaneFilterState(): void {
@@ -119,19 +119,19 @@ function syncLaneFilterTypes(types: string[]): void {
   }
 }
 
-function cancelTimelineRender(): void {
-  if (timelineRaf) {
-    cancelAnimationFrame(timelineRaf);
-    timelineRaf = 0;
+function cancelTimingRender(): void {
+  if (timingRaf) {
+    cancelAnimationFrame(timingRaf);
+    timingRaf = 0;
   }
-  timelinePending = null;
+  timingPending = null;
 }
 
-function teardownTimelineShell(): void {
-  timelineShell?.unsubView();
-  timelineShell?.lanes.disconnect();
-  timelineShell?.track.disconnect();
-  timelineShell = null;
+function teardownTimingShell(): void {
+  timingShell?.unsubView();
+  timingShell?.lanes.disconnect();
+  timingShell?.track.disconnect();
+  timingShell = null;
 }
 
 export function createGapHistogramSvg(
@@ -142,7 +142,7 @@ export function createGapHistogramSvg(
   svg.setAttribute("class", "gap-histogram");
   svg.setAttribute("viewBox", "0 0 440 170");
   svg.setAttribute("role", "img");
-  svg.setAttribute("aria-label", t("timelineGapHistogram"));
+  svg.setAttribute("aria-label", t("timingGapHistogram"));
 
   const maxCount = Math.max(1, ...bins.map((b) => b.count));
   const padL = 42;
@@ -191,7 +191,7 @@ export function createGapHistogramSvg(
   yTitle.setAttribute("y", String(padT + plotH / 2));
   yTitle.setAttribute("text-anchor", "middle");
   yTitle.setAttribute("transform", `rotate(-90 10 ${padT + plotH / 2})`);
-  yTitle.textContent = t("timelineGapHistogramY");
+  yTitle.textContent = t("timingGapHistogramY");
   svg.appendChild(yTitle);
 
   const syncBarActiveState = (): void => {
@@ -246,10 +246,10 @@ export function createGapHistogramSvg(
     }
 
     const tipLines = [
-      t("timelineGapBinTitle", [formatGapBinLabel(bin), String(bin.count)]),
-      bin.count > 0 ? t("timelineGapBinTipAction") : t("timelineGapBinTipEmpty"),
+      t("timingGapBinTitle", [formatGapBinLabel(bin), String(bin.count)]),
+      bin.count > 0 ? t("timingGapBinTipAction") : t("timingGapBinTipEmpty"),
     ];
-    bindTimelineTooltip(rect, tipLines);
+    bindTimingTooltip(rect, tipLines);
 
     rect.addEventListener("pointerenter", () => {
       if (countText) countText.classList.add("is-visible");
@@ -279,57 +279,57 @@ export function createGapHistogramSvg(
   xTitle.setAttribute("x", String(padL + plotW / 2));
   xTitle.setAttribute("y", "164");
   xTitle.setAttribute("text-anchor", "middle");
-  xTitle.textContent = t("timelineGapHistogramX");
+  xTitle.textContent = t("timingGapHistogramX");
   svg.appendChild(xTitle);
 
   syncBarActiveState();
   return svg;
 }
 
-export function renderTimeline(
+export function renderTiming(
   record: StreamRecord | undefined,
-  options: RenderTimelineOptions,
+  options: RenderTimingOptions,
 ): void {
   if (!record) {
-    cancelTimelineRender();
-    teardownTimelineShell();
-    hideTimelineTooltip();
+    cancelTimingRender();
+    teardownTimingShell();
+    hideTimingTooltip();
     activeHistBinIndex = -1;
-    elTimelinePlaceholder.hidden = false;
-    elTimelinePlaceholder.textContent = t("noStreamSelected");
-    elTimelineBody.hidden = true;
-    elTimelineBody.replaceChildren();
+    elTimingPlaceholder.hidden = false;
+    elTimingPlaceholder.textContent = t("noStreamSelected");
+    elTimingBody.hidden = true;
+    elTimingBody.replaceChildren();
     return;
   }
 
   if (record.events.length === 0) {
-    cancelTimelineRender();
-    teardownTimelineShell();
-    hideTimelineTooltip();
+    cancelTimingRender();
+    teardownTimingShell();
+    hideTimingTooltip();
     activeHistBinIndex = -1;
-    elTimelinePlaceholder.hidden = false;
-    elTimelinePlaceholder.textContent = t("noEventsYet");
-    elTimelineBody.hidden = true;
-    elTimelineBody.replaceChildren();
+    elTimingPlaceholder.hidden = false;
+    elTimingPlaceholder.textContent = t("noEventsYet");
+    elTimingBody.hidden = true;
+    elTimingBody.replaceChildren();
     return;
   }
 
-  timelinePending = { record, options };
-  if (timelineRaf) return;
-  timelineRaf = requestAnimationFrame(() => {
-    timelineRaf = 0;
-    const job = timelinePending;
-    timelinePending = null;
-    if (job) applyTimelineRender(job.record, job.options);
+  timingPending = { record, options };
+  if (timingRaf) return;
+  timingRaf = requestAnimationFrame(() => {
+    timingRaf = 0;
+    const job = timingPending;
+    timingPending = null;
+    if (job) applyTimingRender(job.record, job.options);
   });
 }
 
-function applyTimelineRender(record: StreamRecord, options: RenderTimelineOptions): void {
-  elTimelinePlaceholder.hidden = true;
-  elTimelineBody.hidden = false;
+function applyTimingRender(record: StreamRecord, options: RenderTimingOptions): void {
+  elTimingPlaceholder.hidden = true;
+  elTimingBody.hidden = false;
 
   const origin = record.startedAt;
-  const marks = buildTimelineMarks(record.events, origin);
+  const marks = buildTimingMarks(record.events, origin);
   const reconnects = record.reconnects ?? [];
   const reconnectMaxOffset = reconnects.reduce((max, item) => {
     const offset = item.at - origin;
@@ -339,7 +339,7 @@ function applyTimelineRender(record: StreamRecord, options: RenderTimelineOption
   const metrics = ensureStreamMetrics(record);
   const ended = typeof record.endedAt === "number" && Number.isFinite(record.endedAt);
   const spanMs = Math.max(
-    timelineSpanMs(marks),
+    timingSpanMs(marks),
     reconnectMaxOffset,
     typeof metrics.durationMs === "number" ? metrics.durationMs : 0,
     1,
@@ -347,7 +347,7 @@ function applyTimelineRender(record: StreamRecord, options: RenderTimelineOption
   const durationMs = metrics.durationMs ?? spanMs;
   const maxGapMs = gaps.length > 0 ? Math.max(...gaps.map((g) => g.gapMs)) : undefined;
   const maxGapSlow = isStallGapMs(maxGapMs);
-  const phases = buildTimelinePhases({ marks, spanMs, ended });
+  const phases = buildTimingPhases({ marks, spanMs, ended });
   const kpiInput: KpiRowInput = {
     eventCount: record.events.length,
     eventsPerSec: metrics.eventsPerSec,
@@ -371,68 +371,68 @@ function applyTimelineRender(record: StreamRecord, options: RenderTimelineOption
     selectedEventIndex: options.selectedEventIndex,
     onJumpToEvent: options.onJumpToEvent,
   };
-  const insights = buildTimelineInsights({
+  const insights = buildTimingInsights({
     gaps,
     events: record.events,
     reconnects,
     originMs: origin,
-    stallLimit: TIMELINE_WATERFALL_LIMIT,
+    stallLimit: TIMING_WATERFALL_LIMIT,
   });
 
-  const sameStream = timelineShell?.requestId === record.requestId;
-  if (!sameStream || !timelineShell || !elTimelineBody.contains(timelineShell.kpiRow)) {
-    hideTimelineTooltip();
+  const sameStream = timingShell?.requestId === record.requestId;
+  if (!sameStream || !timingShell || !elTimingBody.contains(timingShell.kpiRow)) {
+    hideTimingTooltip();
     activeHistBinIndex = -1;
     resetLaneFilterState();
-    rebuildTimelineShell(record.requestId, kpiInput, trackInput, gaps, insights, options);
+    rebuildTimingShell(record.requestId, kpiInput, trackInput, gaps, insights, options);
     return;
   }
 
-  updateKpiRow(timelineShell.kpiRow, kpiInput);
-  timelineShell.track.update(trackInput);
-  timelineShell.track.paint();
-  fillHistHost(timelineShell.histHost, gaps, options);
-  fillWaterfallHost(timelineShell.waterfallHost, insights, options);
-  timelineShell.lanes.update({
+  updateKpiRow(timingShell.kpiRow, kpiInput);
+  timingShell.track.update(trackInput);
+  timingShell.track.paint();
+  fillHistHost(timingShell.histHost, gaps, options);
+  fillWaterfallHost(timingShell.waterfallHost, insights, options);
+  timingShell.lanes.update({
     marks,
     selectedEventIndex: options.selectedEventIndex,
     onJumpToEvent: options.onJumpToEvent,
   });
-  timelineShell.lanes.setView(timelineShell.track.getView());
+  timingShell.lanes.setView(timingShell.track.getView());
 }
 
-function rebuildTimelineShell(
+function rebuildTimingShell(
   requestId: string,
   kpiInput: KpiRowInput,
   trackInput: ArrivalTrackInput,
   gaps: GapSample[],
-  insights: TimelineInsight[],
-  options: RenderTimelineOptions,
+  insights: TimingInsight[],
+  options: RenderTimingOptions,
 ): void {
-  teardownTimelineShell();
-  elTimelineBody.replaceChildren();
+  teardownTimingShell();
+  elTimingBody.replaceChildren();
 
   const kpiRow = buildKpiRow(kpiInput);
 
   const trackSection = document.createElement("section");
-  trackSection.className = "timeline-section";
+  trackSection.className = "timing-section";
   const trackHead = document.createElement("div");
-  trackHead.className = "timeline-track-head";
+  trackHead.className = "timing-track-head";
   const trackTitleBlock = document.createElement("div");
-  trackTitleBlock.className = "timeline-track-title-row";
+  trackTitleBlock.className = "timing-track-title-row";
   const trackTitle = document.createElement("div");
-  trackTitle.className = "timeline-section-title";
-  trackTitle.textContent = t("timelineTrackTitle");
+  trackTitle.className = "timing-section-title";
+  trackTitle.textContent = t("timingTrackTitle");
   const trackTipsBtn = document.createElement("button");
   trackTipsBtn.type = "button";
-  trackTipsBtn.className = "timeline-track-tips";
+  trackTipsBtn.className = "timing-track-tips";
   trackTipsBtn.textContent = "?";
-  trackTipsBtn.setAttribute("aria-label", t("timelineTrackTipsAria"));
-  bindTimelineTooltip(trackTipsBtn, [
-    t("timelineTrackNavHint"),
-    t("timelineTrackHintTop", String(TIMELINE_STALL_MS)),
-    t("timelineTrackHintBottom"),
-    t("timelineTrackHintAction"),
+  trackTipsBtn.setAttribute("aria-label", t("timingTrackTipsAria"));
+  bindTimingTooltip(trackTipsBtn, [
+    t("timingTrackNavHint"),
+    t("timingTrackHintTop", String(TIMING_STALL_MS)),
+    t("timingTrackHintBottom"),
+    t("timingTrackHintAction"),
   ]);
   trackTitleBlock.append(trackTitle, trackTipsBtn);
   const track = buildArrivalTrackCanvas(trackInput);
@@ -440,46 +440,46 @@ function rebuildTimelineShell(
   trackSection.append(trackHead, track.wrap, track.axis, track.minimap);
 
   const histSection = document.createElement("section");
-  histSection.className = "timeline-section";
+  histSection.className = "timing-section";
   const histTitleRow = document.createElement("div");
-  histTitleRow.className = "timeline-track-title-row";
+  histTitleRow.className = "timing-track-title-row";
   const histTitle = document.createElement("div");
-  histTitle.className = "timeline-section-title";
-  histTitle.textContent = t("timelineGapHistogram");
+  histTitle.className = "timing-section-title";
+  histTitle.textContent = t("timingGapHistogram");
   const histTipsBtn = document.createElement("button");
   histTipsBtn.type = "button";
-  histTipsBtn.className = "timeline-track-tips";
+  histTipsBtn.className = "timing-track-tips";
   histTipsBtn.textContent = "?";
-  histTipsBtn.setAttribute("aria-label", t("timelineGapHistogramTipsAria"));
-  bindTimelineTooltip(histTipsBtn, [
-    t("timelineGapHistogramHintAxes"),
-    t("timelineGapHistogramHintHot", String(TIMELINE_HOT_GAP_MS)),
-    t("timelineGapHistogramHintAction"),
+  histTipsBtn.setAttribute("aria-label", t("timingGapHistogramTipsAria"));
+  bindTimingTooltip(histTipsBtn, [
+    t("timingGapHistogramHintAxes"),
+    t("timingGapHistogramHintHot", String(TIMING_HOT_GAP_MS)),
+    t("timingGapHistogramHintAction"),
   ]);
   histTitleRow.append(histTitle, histTipsBtn);
   const histHost = document.createElement("div");
-  histHost.className = "timeline-hist-host";
+  histHost.className = "timing-hist-host";
   histSection.append(histTitleRow, histHost);
 
   const waterfallSection = document.createElement("section");
-  waterfallSection.className = "timeline-section";
+  waterfallSection.className = "timing-section";
   const waterfallTitleRow = document.createElement("div");
-  waterfallTitleRow.className = "timeline-track-title-row";
+  waterfallTitleRow.className = "timing-track-title-row";
   const waterfallTitle = document.createElement("div");
-  waterfallTitle.className = "timeline-section-title";
-  waterfallTitle.textContent = t("timelineWaitRank", String(TIMELINE_WATERFALL_LIMIT));
+  waterfallTitle.className = "timing-section-title";
+  waterfallTitle.textContent = t("timingWaitRank", String(TIMING_WATERFALL_LIMIT));
   const waterfallTipsBtn = document.createElement("button");
   waterfallTipsBtn.type = "button";
-  waterfallTipsBtn.className = "timeline-track-tips";
+  waterfallTipsBtn.className = "timing-track-tips";
   waterfallTipsBtn.textContent = "?";
-  waterfallTipsBtn.setAttribute("aria-label", t("timelineWaitRankTipsAria"));
-  bindTimelineTooltip(waterfallTipsBtn, [
-    t("timelineWaitRankHintSort"),
-    t("timelineWaitRankHintAction"),
+  waterfallTipsBtn.setAttribute("aria-label", t("timingWaitRankTipsAria"));
+  bindTimingTooltip(waterfallTipsBtn, [
+    t("timingWaitRankHintSort"),
+    t("timingWaitRankHintAction"),
   ]);
   waterfallTitleRow.append(waterfallTitle, waterfallTipsBtn);
   const waterfallHost = document.createElement("div");
-  waterfallHost.className = "timeline-waterfall-host";
+  waterfallHost.className = "timing-waterfall-host";
   waterfallSection.append(waterfallTitleRow, waterfallHost);
 
   const lanes = buildLanesSection({
@@ -488,11 +488,11 @@ function rebuildTimelineShell(
     onJumpToEvent: options.onJumpToEvent,
   });
 
-  elTimelineBody.append(kpiRow, trackSection, histSection, waterfallSection, lanes.root);
+  elTimingBody.append(kpiRow, trackSection, histSection, waterfallSection, lanes.root);
   const unsubView = track.onViewChange((view) => {
     lanes.setView(view);
   });
-  timelineShell = { requestId, kpiRow, track, histHost, waterfallHost, lanes, unsubView };
+  timingShell = { requestId, kpiRow, track, histHost, waterfallHost, lanes, unsubView };
 
   fillHistHost(histHost, gaps, options);
   fillWaterfallHost(waterfallHost, insights, options);
@@ -500,12 +500,12 @@ function rebuildTimelineShell(
   lanes.setView(track.getView());
 }
 
-function fillHistHost(host: HTMLElement, gaps: GapSample[], options: RenderTimelineOptions): void {
+function fillHistHost(host: HTMLElement, gaps: GapSample[], options: RenderTimingOptions): void {
   host.replaceChildren();
   if (gaps.length === 0) {
     const empty = document.createElement("div");
-    empty.className = "timeline-meta";
-    empty.textContent = t("timelineGapHistogramEmpty");
+    empty.className = "timing-meta";
+    empty.textContent = t("timingGapHistogramEmpty");
     host.appendChild(empty);
     return;
   }
@@ -519,14 +519,14 @@ function fillHistHost(host: HTMLElement, gaps: GapSample[], options: RenderTimel
 
 function fillWaterfallHost(
   host: HTMLElement,
-  insights: TimelineInsight[],
-  options: RenderTimelineOptions,
+  insights: TimingInsight[],
+  options: RenderTimingOptions,
 ): void {
   host.replaceChildren();
   if (insights.length === 0) {
     const empty = document.createElement("div");
-    empty.className = "timeline-meta";
-    empty.textContent = t("timelineWaitRankEmpty");
+    empty.className = "timing-meta";
+    empty.textContent = t("timingWaitRankEmpty");
     host.appendChild(empty);
     return;
   }
@@ -535,9 +535,9 @@ function fillWaterfallHost(
   const maxGap = Math.max(1, ...stallGaps);
 
   const list = document.createElement("div");
-  list.className = "timeline-waterfall";
+  list.className = "timing-waterfall";
   list.setAttribute("role", "list");
-  list.setAttribute("aria-label", t("timelineWaitRank", String(TIMELINE_WATERFALL_LIMIT)));
+  list.setAttribute("aria-label", t("timingWaitRank", String(TIMING_WATERFALL_LIMIT)));
 
   for (const insight of insights) {
     list.appendChild(buildWaterfallRow(insight, maxGap, options));
@@ -546,13 +546,13 @@ function fillWaterfallHost(
 }
 
 function buildWaterfallRow(
-  insight: TimelineInsight,
+  insight: TimingInsight,
   maxGap: number,
-  options: RenderTimelineOptions,
+  options: RenderTimingOptions,
 ): HTMLButtonElement {
   const btn = document.createElement("button");
   btn.type = "button";
-  btn.className = "timeline-waterfall-row";
+  btn.className = "timing-waterfall-row";
   btn.setAttribute("role", "listitem");
 
   const jumpIndex = insight.jumpIndex;
@@ -563,34 +563,34 @@ function buildWaterfallRow(
   }
 
   const label = document.createElement("span");
-  label.className = "timeline-waterfall-label";
+  label.className = "timing-waterfall-label";
   const track = document.createElement("span");
-  track.className = "timeline-waterfall-track";
+  track.className = "timing-waterfall-track";
   const bar = document.createElement("i");
   bar.setAttribute("aria-hidden", "true");
   track.appendChild(bar);
   const ms = document.createElement("span");
-  ms.className = "timeline-waterfall-ms";
+  ms.className = "timing-waterfall-ms";
 
   if (insight.kind === "stall") {
     const tone = waterfallBarKind(insight.gapMs);
     const eventBit = insight.eventName ? ` - ${insight.eventName}` : "";
     label.textContent = `#${insight.afterIndex}${eventBit}`;
-    bar.className = `timeline-waterfall-bar is-${tone}`;
+    bar.className = `timing-waterfall-bar is-${tone}`;
     bar.style.width = `${Math.max(2, (insight.gapMs / maxGap) * 100)}%`;
     ms.classList.add(`is-${tone}`);
     ms.textContent = formatMetricMs(insight.gapMs);
   } else {
     btn.classList.add("is-reconnect");
-    label.textContent = t("timelineWaitRankReconnect", String(insight.reconnectCount));
-    bar.className = "timeline-waterfall-bar is-reconnect";
+    label.textContent = t("timingWaitRankReconnect", String(insight.reconnectCount));
+    bar.className = "timing-waterfall-bar is-reconnect";
     bar.style.width = "28%";
     ms.classList.add("is-reconnect");
     ms.textContent = `+${formatMetricMs(insight.offsetMs)}`;
   }
 
   btn.append(label, track, ms);
-  btn.title = canJump ? t("timelineTickTipAction") : "";
+  btn.title = canJump ? t("timingTickTipAction") : "";
   if (canJump) {
     btn.addEventListener("click", () => {
       options.onJumpToEvent(jumpIndex);
@@ -609,9 +609,9 @@ const ARRIVAL_PAD_L = 56;
 const ARRIVAL_PAD_R = 12;
 
 type ArrivalTrackInput = {
-  marks: TimelineMark[];
+  marks: TimingMark[];
   reconnects: StreamReconnectMark[];
-  phases: TimelinePhaseSegment[];
+  phases: TimingPhaseSegment[];
   events: Array<Pick<SseEvent, "index" | "receivedAt" | "id">>;
   spanMs: number;
   originMs: number;
@@ -622,7 +622,7 @@ type ArrivalTrackInput = {
 function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle {
   let input = initial;
   let marksByIndex = new Map(initial.marks.map((m) => [m.index, m]));
-  let view: TimelineViewWindow = fitTimelineView(initial.spanMs);
+  let view: TimingViewWindow = fitTimingView(initial.spanMs);
   let wasFit = true;
   let trackDragging = false;
   let trackDragMoved = false;
@@ -635,21 +635,21 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
   let miniGrabOffsetRatio = 0;
   let paintRaf = 0;
   let needsRemeasure = false;
-  const viewListeners = new Set<(next: TimelineViewWindow) => void>();
+  const viewListeners = new Set<(next: TimingViewWindow) => void>();
 
   const wrap = document.createElement("div");
-  wrap.className = "timeline-track-canvas-wrap";
+  wrap.className = "timing-track-canvas-wrap";
   const canvas = document.createElement("canvas");
-  canvas.className = "timeline-track-canvas";
+  canvas.className = "timing-track-canvas";
   canvas.setAttribute("role", "img");
-  canvas.setAttribute("aria-label", t("timelineTrackTitle"));
+  canvas.setAttribute("aria-label", t("timingTrackTitle"));
   const anomalyLayer = document.createElement("div");
-  anomalyLayer.className = "timeline-anomaly-layer";
+  anomalyLayer.className = "timing-anomaly-layer";
   anomalyLayer.setAttribute("aria-hidden", "false");
   wrap.append(canvas, anomalyLayer);
 
   const axis = document.createElement("div");
-  axis.className = "timeline-track-axis";
+  axis.className = "timing-track-axis";
   const axisStart = document.createElement("span");
   const axisMid = document.createElement("span");
   const axisEnd = document.createElement("span");
@@ -658,31 +658,31 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
   const legend = buildLegend();
 
   const toolbar = document.createElement("div");
-  toolbar.className = "timeline-track-toolbar";
+  toolbar.className = "timing-track-toolbar";
 
   const btnZoomOut = document.createElement("button");
   btnZoomOut.type = "button";
   btnZoomOut.textContent = "\u2212";
-  btnZoomOut.title = t("timelineZoomOut");
-  btnZoomOut.setAttribute("aria-label", t("timelineZoomOut"));
+  btnZoomOut.title = t("timingZoomOut");
+  btnZoomOut.setAttribute("aria-label", t("timingZoomOut"));
   const btnZoomIn = document.createElement("button");
   btnZoomIn.type = "button";
   btnZoomIn.textContent = "+";
-  btnZoomIn.title = t("timelineZoomIn");
-  btnZoomIn.setAttribute("aria-label", t("timelineZoomIn"));
+  btnZoomIn.title = t("timingZoomIn");
+  btnZoomIn.setAttribute("aria-label", t("timingZoomIn"));
   const btnFit = document.createElement("button");
   btnFit.type = "button";
-  btnFit.textContent = t("timelineZoomFit");
-  btnFit.title = t("timelineZoomFit");
+  btnFit.textContent = t("timingZoomFit");
+  btnFit.title = t("timingZoomFit");
   toolbar.append(btnZoomOut, btnZoomIn, btnFit);
 
   const minimap = document.createElement("div");
-  minimap.className = "timeline-minimap";
+  minimap.className = "timing-minimap";
   const miniCanvas = document.createElement("canvas");
-  miniCanvas.className = "timeline-minimap-canvas";
+  miniCanvas.className = "timing-minimap-canvas";
   miniCanvas.setAttribute("aria-hidden", "true");
   const miniWindow = document.createElement("div");
-  miniWindow.className = "timeline-minimap-window";
+  miniWindow.className = "timing-minimap-window";
   minimap.append(miniCanvas, miniWindow);
 
   let plotLayout = {
@@ -699,7 +699,7 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
   };
 
   const syncAnomalyChips = (): void => {
-    const anomalies = buildTimelineAnomalies({
+    const anomalies = buildTimingAnomalies({
       marks: input.marks,
       reconnects: input.reconnects,
       originMs: input.originMs,
@@ -747,8 +747,8 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
     for (const cb of viewListeners) cb(view);
   };
 
-  const setView = (next: TimelineViewWindow, fit = false): void => {
-    view = clampTimelineView(next, input.spanMs);
+  const setView = (next: TimingViewWindow, fit = false): void => {
+    view = clampTimingView(next, input.spanMs);
     wasFit = fit;
     // Window chrome updates immediately; canvas redraw coalesces to next frame.
     syncChrome();
@@ -757,13 +757,13 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
   };
 
   btnZoomIn.addEventListener("click", () => {
-    setView(zoomTimelineView(view, input.spanMs, 1 / 2, 0.5), false);
+    setView(zoomTimingView(view, input.spanMs, 1 / 2, 0.5), false);
   });
   btnZoomOut.addEventListener("click", () => {
-    setView(zoomTimelineView(view, input.spanMs, 2, 0.5), false);
+    setView(zoomTimingView(view, input.spanMs, 2, 0.5), false);
   });
   btnFit.addEventListener("click", () => {
-    setView(fitTimelineView(input.spanMs), true);
+    setView(fitTimingView(input.spanMs), true);
   });
 
   const resolvePlotX = (clientX: number): number | null => {
@@ -782,7 +782,7 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
           ? 0.5
           : Math.min(1, Math.max(0, plotX / plotLayout.plotW));
       const factor = e.deltaY > 0 ? 1.35 : 1 / 1.35;
-      setView(zoomTimelineView(view, input.spanMs, factor, ratio), false);
+      setView(zoomTimingView(view, input.spanMs, factor, ratio), false);
     },
     { passive: false },
   );
@@ -818,14 +818,14 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
       if (Math.abs(dx) > 2) trackDragMoved = true;
       const span = Math.max(1, trackDragOriginView.endMs - trackDragOriginView.startMs);
       const dMs = (-dx / Math.max(1, plotLayout.plotW)) * span;
-      setView(panTimelineView(trackDragOriginView, input.spanMs, dMs), false);
-      hideTimelineTooltip();
+      setView(panTimingView(trackDragOriginView, input.spanMs, dMs), false);
+      hideTimingTooltip();
       return;
     }
 
     const plotX = resolvePlotX(e.clientX);
     if (plotX == null) {
-      hideTimelineTooltip();
+      hideTimingTooltip();
       return;
     }
     const waitSeries = buildArrivalWaitSeries(
@@ -852,10 +852,10 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
     const localY = ((e.clientY - rect.top) / Math.max(1, rect.height)) * ARRIVAL_TRACK_CSS_H;
     const tipFocus = resolveTipFocus(localY);
     if (tipFocus === "density" && !mark) {
-      hideTimelineTooltip();
+      hideTimingTooltip();
       return;
     }
-    showTimelineTooltip(
+    showTimingTooltip(
       e.clientX,
       e.clientY,
       tipLinesForHover(mark, {
@@ -866,7 +866,7 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
   });
 
   wrap.addEventListener("pointerleave", () => {
-    if (!trackDragging) hideTimelineTooltip();
+    if (!trackDragging) hideTimingTooltip();
   });
 
   wrap.addEventListener("click", (e) => {
@@ -901,7 +901,7 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
     } else {
       miniGrabOffsetRatio = windowRatio / 2;
       setView(
-        clampTimelineView(
+        clampTimingView(
           {
             startMs: ratio * span - (windowRatio * span) / 2,
             endMs: ratio * span + (windowRatio * span) / 2,
@@ -934,7 +934,7 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
     const span = Math.max(1, input.spanMs);
     const windowMs = Math.max(1, view.endMs - view.startMs);
     const startMs = (ratio - miniGrabOffsetRatio) * span;
-    setView(clampTimelineView({ startMs, endMs: startMs + windowMs }, span), false);
+    setView(clampTimingView({ startMs, endMs: startMs + windowMs }, span), false);
   });
 
   minimap.addEventListener("pointerup", (e) => {
@@ -952,7 +952,7 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
     const windowMs = Math.max(1, view.endMs - view.startMs);
     const center = ratio * input.spanMs;
     setView(
-      clampTimelineView(
+      clampTimingView(
         { startMs: center - windowMs / 2, endMs: center + windowMs / 2 },
         input.spanMs,
       ),
@@ -982,8 +982,8 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
     update: (next) => {
       input = next;
       marksByIndex = new Map(next.marks.map((m) => [m.index, m]));
-      if (wasFit) view = fitTimelineView(next.spanMs);
-      else view = clampTimelineView(view, next.spanMs);
+      if (wasFit) view = fitTimingView(next.spanMs);
+      else view = clampTimingView(view, next.spanMs);
       notifyView();
     },
     paint,
@@ -1004,53 +1004,53 @@ const LANES_TOP = 16;
 const LANES_LABEL_GAP = 10;
 
 type LanesInput = {
-  marks: TimelineMark[];
+  marks: TimingMark[];
   selectedEventIndex: number | null;
   onJumpToEvent: (eventIndex: number) => void;
 };
 
 function buildLanesSection(initial: LanesInput): LanesHandle {
   let input = initial;
-  let view: TimelineViewWindow = { startMs: 0, endMs: 1 };
-  let types = collectTimelineLaneTypes(initial.marks);
+  let view: TimingViewWindow = { startMs: 0, endMs: 1 };
+  let types = collectTimingLaneTypes(initial.marks);
   syncLaneFilterTypes(types);
 
   const root = document.createElement("section");
-  root.className = "timeline-section";
+  root.className = "timing-section";
 
   const titleRow = document.createElement("div");
-  titleRow.className = "timeline-track-title-row";
+  titleRow.className = "timing-track-title-row";
   const title = document.createElement("div");
-  title.className = "timeline-section-title";
-  title.textContent = t("timelineLanesTitle");
+  title.className = "timing-section-title";
+  title.textContent = t("timingLanesTitle");
   const tipsBtn = document.createElement("button");
   tipsBtn.type = "button";
-  tipsBtn.className = "timeline-track-tips";
+  tipsBtn.className = "timing-track-tips";
   tipsBtn.textContent = "?";
-  tipsBtn.setAttribute("aria-label", t("timelineLanesTipsAria"));
-  bindTimelineTooltip(tipsBtn, [
-    t("timelineLanesHintRows"),
-    t("timelineLanesHintFilter"),
-    t("timelineLanesHintAction"),
+  tipsBtn.setAttribute("aria-label", t("timingLanesTipsAria"));
+  bindTimingTooltip(tipsBtn, [
+    t("timingLanesHintRows"),
+    t("timingLanesHintFilter"),
+    t("timingLanesHintAction"),
   ]);
   titleRow.append(title, tipsBtn);
 
   const filters = document.createElement("div");
-  filters.className = "timeline-lanes-filters";
+  filters.className = "timing-lanes-filters";
   filters.setAttribute("role", "group");
-  filters.setAttribute("aria-label", t("timelineLanesTitle"));
+  filters.setAttribute("aria-label", t("timingLanesTitle"));
 
   const wrap = document.createElement("div");
-  wrap.className = "timeline-lanes-canvas-wrap";
+  wrap.className = "timing-lanes-canvas-wrap";
   const canvas = document.createElement("canvas");
-  canvas.className = "timeline-lanes-canvas";
+  canvas.className = "timing-lanes-canvas";
   canvas.setAttribute("role", "img");
-  canvas.setAttribute("aria-label", t("timelineLanesTitle"));
+  canvas.setAttribute("aria-label", t("timingLanesTitle"));
   wrap.appendChild(canvas);
 
   const empty = document.createElement("div");
-  empty.className = "timeline-meta";
-  empty.textContent = t("timelineLanesEmpty");
+  empty.className = "timing-meta";
+  empty.textContent = t("timingLanesEmpty");
 
   root.append(titleRow, filters, wrap, empty);
 
@@ -1070,12 +1070,12 @@ function buildLanesSection(initial: LanesInput): LanesHandle {
     types.forEach((type, i) => {
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "timeline-lanes-chip";
+      btn.className = "timing-lanes-chip";
       btn.dataset.lane = type;
       btn.dataset.laneColor = laneColorKey(i);
       btn.textContent = type;
       btn.title = type;
-      btn.setAttribute("aria-label", t("timelineLanesFilterAria", type));
+      btn.setAttribute("aria-label", t("timingLanesFilterAria", type));
       const on = laneFilterOn.has(type);
       btn.classList.toggle("is-on", on);
       btn.setAttribute("aria-pressed", on ? "true" : "false");
@@ -1105,7 +1105,7 @@ function buildLanesSection(initial: LanesInput): LanesHandle {
       cssW,
     };
     needsRemeasure = false;
-    drawTimelineLanes(canvas, {
+    drawTimingLanes(canvas, {
       marks: input.marks,
       types,
       enabled: laneFilterOn,
@@ -1139,14 +1139,14 @@ function buildLanesSection(initial: LanesInput): LanesHandle {
       input.marks,
     );
     if (!hit) {
-      hideTimelineTooltip();
+      hideTimingTooltip();
       return;
     }
     const mark = input.marks.find((m) => m.index === hit.index) ?? null;
-    showTimelineTooltip(e.clientX, e.clientY, tipLinesForLane(mark, hit.type));
+    showTimingTooltip(e.clientX, e.clientY, tipLinesForLane(mark, hit.type));
   });
   wrap.addEventListener("pointerleave", () => {
-    hideTimelineTooltip();
+    hideTimingTooltip();
   });
   wrap.addEventListener("click", (e) => {
     const hit = resolveLaneHit(
@@ -1173,7 +1173,7 @@ function buildLanesSection(initial: LanesInput): LanesHandle {
     root,
     update: (next) => {
       input = next;
-      types = collectTimelineLaneTypes(next.marks);
+      types = collectTimingLaneTypes(next.marks);
       syncLaneFilterTypes(types);
       rebuildFilters();
       schedulePaint(true);
@@ -1204,8 +1204,8 @@ function resolveLaneHit(
   padL: number,
   plotW: number,
   types: string[],
-  view: TimelineViewWindow,
-  marks: TimelineMark[],
+  view: TimingViewWindow,
+  marks: TimingMark[],
 ): { type: string; index: number } | null {
   if (types.length === 0 || plotW <= 0) return null;
   const rect = canvas.getBoundingClientRect();
@@ -1218,7 +1218,7 @@ function resolveLaneHit(
   if (!laneFilterOn.has(type)) return null;
   const plotX = e.clientX - rect.left - padL;
   if (plotX < -8 || plotX > plotW + 8) return null;
-  const index = hitTestTimelineLaneMark(
+  const index = hitTestTimingLaneMark(
     marks,
     type,
     plotX,
@@ -1231,12 +1231,12 @@ function resolveLaneHit(
   return { type, index };
 }
 
-function tipLinesForLane(mark: TimelineMark | null, type: string): TipLine[] {
+function tipLinesForLane(mark: TimingMark | null, type: string): TipLine[] {
   if (!mark) return [{ text: type, kind: "meta" }];
   if (mark.gapFromPrevMs != null) {
     return [
       {
-        text: t("timelineTickTipMain", [
+        text: t("timingTickTipMain", [
           String(mark.index),
           type,
           formatMetricMs(mark.gapFromPrevMs),
@@ -1244,16 +1244,16 @@ function tipLinesForLane(mark: TimelineMark | null, type: string): TipLine[] {
         kind: "gap",
       },
       { text: `+${formatMetricMs(mark.offsetMs)}`, kind: "meta" },
-      { text: t("timelineTickTipAction"), kind: "action" },
+      { text: t("timingTickTipAction"), kind: "action" },
     ];
   }
   return [
     {
-      text: t("timelineTickTipNearestEvent", [String(mark.index), type]),
+      text: t("timingTickTipNearestEvent", [String(mark.index), type]),
       kind: "main",
     },
     { text: `+${formatMetricMs(mark.offsetMs)}`, kind: "meta" },
-    { text: t("timelineTickTipAction"), kind: "action" },
+    { text: t("timingTickTipAction"), kind: "action" },
   ];
 }
 
@@ -1289,13 +1289,13 @@ function fitLaneLabel(ctx: CanvasRenderingContext2D, text: string, maxWidth: num
   return lo > 0 ? text.slice(0, lo) + ellipsis : ellipsis;
 }
 
-function drawTimelineLanes(
+function drawTimingLanes(
   canvas: HTMLCanvasElement,
   opts: {
-    marks: TimelineMark[];
+    marks: TimingMark[];
     types: string[];
     enabled: Set<string>;
-    view: TimelineViewWindow;
+    view: TimingViewWindow;
     selectedEventIndex: number | null;
     padL: number;
     padR: number;
@@ -1344,7 +1344,7 @@ function drawTimelineLanes(
     const color = readCssColor(laneCssVar(li), readCssColor("--accent", "#176fc1"));
     ctx.fillStyle = color;
     for (const mark of marks) {
-      if (normalizeTimelineEventType(mark.event) !== type) continue;
+      if (normalizeTimingEventType(mark.event) !== type) continue;
       if (mark.offsetMs < view.startMs || mark.offsetMs > view.endMs) continue;
       const x = padL + ((mark.offsetMs - view.startMs) / viewSpan) * plotW;
       const isSelected = selectedEventIndex === mark.index;
@@ -1415,7 +1415,7 @@ function drawArrivalTrack(
   canvas: HTMLCanvasElement,
   input: ArrivalTrackInput,
   layout: { padL: number; plotW: number; cssW: number },
-  view: TimelineViewWindow,
+  view: TimingViewWindow,
 ): void {
   const dpr = window.devicePixelRatio || 1;
   const cssW = layout.cssW;
@@ -1469,7 +1469,7 @@ function drawArrivalTrack(
   ctx.stroke();
 
   const { buckets, maxCount } = aggregateArrivalLod(input.marks, plotW, viewStart, viewEnd);
-  // Bars must scale with densH — a hard 26px cap made taller lanes look unchanged.
+  // Bars must scale with densH ï¿½ a hard 26px cap made taller lanes look unchanged.
   const maxBar = densH * 0.72;
   for (let i = 0; i < buckets.length; i += 1) {
     const bucket = buckets[i];
@@ -1485,7 +1485,7 @@ function drawArrivalTrack(
   ctx.font = `10px ${sans}`;
   ctx.textAlign = "right";
   ctx.textBaseline = "top";
-  ctx.fillText(t("timelineLaneArrival"), padL + plotW, dens.top);
+  ctx.fillText(t("timingLaneArrival"), padL + plotW, dens.top);
 
   ctx.strokeStyle = stroke;
   ctx.lineWidth = 1;
@@ -1534,7 +1534,7 @@ function drawArrivalTrack(
   ctx.textAlign = "right";
   ctx.textBaseline = "top";
   ctx.fillStyle = warning;
-  ctx.fillText(t("timelineLaneWait"), padL + plotW, waitLane.top + 1);
+  ctx.fillText(t("timingLaneWait"), padL + plotW, waitLane.top + 1);
 
   if (input.selectedEventIndex != null) {
     const selected = input.marks.find((m) => m.index === input.selectedEventIndex);
@@ -1589,7 +1589,7 @@ function drawArrivalTrack(
 }
 
 function phaseBandFill(
-  kind: TimelinePhaseKind,
+  kind: TimingPhaseKind,
   accent: string,
   good: string,
   danger: string,
@@ -1607,7 +1607,7 @@ function phaseBandFill(
   }
 }
 
-function syncMinimapWindow(windowEl: HTMLElement, view: TimelineViewWindow, spanMs: number): void {
+function syncMinimapWindow(windowEl: HTMLElement, view: TimingViewWindow, spanMs: number): void {
   const span = Math.max(1, spanMs);
   const leftPct = (view.startMs / span) * 100;
   const widthPct = (Math.max(1, view.endMs - view.startMs) / span) * 100;
@@ -1660,38 +1660,38 @@ type KpiRowInput = {
 
 function buildKpiRow(input: KpiRowInput): HTMLElement {
   const row = document.createElement("div");
-  row.className = "timeline-kpi-row";
+  row.className = "timing-kpi-row";
   row.setAttribute("role", "group");
-  row.setAttribute("aria-label", t("timelineKpiAria"));
+  row.setAttribute("aria-label", t("timingKpiAria"));
   row.append(
-    kpiCard("events", t("timelineKpiEvents"), String(input.eventCount), {
+    kpiCard("events", t("timingKpiEvents"), String(input.eventCount), {
       sub:
         typeof input.eventsPerSec === "number"
-          ? t("timelineKpiEventsSub", String(input.eventsPerSec))
-          : t("timelineKpiDash"),
+          ? t("timingKpiEventsSub", String(input.eventsPerSec))
+          : t("timingKpiDash"),
     }),
-    kpiCard("duration", t("timelineKpiDuration"), formatMetricMs(input.durationMs), {
+    kpiCard("duration", t("timingKpiDuration"), formatMetricMs(input.durationMs), {
       sub:
         typeof input.ttftMs === "number"
-          ? t("timelineKpiDurationSub", formatMetricMs(input.ttftMs))
-          : t("timelineKpiDash"),
+          ? t("timingKpiDurationSub", formatMetricMs(input.ttftMs))
+          : t("timingKpiDash"),
     }),
     kpiCard(
       "maxGap",
-      t("timelineKpiMaxGap"),
-      typeof input.maxGapMs === "number" ? formatMetricMs(input.maxGapMs) : t("timelineKpiDash"),
+      t("timingKpiMaxGap"),
+      typeof input.maxGapMs === "number" ? formatMetricMs(input.maxGapMs) : t("timingKpiDash"),
       {
         alert: input.maxGapSlow,
         sub: input.maxGapSlow
-          ? t("timelineKpiMaxGapSlow", String(TIMELINE_STALL_MS))
-          : t("timelineKpiMaxGapOk", String(TIMELINE_STALL_MS)),
+          ? t("timingKpiMaxGapSlow", String(TIMING_STALL_MS))
+          : t("timingKpiMaxGapOk", String(TIMING_STALL_MS)),
       },
     ),
-    kpiCard("reconnects", t("timelineKpiReconnects"), String(input.reconnectCount), {
+    kpiCard("reconnects", t("timingKpiReconnects"), String(input.reconnectCount), {
       sub:
         typeof input.lastReconnectOffsetMs === "number"
-          ? t("timelineKpiReconnectsSub", `+${formatMetricMs(input.lastReconnectOffsetMs)}`)
-          : t("timelineKpiDash"),
+          ? t("timingKpiReconnectsSub", `+${formatMetricMs(input.lastReconnectOffsetMs)}`)
+          : t("timingKpiDash"),
     }),
   );
   return row;
@@ -1701,31 +1701,31 @@ function updateKpiRow(row: HTMLElement, input: KpiRowInput): void {
   setKpiCard(row, "events", String(input.eventCount), {
     sub:
       typeof input.eventsPerSec === "number"
-        ? t("timelineKpiEventsSub", String(input.eventsPerSec))
-        : t("timelineKpiDash"),
+        ? t("timingKpiEventsSub", String(input.eventsPerSec))
+        : t("timingKpiDash"),
   });
   setKpiCard(row, "duration", formatMetricMs(input.durationMs), {
     sub:
       typeof input.ttftMs === "number"
-        ? t("timelineKpiDurationSub", formatMetricMs(input.ttftMs))
-        : t("timelineKpiDash"),
+        ? t("timingKpiDurationSub", formatMetricMs(input.ttftMs))
+        : t("timingKpiDash"),
   });
   setKpiCard(
     row,
     "maxGap",
-    typeof input.maxGapMs === "number" ? formatMetricMs(input.maxGapMs) : t("timelineKpiDash"),
+    typeof input.maxGapMs === "number" ? formatMetricMs(input.maxGapMs) : t("timingKpiDash"),
     {
       alert: input.maxGapSlow,
       sub: input.maxGapSlow
-        ? t("timelineKpiMaxGapSlow", String(TIMELINE_STALL_MS))
-        : t("timelineKpiMaxGapOk", String(TIMELINE_STALL_MS)),
+        ? t("timingKpiMaxGapSlow", String(TIMING_STALL_MS))
+        : t("timingKpiMaxGapOk", String(TIMING_STALL_MS)),
     },
   );
   setKpiCard(row, "reconnects", String(input.reconnectCount), {
     sub:
       typeof input.lastReconnectOffsetMs === "number"
-        ? t("timelineKpiReconnectsSub", `+${formatMetricMs(input.lastReconnectOffsetMs)}`)
-        : t("timelineKpiDash"),
+        ? t("timingKpiReconnectsSub", `+${formatMetricMs(input.lastReconnectOffsetMs)}`)
+        : t("timingKpiDash"),
   });
 }
 
@@ -1738,8 +1738,8 @@ function setKpiCard(
   const card = row.querySelector<HTMLElement>(`[data-kpi="${key}"]`);
   if (!card) return;
   card.classList.toggle("is-alert", Boolean(options.alert));
-  const valueEl = card.querySelector(".timeline-kpi-value");
-  const subEl = card.querySelector(".timeline-kpi-sub");
+  const valueEl = card.querySelector(".timing-kpi-value");
+  const subEl = card.querySelector(".timing-kpi-sub");
   if (valueEl) valueEl.textContent = value;
   if (subEl) subEl.textContent = options.sub;
 }
@@ -1751,16 +1751,16 @@ function kpiCard(
   options: { sub: string; alert?: boolean },
 ): HTMLElement {
   const card = document.createElement("div");
-  card.className = `timeline-kpi${options.alert ? " is-alert" : ""}`;
+  card.className = `timing-kpi${options.alert ? " is-alert" : ""}`;
   card.dataset.kpi = key;
   const labelEl = document.createElement("div");
-  labelEl.className = "timeline-kpi-label";
+  labelEl.className = "timing-kpi-label";
   labelEl.textContent = label;
   const valueEl = document.createElement("div");
-  valueEl.className = "timeline-kpi-value";
+  valueEl.className = "timing-kpi-value";
   valueEl.textContent = value;
   const subEl = document.createElement("div");
-  subEl.className = "timeline-kpi-sub";
+  subEl.className = "timing-kpi-sub";
   subEl.textContent = options.sub;
   card.append(labelEl, valueEl, subEl);
   return card;
@@ -1768,9 +1768,9 @@ function kpiCard(
 
 function syncAnomalyChipLayer(
   layer: HTMLElement,
-  anomalies: TimelineAnomaly[],
+  anomalies: TimingAnomaly[],
   options: {
-    view: TimelineViewWindow;
+    view: TimingViewWindow;
     padL: number;
     plotW: number;
     selectedEventIndex: number | null;
@@ -1789,7 +1789,7 @@ function syncAnomalyChipLayer(
 
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = `timeline-anomaly-chip is-${anomaly.kind}`;
+    btn.className = `timing-anomaly-chip is-${anomaly.kind}`;
     btn.textContent = anomalyChipLabel(anomaly);
     btn.style.left = `${x}px`;
     const jumpIndex = anomaly.jumpIndex;
@@ -1798,7 +1798,7 @@ function syncAnomalyChipLayer(
     if (canJump && options.selectedEventIndex === jumpIndex) {
       btn.classList.add("is-selected");
     }
-    btn.title = canJump ? t("timelineTickTipAction") : "";
+    btn.title = canJump ? t("timingTickTipAction") : "";
     btn.addEventListener("pointerdown", (e) => {
       e.stopPropagation();
     });
@@ -1812,34 +1812,34 @@ function syncAnomalyChipLayer(
   }
 }
 
-function anomalyChipLabel(anomaly: TimelineAnomaly): string {
+function anomalyChipLabel(anomaly: TimingAnomaly): string {
   switch (anomaly.kind) {
     case "stall":
-      return t("timelineAnomalyStall", formatMetricMs(anomaly.gapMs));
+      return t("timingAnomalyStall", formatMetricMs(anomaly.gapMs));
     case "reconnect":
-      return t("timelineAnomalyReconnect", String(anomaly.reconnectCount));
+      return t("timingAnomalyReconnect", String(anomaly.reconnectCount));
   }
 }
 
 function buildLegend(): HTMLElement {
   const legend = document.createElement("div");
-  legend.className = "timeline-legend";
+  legend.className = "timing-legend";
   legend.setAttribute("role", "list");
-  legend.setAttribute("aria-label", t("timelineLegendAria"));
+  legend.setAttribute("aria-label", t("timingLegendAria"));
 
   const items: Array<{ swatch: string; label: string }> = [
-    { swatch: "is-normal", label: t("timelineLegendNormal") },
-    { swatch: "is-stall", label: t("timelineLegendStall", String(TIMELINE_STALL_MS)) },
-    { swatch: "is-wait", label: t("timelineLegendWait") },
-    { swatch: "is-reconnect", label: t("timelineLegendReconnect") },
-    { swatch: "is-selected", label: t("timelineLegendSelected") },
+    { swatch: "is-normal", label: t("timingLegendNormal") },
+    { swatch: "is-stall", label: t("timingLegendStall", String(TIMING_STALL_MS)) },
+    { swatch: "is-wait", label: t("timingLegendWait") },
+    { swatch: "is-reconnect", label: t("timingLegendReconnect") },
+    { swatch: "is-selected", label: t("timingLegendSelected") },
   ];
   for (const item of items) {
     const row = document.createElement("span");
-    row.className = "timeline-legend-item";
+    row.className = "timing-legend-item";
     row.setAttribute("role", "listitem");
     const swatch = document.createElement("i");
-    swatch.className = `timeline-legend-swatch ${item.swatch}`;
+    swatch.className = `timing-legend-swatch ${item.swatch}`;
     swatch.setAttribute("aria-hidden", "true");
     const text = document.createElement("span");
     text.textContent = item.label;
@@ -1852,22 +1852,22 @@ function buildLegend(): HTMLElement {
 type TipLine = { text: string; kind: "main" | "wait" | "gap" | "stall" | "action" | "meta" };
 
 function tipLinesForHover(
-  mark: TimelineMark | null,
+  mark: TimingMark | null,
   options: { focus: "density" | "wait"; waitAtHoverMs: number },
 ): TipLine[] {
   if (options.focus === "wait") {
     const lines: TipLine[] = [
       {
-        text: t("timelineTickTipWaitMain", formatMetricMs(options.waitAtHoverMs)),
+        text: t("timingTickTipWaitMain", formatMetricMs(options.waitAtHoverMs)),
         kind: "wait",
       },
     ];
     if (mark) {
       lines.push({
-        text: t("timelineTickTipNearestEvent", [String(mark.index), mark.event]),
+        text: t("timingTickTipNearestEvent", [String(mark.index), mark.event]),
         kind: "meta",
       });
-      lines.push({ text: t("timelineTickTipAction"), kind: "action" });
+      lines.push({ text: t("timingTickTipAction"), kind: "action" });
     }
     return lines;
   }
@@ -1876,7 +1876,7 @@ function tipLinesForHover(
   const lines: TipLine[] = [];
   if (mark.gapFromPrevMs != null) {
     lines.push({
-      text: t("timelineTickTipMain", [
+      text: t("timingTickTipMain", [
         String(mark.index),
         mark.event,
         formatMetricMs(mark.gapFromPrevMs),
@@ -1884,47 +1884,47 @@ function tipLinesForHover(
       kind: "gap",
     });
     if (isStallGapMs(mark.gapFromPrevMs)) {
-      lines.push({ text: t("timelineTickTipStall"), kind: "stall" });
+      lines.push({ text: t("timingTickTipStall"), kind: "stall" });
     }
   } else {
     lines.push({
-      text: t("timelineTickTipMainFirst", [String(mark.index), mark.event]),
+      text: t("timingTickTipMainFirst", [String(mark.index), mark.event]),
       kind: "main",
     });
   }
-  lines.push({ text: t("timelineTickTipAction"), kind: "action" });
+  lines.push({ text: t("timingTickTipAction"), kind: "action" });
   return lines;
 }
 
-let timelineTipEl: HTMLDivElement | null = null;
+let timingTipEl: HTMLDivElement | null = null;
 
-function ensureTimelineTooltip(): HTMLDivElement {
-  if (!timelineTipEl || !timelineTipEl.isConnected) {
-    timelineTipEl = document.createElement("div");
-    timelineTipEl.className = "timeline-tooltip";
-    timelineTipEl.setAttribute("role", "tooltip");
-    timelineTipEl.hidden = true;
-    document.body.appendChild(timelineTipEl);
+function ensureTimingTooltip(): HTMLDivElement {
+  if (!timingTipEl || !timingTipEl.isConnected) {
+    timingTipEl = document.createElement("div");
+    timingTipEl.className = "timing-tooltip";
+    timingTipEl.setAttribute("role", "tooltip");
+    timingTipEl.hidden = true;
+    document.body.appendChild(timingTipEl);
   }
-  return timelineTipEl;
+  return timingTipEl;
 }
 
-function hideTimelineTooltip(): void {
-  if (!timelineTipEl) return;
-  timelineTipEl.hidden = true;
-  timelineTipEl.classList.remove("is-on");
+function hideTimingTooltip(): void {
+  if (!timingTipEl) return;
+  timingTipEl.hidden = true;
+  timingTipEl.classList.remove("is-on");
 }
 
-function showTimelineTooltip(clientX: number, clientY: number, lines: TipLine[]): void {
-  const tip = ensureTimelineTooltip();
+function showTimingTooltip(clientX: number, clientY: number, lines: TipLine[]): void {
+  const tip = ensureTimingTooltip();
   tip.replaceChildren();
   for (let i = 0; i < lines.length; i += 1) {
     const row = document.createElement("div");
     const line = lines[i];
     row.className =
       i === 0 || line.kind === "wait" || line.kind === "gap"
-        ? "timeline-tooltip-main"
-        : "timeline-tooltip-sub";
+        ? "timing-tooltip-main"
+        : "timing-tooltip-sub";
     if (line.kind === "stall") row.classList.add("is-stall");
     if (line.kind === "wait") row.classList.add("is-wait");
     if (line.kind === "gap") row.classList.add("is-gap");
@@ -1944,20 +1944,20 @@ function showTimelineTooltip(clientX: number, clientY: number, lines: TipLine[])
   tip.style.top = `${top}px`;
 }
 
-function bindTimelineTooltip(target: Element, lines: string[]): void {
+function bindTimingTooltip(target: Element, lines: string[]): void {
   const tipLines: TipLine[] = lines.map((text, i) => ({
     text,
     kind: i === 0 ? "main" : "meta",
   }));
   target.addEventListener("pointerenter", (e) => {
     const pe = e as PointerEvent;
-    showTimelineTooltip(pe.clientX, pe.clientY, tipLines);
+    showTimingTooltip(pe.clientX, pe.clientY, tipLines);
   });
   target.addEventListener("pointermove", (e) => {
     const pe = e as PointerEvent;
-    showTimelineTooltip(pe.clientX, pe.clientY, tipLines);
+    showTimingTooltip(pe.clientX, pe.clientY, tipLines);
   });
   target.addEventListener("pointerleave", () => {
-    hideTimelineTooltip();
+    hideTimingTooltip();
   });
 }

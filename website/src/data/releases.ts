@@ -14,6 +14,18 @@ export const releasePulse: {
 } = {
   items: [
     {
+      version: "1.3.0",
+      date: "2026-10-12",
+      title: {
+        zh: "时序面板重做",
+        en: "Timing redesign",
+      },
+      blurb: {
+        zh: "Timeline 更名为 Timing / 时序：双轨到达与等待、缩放、阶段色带、卡顿浮标与按事件类型分行。",
+        en: "Timeline is now Timing: dual-track arrival & wait-ms, zoom, phase bands, stall pins, and rows by event type.",
+      },
+    },
+    {
       version: "1.2.6",
       date: "2026-09-29",
       title: {

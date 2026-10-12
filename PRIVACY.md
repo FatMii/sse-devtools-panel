@@ -14,7 +14,7 @@ All of the following stays on the developer’s machine unless the developer exp
 - Request metadata collected from the page when available: URL, method, status, Content-Type, transport.
 - Request and response headers after automatic redaction of common sensitive header names (for example `Authorization`, `Cookie`, and many `*token*` / `*api-key*` style headers). Redaction follows known naming patterns and may not cover every custom header name.
 - A text preview of the request body when available (kept intact for typical sizes; only an extension soft ceiling of about 8,000,000 characters applies for pathological payloads). Soft-limit truncation is indicated in the UI when it occurs. Long Source text and long string fields in the Parsed JSON view are abbreviated in the UI (Show more / Copy), similar to the Network panel.
-- Derived debugging views built from the above (Events, Timeline, Raw, Request, Conversation merge output for supported profiles).
+- Derived debugging views built from the above (Events, Timing, Raw, Request, Conversation merge output for supported profiles).
 
 ### Stored on the device
 

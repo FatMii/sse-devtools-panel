@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 GitHub Releases mirror these notes and attach the offline zip for each tag:
 https://github.com/FatMii/sse-devtools-panel/releases
 
+## [1.3.0] — 2026-10-12
+
+### Changed
+
+- **Rename Timeline → Timing** (UI tab, i18n, DOM ids, CSS, view module); Chinese label **时序**
+- **Timing redesign** — KPI strip, Canvas LOD arrival density + wait-ms dual track, zoom / pan / Fit + minimap, phase bands, longest-waits list, stall / reconnect pins, and by-event-type rows with filters
+- Stall / hot gap threshold unified to **400ms**
+- Docs: README (en/zh), website feature copy, onboarding tour Timing step, and refreshed screenshots (`tab-timing.png` + `tab-timing-lists.png`, `deepseek-timing.gif`, `main-workbench.png`, `panel-overview.gif`)
+
 ## [1.2.6] — 2026-09-29
 
 ### Added
@@ -126,8 +135,9 @@ https://github.com/FatMii/sse-devtools-panel/releases
 
 ### Added
 
-- Initial public release: Chromium DevTools panel for SSE / EventSource / NDJSON capture, Events, Request, Conversation, Timeline, Raw, import/export, and local demo
+- Initial public release: Chromium DevTools panel for SSE / EventSource / NDJSON capture, Events, Request, Conversation, Timing, Raw, import/export, and local demo
 
+[1.3.0]: https://github.com/FatMii/sse-devtools-panel/releases/tag/v1.3.0
 [1.2.6]: https://github.com/FatMii/sse-devtools-panel/releases/tag/v1.2.6
 [1.2.5]: https://github.com/FatMii/sse-devtools-panel/releases/tag/v1.2.5
 [1.2.4]: https://github.com/FatMii/sse-devtools-panel/releases/tag/v1.2.4

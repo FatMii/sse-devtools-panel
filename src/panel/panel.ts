@@ -99,7 +99,7 @@ import {
   clearStreamAnomalyCaches,
   invalidateStreamAnomalyCache,
 } from "./features/stream-anomalies";
-import { renderTimeline, resetTimelineView } from "./views/timeline-view";
+import { renderTiming, resetTimingView } from "./views/timing-view";
 import { renderRequest, resetRequestViewState } from "./views/request-view-ui";
 import { renderConversation, resetConversationView } from "./views/conversation-view";
 import { renderRawView, resetRawView } from "./views/raw-view";
@@ -631,7 +631,7 @@ function paintDetail(appendFriendly = false): void {
     updateTabCounts(undefined);
     clearEventsView();
     resetRawView();
-    renderTimelineForSelection(undefined);
+    renderTimingForSelection(undefined);
     renderRequestForSelection(undefined);
     renderConversationForSelection(undefined);
     return;
@@ -643,8 +643,8 @@ function paintDetail(appendFriendly = false): void {
   // Only paint the active detail tab; inactive panes refresh on tab click.
   if (state.activeTab === "events") {
     renderEvents(record, appendFriendly);
-  } else if (state.activeTab === "timeline") {
-    renderTimelineForSelection(record);
+  } else if (state.activeTab === "timing") {
+    renderTimingForSelection(record);
   } else if (state.activeTab === "request") {
     renderRequestForSelection(record);
   } else if (state.activeTab === "raw") {
@@ -684,8 +684,8 @@ function getTourHooks(): OnboardingTourHooks {
         renderRequestForSelection(record);
       } else if (tab === "conversation") {
         renderConversationForSelection(record);
-      } else if (tab === "timeline") {
-        renderTimelineForSelection(record);
+      } else if (tab === "timing") {
+        renderTimingForSelection(record);
       }
     },
     openMoreMenu,
@@ -693,17 +693,17 @@ function getTourHooks(): OnboardingTourHooks {
   };
 }
 
-function jumpToSelectedEventFromTimeline(eventIndex: number): void {
+function jumpToSelectedEventFromTiming(eventIndex: number): void {
   const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
   if (!record) return;
   activateTab("events");
   selectEventByIndex(record, eventIndex, { scrollMode: "start" });
 }
 
-function renderTimelineForSelection(record: StreamRecord | undefined): void {
-  renderTimeline(record, {
+function renderTimingForSelection(record: StreamRecord | undefined): void {
+  renderTiming(record, {
     selectedEventIndex: state.selectedEventIndex,
-    onJumpToEvent: jumpToSelectedEventFromTimeline,
+    onJumpToEvent: jumpToSelectedEventFromTiming,
   });
 }
 
@@ -726,7 +726,7 @@ function setupTabs(): void {
       if (
         tab !== "events" &&
         tab !== "raw" &&
-        tab !== "timeline" &&
+        tab !== "timing" &&
         tab !== "request" &&
         tab !== "conversation"
       ) {
@@ -737,8 +737,8 @@ function setupTabs(): void {
       if (tab === "events") {
         if (record) renderEvents(record, false);
         else clearEventsView();
-      } else if (tab === "timeline") {
-        renderTimelineForSelection(record);
+      } else if (tab === "timing") {
+        renderTimingForSelection(record);
       } else if (tab === "request") {
         renderRequestForSelection(record);
       } else if (tab === "raw") {
@@ -772,7 +772,7 @@ function setupActions(): void {
     resetRequestViewState();
     resetConversationView();
     resetRawView();
-    resetTimelineView();
+    resetTimingView();
     state.selectedId = null;
     state.selectedEventIndex = null;
     state.streamsUrlFilterQuery = "";
@@ -1096,7 +1096,7 @@ function refreshLocaleUi(): void {
   applyDomI18n();
   setUiPaused(state.uiPaused, pauseHooks);
   if (elStatusbarLocale) {
-    const version = chrome.runtime.getManifest?.().version ?? "1.2.6";
+    const version = chrome.runtime.getManifest?.().version ?? "1.3.0";
     elStatusbarLocale.textContent =
       getActiveLocale() === "zh_CN" ? `中文 · ${version}` : `EN · ${version}`;
   }

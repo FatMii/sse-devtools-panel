@@ -4,7 +4,7 @@ export const en: UI = {
   meta: {
     title: "SSE DevTools Panel — SSE / EventSource / NDJSON Debugger for Chrome & Edge",
     description:
-      "SSE DevTools Panel is a Chromium DevTools extension for Chrome and Edge. Capture, parse, and visualize SSE / EventSource / NDJSON streams—timeline, conversation merge, and event-level debugging.",
+      "SSE DevTools Panel is a Chromium DevTools extension for Chrome and Edge. Capture, parse, and visualize SSE / EventSource / NDJSON streams—timing, conversation merge, and event-level debugging.",
     keywords:
       "SSE DevTools Panel, SSE debugger, EventSource, NDJSON, Chrome DevTools, Edge DevTools, streaming debug, AI chat stream, Server-Sent Events",
   },
@@ -35,7 +35,7 @@ export const en: UI = {
   heroDemo: {
     ariaLabel: "Product demo",
     windowUrl: "F12 → SSE DevTools · /api/stream",
-    imageAlt: "SSE DevTools Panel overview: Streams list, Timeline, and event details",
+    imageAlt: "SSE DevTools Panel overview: Streams list, Timing, and event details",
   },
   pain: {
     title: "Why you need it",
@@ -71,10 +71,10 @@ export const en: UI = {
         num: "02",
         title: "See stream timing",
         description:
-          "Timeline and Stats mark first byte, gaps, and stalls—clearer than Network total duration alone.",
-        image: "tab-timeline.png",
-        alt: "Timeline tab visualizing event gaps and stalls",
-        tags: ["Timeline", "TTFT"],
+          "Timing shows arrival density, wait-ms, phase bands, stall pins, and rows by event type—clearer than Network total duration alone.",
+        image: "tab-timing.png",
+        alt: "Timing tab with arrival density, wait-ms track, and stall pins",
+        tags: ["Timing", "TTFT", "Zoom"],
       },
       {
         num: "03",
@@ -163,7 +163,7 @@ export const en: UI = {
       {
         question: "How is this different from the Network panel?",
         answer:
-          "Network shows whole requests; SSE DevTools is stream-native—per-event parsing, conversation merge, timeline rhythm, and TTFT for AI chats and NDJSON protocols.",
+          "Network shows whole requests; SSE DevTools is stream-native—per-event parsing, conversation merge, timing rhythm, and TTFT for AI chats and NDJSON protocols.",
       },
     ],
   },

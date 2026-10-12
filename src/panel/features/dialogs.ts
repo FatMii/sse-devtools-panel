@@ -39,7 +39,7 @@ export function jumpToStreamEvent(requestId: string, eventIndex: number, hooks: 
   state.selectedEventIndex = null;
   hooks.renderList();
   hooks.renderDetail();
-  // Keep global-search jump behavior stable even when user is on Timeline/Raw/Request.
+  // Keep global-search jump behavior stable even when user is on Timing/Raw/Request.
   hooks.activateTab("events");
   hooks.selectEventByIndex(record, eventIndex, { scrollMode: "start" });
 }

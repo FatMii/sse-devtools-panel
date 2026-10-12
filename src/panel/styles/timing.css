@@ -1,4 +1,4 @@
-.timeline-view.active {
+.timing-view.active {
   display: flex;
   flex-direction: column;
   padding: 0;
@@ -6,7 +6,7 @@
   background: var(--canvas);
 }
 
-.timeline-body {
+.timing-body {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -16,7 +16,7 @@
   padding: 9px 11px 16px;
 }
 
-.timeline-meta {
+.timing-meta {
   color: var(--text-faint);
   font: var(--text-xs) var(--mono);
   font-variant-numeric: tabular-nums;
@@ -26,13 +26,13 @@
   background: var(--surface-1);
 }
 
-.timeline-kpi-row {
+.timing-kpi-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-2);
 }
 
-.timeline-kpi {
+.timing-kpi {
   min-width: 0;
   padding: 8px 10px;
   border: 1px solid var(--stroke);
@@ -40,12 +40,12 @@
   background: var(--surface-1);
 }
 
-.timeline-kpi.is-alert {
+.timing-kpi.is-alert {
   border-color: color-mix(in srgb, var(--danger) 45%, var(--stroke));
   background: color-mix(in srgb, var(--danger) 8%, var(--surface-1));
 }
 
-.timeline-kpi-label {
+.timing-kpi-label {
   color: var(--text-faint);
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
@@ -53,18 +53,18 @@
   text-transform: uppercase;
 }
 
-.timeline-kpi-value {
+.timing-kpi-value {
   margin-top: 3px;
   color: var(--text);
   font: var(--weight-semibold) 15px / 1.2 var(--mono);
   font-variant-numeric: tabular-nums;
 }
 
-.timeline-kpi.is-alert .timeline-kpi-value {
+.timing-kpi.is-alert .timing-kpi-value {
   color: var(--danger);
 }
 
-.timeline-kpi-sub {
+.timing-kpi-sub {
   margin-top: 2px;
   color: var(--text-muted);
   font-size: var(--text-xs);
@@ -73,7 +73,7 @@
   white-space: nowrap;
 }
 
-.timeline-track-head {
+.timing-track-head {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -81,7 +81,7 @@
   gap: var(--space-3);
 }
 
-.timeline-track-toolbar {
+.timing-track-toolbar {
   display: inline-flex;
   flex-wrap: wrap;
   gap: 6px 8px;
@@ -89,7 +89,7 @@
   justify-content: flex-end;
 }
 
-.timeline-track-toolbar > button {
+.timing-track-toolbar > button {
   min-width: 28px;
   height: 26px;
   padding: 0 8px;
@@ -101,19 +101,19 @@
   cursor: pointer;
 }
 
-.timeline-track-toolbar > button:hover {
+.timing-track-toolbar > button:hover {
   background: var(--surface-hover);
   color: var(--text);
 }
 
-.timeline-legend {
+.timing-legend {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 12px;
   align-items: center;
 }
 
-.timeline-legend-item {
+.timing-legend-item {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -121,7 +121,7 @@
   font-size: var(--text-xs);
 }
 
-.timeline-legend-swatch {
+.timing-legend-swatch {
   display: inline-block;
   width: 10px;
   height: 14px;
@@ -129,22 +129,22 @@
   flex-shrink: 0;
 }
 
-.timeline-legend-swatch.is-normal {
+.timing-legend-swatch.is-normal {
   background: color-mix(in srgb, var(--accent) 65%, transparent);
 }
 
-.timeline-legend-swatch.is-stall {
+.timing-legend-swatch.is-stall {
   background: var(--danger);
 }
 
-.timeline-legend-swatch.is-wait {
+.timing-legend-swatch.is-wait {
   background: var(--warning);
   border-radius: 1px;
   height: 3px;
   align-self: center;
 }
 
-.timeline-legend-swatch.is-reconnect {
+.timing-legend-swatch.is-reconnect {
   width: 9px;
   height: 9px;
   border-radius: 1px;
@@ -153,12 +153,12 @@
   transform: rotate(45deg);
 }
 
-.timeline-legend-swatch.is-selected {
+.timing-legend-swatch.is-selected {
   background: var(--accent-strong);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
-.timeline-tooltip {
+.timing-tooltip {
   position: fixed;
   z-index: 1000;
   min-width: 160px;
@@ -176,34 +176,34 @@
     transform var(--duration-fast) var(--ease-out);
 }
 
-.timeline-tooltip.is-on {
+.timing-tooltip.is-on {
   opacity: 1;
   transform: translateY(0);
 }
 
-.timeline-tooltip-main {
+.timing-tooltip-main {
   color: var(--text);
   font: var(--weight-semibold) var(--text-xs) / 1.45 var(--sans);
   font-variant-numeric: tabular-nums;
 }
 
-.timeline-tooltip-sub {
+.timing-tooltip-sub {
   margin-top: 3px;
   color: var(--text-muted);
   font-size: var(--text-xs);
 }
 
-.timeline-tooltip-main.is-wait {
+.timing-tooltip-main.is-wait {
   color: var(--warning);
   font-weight: var(--weight-semibold);
 }
 
-.timeline-tooltip-main.is-gap {
+.timing-tooltip-main.is-gap {
   color: var(--text);
   font-weight: var(--weight-semibold);
 }
 
-.timeline-tooltip-sub.is-stall {
+.timing-tooltip-sub.is-stall {
   display: inline-block;
   margin-top: 6px;
   padding: 1px 6px;
@@ -213,7 +213,7 @@
   font-weight: var(--weight-semibold);
 }
 
-.timeline-section {
+.timing-section {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -221,12 +221,12 @@
   border-bottom: 1px solid var(--stroke);
 }
 
-.timeline-section:last-child {
+.timing-section:last-child {
   border-bottom: none;
   padding-bottom: 0;
 }
 
-.timeline-section-title {
+.timing-section-title {
   color: var(--text-muted);
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
@@ -234,20 +234,20 @@
   text-transform: uppercase;
 }
 
-.timeline-section-hint {
+.timing-section-hint {
   color: var(--text-faint);
   font-size: var(--text-xs);
   line-height: 1.5;
 }
 
-.timeline-track-title-row {
+.timing-track-title-row {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   min-width: 0;
 }
 
-.timeline-track-tips {
+.timing-track-tips {
   flex-shrink: 0;
   width: 18px;
   height: 18px;
@@ -260,15 +260,15 @@
   cursor: help;
 }
 
-.timeline-track-tips:hover,
-.timeline-track-tips:focus-visible {
+.timing-track-tips:hover,
+.timing-track-tips:focus-visible {
   border-color: var(--accent);
   color: var(--accent-strong);
   background: var(--accent-wash);
   outline: none;
 }
 
-.timeline-track-canvas-wrap {
+.timing-track-canvas-wrap {
   position: relative;
   width: 100%;
   border: 1px solid var(--stroke);
@@ -280,14 +280,14 @@
   touch-action: none;
 }
 
-.timeline-anomaly-layer {
+.timing-anomaly-layer {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 2;
 }
 
-.timeline-anomaly-chip {
+.timing-anomaly-chip {
   position: absolute;
   top: 10px;
   transform: translateX(-50%);
@@ -307,45 +307,45 @@
   z-index: 3;
 }
 
-.timeline-anomaly-chip.is-stall {
+.timing-anomaly-chip.is-stall {
   top: 10px;
   border-color: color-mix(in srgb, var(--danger) 45%, var(--stroke));
   background: color-mix(in srgb, var(--danger) 12%, var(--surface-1));
   color: var(--danger);
 }
 
-.timeline-anomaly-chip.is-reconnect {
+.timing-anomaly-chip.is-reconnect {
   top: 36px;
   border-color: color-mix(in srgb, var(--warning) 45%, var(--stroke));
   background: color-mix(in srgb, var(--warning) 14%, var(--surface-1));
   color: var(--warning);
 }
 
-.timeline-anomaly-chip.is-selected {
+.timing-anomaly-chip.is-selected {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
-.timeline-anomaly-chip:disabled {
+.timing-anomaly-chip:disabled {
   cursor: default;
   opacity: 0.72;
 }
 
-.timeline-anomaly-chip:hover:not(:disabled) {
+.timing-anomaly-chip:hover:not(:disabled) {
   filter: brightness(1.03);
 }
 
-.timeline-track-canvas-wrap.is-panning {
+.timing-track-canvas-wrap.is-panning {
   cursor: grabbing;
 }
 
-.timeline-track-canvas {
+.timing-track-canvas {
   display: block;
   width: 100%;
   height: 320px;
   pointer-events: none;
 }
 
-.timeline-track-axis {
+.timing-track-axis {
   display: flex;
   justify-content: space-between;
   gap: var(--space-3);
@@ -355,7 +355,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-.timeline-minimap {
+.timing-minimap {
   position: relative;
   height: 18px;
   margin-top: 8px;
@@ -368,18 +368,18 @@
   user-select: none;
 }
 
-.timeline-minimap.is-panning {
+.timing-minimap.is-panning {
   cursor: grabbing;
 }
 
-.timeline-minimap-canvas {
+.timing-minimap-canvas {
   display: block;
   width: 100%;
   height: 100%;
   pointer-events: none;
 }
 
-.timeline-minimap-window {
+.timing-minimap-window {
   position: absolute;
   top: 0;
   bottom: 0;
@@ -389,7 +389,7 @@
   pointer-events: none;
 }
 
-.timeline-waterfall {
+.timing-waterfall {
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -397,7 +397,7 @@
   overflow: auto;
 }
 
-.timeline-waterfall-row {
+.timing-waterfall-row {
   display: grid;
   grid-template-columns: minmax(72px, 28%) minmax(0, 1fr) 72px;
   gap: 8px;
@@ -414,33 +414,33 @@
   cursor: pointer;
 }
 
-.timeline-waterfall-row:hover:not(:disabled) {
+.timing-waterfall-row:hover:not(:disabled) {
   background: var(--surface-hover);
   border-color: var(--stroke);
 }
 
-.timeline-waterfall-row:disabled {
+.timing-waterfall-row:disabled {
   cursor: default;
   opacity: 0.72;
 }
 
-.timeline-waterfall-row.is-selected {
+.timing-waterfall-row.is-selected {
   border-color: color-mix(in srgb, var(--accent) 45%, var(--stroke));
   background: color-mix(in srgb, var(--accent) 8%, var(--surface-1));
 }
 
-.timeline-waterfall-label {
+.timing-waterfall-label {
   color: var(--text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.timeline-waterfall-row.is-reconnect .timeline-waterfall-label {
+.timing-waterfall-row.is-reconnect .timing-waterfall-label {
   color: var(--warning);
 }
 
-.timeline-waterfall-track {
+.timing-waterfall-track {
   position: relative;
   height: 14px;
   border-radius: 3px;
@@ -449,52 +449,52 @@
   overflow: hidden;
 }
 
-.timeline-waterfall-bar {
+.timing-waterfall-bar {
   display: block;
   height: 100%;
   border-radius: 2px;
   background: color-mix(in srgb, var(--accent) 55%, transparent);
 }
 
-.timeline-waterfall-bar.is-stall {
+.timing-waterfall-bar.is-stall {
   background: color-mix(in srgb, var(--warning) 75%, transparent);
 }
 
-.timeline-waterfall-bar.is-severe {
+.timing-waterfall-bar.is-severe {
   background: color-mix(in srgb, var(--danger) 70%, transparent);
 }
 
-.timeline-waterfall-bar.is-reconnect {
+.timing-waterfall-bar.is-reconnect {
   background: color-mix(in srgb, var(--warning) 65%, transparent);
 }
 
-.timeline-waterfall-ms {
+.timing-waterfall-ms {
   text-align: right;
   font-weight: var(--weight-semibold);
   color: var(--accent-strong);
   white-space: nowrap;
 }
 
-.timeline-waterfall-ms.is-stall {
+.timing-waterfall-ms.is-stall {
   color: var(--warning);
 }
 
-.timeline-waterfall-ms.is-severe {
+.timing-waterfall-ms.is-severe {
   color: var(--danger);
 }
 
-.timeline-waterfall-ms.is-reconnect {
+.timing-waterfall-ms.is-reconnect {
   color: var(--warning);
 }
 
-.timeline-lanes-filters {
+.timing-lanes-filters {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   margin: 0 0 8px;
 }
 
-.timeline-lanes-chip {
+.timing-lanes-chip {
   appearance: none;
   border: 1px solid var(--stroke);
   border-radius: var(--r-sm);
@@ -505,38 +505,38 @@
   cursor: pointer;
 }
 
-.timeline-lanes-chip.is-on {
+.timing-lanes-chip.is-on {
   border-color: color-mix(in srgb, var(--accent) 40%, var(--stroke));
   background: color-mix(in srgb, var(--accent) 10%, var(--surface-1));
   color: var(--text);
   font-weight: var(--weight-semibold);
 }
 
-.timeline-lanes-chip.is-on[data-lane-color="a"] {
+.timing-lanes-chip.is-on[data-lane-color="a"] {
   border-color: color-mix(in srgb, var(--lane-a) 45%, var(--stroke));
   background: color-mix(in srgb, var(--lane-a) 12%, var(--surface-1));
   color: var(--lane-a);
 }
 
-.timeline-lanes-chip.is-on[data-lane-color="b"] {
+.timing-lanes-chip.is-on[data-lane-color="b"] {
   border-color: color-mix(in srgb, var(--lane-b) 45%, var(--stroke));
   background: color-mix(in srgb, var(--lane-b) 12%, var(--surface-1));
   color: var(--lane-b);
 }
 
-.timeline-lanes-chip.is-on[data-lane-color="c"] {
+.timing-lanes-chip.is-on[data-lane-color="c"] {
   border-color: color-mix(in srgb, var(--lane-c) 45%, var(--stroke));
   background: color-mix(in srgb, var(--lane-c) 12%, var(--surface-1));
   color: var(--lane-c);
 }
 
-.timeline-lanes-chip.is-on[data-lane-color="d"] {
+.timing-lanes-chip.is-on[data-lane-color="d"] {
   border-color: color-mix(in srgb, var(--lane-d) 45%, var(--stroke));
   background: color-mix(in srgb, var(--lane-d) 12%, var(--surface-1));
   color: var(--lane-d);
 }
 
-.timeline-lanes-canvas-wrap {
+.timing-lanes-canvas-wrap {
   position: relative;
   width: 100%;
   border: 1px solid var(--stroke);
@@ -545,7 +545,7 @@
   overflow: hidden;
 }
 
-.timeline-lanes-canvas {
+.timing-lanes-canvas {
   display: block;
   width: 100%;
   height: auto;

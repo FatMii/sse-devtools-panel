@@ -3,32 +3,32 @@ import {
   aggregateArrivalLod,
   buildArrivalWaitSeries,
   buildGapHistogram,
-  buildTimelineAnomalies,
-  buildTimelineInsights,
-  buildTimelineMarks,
-  buildTimelinePhases,
-  clampTimelineView,
+  buildTimingAnomalies,
+  buildTimingInsights,
+  buildTimingMarks,
+  buildTimingPhases,
+  clampTimingView,
   collectEventGaps,
   findNearestEventIndex,
-  fitTimelineView,
+  fitTimingView,
   gapsInBin,
   hitTestArrivalMark,
   isHotGapBin,
   isHotGapBinFromMs,
   isStallGapMs,
   largestGaps,
-  TIMELINE_ANOMALY_STALL_LIMIT,
-  TIMELINE_LANE_MAX,
-  TIMELINE_WATERFALL_LIMIT,
-  collectTimelineLaneTypes,
-  hitTestTimelineLaneMark,
-  normalizeTimelineEventType,
+  TIMING_ANOMALY_STALL_LIMIT,
+  TIMING_LANE_MAX,
+  TIMING_WATERFALL_LIMIT,
+  collectTimingLaneTypes,
+  hitTestTimingLaneMark,
+  normalizeTimingEventType,
   waterfallBarKind,
-  panTimelineView,
-  TIMELINE_HOT_GAP_MS,
-  TIMELINE_STALL_MS,
-  timelineSpanMs,
-  zoomTimelineView,
+  panTimingView,
+  TIMING_HOT_GAP_MS,
+  TIMING_STALL_MS,
+  timingSpanMs,
+  zoomTimingView,
 } from "../stream-timing";
 
 function assert(cond: unknown, msg: string): asserts cond {
@@ -63,19 +63,19 @@ describe("stream-timing", () => {
       "bin 1000+",
     );
 
-    const marks = buildTimelineMarks(events, 1000);
+    const marks = buildTimingMarks(events, 1000);
     assert(marks.length === 4, "marks");
     assert(marks[0].offsetMs === 0, "origin");
     assert(marks[3].offsetMs === 1065, "last offset");
     assert(marks[3].gapFromPrevMs === 1000, "mark gap");
-    assert(timelineSpanMs(marks) === 1065, "span");
+    assert(timingSpanMs(marks) === 1065, "span");
 
     const top = largestGaps(gaps, 2);
     assert(top[0].gapMs === 1000 && top[1].gapMs === 50, "largest");
   });
 
   it("classifies waterfall bar tones and top-N waits", () => {
-    expect(TIMELINE_WATERFALL_LIMIT).toBe(10);
+    expect(TIMING_WATERFALL_LIMIT).toBe(10);
     expect(waterfallBarKind(100)).toBe("ok");
     expect(waterfallBarKind(400)).toBe("stall");
     expect(waterfallBarKind(999)).toBe("stall");
@@ -85,17 +85,17 @@ describe("stream-timing", () => {
       { afterIndex: 5, gapMs: 1800 },
       { afterIndex: 9, gapMs: 600 },
     ];
-    expect(largestGaps(gaps, TIMELINE_WATERFALL_LIMIT).map((g) => g.afterIndex)).toEqual([
+    expect(largestGaps(gaps, TIMING_WATERFALL_LIMIT).map((g) => g.afterIndex)).toEqual([
       5, 9, 2,
     ]);
   });
 
   it("collects event-type swimlanes with preferred order", () => {
-    expect(normalizeTimelineEventType("")).toBe("message");
-    expect(normalizeTimelineEventType("  delta ")).toBe("delta");
-    expect(TIMELINE_LANE_MAX).toBe(8);
+    expect(normalizeTimingEventType("")).toBe("message");
+    expect(normalizeTimingEventType("  delta ")).toBe("delta");
+    expect(TIMING_LANE_MAX).toBe(8);
 
-    const types = collectTimelineLaneTypes([
+    const types = collectTimingLaneTypes([
       { event: "ping" },
       { event: "custom" },
       { event: "message" },
@@ -107,7 +107,7 @@ describe("stream-timing", () => {
     expect(types.slice(0, 4)).toEqual(["message", "delta", "ping", "error"]);
     expect(types).toContain("custom");
 
-    const capped = collectTimelineLaneTypes(
+    const capped = collectTimingLaneTypes(
       Array.from({ length: 12 }, (_, i) => ({ event: `t${i}` })),
       [],
       3,
@@ -119,13 +119,13 @@ describe("stream-timing", () => {
       { index: 1, event: "ping", offsetMs: 100 },
       { index: 2, event: "message", offsetMs: 200 },
     ];
-    expect(hitTestTimelineLaneMark(marks, "ping", 50, 100, 0, 200, 20)).toBe(1);
-    expect(hitTestTimelineLaneMark(marks, "message", 5, 100, 0, 200, 20)).toBe(0);
-    expect(hitTestTimelineLaneMark(marks, "message", 50, 100, 0, 200, 20)).toBeNull();
+    expect(hitTestTimingLaneMark(marks, "ping", 50, 100, 0, 200, 20)).toBe(1);
+    expect(hitTestTimingLaneMark(marks, "message", 5, 100, 0, 200, 20)).toBe(0);
+    expect(hitTestTimingLaneMark(marks, "message", 50, 100, 0, 200, 20)).toBeNull();
   });
 
   it("builds stall / reconnect anomaly pins", () => {
-    expect(TIMELINE_ANOMALY_STALL_LIMIT).toBe(5);
+    expect(TIMING_ANOMALY_STALL_LIMIT).toBe(5);
 
     const marks = [
       { index: 0, offsetMs: 0 },
@@ -138,7 +138,7 @@ describe("stream-timing", () => {
       receivedAt: 1000 + m.offsetMs,
       id: String(m.index),
     }));
-    const anomalies = buildTimelineAnomalies({
+    const anomalies = buildTimingAnomalies({
       marks,
       events,
       originMs: 1000,
@@ -150,8 +150,8 @@ describe("stream-timing", () => {
   });
 
   it("exposes unified stall / hot thresholds", () => {
-    expect(TIMELINE_STALL_MS).toBe(400);
-    expect(TIMELINE_HOT_GAP_MS).toBe(400);
+    expect(TIMING_STALL_MS).toBe(400);
+    expect(TIMING_HOT_GAP_MS).toBe(400);
     expect(isStallGapMs(399)).toBe(false);
     expect(isStallGapMs(400)).toBe(true);
     expect(isStallGapMs(undefined)).toBe(false);
@@ -180,7 +180,7 @@ describe("stream-timing", () => {
       { index: 2, event: "message", receivedAt: 2600, id: "c" },
     ];
     const gaps = collectEventGaps(events);
-    const insights = buildTimelineInsights({
+    const insights = buildTimingInsights({
       gaps,
       events,
       reconnects: [
@@ -258,29 +258,29 @@ describe("stream-timing", () => {
       { offsetMs: 900, gapFromPrevMs: 600 },
       { offsetMs: 1000, gapFromPrevMs: 100 },
     ];
-    const live = buildTimelinePhases({ marks, spanMs: 1000, ended: false });
+    const live = buildTimingPhases({ marks, spanMs: 1000, ended: false });
     expect(live.map((s) => s.kind)).toEqual(["ttft", "steady", "stall", "steady"]);
     expect(live[0]).toEqual({ kind: "ttft", startMs: 0, endMs: 200 });
     expect(live[2]).toEqual({ kind: "stall", startMs: 300, endMs: 900 });
 
-    const ended = buildTimelinePhases({ marks, spanMs: 1300, ended: true });
+    const ended = buildTimingPhases({ marks, spanMs: 1300, ended: true });
     expect(ended.at(-1)).toEqual({ kind: "done", startMs: 1000, endMs: 1300 });
 
-    const emptyLive = buildTimelinePhases({ marks: [], spanMs: 500, ended: false });
+    const emptyLive = buildTimingPhases({ marks: [], spanMs: 500, ended: false });
     expect(emptyLive).toEqual([{ kind: "ttft", startMs: 0, endMs: 500 }]);
   });
 
-  it("clamps zooms and pans the timeline view window", () => {
-    expect(fitTimelineView(2000)).toEqual({ startMs: 0, endMs: 2000 });
-    expect(clampTimelineView({ startMs: -100, endMs: 500 }, 1000)).toEqual({
+  it("clamps zooms and pans the timing view window", () => {
+    expect(fitTimingView(2000)).toEqual({ startMs: 0, endMs: 2000 });
+    expect(clampTimingView({ startMs: -100, endMs: 500 }, 1000)).toEqual({
       startMs: 0,
       endMs: 600,
     });
-    expect(zoomTimelineView({ startMs: 0, endMs: 2000 }, 2000, 0.5, 0.5)).toEqual({
+    expect(zoomTimingView({ startMs: 0, endMs: 2000 }, 2000, 0.5, 0.5)).toEqual({
       startMs: 500,
       endMs: 1500,
     });
-    const panned = panTimelineView({ startMs: 500, endMs: 1500 }, 2000, 800);
+    const panned = panTimingView({ startMs: 500, endMs: 1500 }, 2000, 800);
     expect(panned).toEqual({ startMs: 1000, endMs: 2000 });
   });
 });

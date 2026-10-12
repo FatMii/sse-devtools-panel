@@ -143,11 +143,11 @@
     box-shadow: -8px 0 24px rgb(32 55 82 / 8%);
   }
 
-  .timeline-kpi-row {
+  .timing-kpi-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .timeline-reconnect-item {
+  .timing-reconnect-item {
     grid-template-columns: 1fr;
     gap: 2px;
   }
@@ -168,7 +168,7 @@
     --col-data-width: 160px;
   }
 
-  .timeline-body,
+  .timing-body,
   .conversation-pane {
     padding-inline: var(--space-4);
   }
