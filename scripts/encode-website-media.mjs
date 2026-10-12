@@ -76,11 +76,13 @@ for (const name of clips) {
     webm,
   ]);
 
-  // H.264 fallback for Safari / older browsers
+  // H.264 fallback for Safari / older browsers (even dimensions required for yuv420p)
   run([
     "-y",
     "-i",
     gif,
+    "-vf",
+    "scale=trunc(iw/2)*2:trunc(ih/2)*2",
     "-c:v",
     "libx264",
     "-pix_fmt",
@@ -95,7 +97,18 @@ for (const name of clips) {
     mp4,
   ]);
 
-  run(["-y", "-i", gif, "-vframes", "1", "-q:v", "2", poster]);
+  run([
+    "-y",
+    "-i",
+    gif,
+    "-vf",
+    "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+    "-vframes",
+    "1",
+    "-q:v",
+    "2",
+    poster,
+  ]);
 
   console.log(`  gif ${kb(gif)} → webm ${kb(webm)}, mp4 ${kb(mp4)}, poster ${kb(poster)}`);
 }

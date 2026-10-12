@@ -33,14 +33,25 @@ const requiredClips = [
 execSync("node scripts/sync-website-screenshots.mjs", { cwd: root, stdio: "inherit" });
 
 const missing = requiredClips.filter((f) => !fs.existsSync(path.join(shotsDir, f)));
-if (missing.length) {
-  // Prefer committed clips; only encode when absent (CI often blocks ffmpeg-static scripts).
+// Always run the encoder: it no-ops when webm/mp4/poster are newer than the source GIF.
+// Skipping entirely when files exist left Hero stuck on stale panel-overview clips after GIF updates.
+try {
   execSync("pnpm --dir website exec node ../scripts/encode-website-media.mjs", {
     cwd: root,
     stdio: "inherit",
   });
-} else {
-  console.log("[build-website] encoded demo clips present, skip encode");
+} catch (err) {
+  if (missing.length) {
+    console.error(
+      "[build-website] encode failed and required clips are missing:",
+      missing.join(", "),
+    );
+    throw err;
+  }
+  console.warn(
+    "[build-website] encode failed; continuing with committed clips:",
+    err instanceof Error ? err.message : err,
+  );
 }
 
 execSync("pnpm build", { cwd: websiteDir, stdio: "inherit", env });
