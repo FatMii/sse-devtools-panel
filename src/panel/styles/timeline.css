@@ -269,6 +269,7 @@
 }
 
 .timeline-track-canvas-wrap {
+  position: relative;
   width: 100%;
   border: 1px solid var(--stroke);
   border-radius: var(--r-sm);
@@ -277,6 +278,60 @@
   cursor: pointer;
   user-select: none;
   touch-action: none;
+}
+
+.timeline-anomaly-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.timeline-anomaly-chip {
+  position: absolute;
+  top: 10px;
+  transform: translateX(-50%);
+  max-width: 140px;
+  padding: 3px 7px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-menu);
+  color: var(--text);
+  font: var(--weight-semibold) 10px / 1.2 var(--sans);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: auto;
+  cursor: pointer;
+  z-index: 3;
+}
+
+.timeline-anomaly-chip.is-stall {
+  top: 10px;
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--stroke));
+  background: color-mix(in srgb, var(--danger) 12%, var(--surface-1));
+  color: var(--danger);
+}
+
+.timeline-anomaly-chip.is-reconnect {
+  top: 36px;
+  border-color: color-mix(in srgb, var(--warning) 45%, var(--stroke));
+  background: color-mix(in srgb, var(--warning) 14%, var(--surface-1));
+  color: var(--warning);
+}
+
+.timeline-anomaly-chip.is-selected {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.timeline-anomaly-chip:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.timeline-anomaly-chip:hover:not(:disabled) {
+  filter: brightness(1.03);
 }
 
 .timeline-track-canvas-wrap.is-panning {

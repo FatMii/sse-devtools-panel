@@ -3,6 +3,7 @@ import {
   aggregateArrivalLod,
   buildArrivalWaitSeries,
   buildGapHistogram,
+  buildTimelineAnomalies,
   buildTimelineInsights,
   buildTimelineMarks,
   buildTimelinePhases,
@@ -23,13 +24,14 @@ import {
   zoomTimelineView,
   type GapSample,
   type HistogramBin,
+  type TimelineAnomaly,
   type TimelineInsight,
   type TimelineMark,
   type TimelinePhaseKind,
   type TimelinePhaseSegment,
   type TimelineViewWindow,
 } from "../../shared/stream-timing";
-import type { StreamReconnectMark, StreamRecord } from "../../shared/types";
+import type { SseEvent, StreamReconnectMark, StreamRecord } from "../../shared/types";
 import { elTimelineBody, elTimelinePlaceholder } from "../core/dom";
 import { formatGapBinLabel, formatMetricMs } from "../core/format";
 import { ensureStreamMetrics } from "../features/stream-metrics";
@@ -328,6 +330,7 @@ function applyTimelineRender(record: StreamRecord, options: RenderTimelineOption
     marks,
     reconnects,
     phases,
+    events: record.events,
     spanMs,
     originMs: origin,
     selectedEventIndex: options.selectedEventIndex,
@@ -557,6 +560,7 @@ type ArrivalTrackInput = {
   marks: TimelineMark[];
   reconnects: StreamReconnectMark[];
   phases: TimelinePhaseSegment[];
+  events: Array<Pick<SseEvent, "index" | "receivedAt" | "id">>;
   spanMs: number;
   originMs: number;
   selectedEventIndex: number | null;
@@ -586,7 +590,10 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
   canvas.className = "timeline-track-canvas";
   canvas.setAttribute("role", "img");
   canvas.setAttribute("aria-label", t("timelineTrackTitle"));
-  wrap.appendChild(canvas);
+  const anomalyLayer = document.createElement("div");
+  anomalyLayer.className = "timeline-anomaly-layer";
+  anomalyLayer.setAttribute("aria-hidden", "false");
+  wrap.append(canvas, anomalyLayer);
 
   const axis = document.createElement("div");
   axis.className = "timeline-track-axis";
@@ -638,6 +645,22 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
     axisEnd.textContent = formatMetricMs(view.endMs);
   };
 
+  const syncAnomalyChips = (): void => {
+    const anomalies = buildTimelineAnomalies({
+      marks: input.marks,
+      reconnects: input.reconnects,
+      originMs: input.originMs,
+      events: input.events,
+    });
+    syncAnomalyChipLayer(anomalyLayer, anomalies, {
+      view,
+      padL: plotLayout.padL,
+      plotW: plotLayout.plotW,
+      selectedEventIndex: input.selectedEventIndex,
+      onJumpToEvent: input.onJumpToEvent,
+    });
+  };
+
   const paintFrame = (): void => {
     if (needsRemeasure) {
       plotLayout = measureArrivalPlot(canvas, ARRIVAL_PAD_L);
@@ -646,6 +669,7 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
     drawArrivalTrack(canvas, input, plotLayout, view);
     drawArrivalMinimap(miniCanvas, input);
     syncChrome();
+    syncAnomalyChips();
   };
 
   const schedulePaint = (remeasure = false): void => {
@@ -1308,6 +1332,61 @@ function kpiCard(
   subEl.textContent = options.sub;
   card.append(labelEl, valueEl, subEl);
   return card;
+}
+
+function syncAnomalyChipLayer(
+  layer: HTMLElement,
+  anomalies: TimelineAnomaly[],
+  options: {
+    view: TimelineViewWindow;
+    padL: number;
+    plotW: number;
+    selectedEventIndex: number | null;
+    onJumpToEvent: (eventIndex: number) => void;
+  },
+): void {
+  layer.replaceChildren();
+  const viewSpan = Math.max(1, options.view.endMs - options.view.startMs);
+  for (const anomaly of anomalies) {
+    if (anomaly.offsetMs < options.view.startMs || anomaly.offsetMs > options.view.endMs) {
+      continue;
+    }
+    const x =
+      options.padL + ((anomaly.offsetMs - options.view.startMs) / viewSpan) * options.plotW;
+    if (x < options.padL - 4 || x > options.padL + options.plotW + 4) continue;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `timeline-anomaly-chip is-${anomaly.kind}`;
+    btn.textContent = anomalyChipLabel(anomaly);
+    btn.style.left = `${x}px`;
+    const jumpIndex = anomaly.jumpIndex;
+    const canJump = typeof jumpIndex === "number";
+    btn.disabled = !canJump;
+    if (canJump && options.selectedEventIndex === jumpIndex) {
+      btn.classList.add("is-selected");
+    }
+    btn.title = canJump ? t("timelineTickTipAction") : "";
+    btn.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+    });
+    if (canJump) {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        options.onJumpToEvent(jumpIndex);
+      });
+    }
+    layer.appendChild(btn);
+  }
+}
+
+function anomalyChipLabel(anomaly: TimelineAnomaly): string {
+  switch (anomaly.kind) {
+    case "stall":
+      return t("timelineAnomalyStall", formatMetricMs(anomaly.gapMs));
+    case "reconnect":
+      return t("timelineAnomalyReconnect", String(anomaly.reconnectCount));
+  }
 }
 
 function buildLegend(): HTMLElement {

@@ -593,6 +593,24 @@
   "timelineLegendWait": {
     "message": "等待随时间（ms）"
   },
+  "timelineAnomalyStall": {
+    "message": "卡顿 $GAP$",
+    "placeholders": {
+      "gap": {
+        "content": "$1",
+        "example": "1.2 s"
+      }
+    }
+  },
+  "timelineAnomalyReconnect": {
+    "message": "Reconnect #$COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
   "timelineLaneArrival": {
     "message": "到达"
   },

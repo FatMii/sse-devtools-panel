@@ -58,6 +58,60 @@ export const TIMELINE_WATERFALL_LIMIT = 10;
 /** Gaps ≥ this use the strongest waterfall bar tone. */
 export const TIMELINE_WATERFALL_SEVERE_MS = 1000;
 
+/** Max stall chips pinned on the arrival track. */
+export const TIMELINE_ANOMALY_STALL_LIMIT = 5;
+
+export type TimelineAnomaly =
+  | {
+      kind: "stall";
+      offsetMs: number;
+      gapMs: number;
+      jumpIndex: number;
+    }
+  | {
+      kind: "reconnect";
+      offsetMs: number;
+      reconnectCount: number;
+      jumpIndex: number | null;
+    };
+
+/**
+ * Pin notable stalls / reconnects on the arrival track.
+ * Stalls are capped; reconnects stay complete (usually few).
+ */
+export function buildTimelineAnomalies(input: {
+  marks: Array<Pick<TimelineMark, "index" | "offsetMs" | "gapFromPrevMs">>;
+  reconnects: StreamReconnectMark[];
+  originMs: number;
+  events: Array<Pick<SseEvent, "index" | "receivedAt" | "id">>;
+  stallLimit?: number;
+}): TimelineAnomaly[] {
+  const stallLimit = input.stallLimit ?? TIMELINE_ANOMALY_STALL_LIMIT;
+
+  const stallMarks = input.marks
+    .filter((m) => isStallGapMs(m.gapFromPrevMs))
+    .sort((a, b) => (b.gapFromPrevMs ?? 0) - (a.gapFromPrevMs ?? 0))
+    .slice(0, Math.max(0, stallLimit));
+
+  const stalls: TimelineAnomaly[] = stallMarks.map((m) => ({
+    kind: "stall",
+    offsetMs: m.offsetMs,
+    gapMs: m.gapFromPrevMs ?? 0,
+    jumpIndex: m.index,
+  }));
+
+  const reconnects: TimelineAnomaly[] = [...input.reconnects]
+    .sort((a, b) => a.reconnectCount - b.reconnectCount)
+    .map((reconnect) => ({
+      kind: "reconnect" as const,
+      offsetMs: Math.max(0, reconnect.at - input.originMs),
+      reconnectCount: reconnect.reconnectCount,
+      jumpIndex: findNearestEventIndex(input.events, reconnect.at, reconnect.lastEventId),
+    }));
+
+  return [...stalls, ...reconnects];
+}
+
 export type WaterfallBarKind = "severe" | "stall" | "ok";
 
 export function waterfallBarKind(gapMs: number): WaterfallBarKind {

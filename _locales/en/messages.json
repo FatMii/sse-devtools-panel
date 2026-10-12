@@ -593,6 +593,24 @@
   "timelineLegendWait": {
     "message": "Wait over time (ms)"
   },
+  "timelineAnomalyStall": {
+    "message": "Stall $GAP$",
+    "placeholders": {
+      "gap": {
+        "content": "$1",
+        "example": "1.2 s"
+      }
+    }
+  },
+  "timelineAnomalyReconnect": {
+    "message": "Reconnect #$COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
   "timelineLaneArrival": {
     "message": "Arrival"
   },

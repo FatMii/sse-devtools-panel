@@ -3,6 +3,7 @@ import {
   aggregateArrivalLod,
   buildArrivalWaitSeries,
   buildGapHistogram,
+  buildTimelineAnomalies,
   buildTimelineInsights,
   buildTimelineMarks,
   buildTimelinePhases,
@@ -16,6 +17,7 @@ import {
   isHotGapBinFromMs,
   isStallGapMs,
   largestGaps,
+  TIMELINE_ANOMALY_STALL_LIMIT,
   TIMELINE_WATERFALL_LIMIT,
   waterfallBarKind,
   panTimelineView,
@@ -82,6 +84,31 @@ describe("stream-timing", () => {
     expect(largestGaps(gaps, TIMELINE_WATERFALL_LIMIT).map((g) => g.afterIndex)).toEqual([
       5, 9, 2,
     ]);
+  });
+
+  it("builds stall / reconnect anomaly pins", () => {
+    expect(TIMELINE_ANOMALY_STALL_LIMIT).toBe(5);
+
+    const marks = [
+      { index: 0, offsetMs: 0 },
+      { index: 1, offsetMs: 100, gapFromPrevMs: 100 },
+      { index: 2, offsetMs: 800, gapFromPrevMs: 700 },
+      { index: 3, offsetMs: 900, gapFromPrevMs: 100 },
+    ];
+    const events = marks.map((m) => ({
+      index: m.index,
+      receivedAt: 1000 + m.offsetMs,
+      id: String(m.index),
+    }));
+    const anomalies = buildTimelineAnomalies({
+      marks,
+      events,
+      originMs: 1000,
+      reconnects: [{ at: 1500, reconnectCount: 1, lastEventId: "1" }],
+      stallLimit: 2,
+    });
+    expect(anomalies.some((a) => a.kind === "stall" && a.jumpIndex === 2)).toBe(true);
+    expect(anomalies.some((a) => a.kind === "reconnect" && a.reconnectCount === 1)).toBe(true);
   });
 
   it("exposes unified stall / hot thresholds", () => {
