@@ -1,11 +1,13 @@
 import { describe, it, expect } from "vitest";
 import {
+  aggregateArrivalLod,
   buildGapHistogram,
   buildTimelineInsights,
   buildTimelineMarks,
   collectEventGaps,
   findNearestEventIndex,
   gapsInBin,
+  hitTestArrivalMark,
   isHotGapBin,
   isHotGapBinFromMs,
   isStallGapMs,
@@ -121,5 +123,25 @@ describe("stream-timing", () => {
     });
     expect(findNearestEventIndex(events, 1800, "b")).toBe(1);
     expect(findNearestEventIndex([], 1800)).toBeNull();
+  });
+
+  it("aggregates arrival LOD buckets and hit-tests nearest marks", () => {
+    const marks = [
+      { index: 0, offsetMs: 0, gapFromPrevMs: undefined },
+      { index: 1, offsetMs: 100, gapFromPrevMs: 100 },
+      { index: 2, offsetMs: 500, gapFromPrevMs: 400 },
+      { index: 3, offsetMs: 520, gapFromPrevMs: 20 },
+    ];
+    const { buckets, maxCount } = aggregateArrivalLod(marks, 100, 0, 1000);
+    expect(buckets).toHaveLength(100);
+    expect(maxCount).toBeGreaterThanOrEqual(1);
+    const stallBucket = buckets[Math.floor((500 / 1000) * 100)];
+    expect(stallBucket.stallCount).toBeGreaterThanOrEqual(1);
+    expect(stallBucket.jumpIndex).toBe(2);
+
+    expect(hitTestArrivalMark(marks, 50, 100, 0, 1000)).toBe(2);
+    expect(hitTestArrivalMark(marks, 0, 100, 0, 1000)).toBe(0);
+    expect(hitTestArrivalMark(marks, 52, 100, 0, 1000, 0.5)).toBe(3);
+    expect(hitTestArrivalMark([], 10, 100, 0, 1000)).toBeNull();
   });
 });

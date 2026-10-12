@@ -1,10 +1,12 @@
 import { t } from "../../shared/i18n";
 import {
+  aggregateArrivalLod,
   buildGapHistogram,
   buildTimelineInsights,
   buildTimelineMarks,
   collectEventGaps,
   gapsInBin,
+  hitTestArrivalMark,
   isHotGapBin,
   isStallGapMs,
   largestGaps,
@@ -16,7 +18,7 @@ import {
   type TimelineInsight,
   type TimelineMark,
 } from "../../shared/stream-timing";
-import type { StreamRecord } from "../../shared/types";
+import type { StreamReconnectMark, StreamRecord } from "../../shared/types";
 import { elTimelineBody, elTimelinePlaceholder } from "../core/dom";
 import { escapeHtml, formatGapBinLabel, formatMetricMs } from "../core/format";
 import { ensureStreamMetrics } from "../features/stream-metrics";
@@ -264,108 +266,17 @@ export function renderTimeline(
   trackHead.append(trackTitleBlock, buildLegend());
   trackSection.appendChild(trackHead);
 
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("class", "timeline-track-svg");
-  svg.setAttribute("viewBox", "0 0 640 72");
-  svg.setAttribute("role", "img");
-  svg.setAttribute("aria-label", t("timelineTrackTitle"));
-
-  const padL = 16;
-  const padR = 16;
-  const trackY = 28;
-  const plotW = 640 - padL - padR;
-
-  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-  line.setAttribute("class", "track-line");
-  line.setAttribute("x1", String(padL));
-  line.setAttribute("y1", String(trackY));
-  line.setAttribute("x2", String(padL + plotW));
-  line.setAttribute("y2", String(trackY));
-  svg.appendChild(line);
-
-  // Paint stalls after normal ticks so dense streams do not cover red marks.
-  const paintMarks = [...marks].sort((a, b) => {
-    const aStall = isStallGapMs(a.gapFromPrevMs) ? 1 : 0;
-    const bStall = isStallGapMs(b.gapFromPrevMs) ? 1 : 0;
-    return aStall - bStall || a.index - b.index;
+  const trackMount = buildArrivalTrackCanvas({
+    marks,
+    reconnects,
+    spanMs,
+    originMs: origin,
+    selectedEventIndex: options.selectedEventIndex,
+    onJumpToEvent: options.onJumpToEvent,
   });
-
-  for (const mark of paintMarks) {
-    const x = padL + (mark.offsetMs / spanMs) * plotW;
-    const isStall = isStallGapMs(mark.gapFromPrevMs);
-    const isSelected = options.selectedEventIndex === mark.index;
-    if (isSelected) {
-      const halo = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-      halo.setAttribute("class", "tick-select-halo");
-      halo.setAttribute("x", String(x - 5));
-      halo.setAttribute("y", String(trackY - 18));
-      halo.setAttribute("width", "10");
-      halo.setAttribute("height", "36");
-      halo.setAttribute("rx", "2");
-      svg.appendChild(halo);
-    }
-    const tickClass = `tick${isSelected ? " is-selected" : ""}${isStall ? " is-stall" : ""}`;
-    const tick = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    tick.setAttribute("class", tickClass);
-    tick.setAttribute("x", String(x - 2));
-    tick.setAttribute("y", String(trackY - 14));
-    tick.setAttribute("width", "4");
-    tick.setAttribute("height", "28");
-    tick.setAttribute("rx", "1");
-    tick.setAttribute("data-index", String(mark.index));
-    bindTimelineTooltip(tick, tipLinesForMark(mark));
-    tick.addEventListener("click", () => {
-      options.onJumpToEvent(mark.index);
-    });
-    svg.appendChild(tick);
-  }
-
-  const label0 = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  label0.setAttribute("class", "axis-label");
-  label0.setAttribute("x", String(padL));
-  label0.setAttribute("y", "58");
-  label0.textContent = "0";
-  svg.appendChild(label0);
-
-  const labelMid = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  labelMid.setAttribute("class", "axis-label");
-  labelMid.setAttribute("x", String(padL + plotW / 2));
-  labelMid.setAttribute("y", "58");
-  labelMid.setAttribute("text-anchor", "middle");
-  labelMid.textContent = formatMetricMs(spanMs / 2);
-  svg.appendChild(labelMid);
-
-  const labelEnd = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  labelEnd.setAttribute("class", "axis-label");
-  labelEnd.setAttribute("x", String(padL + plotW));
-  labelEnd.setAttribute("y", "58");
-  labelEnd.setAttribute("text-anchor", "end");
-  labelEnd.textContent = formatMetricMs(spanMs);
-  svg.appendChild(labelEnd);
-
-  trackSection.appendChild(svg);
+  trackSection.append(trackMount.wrap, trackMount.axis);
   elTimelineBody.appendChild(trackSection);
-
-  if (reconnects.length > 0) {
-    for (const reconnect of reconnects) {
-      const offsetMs = Math.max(0, reconnect.at - origin);
-      const x = padL + (Math.min(offsetMs, spanMs) / spanMs) * plotW;
-      const marker = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-      marker.setAttribute("class", "reconnect-mark");
-      marker.setAttribute(
-        "points",
-        `${x},${trackY - 20} ${x + 5},${trackY - 10} ${x},${trackY} ${x - 5},${trackY - 10}`,
-      );
-      bindTimelineTooltip(marker, [
-        t("timelineReconnectMark", [
-          String(reconnect.reconnectCount),
-          reconnect.lastEventId ? reconnect.lastEventId : "—",
-          `+${Math.round(offsetMs)}ms`,
-        ]),
-      ]);
-      svg.appendChild(marker);
-    }
-  }
+  trackMount.paint();
 
   const histSection = document.createElement("section");
   histSection.className = "timeline-section";
@@ -398,6 +309,229 @@ export function renderTimeline(
     originMs: origin,
   });
   elTimelineBody.appendChild(buildInsightsSection(insights, options));
+}
+
+const ARRIVAL_TRACK_CSS_H = 88;
+const ARRIVAL_PAD_L = 12;
+const ARRIVAL_PAD_R = 12;
+
+type ArrivalTrackInput = {
+  marks: TimelineMark[];
+  reconnects: StreamReconnectMark[];
+  spanMs: number;
+  originMs: number;
+  selectedEventIndex: number | null;
+  onJumpToEvent: (eventIndex: number) => void;
+};
+
+function buildArrivalTrackCanvas(input: ArrivalTrackInput): {
+  wrap: HTMLElement;
+  axis: HTMLElement;
+  paint: () => void;
+} {
+  const wrap = document.createElement("div");
+  wrap.className = "timeline-track-canvas-wrap";
+  const canvas = document.createElement("canvas");
+  canvas.className = "timeline-track-canvas";
+  canvas.setAttribute("role", "img");
+  canvas.setAttribute("aria-label", t("timelineTrackTitle"));
+  wrap.appendChild(canvas);
+
+  const axis = document.createElement("div");
+  axis.className = "timeline-track-axis";
+  const axisStart = document.createElement("span");
+  const axisMid = document.createElement("span");
+  const axisEnd = document.createElement("span");
+  axis.append(axisStart, axisMid, axisEnd);
+
+  const marksByIndex = new Map(input.marks.map((m) => [m.index, m]));
+  let plotLayout = { padL: ARRIVAL_PAD_L, plotW: 1, cssW: 1 };
+
+  const paint = (): void => {
+    drawArrivalTrack(canvas, input, plotLayout);
+    axisStart.textContent = "0";
+    axisMid.textContent = formatMetricMs(input.spanMs / 2);
+    axisEnd.textContent = formatMetricMs(input.spanMs);
+  };
+
+  const resolvePlotX = (clientX: number): number | null => {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width <= 0) return null;
+    return clientX - rect.left - plotLayout.padL;
+  };
+
+  canvas.addEventListener("click", (e) => {
+    const plotX = resolvePlotX(e.clientX);
+    if (plotX == null) return;
+    const index = hitTestArrivalMark(input.marks, plotX, plotLayout.plotW, 0, input.spanMs);
+    if (index != null) input.onJumpToEvent(index);
+  });
+
+  canvas.addEventListener("pointermove", (e) => {
+    const plotX = resolvePlotX(e.clientX);
+    if (plotX == null) {
+      hideTimelineTooltip();
+      return;
+    }
+    const index = hitTestArrivalMark(input.marks, plotX, plotLayout.plotW, 0, input.spanMs, 16);
+    if (index == null) {
+      hideTimelineTooltip();
+      canvas.style.cursor = "default";
+      return;
+    }
+    const mark = marksByIndex.get(index);
+    if (!mark) {
+      hideTimelineTooltip();
+      return;
+    }
+    canvas.style.cursor = "pointer";
+    showTimelineTooltip(e.clientX, e.clientY, tipLinesForMark(mark));
+  });
+
+  canvas.addEventListener("pointerleave", () => {
+    hideTimelineTooltip();
+    canvas.style.cursor = "default";
+  });
+
+  const ro = new ResizeObserver(() => {
+    plotLayout = measureArrivalPlot(canvas);
+    paint();
+  });
+  ro.observe(wrap);
+
+  return {
+    wrap,
+    axis,
+    paint: () => {
+      plotLayout = measureArrivalPlot(canvas);
+      paint();
+    },
+  };
+}
+
+function measureArrivalPlot(canvas: HTMLCanvasElement): {
+  padL: number;
+  plotW: number;
+  cssW: number;
+} {
+  const cssW = Math.max(1, canvas.getBoundingClientRect().width || canvas.clientWidth || 320);
+  const plotW = Math.max(1, cssW - ARRIVAL_PAD_L - ARRIVAL_PAD_R);
+  return { padL: ARRIVAL_PAD_L, plotW, cssW };
+}
+
+function readCssColor(name: string, fallback: string): string {
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return value || fallback;
+}
+
+function mixCssColor(color: string, pct: number): string {
+  return `color-mix(in srgb, ${color} ${Math.round(pct)}%, transparent)`;
+}
+
+function drawArrivalTrack(
+  canvas: HTMLCanvasElement,
+  input: ArrivalTrackInput,
+  layout: { padL: number; plotW: number; cssW: number },
+): void {
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = layout.cssW;
+  const cssH = ARRIVAL_TRACK_CSS_H;
+  const pixelW = Math.max(1, Math.floor(cssW * dpr));
+  const pixelH = Math.max(1, Math.floor(cssH * dpr));
+  if (canvas.width !== pixelW || canvas.height !== pixelH) {
+    canvas.width = pixelW;
+    canvas.height = pixelH;
+  }
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  const padL = layout.padL;
+  const plotW = layout.plotW;
+  const trackY = 40;
+  const spanMs = Math.max(1, input.spanMs);
+  const accent = readCssColor("--accent", "#176fc1");
+  const accentStrong = readCssColor("--accent-strong", "#145fa8");
+  const danger = readCssColor("--danger", "#c33c30");
+  const warning = readCssColor("--warning", "#9a6700");
+  const strokeStrong = readCssColor("--stroke-strong", "#b8c3d1");
+
+  const { buckets, maxCount } = aggregateArrivalLod(input.marks, plotW, 0, spanMs);
+
+  // Long-wait bands behind the baseline.
+  ctx.fillStyle = mixCssColor(danger, 12);
+  for (const mark of input.marks) {
+    if (!isStallGapMs(mark.gapFromPrevMs) || mark.gapFromPrevMs == null) continue;
+    const x0 = padL + ((mark.offsetMs - mark.gapFromPrevMs) / spanMs) * plotW;
+    const x1 = padL + (mark.offsetMs / spanMs) * plotW;
+    const left = Math.max(padL, x0);
+    const right = Math.min(padL + plotW, x1);
+    if (right > left) ctx.fillRect(left, 18, right - left, 44);
+  }
+
+  ctx.strokeStyle = strokeStrong;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(padL, trackY);
+  ctx.lineTo(padL + plotW, trackY);
+  ctx.stroke();
+
+  for (let i = 0; i < buckets.length; i += 1) {
+    const bucket = buckets[i];
+    if (!bucket.count) continue;
+    const alpha = 0.25 + 0.75 * (bucket.count / maxCount);
+    ctx.fillStyle =
+      bucket.stallCount > 0 ? mixCssColor(danger, alpha * 100) : mixCssColor(accent, alpha * 70);
+    const bh = 10 + 26 * (bucket.count / maxCount);
+    ctx.fillRect(padL + i, trackY - bh / 2, 1, bh);
+  }
+
+  if (input.selectedEventIndex != null) {
+    const selected = input.marks.find((m) => m.index === input.selectedEventIndex);
+    if (selected) {
+      const sx = padL + (selected.offsetMs / spanMs) * plotW;
+      ctx.strokeStyle = accentStrong;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(sx, 8);
+      ctx.lineTo(sx, 72);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      if (isStallGapMs(selected.gapFromPrevMs)) {
+        ctx.strokeStyle = accentStrong;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(sx - 5, trackY - 18, 10, 36);
+        ctx.fillStyle = danger;
+      } else {
+        ctx.fillStyle = accentStrong;
+      }
+      ctx.fillRect(sx - 2, trackY - 16, 4, 32);
+    }
+  }
+
+  for (const reconnect of input.reconnects) {
+    const offsetMs = Math.max(0, reconnect.at - input.originMs);
+    const x = padL + (Math.min(offsetMs, spanMs) / spanMs) * plotW;
+    ctx.setLineDash([2, 3]);
+    ctx.strokeStyle = warning;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, 6);
+    ctx.lineTo(x, 74);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = warning;
+    ctx.beginPath();
+    ctx.moveTo(x, 12);
+    ctx.lineTo(x + 5, 20);
+    ctx.lineTo(x, 28);
+    ctx.lineTo(x - 5, 20);
+    ctx.closePath();
+    ctx.fill();
+  }
 }
 
 function buildInsightsSection(

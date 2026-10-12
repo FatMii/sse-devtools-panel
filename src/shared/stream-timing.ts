@@ -218,3 +218,73 @@ export function buildTimelineInsights(input: {
 
   return [...stalls, ...reconnects];
 }
+
+export type ArrivalLodBucket = {
+  count: number;
+  stallCount: number;
+  /** Prefer latest stall in the bucket; else latest mark. */
+  jumpIndex: number | null;
+};
+
+/** Pixel-column LOD for the arrival track (one bucket ≈ one CSS pixel). */
+export function aggregateArrivalLod(
+  marks: Array<Pick<TimelineMark, "index" | "offsetMs" | "gapFromPrevMs">>,
+  plotWidthPx: number,
+  viewStartMs = 0,
+  viewEndMs?: number,
+): { buckets: ArrivalLodBucket[]; maxCount: number } {
+  const endMs =
+    typeof viewEndMs === "number" && Number.isFinite(viewEndMs)
+      ? viewEndMs
+      : marks.reduce((max, m) => (m.offsetMs > max ? m.offsetMs : max), viewStartMs);
+  const span = Math.max(1, endMs - viewStartMs);
+  const n = Math.max(1, Math.floor(plotWidthPx));
+  const buckets: ArrivalLodBucket[] = [];
+  for (let i = 0; i < n; i += 1) {
+    buckets.push({ count: 0, stallCount: 0, jumpIndex: null });
+  }
+
+  let maxCount = 0;
+  for (const mark of marks) {
+    if (mark.offsetMs < viewStartMs || mark.offsetMs > endMs) continue;
+    const x = ((mark.offsetMs - viewStartMs) / span) * n;
+    const bi = Math.min(n - 1, Math.max(0, Math.floor(x)));
+    const bucket = buckets[bi];
+    bucket.count += 1;
+    if (isStallGapMs(mark.gapFromPrevMs)) {
+      bucket.stallCount += 1;
+      bucket.jumpIndex = mark.index;
+    } else if (bucket.stallCount === 0) {
+      bucket.jumpIndex = mark.index;
+    }
+    if (bucket.count > maxCount) maxCount = bucket.count;
+  }
+
+  return { buckets, maxCount: Math.max(1, maxCount) };
+}
+
+/** Map a plot-local X coordinate to the nearest in-view mark index. */
+export function hitTestArrivalMark(
+  marks: Array<Pick<TimelineMark, "index" | "offsetMs">>,
+  plotX: number,
+  plotWidthPx: number,
+  viewStartMs: number,
+  viewEndMs: number,
+  maxDistancePx = Number.POSITIVE_INFINITY,
+): number | null {
+  if (marks.length === 0 || plotWidthPx <= 0 || !Number.isFinite(plotX)) return null;
+  const span = Math.max(1, viewEndMs - viewStartMs);
+  let bestIndex: number | null = null;
+  let bestDist = Number.POSITIVE_INFINITY;
+  for (const mark of marks) {
+    if (mark.offsetMs < viewStartMs || mark.offsetMs > viewEndMs) continue;
+    const x = ((mark.offsetMs - viewStartMs) / span) * plotWidthPx;
+    const dist = Math.abs(x - plotX);
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestIndex = mark.index;
+    }
+  }
+  if (bestIndex == null || bestDist > maxDistancePx) return null;
+  return bestIndex;
+}

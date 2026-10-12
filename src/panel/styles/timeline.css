@@ -197,60 +197,28 @@
   line-height: 1.5;
 }
 
-.timeline-track-svg {
+.timeline-track-canvas-wrap {
   width: 100%;
-  height: 64px;
-  display: block;
-  padding: 4px 0;
   border: 1px solid var(--stroke);
   border-radius: var(--r-sm);
   background: var(--surface-1);
+  overflow: hidden;
 }
 
-.timeline-track-svg .track-line {
-  stroke: var(--stroke-strong);
-  stroke-width: 2;
+.timeline-track-canvas {
+  display: block;
+  width: 100%;
+  height: 88px;
 }
 
-.timeline-track-svg .tick {
-  fill: color-mix(in srgb, var(--accent) 65%, transparent);
-  cursor: pointer;
-}
-
-.timeline-track-svg .tick:hover {
-  fill: var(--accent);
-}
-
-.timeline-track-svg .tick.is-selected {
-  fill: var(--accent-strong);
-}
-
-.timeline-track-svg .tick.is-stall {
-  fill: var(--danger);
-}
-
-/* Selection chrome is a separate halo; keep stall fill solid red (no stroke on 4px tick). */
-.timeline-track-svg .tick.is-stall.is-selected {
-  fill: var(--danger);
-  stroke: none;
-}
-
-.timeline-track-svg .tick-select-halo {
-  fill: none;
-  stroke: var(--accent-strong);
-  stroke-width: 1.5;
-  pointer-events: none;
-}
-
-.timeline-track-svg .reconnect-mark {
-  fill: var(--warning);
-  stroke: color-mix(in srgb, var(--warning) 55%, var(--text));
-  stroke-width: 1;
-}
-
-.timeline-track-svg .axis-label {
-  fill: var(--text-muted);
+.timeline-track-axis {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: 4px;
+  color: var(--text-muted);
   font-size: 10px;
+  font-variant-numeric: tabular-nums;
 }
 
 .timeline-insight-list {
