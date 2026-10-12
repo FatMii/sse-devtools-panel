@@ -9,12 +9,15 @@ import {
   buildTimelinePhases,
   clampTimelineView,
   collectEventGaps,
+  collectTimelineLaneTypes,
   fitTimelineView,
   gapsInBin,
   hitTestArrivalMark,
+  hitTestTimelineLaneMark,
   isHotGapBin,
   isStallGapMs,
   largestGaps,
+  normalizeTimelineEventType,
   panTimelineView,
   TIMELINE_HOT_GAP_MS,
   TIMELINE_STALL_MS,
@@ -58,8 +61,17 @@ type ArrivalTrackHandle = {
   toolbar: HTMLElement;
   legend: HTMLElement;
   minimap: HTMLElement;
+  getView: () => TimelineViewWindow;
+  onViewChange: (cb: (view: TimelineViewWindow) => void) => () => void;
   update: (next: ArrivalTrackInput) => void;
   paint: () => void;
+  disconnect: () => void;
+};
+
+type LanesHandle = {
+  root: HTMLElement;
+  update: (input: LanesInput) => void;
+  setView: (view: TimelineViewWindow) => void;
   disconnect: () => void;
 };
 
@@ -69,21 +81,42 @@ type TimelineShell = {
   track: ArrivalTrackHandle;
   histHost: HTMLElement;
   waterfallHost: HTMLElement;
+  lanes: LanesHandle;
+  unsubView: () => void;
 };
 
 let timelineShell: TimelineShell | null = null;
 let timelineRaf = 0;
 let timelinePending: { record: StreamRecord; options: RenderTimelineOptions } | null = null;
+/** Enabled lane types; reset on stream change. */
+let laneFilterOn = new Set<string>();
+/** Types already offered to the filter UI (so new types default on). */
+let laneTypesSeen = new Set<string>();
 
 export function resetTimelineView(): void {
   cancelTimelineRender();
   teardownTimelineShell();
   hideTimelineTooltip();
   activeHistBinIndex = -1;
+  resetLaneFilterState();
   elTimelinePlaceholder.hidden = false;
   elTimelinePlaceholder.textContent = t("noStreamSelected");
   elTimelineBody.hidden = true;
   elTimelineBody.replaceChildren();
+}
+
+function resetLaneFilterState(): void {
+  laneFilterOn = new Set();
+  laneTypesSeen = new Set();
+}
+
+function syncLaneFilterTypes(types: string[]): void {
+  for (const type of types) {
+    if (!laneTypesSeen.has(type)) {
+      laneFilterOn.add(type);
+      laneTypesSeen.add(type);
+    }
+  }
 }
 
 function cancelTimelineRender(): void {
@@ -95,6 +128,8 @@ function cancelTimelineRender(): void {
 }
 
 function teardownTimelineShell(): void {
+  timelineShell?.unsubView();
+  timelineShell?.lanes.disconnect();
   timelineShell?.track.disconnect();
   timelineShell = null;
 }
@@ -348,6 +383,7 @@ function applyTimelineRender(record: StreamRecord, options: RenderTimelineOption
   if (!sameStream || !timelineShell || !elTimelineBody.contains(timelineShell.kpiRow)) {
     hideTimelineTooltip();
     activeHistBinIndex = -1;
+    resetLaneFilterState();
     rebuildTimelineShell(record.requestId, kpiInput, trackInput, gaps, insights, options);
     return;
   }
@@ -357,6 +393,12 @@ function applyTimelineRender(record: StreamRecord, options: RenderTimelineOption
   timelineShell.track.paint();
   fillHistHost(timelineShell.histHost, gaps, options);
   fillWaterfallHost(timelineShell.waterfallHost, insights, options);
+  timelineShell.lanes.update({
+    marks,
+    selectedEventIndex: options.selectedEventIndex,
+    onJumpToEvent: options.onJumpToEvent,
+  });
+  timelineShell.lanes.setView(timelineShell.track.getView());
 }
 
 function rebuildTimelineShell(
@@ -440,12 +482,22 @@ function rebuildTimelineShell(
   waterfallHost.className = "timeline-waterfall-host";
   waterfallSection.append(waterfallTitleRow, waterfallHost);
 
-  elTimelineBody.append(kpiRow, trackSection, histSection, waterfallSection);
-  timelineShell = { requestId, kpiRow, track, histHost, waterfallHost };
+  const lanes = buildLanesSection({
+    marks: trackInput.marks,
+    selectedEventIndex: options.selectedEventIndex,
+    onJumpToEvent: options.onJumpToEvent,
+  });
+
+  elTimelineBody.append(kpiRow, trackSection, histSection, waterfallSection, lanes.root);
+  const unsubView = track.onViewChange((view) => {
+    lanes.setView(view);
+  });
+  timelineShell = { requestId, kpiRow, track, histHost, waterfallHost, lanes, unsubView };
 
   fillHistHost(histHost, gaps, options);
   fillWaterfallHost(waterfallHost, insights, options);
   track.paint();
+  lanes.setView(track.getView());
 }
 
 function fillHistHost(host: HTMLElement, gaps: GapSample[], options: RenderTimelineOptions): void {
@@ -583,6 +635,7 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
   let miniGrabOffsetRatio = 0;
   let paintRaf = 0;
   let needsRemeasure = false;
+  const viewListeners = new Set<(next: TimelineViewWindow) => void>();
 
   const wrap = document.createElement("div");
   wrap.className = "timeline-track-canvas-wrap";
@@ -690,11 +743,16 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
     paintFrame();
   };
 
+  const notifyView = (): void => {
+    for (const cb of viewListeners) cb(view);
+  };
+
   const setView = (next: TimelineViewWindow, fit = false): void => {
     view = clampTimelineView(next, input.spanMs);
     wasFit = fit;
     // Window chrome updates immediately; canvas redraw coalesces to next frame.
     syncChrome();
+    notifyView();
     schedulePaint();
   };
 
@@ -914,19 +972,393 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
     toolbar,
     legend,
     minimap,
+    getView: () => view,
+    onViewChange: (cb) => {
+      viewListeners.add(cb);
+      return () => {
+        viewListeners.delete(cb);
+      };
+    },
     update: (next) => {
       input = next;
       marksByIndex = new Map(next.marks.map((m) => [m.index, m]));
       if (wasFit) view = fitTimelineView(next.spanMs);
       else view = clampTimelineView(view, next.spanMs);
+      notifyView();
     },
     paint,
+    disconnect: () => {
+      if (paintRaf) cancelAnimationFrame(paintRaf);
+      paintRaf = 0;
+      viewListeners.clear();
+      ro.disconnect();
+    },
+  };
+}
+
+const LANES_PAD_L_MIN = 72;
+const LANES_PAD_L_MAX = 148;
+const LANES_PAD_R = ARRIVAL_PAD_R;
+const LANES_ROW_H = 36;
+const LANES_TOP = 16;
+const LANES_LABEL_GAP = 10;
+
+type LanesInput = {
+  marks: TimelineMark[];
+  selectedEventIndex: number | null;
+  onJumpToEvent: (eventIndex: number) => void;
+};
+
+function buildLanesSection(initial: LanesInput): LanesHandle {
+  let input = initial;
+  let view: TimelineViewWindow = { startMs: 0, endMs: 1 };
+  let types = collectTimelineLaneTypes(initial.marks);
+  syncLaneFilterTypes(types);
+
+  const root = document.createElement("section");
+  root.className = "timeline-section";
+
+  const titleRow = document.createElement("div");
+  titleRow.className = "timeline-track-title-row";
+  const title = document.createElement("div");
+  title.className = "timeline-section-title";
+  title.textContent = t("timelineLanesTitle");
+  const tipsBtn = document.createElement("button");
+  tipsBtn.type = "button";
+  tipsBtn.className = "timeline-track-tips";
+  tipsBtn.textContent = "?";
+  tipsBtn.setAttribute("aria-label", t("timelineLanesTipsAria"));
+  bindTimelineTooltip(tipsBtn, [
+    t("timelineLanesHintRows"),
+    t("timelineLanesHintFilter"),
+    t("timelineLanesHintAction"),
+  ]);
+  titleRow.append(title, tipsBtn);
+
+  const filters = document.createElement("div");
+  filters.className = "timeline-lanes-filters";
+  filters.setAttribute("role", "group");
+  filters.setAttribute("aria-label", t("timelineLanesTitle"));
+
+  const wrap = document.createElement("div");
+  wrap.className = "timeline-lanes-canvas-wrap";
+  const canvas = document.createElement("canvas");
+  canvas.className = "timeline-lanes-canvas";
+  canvas.setAttribute("role", "img");
+  canvas.setAttribute("aria-label", t("timelineLanesTitle"));
+  wrap.appendChild(canvas);
+
+  const empty = document.createElement("div");
+  empty.className = "timeline-meta";
+  empty.textContent = t("timelineLanesEmpty");
+
+  root.append(titleRow, filters, wrap, empty);
+
+  let paintRaf = 0;
+  let needsRemeasure = false;
+  let plotLayout = { padL: LANES_PAD_L_MIN, plotW: 1, cssW: 1 };
+
+  const syncChrome = (): void => {
+    const hasEvents = input.marks.length > 0 && types.length > 0;
+    wrap.hidden = !hasEvents;
+    empty.hidden = hasEvents;
+    filters.hidden = !hasEvents;
+  };
+
+  const rebuildFilters = (): void => {
+    filters.replaceChildren();
+    types.forEach((type, i) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "timeline-lanes-chip";
+      btn.dataset.lane = type;
+      btn.dataset.laneColor = laneColorKey(i);
+      btn.textContent = type;
+      btn.title = type;
+      btn.setAttribute("aria-label", t("timelineLanesFilterAria", type));
+      const on = laneFilterOn.has(type);
+      btn.classList.toggle("is-on", on);
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+      btn.addEventListener("click", () => {
+        if (laneFilterOn.has(type)) laneFilterOn.delete(type);
+        else laneFilterOn.add(type);
+        btn.classList.toggle("is-on", laneFilterOn.has(type));
+        btn.setAttribute("aria-pressed", laneFilterOn.has(type) ? "true" : "false");
+        schedulePaint();
+      });
+      filters.appendChild(btn);
+    });
+  };
+
+  const paintFrame = (): void => {
+    syncChrome();
+    if (input.marks.length === 0 || types.length === 0) return;
+    const cssW = Math.max(1, canvas.getBoundingClientRect().width || canvas.clientWidth || 320);
+    const cssH = LANES_TOP + types.length * LANES_ROW_H + 8;
+    const mono =
+      getComputedStyle(document.documentElement).getPropertyValue("--mono").trim() || "monospace";
+    const font = `11px ${mono}`;
+    const padL = measureLaneLabelPad(types, font, cssW);
+    plotLayout = {
+      padL,
+      plotW: Math.max(1, cssW - padL - LANES_PAD_R),
+      cssW,
+    };
+    needsRemeasure = false;
+    drawTimelineLanes(canvas, {
+      marks: input.marks,
+      types,
+      enabled: laneFilterOn,
+      view,
+      selectedEventIndex: input.selectedEventIndex,
+      padL: plotLayout.padL,
+      padR: LANES_PAD_R,
+      cssW,
+      cssH,
+      font,
+    });
+  };
+
+  const schedulePaint = (remeasure = false): void => {
+    if (remeasure) needsRemeasure = true;
+    if (paintRaf) return;
+    paintRaf = requestAnimationFrame(() => {
+      paintRaf = 0;
+      paintFrame();
+    });
+  };
+
+  wrap.addEventListener("pointermove", (e) => {
+    const hit = resolveLaneHit(
+      e,
+      canvas,
+      plotLayout.padL,
+      plotLayout.plotW,
+      types,
+      view,
+      input.marks,
+    );
+    if (!hit) {
+      hideTimelineTooltip();
+      return;
+    }
+    const mark = input.marks.find((m) => m.index === hit.index) ?? null;
+    showTimelineTooltip(e.clientX, e.clientY, tipLinesForLane(mark, hit.type));
+  });
+  wrap.addEventListener("pointerleave", () => {
+    hideTimelineTooltip();
+  });
+  wrap.addEventListener("click", (e) => {
+    const hit = resolveLaneHit(
+      e,
+      canvas,
+      plotLayout.padL,
+      plotLayout.plotW,
+      types,
+      view,
+      input.marks,
+    );
+    if (hit) input.onJumpToEvent(hit.index);
+  });
+
+  const ro = new ResizeObserver(() => {
+    schedulePaint(true);
+  });
+  ro.observe(wrap);
+
+  rebuildFilters();
+  syncChrome();
+
+  return {
+    root,
+    update: (next) => {
+      input = next;
+      types = collectTimelineLaneTypes(next.marks);
+      syncLaneFilterTypes(types);
+      rebuildFilters();
+      schedulePaint(true);
+    },
+    setView: (next) => {
+      view = next;
+      schedulePaint();
+    },
     disconnect: () => {
       if (paintRaf) cancelAnimationFrame(paintRaf);
       paintRaf = 0;
       ro.disconnect();
     },
   };
+}
+
+function laneColorKey(index: number): string {
+  return String.fromCharCode(97 + (index % 4)); // a..d
+}
+
+function laneCssVar(index: number): string {
+  return `--lane-${laneColorKey(index)}`;
+}
+
+function resolveLaneHit(
+  e: PointerEvent | MouseEvent,
+  canvas: HTMLCanvasElement,
+  padL: number,
+  plotW: number,
+  types: string[],
+  view: TimelineViewWindow,
+  marks: TimelineMark[],
+): { type: string; index: number } | null {
+  if (types.length === 0 || plotW <= 0) return null;
+  const rect = canvas.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return null;
+  const cssH = LANES_TOP + types.length * LANES_ROW_H + 8;
+  const localY = ((e.clientY - rect.top) / rect.height) * cssH;
+  const laneIndex = Math.floor((localY - LANES_TOP + LANES_ROW_H / 2) / LANES_ROW_H);
+  if (laneIndex < 0 || laneIndex >= types.length) return null;
+  const type = types[laneIndex];
+  if (!laneFilterOn.has(type)) return null;
+  const plotX = e.clientX - rect.left - padL;
+  if (plotX < -8 || plotX > plotW + 8) return null;
+  const index = hitTestTimelineLaneMark(
+    marks,
+    type,
+    plotX,
+    plotW,
+    view.startMs,
+    view.endMs,
+    16,
+  );
+  if (index == null) return null;
+  return { type, index };
+}
+
+function tipLinesForLane(mark: TimelineMark | null, type: string): TipLine[] {
+  if (!mark) return [{ text: type, kind: "meta" }];
+  if (mark.gapFromPrevMs != null) {
+    return [
+      {
+        text: t("timelineTickTipMain", [
+          String(mark.index),
+          type,
+          formatMetricMs(mark.gapFromPrevMs),
+        ]),
+        kind: "gap",
+      },
+      { text: `+${formatMetricMs(mark.offsetMs)}`, kind: "meta" },
+      { text: t("timelineTickTipAction"), kind: "action" },
+    ];
+  }
+  return [
+    {
+      text: t("timelineTickTipNearestEvent", [String(mark.index), type]),
+      kind: "main",
+    },
+    { text: `+${formatMetricMs(mark.offsetMs)}`, kind: "meta" },
+    { text: t("timelineTickTipAction"), kind: "action" },
+  ];
+}
+
+/** Left gutter wide enough for type names; keep a usable plot width. */
+function measureLaneLabelPad(types: string[], font: string, cssW: number): number {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return LANES_PAD_L_MIN;
+  ctx.font = font;
+  let maxText = 0;
+  for (const type of types) {
+    maxText = Math.max(maxText, ctx.measureText(type).width);
+  }
+  const wanted = Math.ceil(maxText) + LANES_LABEL_GAP + 4;
+  const maxByWidth = Math.max(LANES_PAD_L_MIN, Math.floor(cssW * 0.42));
+  return Math.min(LANES_PAD_L_MAX, maxByWidth, Math.max(LANES_PAD_L_MIN, wanted));
+}
+
+/** Prefer keeping the prefix when the gutter still overflows. */
+function fitLaneLabel(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
+  if (maxWidth <= 0) return "";
+  if (ctx.measureText(text).width <= maxWidth) return text;
+  const ellipsis = "\u2026";
+  if (ctx.measureText(ellipsis).width > maxWidth) return "";
+  let lo = 0;
+  let hi = text.length;
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    const candidate = text.slice(0, mid) + ellipsis;
+    if (ctx.measureText(candidate).width <= maxWidth) lo = mid;
+    else hi = mid - 1;
+  }
+  return lo > 0 ? text.slice(0, lo) + ellipsis : ellipsis;
+}
+
+function drawTimelineLanes(
+  canvas: HTMLCanvasElement,
+  opts: {
+    marks: TimelineMark[];
+    types: string[];
+    enabled: Set<string>;
+    view: TimelineViewWindow;
+    selectedEventIndex: number | null;
+    padL: number;
+    padR: number;
+    cssW: number;
+    cssH: number;
+    font: string;
+  },
+): void {
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  const { cssW, cssH, padL, padR, view, types, marks, enabled, selectedEventIndex, font } = opts;
+  canvas.width = Math.floor(cssW * dpr);
+  canvas.height = Math.floor(cssH * dpr);
+  canvas.style.height = `${cssH}px`;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  const plotW = Math.max(1, cssW - padL - padR);
+  const viewSpan = Math.max(1, view.endMs - view.startMs);
+  const muted = readCssColor("--text-muted", "#596779");
+  const stroke = readCssColor("--stroke", "#d8dee8");
+  const selected = readCssColor("--accent-strong", "#145fa8");
+  const labelMaxW = Math.max(8, padL - LANES_LABEL_GAP);
+
+  types.forEach((type, li) => {
+    const y = LANES_TOP + li * LANES_ROW_H;
+    ctx.font = font;
+    ctx.fillStyle = muted;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.globalAlpha = enabled.has(type) ? 1 : 0.4;
+    const label = fitLaneLabel(ctx, type, labelMaxW);
+    ctx.fillText(label, 4, y);
+    ctx.globalAlpha = 1;
+
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padL, y);
+    ctx.lineTo(padL + plotW, y);
+    ctx.stroke();
+
+    if (!enabled.has(type)) return;
+
+    const color = readCssColor(laneCssVar(li), readCssColor("--accent", "#176fc1"));
+    ctx.fillStyle = color;
+    for (const mark of marks) {
+      if (normalizeTimelineEventType(mark.event) !== type) continue;
+      if (mark.offsetMs < view.startMs || mark.offsetMs > view.endMs) continue;
+      const x = padL + ((mark.offsetMs - view.startMs) / viewSpan) * plotW;
+      const isSelected = selectedEventIndex === mark.index;
+      ctx.globalAlpha = isSelected ? 1 : 0.75;
+      if (isSelected) {
+        ctx.fillStyle = selected;
+        ctx.fillRect(x - 1.5, y - 10, 3, 20);
+        ctx.fillStyle = color;
+      } else {
+        ctx.fillRect(x - 1, y - 8, 2, 16);
+      }
+    }
+    ctx.globalAlpha = 1;
+  });
 }
 
 function resolveTipFocus(localY: number): "density" | "wait" {

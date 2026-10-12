@@ -486,3 +486,68 @@
 .timeline-waterfall-ms.is-reconnect {
   color: var(--warning);
 }
+
+.timeline-lanes-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 8px;
+}
+
+.timeline-lanes-chip {
+  appearance: none;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font: 11px / 1.2 var(--mono);
+  padding: 3px 8px;
+  cursor: pointer;
+}
+
+.timeline-lanes-chip.is-on {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--stroke));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-1));
+  color: var(--text);
+  font-weight: var(--weight-semibold);
+}
+
+.timeline-lanes-chip.is-on[data-lane-color="a"] {
+  border-color: color-mix(in srgb, var(--lane-a) 45%, var(--stroke));
+  background: color-mix(in srgb, var(--lane-a) 12%, var(--surface-1));
+  color: var(--lane-a);
+}
+
+.timeline-lanes-chip.is-on[data-lane-color="b"] {
+  border-color: color-mix(in srgb, var(--lane-b) 45%, var(--stroke));
+  background: color-mix(in srgb, var(--lane-b) 12%, var(--surface-1));
+  color: var(--lane-b);
+}
+
+.timeline-lanes-chip.is-on[data-lane-color="c"] {
+  border-color: color-mix(in srgb, var(--lane-c) 45%, var(--stroke));
+  background: color-mix(in srgb, var(--lane-c) 12%, var(--surface-1));
+  color: var(--lane-c);
+}
+
+.timeline-lanes-chip.is-on[data-lane-color="d"] {
+  border-color: color-mix(in srgb, var(--lane-d) 45%, var(--stroke));
+  background: color-mix(in srgb, var(--lane-d) 12%, var(--surface-1));
+  color: var(--lane-d);
+}
+
+.timeline-lanes-canvas-wrap {
+  position: relative;
+  width: 100%;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+  overflow: hidden;
+}
+
+.timeline-lanes-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: pointer;
+}

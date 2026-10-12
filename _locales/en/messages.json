@@ -793,6 +793,33 @@
       }
     }
   },
+  "timelineLanesTitle": {
+    "message": "By event type"
+  },
+  "timelineLanesTipsAria": {
+    "message": "By event type tips"
+  },
+  "timelineLanesHintRows": {
+    "message": "One row per SSE event type (message / delta / ping / \u2026)."
+  },
+  "timelineLanesHintFilter": {
+    "message": "Click a button above to show or hide that type."
+  },
+  "timelineLanesHintAction": {
+    "message": "Aligned with the arrival track window. Click a tick to open in Events."
+  },
+  "timelineLanesEmpty": {
+    "message": "No events to show by type yet."
+  },
+  "timelineLanesFilterAria": {
+    "message": "Filter event type $TYPE$",
+    "placeholders": {
+      "type": {
+        "content": "$1",
+        "example": "message"
+      }
+    }
+  },
   "originImported": {
     "message": "imported"
   },

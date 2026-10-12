@@ -529,3 +529,68 @@ export function hitTestArrivalMark(
   if (bestIndex == null || bestDist > maxDistancePx) return null;
   return bestIndex;
 }
+
+/** Preferred lane order when those event types are present. */
+export const TIMELINE_LANE_PREFERRED_TYPES = ["message", "delta", "ping", "error"] as const;
+
+/** Cap swimlane rows so exotic streams stay readable. */
+export const TIMELINE_LANE_MAX = 8;
+
+/** Empty / blank SSE `event:` fields render as the default message type. */
+export function normalizeTimelineEventType(event: string | undefined | null): string {
+  const raw = typeof event === "string" ? event.trim() : "";
+  return raw.length > 0 ? raw : "message";
+}
+
+/**
+ * Distinct event types for swimlanes: preferred types first (if present),
+ * then remaining by frequency (desc) / name. Capped at TIMELINE_LANE_MAX.
+ */
+export function collectTimelineLaneTypes(
+  marks: Array<Pick<TimelineMark, "event">>,
+  preferred: readonly string[] = TIMELINE_LANE_PREFERRED_TYPES,
+  maxLanes = TIMELINE_LANE_MAX,
+): string[] {
+  const counts = new Map<string, number>();
+  for (const m of marks) {
+    const type = normalizeTimelineEventType(m.event);
+    counts.set(type, (counts.get(type) ?? 0) + 1);
+  }
+  if (counts.size === 0) return [];
+
+  const preferredPresent: string[] = [];
+  for (const p of preferred) {
+    if (counts.has(p)) preferredPresent.push(p);
+  }
+  const rest = [...counts.keys()]
+    .filter((type) => !preferredPresent.includes(type))
+    .sort((a, b) => {
+      const diff = (counts.get(b) ?? 0) - (counts.get(a) ?? 0);
+      return diff !== 0 ? diff : a.localeCompare(b);
+    });
+  const ordered = [...preferredPresent, ...rest];
+  const limit = Math.max(1, maxLanes);
+  if (ordered.length <= limit) return ordered;
+  return ordered.slice(0, limit);
+}
+
+/** Hit-test within one event-type lane (same X mapping as the arrival track). */
+export function hitTestTimelineLaneMark(
+  marks: Array<Pick<TimelineMark, "index" | "offsetMs" | "event">>,
+  eventType: string,
+  plotX: number,
+  plotWidthPx: number,
+  viewStartMs: number,
+  viewEndMs: number,
+  maxDistancePx = 16,
+): number | null {
+  const filtered = marks.filter((m) => normalizeTimelineEventType(m.event) === eventType);
+  return hitTestArrivalMark(
+    filtered,
+    plotX,
+    plotWidthPx,
+    viewStartMs,
+    viewEndMs,
+    maxDistancePx,
+  );
+}

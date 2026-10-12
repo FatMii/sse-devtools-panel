@@ -18,7 +18,11 @@ import {
   isStallGapMs,
   largestGaps,
   TIMELINE_ANOMALY_STALL_LIMIT,
+  TIMELINE_LANE_MAX,
   TIMELINE_WATERFALL_LIMIT,
+  collectTimelineLaneTypes,
+  hitTestTimelineLaneMark,
+  normalizeTimelineEventType,
   waterfallBarKind,
   panTimelineView,
   TIMELINE_HOT_GAP_MS,
@@ -84,6 +88,40 @@ describe("stream-timing", () => {
     expect(largestGaps(gaps, TIMELINE_WATERFALL_LIMIT).map((g) => g.afterIndex)).toEqual([
       5, 9, 2,
     ]);
+  });
+
+  it("collects event-type swimlanes with preferred order", () => {
+    expect(normalizeTimelineEventType("")).toBe("message");
+    expect(normalizeTimelineEventType("  delta ")).toBe("delta");
+    expect(TIMELINE_LANE_MAX).toBe(8);
+
+    const types = collectTimelineLaneTypes([
+      { event: "ping" },
+      { event: "custom" },
+      { event: "message" },
+      { event: "custom" },
+      { event: "" },
+      { event: "delta" },
+      { event: "error" },
+    ]);
+    expect(types.slice(0, 4)).toEqual(["message", "delta", "ping", "error"]);
+    expect(types).toContain("custom");
+
+    const capped = collectTimelineLaneTypes(
+      Array.from({ length: 12 }, (_, i) => ({ event: `t${i}` })),
+      [],
+      3,
+    );
+    expect(capped).toHaveLength(3);
+
+    const marks = [
+      { index: 0, event: "message", offsetMs: 0 },
+      { index: 1, event: "ping", offsetMs: 100 },
+      { index: 2, event: "message", offsetMs: 200 },
+    ];
+    expect(hitTestTimelineLaneMark(marks, "ping", 50, 100, 0, 200, 20)).toBe(1);
+    expect(hitTestTimelineLaneMark(marks, "message", 5, 100, 0, 200, 20)).toBe(0);
+    expect(hitTestTimelineLaneMark(marks, "message", 50, 100, 0, 200, 20)).toBeNull();
   });
 
   it("builds stall / reconnect anomaly pins", () => {

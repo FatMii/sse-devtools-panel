@@ -793,6 +793,33 @@
       }
     }
   },
+  "timelineLanesTitle": {
+    "message": "按事件类型"
+  },
+  "timelineLanesTipsAria": {
+    "message": "按事件类型说明"
+  },
+  "timelineLanesHintRows": {
+    "message": "每种 SSE event 类型一行（message / delta / ping / \u2026）。"
+  },
+  "timelineLanesHintFilter": {
+    "message": "点上方按钮，可显示或隐藏某一类型。"
+  },
+  "timelineLanesHintAction": {
+    "message": "时间窗与到达轨同步。点击刻度可在 Events 中打开。"
+  },
+  "timelineLanesEmpty": {
+    "message": "尚无按类型可展示的事件。"
+  },
+  "timelineLanesFilterAria": {
+    "message": "筛选事件类型 $TYPE$",
+    "placeholders": {
+      "type": {
+        "content": "$1",
+        "example": "message"
+      }
+    }
+  },
   "originImported": {
     "message": "导入"
   },
