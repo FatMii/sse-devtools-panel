@@ -26,6 +26,105 @@
   background: var(--surface-1);
 }
 
+.timeline-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.timeline-kpi {
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+}
+
+.timeline-kpi.is-alert {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--stroke));
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface-1));
+}
+
+.timeline-kpi-label {
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.timeline-kpi-value {
+  margin-top: 3px;
+  color: var(--text);
+  font: var(--weight-semibold) 15px / 1.2 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.timeline-kpi.is-alert .timeline-kpi-value {
+  color: var(--danger);
+}
+
+.timeline-kpi-sub {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timeline-track-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.timeline-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+}
+
+.timeline-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.timeline-legend-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 14px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.timeline-legend-swatch.is-normal {
+  background: color-mix(in srgb, var(--accent) 65%, transparent);
+}
+
+.timeline-legend-swatch.is-stall {
+  background: var(--danger);
+}
+
+.timeline-legend-swatch.is-reconnect {
+  width: 10px;
+  height: 10px;
+  border-radius: 1px;
+  background: var(--warning);
+  transform: rotate(45deg);
+}
+
+.timeline-legend-swatch.is-selected {
+  background: var(--accent-strong);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
 .timeline-section {
   display: flex;
   flex-direction: column;

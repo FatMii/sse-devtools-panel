@@ -3,7 +3,11 @@ import {
   buildGapHistogram,
   buildTimelineMarks,
   collectEventGaps,
+  isHotGapBinFromMs,
+  isStallGapMs,
   largestGaps,
+  TIMELINE_HOT_GAP_MS,
+  TIMELINE_STALL_MS,
   timelineSpanMs,
   type HistogramBin,
 } from "../../shared/stream-timing";
@@ -12,7 +16,8 @@ import { elTimelineBody, elTimelinePlaceholder } from "../core/dom";
 import { escapeHtml, formatGapBinLabel, formatMetricMs } from "../core/format";
 import { ensureStreamMetrics } from "../features/stream-metrics";
 
-export const TIMELINE_STALL_MS = 250;
+/** Re-export for callers; single source of truth is stream-timing. */
+export { TIMELINE_STALL_MS, TIMELINE_HOT_GAP_MS };
 
 export type RenderTimelineOptions = {
   selectedEventIndex: number | null;
@@ -35,7 +40,6 @@ export function createGapHistogramSvg(bins: HistogramBin[]): SVGSVGElement {
   const plotH = 170 - padT - padB;
   const gap = 4;
   const barW = Math.max(8, (plotW - gap * (bins.length - 1)) / bins.length);
-  const hotThreshold = 500;
 
   // Y-axis baseline + value ticks
   const axis = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -81,7 +85,7 @@ export function createGapHistogramSvg(bins: HistogramBin[]): SVGSVGElement {
     const x = padL + i * (barW + gap);
     const y = padT + plotH - h;
     const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    rect.setAttribute("class", `bar${bin.fromMs >= hotThreshold ? " is-hot" : ""}`);
+    rect.setAttribute("class", `bar${isHotGapBinFromMs(bin.fromMs) ? " is-hot" : ""}`);
     rect.setAttribute("x", String(x));
     rect.setAttribute("y", String(y));
     rect.setAttribute("width", String(barW));
@@ -157,25 +161,40 @@ export function renderTimeline(
   const spanMs = Math.max(timelineSpanMs(marks), reconnectMaxOffset, 1);
   const gaps = collectEventGaps(record.events);
   const metrics = ensureStreamMetrics(record);
+  const durationMs = metrics.durationMs ?? spanMs;
+  const maxGapMs = gaps.length > 0 ? Math.max(...gaps.map((g) => g.gapMs)) : undefined;
+  const maxGapSlow = isStallGapMs(maxGapMs);
 
-  const meta = document.createElement("div");
-  meta.className = "timeline-meta";
-  meta.textContent = t("timelineMeta", [
-    String(record.events.length),
-    formatMetricMs(metrics.durationMs ?? spanMs),
-    formatMetricMs(metrics.p95GapMs),
-  ]);
-  elTimelineBody.appendChild(meta);
+  elTimelineBody.appendChild(
+    buildKpiRow({
+      eventCount: record.events.length,
+      eventsPerSec: metrics.eventsPerSec,
+      durationMs,
+      ttftMs: metrics.ttftMs,
+      maxGapMs,
+      maxGapSlow,
+      reconnectCount: reconnects.length,
+      lastReconnectOffsetMs:
+        reconnects.length > 0
+          ? Math.max(0, reconnects[reconnects.length - 1].at - origin)
+          : undefined,
+    }),
+  );
 
   const trackSection = document.createElement("section");
   trackSection.className = "timeline-section";
+  const trackHead = document.createElement("div");
+  trackHead.className = "timeline-track-head";
+  const trackTitleBlock = document.createElement("div");
   const trackTitle = document.createElement("div");
   trackTitle.className = "timeline-section-title";
   trackTitle.textContent = t("timelineTrackTitle");
   const trackHint = document.createElement("div");
   trackHint.className = "timeline-section-hint";
-  trackHint.textContent = t("timelineTrackHint");
-  trackSection.append(trackTitle, trackHint);
+  trackHint.textContent = t("timelineTrackHint", String(TIMELINE_STALL_MS));
+  trackTitleBlock.append(trackTitle, trackHint);
+  trackHead.append(trackTitleBlock, buildLegend());
+  trackSection.appendChild(trackHead);
 
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("class", "timeline-track-svg");
@@ -198,8 +217,7 @@ export function renderTimeline(
 
   for (const mark of marks) {
     const x = padL + (mark.offsetMs / spanMs) * plotW;
-    const isStall =
-      typeof mark.gapFromPrevMs === "number" && mark.gapFromPrevMs >= TIMELINE_STALL_MS;
+    const isStall = isStallGapMs(mark.gapFromPrevMs);
     const isSelected = options.selectedEventIndex === mark.index;
     const tick = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     tick.setAttribute(
@@ -301,7 +319,7 @@ export function renderTimeline(
   histTitle.textContent = t("timelineGapHistogram");
   const histHint = document.createElement("div");
   histHint.className = "timeline-section-hint";
-  histHint.textContent = t("timelineGapHistogramHint");
+  histHint.textContent = t("timelineGapHistogramHint", String(TIMELINE_HOT_GAP_MS));
   histSection.append(histTitle, histHint);
   if (gaps.length === 0) {
     const empty = document.createElement("div");
@@ -345,4 +363,101 @@ export function renderTimeline(
     }
   }
   elTimelineBody.appendChild(gapBox);
+}
+
+type KpiRowInput = {
+  eventCount: number;
+  eventsPerSec: number | undefined;
+  durationMs: number;
+  ttftMs: number | undefined;
+  maxGapMs: number | undefined;
+  maxGapSlow: boolean;
+  reconnectCount: number;
+  lastReconnectOffsetMs: number | undefined;
+};
+
+function buildKpiRow(input: KpiRowInput): HTMLElement {
+  const row = document.createElement("div");
+  row.className = "timeline-kpi-row";
+  row.setAttribute("role", "group");
+  row.setAttribute("aria-label", t("timelineKpiAria"));
+
+  row.append(
+    kpiCard(t("timelineKpiEvents"), String(input.eventCount), {
+      sub:
+        typeof input.eventsPerSec === "number"
+          ? t("timelineKpiEventsSub", String(input.eventsPerSec))
+          : t("timelineKpiDash"),
+    }),
+    kpiCard(t("timelineKpiDuration"), formatMetricMs(input.durationMs), {
+      sub:
+        typeof input.ttftMs === "number"
+          ? t("timelineKpiDurationSub", formatMetricMs(input.ttftMs))
+          : t("timelineKpiDash"),
+    }),
+    kpiCard(
+      t("timelineKpiMaxGap"),
+      typeof input.maxGapMs === "number" ? formatMetricMs(input.maxGapMs) : t("timelineKpiDash"),
+      {
+        alert: input.maxGapSlow,
+        sub: input.maxGapSlow
+          ? t("timelineKpiMaxGapSlow", String(TIMELINE_STALL_MS))
+          : t("timelineKpiMaxGapOk", String(TIMELINE_STALL_MS)),
+      },
+    ),
+    kpiCard(t("timelineKpiReconnects"), String(input.reconnectCount), {
+      sub:
+        typeof input.lastReconnectOffsetMs === "number"
+          ? t("timelineKpiReconnectsSub", `+${formatMetricMs(input.lastReconnectOffsetMs)}`)
+          : t("timelineKpiDash"),
+    }),
+  );
+  return row;
+}
+
+function kpiCard(
+  label: string,
+  value: string,
+  options: { sub: string; alert?: boolean },
+): HTMLElement {
+  const card = document.createElement("div");
+  card.className = `timeline-kpi${options.alert ? " is-alert" : ""}`;
+  const labelEl = document.createElement("div");
+  labelEl.className = "timeline-kpi-label";
+  labelEl.textContent = label;
+  const valueEl = document.createElement("div");
+  valueEl.className = "timeline-kpi-value";
+  valueEl.textContent = value;
+  const subEl = document.createElement("div");
+  subEl.className = "timeline-kpi-sub";
+  subEl.textContent = options.sub;
+  card.append(labelEl, valueEl, subEl);
+  return card;
+}
+
+function buildLegend(): HTMLElement {
+  const legend = document.createElement("div");
+  legend.className = "timeline-legend";
+  legend.setAttribute("role", "list");
+  legend.setAttribute("aria-label", t("timelineLegendAria"));
+
+  const items: Array<{ swatch: string; label: string }> = [
+    { swatch: "is-normal", label: t("timelineLegendNormal") },
+    { swatch: "is-stall", label: t("timelineLegendStall", String(TIMELINE_STALL_MS)) },
+    { swatch: "is-reconnect", label: t("timelineLegendReconnect") },
+    { swatch: "is-selected", label: t("timelineLegendSelected") },
+  ];
+  for (const item of items) {
+    const row = document.createElement("span");
+    row.className = "timeline-legend-item";
+    row.setAttribute("role", "listitem");
+    const swatch = document.createElement("i");
+    swatch.className = `timeline-legend-swatch ${item.swatch}`;
+    swatch.setAttribute("aria-hidden", "true");
+    const text = document.createElement("span");
+    text.textContent = item.label;
+    row.append(swatch, text);
+    legend.appendChild(row);
+  }
+  return legend;
 }

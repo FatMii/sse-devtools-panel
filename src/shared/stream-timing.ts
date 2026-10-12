@@ -27,6 +27,20 @@ export type TimelineMark = {
 /** Default gap histogram edges (ms). Last bin is open-ended. */
 export const DEFAULT_GAP_BIN_EDGES_MS = [0, 10, 25, 50, 100, 250, 500, 1000] as const;
 
+/** Gap ≥ this is a stall (red tick / KPI alert). */
+export const TIMELINE_STALL_MS = 800;
+
+/** Histogram bins with fromMs ≥ this are "hot" (longer stalls). */
+export const TIMELINE_HOT_GAP_MS = 800;
+
+export function isStallGapMs(gapMs: number | undefined | null): boolean {
+  return typeof gapMs === "number" && Number.isFinite(gapMs) && gapMs >= TIMELINE_STALL_MS;
+}
+
+export function isHotGapBinFromMs(fromMs: number): boolean {
+  return Number.isFinite(fromMs) && fromMs >= TIMELINE_HOT_GAP_MS;
+}
+
 export function collectEventGaps(
   events: Array<Pick<SseEvent, "index" | "receivedAt">>,
 ): GapSample[] {

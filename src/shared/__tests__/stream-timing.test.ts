@@ -3,7 +3,11 @@ import {
   buildGapHistogram,
   buildTimelineMarks,
   collectEventGaps,
+  isHotGapBinFromMs,
+  isStallGapMs,
   largestGaps,
+  TIMELINE_HOT_GAP_MS,
+  TIMELINE_STALL_MS,
   timelineSpanMs,
 } from "../stream-timing";
 
@@ -48,5 +52,16 @@ describe("stream-timing", () => {
 
     const top = largestGaps(gaps, 2);
     assert(top[0].gapMs === 1000 && top[1].gapMs === 50, "largest");
+  });
+
+  it("exposes unified stall / hot thresholds", () => {
+    expect(TIMELINE_STALL_MS).toBe(800);
+    expect(TIMELINE_HOT_GAP_MS).toBe(800);
+    expect(isStallGapMs(799)).toBe(false);
+    expect(isStallGapMs(800)).toBe(true);
+    expect(isStallGapMs(undefined)).toBe(false);
+    expect(isHotGapBinFromMs(500)).toBe(false);
+    expect(isHotGapBinFromMs(800)).toBe(true);
+    expect(isHotGapBinFromMs(1000)).toBe(true);
   });
 });

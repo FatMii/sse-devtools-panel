@@ -529,17 +529,113 @@
       }
     }
   },
+  "timelineKpiAria": {
+    "message": "Timeline summary metrics"
+  },
+  "timelineKpiEvents": {
+    "message": "Events"
+  },
+  "timelineKpiEventsSub": {
+    "message": "$RATE$ /s",
+    "placeholders": {
+      "rate": {
+        "content": "$1",
+        "example": "103.5"
+      }
+    }
+  },
+  "timelineKpiDuration": {
+    "message": "Duration"
+  },
+  "timelineKpiDurationSub": {
+    "message": "TTFT $TTFT$",
+    "placeholders": {
+      "ttft": {
+        "content": "$1",
+        "example": "180 ms"
+      }
+    }
+  },
+  "timelineKpiMaxGap": {
+    "message": "Max gap"
+  },
+  "timelineKpiMaxGapOk": {
+    "message": "Threshold $MS$ ms",
+    "placeholders": {
+      "ms": {
+        "content": "$1",
+        "example": "800"
+      }
+    }
+  },
+  "timelineKpiMaxGapSlow": {
+    "message": "Threshold $MS$ ms · stall",
+    "placeholders": {
+      "ms": {
+        "content": "$1",
+        "example": "800"
+      }
+    }
+  },
+  "timelineKpiReconnects": {
+    "message": "Reconnects"
+  },
+  "timelineKpiReconnectsSub": {
+    "message": "Last $OFFSET$",
+    "placeholders": {
+      "offset": {
+        "content": "$1",
+        "example": "+8.1 s"
+      }
+    }
+  },
+  "timelineKpiDash": {
+    "message": "—"
+  },
+  "timelineLegendAria": {
+    "message": "Timeline legend"
+  },
+  "timelineLegendNormal": {
+    "message": "Normal"
+  },
+  "timelineLegendStall": {
+    "message": "Stall ≥$MS$ms",
+    "placeholders": {
+      "ms": {
+        "content": "$1",
+        "example": "800"
+      }
+    }
+  },
+  "timelineLegendReconnect": {
+    "message": "Reconnect"
+  },
+  "timelineLegendSelected": {
+    "message": "Selected"
+  },
   "timelineTrackTitle": {
     "message": "Event arrival timeline"
   },
   "timelineTrackHint": {
-    "message": "Each tick marks one event. Red ticks had ≥250ms wait before arrival; blue is selected. Click to open."
+    "message": "Each tick is one event. Stall ≥$MS$ms; see legend. Click to open in Events.",
+    "placeholders": {
+      "ms": {
+        "content": "$1",
+        "example": "800"
+      }
+    }
   },
   "timelineGapHistogram": {
     "message": "Wait-time distribution between events"
   },
   "timelineGapHistogramHint": {
-    "message": "X-axis: how long you waited between two events. Y-axis: how many times that wait length occurred. Yellow bars (≥500ms) are longer stalls."
+    "message": "X-axis: wait between two events. Y-axis: how often. Yellow bars (≥$MS$ms) are longer stalls.",
+    "placeholders": {
+      "ms": {
+        "content": "$1",
+        "example": "800"
+      }
+    }
   },
   "timelineGapHistogramX": {
     "message": "Wait between events →"

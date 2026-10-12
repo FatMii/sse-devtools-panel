@@ -529,17 +529,113 @@
       }
     }
   },
+  "timelineKpiAria": {
+    "message": "时间线摘要指标"
+  },
+  "timelineKpiEvents": {
+    "message": "事件数"
+  },
+  "timelineKpiEventsSub": {
+    "message": "$RATE$ /s",
+    "placeholders": {
+      "rate": {
+        "content": "$1",
+        "example": "103.5"
+      }
+    }
+  },
+  "timelineKpiDuration": {
+    "message": "时长"
+  },
+  "timelineKpiDurationSub": {
+    "message": "TTFT $TTFT$",
+    "placeholders": {
+      "ttft": {
+        "content": "$1",
+        "example": "180 ms"
+      }
+    }
+  },
+  "timelineKpiMaxGap": {
+    "message": "最长间隔"
+  },
+  "timelineKpiMaxGapOk": {
+    "message": "阈值 $MS$ ms",
+    "placeholders": {
+      "ms": {
+        "content": "$1",
+        "example": "800"
+      }
+    }
+  },
+  "timelineKpiMaxGapSlow": {
+    "message": "阈值 $MS$ ms · 有卡顿",
+    "placeholders": {
+      "ms": {
+        "content": "$1",
+        "example": "800"
+      }
+    }
+  },
+  "timelineKpiReconnects": {
+    "message": "重连"
+  },
+  "timelineKpiReconnectsSub": {
+    "message": "末次 $OFFSET$",
+    "placeholders": {
+      "offset": {
+        "content": "$1",
+        "example": "+8.1 s"
+      }
+    }
+  },
+  "timelineKpiDash": {
+    "message": "—"
+  },
+  "timelineLegendAria": {
+    "message": "时间线图例"
+  },
+  "timelineLegendNormal": {
+    "message": "正常"
+  },
+  "timelineLegendStall": {
+    "message": "Stall ≥$MS$ms",
+    "placeholders": {
+      "ms": {
+        "content": "$1",
+        "example": "800"
+      }
+    }
+  },
+  "timelineLegendReconnect": {
+    "message": "重连"
+  },
+  "timelineLegendSelected": {
+    "message": "选中"
+  },
   "timelineTrackTitle": {
     "message": "事件到达时间线"
   },
   "timelineTrackHint": {
-    "message": "每个刻度对应一个事件。红色表示到达前等待 ≥250ms；蓝色为当前选中。点击可打开。"
+    "message": "每个刻度对应一个事件。Stall ≥$MS$ms，见图例。点击可在 Events 中打开。",
+    "placeholders": {
+      "ms": {
+        "content": "$1",
+        "example": "800"
+      }
+    }
   },
   "timelineGapHistogram": {
     "message": "相邻事件等待时长分布"
   },
   "timelineGapHistogramHint": {
-    "message": "横轴：两次事件之间等了多久；纵轴：这种等待发生了多少次。黄色柱（≥500ms）表示较长停顿。"
+    "message": "横轴：两次事件之间等了多久；纵轴：次数。黄色柱（≥$MS$ms）表示较长停顿。",
+    "placeholders": {
+      "ms": {
+        "content": "$1",
+        "example": "800"
+      }
+    }
   },
   "timelineGapHistogramX": {
     "message": "两次事件之间的等待 →"
