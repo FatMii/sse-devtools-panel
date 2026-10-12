@@ -4,6 +4,7 @@ import {
   buildGapHistogram,
   buildTimelineInsights,
   buildTimelineMarks,
+  buildTimelinePhases,
   clampTimelineView,
   collectEventGaps,
   fitTimelineView,
@@ -21,6 +22,8 @@ import {
   type HistogramBin,
   type TimelineInsight,
   type TimelineMark,
+  type TimelinePhaseKind,
+  type TimelinePhaseSegment,
   type TimelineViewWindow,
 } from "../../shared/stream-timing";
 import type { StreamReconnectMark, StreamRecord } from "../../shared/types";
@@ -292,12 +295,19 @@ function applyTimelineRender(record: StreamRecord, options: RenderTimelineOption
     const offset = item.at - origin;
     return Number.isFinite(offset) && offset > max ? offset : max;
   }, 0);
-  const spanMs = Math.max(timelineSpanMs(marks), reconnectMaxOffset, 1);
   const gaps = collectEventGaps(record.events);
   const metrics = ensureStreamMetrics(record);
+  const ended = typeof record.endedAt === "number" && Number.isFinite(record.endedAt);
+  const spanMs = Math.max(
+    timelineSpanMs(marks),
+    reconnectMaxOffset,
+    typeof metrics.durationMs === "number" ? metrics.durationMs : 0,
+    1,
+  );
   const durationMs = metrics.durationMs ?? spanMs;
   const maxGapMs = gaps.length > 0 ? Math.max(...gaps.map((g) => g.gapMs)) : undefined;
   const maxGapSlow = isStallGapMs(maxGapMs);
+  const phases = buildTimelinePhases({ marks, spanMs, ended });
   const kpiInput: KpiRowInput = {
     eventCount: record.events.length,
     eventsPerSec: metrics.eventsPerSec,
@@ -314,6 +324,7 @@ function applyTimelineRender(record: StreamRecord, options: RenderTimelineOption
   const trackInput: ArrivalTrackInput = {
     marks,
     reconnects,
+    phases,
     spanMs,
     originMs: origin,
     selectedEventIndex: options.selectedEventIndex,
@@ -448,6 +459,7 @@ const ARRIVAL_PAD_R = 12;
 type ArrivalTrackInput = {
   marks: TimelineMark[];
   reconnects: StreamReconnectMark[];
+  phases: TimelinePhaseSegment[];
   spanMs: number;
   originMs: number;
   selectedEventIndex: number | null;
@@ -826,21 +838,21 @@ function drawArrivalTrack(
   const accentStrong = readCssColor("--accent-strong", "#145fa8");
   const danger = readCssColor("--danger", "#c33c30");
   const warning = readCssColor("--warning", "#9a6700");
+  const good = readCssColor("--good", "#218739");
+  const muted = readCssColor("--text-muted", "#596779");
   const strokeStrong = readCssColor("--stroke-strong", "#b8c3d1");
 
   const toX = (offsetMs: number): number => padL + ((offsetMs - viewStart) / viewSpan) * plotW;
 
   const { buckets, maxCount } = aggregateArrivalLod(input.marks, plotW, viewStart, viewEnd);
 
-  ctx.fillStyle = mixCssColor(danger, 12);
-  for (const mark of input.marks) {
-    if (!isStallGapMs(mark.gapFromPrevMs) || mark.gapFromPrevMs == null) continue;
-    if (mark.offsetMs < viewStart || mark.offsetMs - mark.gapFromPrevMs > viewEnd) continue;
-    const x0 = toX(mark.offsetMs - mark.gapFromPrevMs);
-    const x1 = toX(mark.offsetMs);
-    const left = Math.max(padL, x0);
-    const right = Math.min(padL + plotW, x1);
-    if (right > left) ctx.fillRect(left, 18, right - left, 44);
+  for (const phase of input.phases) {
+    if (phase.endMs <= viewStart || phase.startMs >= viewEnd) continue;
+    const left = Math.max(padL, toX(phase.startMs));
+    const right = Math.min(padL + plotW, toX(phase.endMs));
+    if (right <= left) continue;
+    ctx.fillStyle = phaseBandFill(phase.kind, accent, good, danger, muted);
+    ctx.fillRect(left, 10, right - left, 60);
   }
 
   ctx.strokeStyle = strokeStrong;
@@ -904,6 +916,25 @@ function drawArrivalTrack(
     ctx.lineTo(x - 5, 20);
     ctx.closePath();
     ctx.fill();
+  }
+}
+
+function phaseBandFill(
+  kind: TimelinePhaseKind,
+  accent: string,
+  good: string,
+  danger: string,
+  muted: string,
+): string {
+  switch (kind) {
+    case "ttft":
+      return mixCssColor(accent, 22);
+    case "steady":
+      return mixCssColor(good, 14);
+    case "stall":
+      return mixCssColor(danger, 20);
+    case "done":
+      return mixCssColor(muted, 18);
   }
 }
 

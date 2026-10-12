@@ -4,6 +4,7 @@ import {
   buildGapHistogram,
   buildTimelineInsights,
   buildTimelineMarks,
+  buildTimelinePhases,
   clampTimelineView,
   collectEventGaps,
   findNearestEventIndex,
@@ -147,6 +148,25 @@ describe("stream-timing", () => {
     expect(hitTestArrivalMark(marks, 0, 100, 0, 1000)).toBe(0);
     expect(hitTestArrivalMark(marks, 52, 100, 0, 1000, 0.5)).toBe(3);
     expect(hitTestArrivalMark([], 10, 100, 0, 1000)).toBeNull();
+  });
+
+  it("builds TTFT / steady / stall / done phase bands", () => {
+    const marks = [
+      { offsetMs: 200 },
+      { offsetMs: 300, gapFromPrevMs: 100 },
+      { offsetMs: 900, gapFromPrevMs: 600 },
+      { offsetMs: 1000, gapFromPrevMs: 100 },
+    ];
+    const live = buildTimelinePhases({ marks, spanMs: 1000, ended: false });
+    expect(live.map((s) => s.kind)).toEqual(["ttft", "steady", "stall", "steady"]);
+    expect(live[0]).toEqual({ kind: "ttft", startMs: 0, endMs: 200 });
+    expect(live[2]).toEqual({ kind: "stall", startMs: 300, endMs: 900 });
+
+    const ended = buildTimelinePhases({ marks, spanMs: 1300, ended: true });
+    expect(ended.at(-1)).toEqual({ kind: "done", startMs: 1000, endMs: 1300 });
+
+    const emptyLive = buildTimelinePhases({ marks: [], spanMs: 500, ended: false });
+    expect(emptyLive).toEqual([{ kind: "ttft", startMs: 0, endMs: 500 }]);
   });
 
   it("clamps zooms and pans the timeline view window", () => {

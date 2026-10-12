@@ -326,6 +326,75 @@ export function panTimelineView(
   );
 }
 
+/** Session narrative phases along the arrival timeline (canvas band fill). */
+export type TimelinePhaseKind = "ttft" | "steady" | "stall" | "done";
+
+export type TimelinePhaseSegment = {
+  kind: TimelinePhaseKind;
+  startMs: number;
+  endMs: number;
+};
+
+/**
+ * Split the stream into TTFT → steady/stall gaps → optional done tail.
+ * TTFT covers [0, first event] (connect wait is included; no separate connect probe).
+ * Trailing time after the last event is `done` only when `ended` is true.
+ */
+export function buildTimelinePhases(input: {
+  marks: Array<Pick<TimelineMark, "offsetMs" | "gapFromPrevMs">>;
+  spanMs: number;
+  ended?: boolean;
+  stallMs?: number;
+}): TimelinePhaseSegment[] {
+  const spanMs = Math.max(1, input.spanMs);
+  const stallMs = input.stallMs ?? TIMELINE_STALL_MS;
+  const ended = Boolean(input.ended);
+  const marks = input.marks;
+  const raw: TimelinePhaseSegment[] = [];
+
+  if (marks.length === 0) {
+    raw.push({ kind: ended ? "done" : "ttft", startMs: 0, endMs: spanMs });
+  } else {
+    const first = marks[0];
+    if (first.offsetMs > 0) {
+      raw.push({ kind: "ttft", startMs: 0, endMs: first.offsetMs });
+    }
+
+    for (let i = 1; i < marks.length; i += 1) {
+      const prev = marks[i - 1];
+      const cur = marks[i];
+      if (cur.offsetMs <= prev.offsetMs) continue;
+      const gap = cur.gapFromPrevMs ?? cur.offsetMs - prev.offsetMs;
+      raw.push({
+        kind: gap >= stallMs ? "stall" : "steady",
+        startMs: prev.offsetMs,
+        endMs: cur.offsetMs,
+      });
+    }
+
+    const last = marks[marks.length - 1];
+    if (ended && last.offsetMs < spanMs) {
+      raw.push({ kind: "done", startMs: last.offsetMs, endMs: spanMs });
+    }
+  }
+
+  return mergeAdjacentPhases(raw);
+}
+
+function mergeAdjacentPhases(segments: TimelinePhaseSegment[]): TimelinePhaseSegment[] {
+  const out: TimelinePhaseSegment[] = [];
+  for (const seg of segments) {
+    if (seg.endMs <= seg.startMs) continue;
+    const prev = out[out.length - 1];
+    if (prev && prev.kind === seg.kind && prev.endMs === seg.startMs) {
+      prev.endMs = seg.endMs;
+      continue;
+    }
+    out.push({ ...seg });
+  }
+  return out;
+}
+
 /** Map a plot-local X coordinate to the nearest in-view mark index. */
 export function hitTestArrivalMark(
   marks: Array<Pick<TimelineMark, "index" | "offsetMs">>,
