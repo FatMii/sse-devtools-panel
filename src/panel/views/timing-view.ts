@@ -1049,7 +1049,6 @@ function buildLanesSection(initial: LanesInput): LanesHandle {
   root.append(titleRow, filters, wrap, empty);
 
   let paintRaf = 0;
-  let needsRemeasure = false;
   let plotLayout = { padL: LANES_PAD_L_MIN, plotW: 1, cssW: 1 };
 
   const syncChrome = (): void => {
@@ -1098,7 +1097,6 @@ function buildLanesSection(initial: LanesInput): LanesHandle {
       plotW: Math.max(1, cssW - padL - LANES_PAD_R),
       cssW,
     };
-    needsRemeasure = false;
     drawTimingLanes(canvas, {
       marks: input.marks,
       types,
@@ -1113,8 +1111,7 @@ function buildLanesSection(initial: LanesInput): LanesHandle {
     });
   };
 
-  const schedulePaint = (remeasure = false): void => {
-    if (remeasure) needsRemeasure = true;
+  const schedulePaint = (): void => {
     if (paintRaf) return;
     paintRaf = requestAnimationFrame(() => {
       paintRaf = 0;
@@ -1156,7 +1153,7 @@ function buildLanesSection(initial: LanesInput): LanesHandle {
   });
 
   const ro = new ResizeObserver(() => {
-    schedulePaint(true);
+    schedulePaint();
   });
   ro.observe(wrap);
 
@@ -1170,7 +1167,7 @@ function buildLanesSection(initial: LanesInput): LanesHandle {
       types = collectTimingLaneTypes(next.marks);
       syncLaneFilterTypes(types);
       rebuildFilters();
-      schedulePaint(true);
+      schedulePaint();
     },
     setView: (next) => {
       view = next;
