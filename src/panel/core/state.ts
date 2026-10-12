@@ -9,7 +9,7 @@ export type StreamParser = {
 export type ContextMenuData =
   { kind: "event-data"; data: string } | { kind: "json-node"; path: string; value?: string };
 
-export type ActiveTab = "events" | "raw" | "timeline" | "request" | "conversation";
+export type ActiveTab = "events" | "raw" | "timing" | "request" | "conversation";
 
 /** Shared mutable panel state — views import this; nothing imports panel.ts. */
 export const state = {

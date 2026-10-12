@@ -12,7 +12,7 @@ export type StampableEvent = {
  * Assign monotonic `receivedAt` timestamps.
  *
  * Network chunks often contain many framed events; a single Date.now() would
- * collapse Timeline gaps to zero. Within a batch we keep order with ≥1ms steps,
+ * collapse Timing gaps to zero. Within a batch we keep order with ≥1ms steps,
  * and never go backwards relative to the previous event on the stream.
  *
  * These are receive-order stamps, not true on-the-wire write times.

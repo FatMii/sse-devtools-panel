@@ -2,13 +2,13 @@ import { driver, type Driver, type DriveStep } from "driver.js";
 import { getActiveLocale, t } from "../../shared/i18n";
 
 /** Bump when step list / copy changes meaningfully so prior completions re-show once. */
-export const TOUR_VERSION = 3;
+export const TOUR_VERSION = 4;
 export const TOUR_STORAGE_KEY = "onboardingTour";
 
-export type TourTab = "events" | "request" | "conversation" | "timeline";
+export type TourTab = "events" | "request" | "conversation" | "timing";
 
 export type TourStepId =
-  "streams" | "import" | "events" | "request" | "conversation" | "timeline" | "more-help";
+  "streams" | "import" | "events" | "request" | "conversation" | "timing" | "more-help";
 
 export type TourStepDef = {
   id: TourStepId;
@@ -57,11 +57,11 @@ export const TOUR_STEPS: TourStepDef[] = [
     activateTab: "conversation",
   },
   {
-    id: "timeline",
-    selector: '[data-tour="tab-timeline"]',
+    id: "timing",
+    selector: '[data-tour="tab-timing"]',
     titleKey: "tourStep6Title",
     bodyKey: "tourStep6Body",
-    activateTab: "timeline",
+    activateTab: "timing",
   },
   {
     id: "more-help",

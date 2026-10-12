@@ -16,7 +16,7 @@ const targetDir = path.join(root, "website", "public", "screenshots");
 const files = [
   "panel-overview.gif",
   "tab-events.png",
-  "tab-timeline.png",
+  "tab-timing.png",
   "tab-conversation-content.png",
   "main-workbench.png",
   "virtual-scrolling.gif",

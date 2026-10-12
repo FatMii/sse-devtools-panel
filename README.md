@@ -12,7 +12,7 @@
 
 <p align="center">
   <strong>A Chromium extension to debug SSE / EventSource / NDJSON streams in DevTools.</strong><br/>
-  After install, open F12 → SSE DevTools to inspect events, conversation, timeline, and global search.<br/>
+  After install, open F12 → SSE DevTools to inspect events, conversation, timing, and global search.<br/>
   Built for long-lived streams such as AI chats, notifications, and progress updates.
 </p>
 
@@ -63,7 +63,7 @@
   - [📋 Events](#-events)
   - [📨 Request](#-request)
   - [🧠 Conversation](#-conversation)
-  - [⏱ Timeline](#-timeline)
+  - [⏱ Timing](#-timing)
   - [📄 Raw](#-raw)
   - [⚡ Virtual scrolling](#-virtual-scrolling)
   - [🛠 Analysis & toolbar](#-analysis--toolbar)
@@ -102,7 +102,7 @@ For many AI / product streams that is not enough. They are often not plain Event
 | ----------------------------------------------- | ------------------------------ | ------------------------------------------------- |
 | Standard SSE (EventSource / some fetch)         | EventStream tab on the request | Same view, plus filters, JSON tree, export        |
 | AI / vendor protocols (NDJSON, Connect+JSON, …) | Mostly a whole Response body   | Profile detection + **Conversation** channels     |
-| In-stream timing & stalls                       | Mostly whole-request duration  | Timeline + Stats (TTFT / gap / events·s)          |
+| In-stream timing & stalls                       | Mostly whole-request duration  | Timing (KPI / zoom / wait-ms / types) + Stats   |
 | Spec & anomalies                                | No targeted scan               | SSE Spec warnings · Anomalies                     |
 | Web search / tool results                       | Buried in raw                  | Normalized `web_search` cards (queries + sources) |
 
@@ -151,7 +151,7 @@ Inspect stream events row by row: index, arrival time, event name, data summary.
 - Click a row to expand JSON (collapsible)
 - Filter event / data with text or regex
 - Column widths are resizable
-- Jump to matching rows from Timeline / Raw
+- Jump to matching rows from Timing / Raw
 
 <p align="center">
   <img width="1200" alt="Events tab" src="docs/assets/screenshots/tab-events.png">
@@ -204,23 +204,33 @@ DeepSeek web example — Conversation merges thinking / content / search while t
   <img width="1200" alt="DeepSeek conversation" src="docs/assets/screenshots/deepseek-conversation.gif">
 </p>
 
-## ⏱ Timeline
+## ⏱ Timing
 
-Use the timeline to see when events arrived and how long gaps lasted:
+Use Timing to see when events arrived, how long gaps lasted, and where the stream stalled (stall threshold **400ms**):
 
-- **Arrival track** — each event placed by arrival time; click to jump to the Events row
-- **Stall highlight** — events with ≥250ms gap from the previous one are marked red
-- **Gap distribution** — histogram of waits between adjacent events; long stalls stand out
-- **Reconnect markers** — EventSource reconnects appear on the track, with reconnect count and Last-Event-ID
+- **KPI strip** — event count, duration, max gap, reconnects at a glance
+- **Arrival + wait tracks** — density (Canvas LOD) on top, wait-ms over time below; scroll to zoom, drag to pan, Fit + minimap
+- **Phase bands** — TTFT / steady / stall / done under the arrival track
+- **Stall & reconnect pins** — top stalls and reconnects pinned on the track; click to open Events
+- **Longest waits** — top waits by duration, then reconnects; click a row to jump
+- **Gap histogram** — distribution of adjacent waits; click a bin to drill in
+- **By event type** — one row per SSE `event` type with show/hide filters (synced to the same time window)
+- Click ticks / pins / rows → jump to the matching Events row
 
 <p align="center">
-  <img width="1200" alt="Timeline tab" src="docs/assets/screenshots/tab-timeline.png">
+  <em>Timing — KPIs, arrival + wait tracks, gap histogram</em><br/>
+  <img width="1200" alt="Timing tab: tracks and KPIs" src="docs/assets/screenshots/tab-timing.png">
 </p>
 
-DeepSeek stream on the timeline — arrival cadence and stalls while the reply is still coming in:
+<p align="center">
+  <em>Timing — longest waits and by event type</em><br/>
+  <img width="1200" alt="Timing tab: waits and event types" src="docs/assets/screenshots/tab-timing-lists.png">
+</p>
+
+DeepSeek stream in Timing — arrival cadence and stalls while the reply is still coming in:
 
 <p align="center">
-  <img width="1200" alt="DeepSeek timeline" src="docs/assets/screenshots/deepseek-timeline.gif">
+  <img width="1200" alt="DeepSeek timing" src="docs/assets/screenshots/deepseek-timing.gif">
 </p>
 
 ## 📄 Raw
@@ -274,7 +284,7 @@ Events, Conversation (Content / Thinking), and Raw use virtual scrolling: off-sc
 
 ## Main workbench
 
-Pick a stream in the sidebar; switch Events / Request / Conversation / Timeline / Raw on the right.
+Pick a stream in the sidebar; switch Events / Request / Conversation / Timing / Raw on the right.
 
 <p align="center">
   <img width="1400" alt="Main workbench" src="docs/assets/screenshots/main-workbench.png">
@@ -326,7 +336,7 @@ Conversation merges content by protocol profile. Currently supported:
 | `chatglm-web`       | ChatGLM / Zhipu Qingyan | Thinking / content / search results                |
 | `yuanbao-web`       | Tencent Yuanbao         | Deep-search thinking + sources                     |
 | `anthropic`         | Anthropic-style SSE     | Profile detection only — no Conversation merge yet |
-| `generic`           | Unrecognized            | Events / Timeline / Raw still work                 |
+| `generic`           | Unrecognized            | Events / Timing / Raw still work                 |
 
 > Vendor protocols change often. If Conversation is empty or tool cards look wrong, export Raw or JSON and include the URL.  
 > Sites not listed here are adapted after we have a real sample.  
@@ -375,7 +385,7 @@ pnpm build && pnpm demo
 1. Open <http://127.0.0.1:8765>
 2. Confirm the extension is loaded → open DevTools → **SSE DevTools**
 3. **Refresh the demo page** → try **Fetch SSE**, **EventSource**, **XHR SSE**, **Fetch NDJSON**, **Fetch SSE (JSON CT)**, or **EventSource onping**
-4. A stream should appear in the sidebar; Events / Conversation / Timeline / Raw tabs should have data
+4. A stream should appear in the sidebar; Events / Conversation / Timing / Raw tabs should have data
 
 ---
 

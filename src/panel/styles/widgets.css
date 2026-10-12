@@ -253,10 +253,25 @@
 
 .gap-histogram .bar {
   fill: color-mix(in srgb, var(--accent) 62%, transparent);
+  transition: opacity var(--duration-fast) var(--ease-out);
 }
 
 .gap-histogram .bar.is-hot {
   fill: color-mix(in srgb, var(--warning) 75%, transparent);
+}
+
+.gap-histogram .bar.is-dimmed {
+  opacity: 0.35;
+}
+
+.gap-histogram .bar.is-active {
+  stroke: var(--accent-strong);
+  stroke-width: 1.5;
+  opacity: 1;
+}
+
+.gap-histogram .bar:hover {
+  filter: brightness(1.08);
 }
 
 .gap-histogram .plot-axis {
@@ -281,4 +296,11 @@
 .gap-histogram .count-label {
   fill: var(--text);
   font-size: 9px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.gap-histogram .count-label.is-visible {
+  opacity: 1;
 }

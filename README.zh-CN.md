@@ -12,7 +12,7 @@
 
 <p align="center">
   <strong>Chromium 扩展：在 DevTools 里调试网页的 SSE / EventSource / NDJSON 流。</strong><br/>
-  安装后打开 F12 → SSE DevTools：事件列表、对话、时间线与全局搜索，都能在面板里直接看。<br/>
+  安装后打开 F12 → SSE DevTools：事件列表、对话、时序与全局搜索，都能在面板里直接看。<br/>
   适合 AI 对话、通知推送、进度上报等长连接场景。
 </p>
 
@@ -63,7 +63,7 @@
   - [📋 Events](#-events)
   - [📨 Request](#-request)
   - [🧠 对话（Conversation）](#-对话conversation)
-  - [⏱ Timeline](#-timeline)
+  - [⏱ 时序](#-时序timing)
   - [📄 Raw](#-raw)
   - [⚡ 虚拟滚动](#-虚拟滚动)
   - [🛠 分析与工具栏](#-分析与工具栏)
@@ -104,7 +104,7 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 | ---------------------------------------- | -------------------------- | ----------------------------------------- |
 | 标准 SSE（EventSource / 部分 fetch）     | 请求详情有 EventStream Tab | 同样可看，并带过滤、JSON 树、导出         |
 | AI / 厂商协议（NDJSON、Connect+JSON 等） | 多半是整段 Response 原文   | Profile 识别 + **对话**分通道合并         |
-| 流内时序与卡顿                           | 基本只有整请求耗时         | Timeline + Stats（TTFT / gap / events·s） |
+| 流内时序与卡顿                           | 基本只有整请求耗时         | 时序（KPI / 缩放 / 等待 / 类型）+ Stats |
 | 规范与异常                               | 无针对性扫描               | SSE Spec 告警 · Anomalies                 |
 | 网页搜索等工具结果                       | 埋在 raw 里                | 归一成 `web_search` 卡片（查询 + 来源）   |
 
@@ -161,7 +161,7 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 - 点击行可展开 JSON，支持折叠浏览
 - 支持文本或正则过滤事件 / 数据
 - 列宽可拖拽调整
-- 可与 Timeline、Raw 联动跳转定位
+- 可与时序、Raw 联动跳转定位
 
 <p align="center">
   <img width="1200" alt="Events Tab" src="docs/assets/screenshots/tab-events.png">
@@ -216,23 +216,33 @@ DeepSeek 网页示例 — 推流过程中 Conversation 合并思考 / 正文 / �
   <img width="1200" alt="DeepSeek 对话" src="docs/assets/screenshots/deepseek-conversation.gif">
 </p>
 
-## ⏱ Timeline
+## ⏱ 时序（Timing）
 
-用时间轴看这条流「什么时候到、中间卡了多久」：
+用时序面板看这条流「什么时候到、中间卡了多久、卡在哪」（卡顿阈值 **400ms**）：
 
-- **到达时间线** — 每个事件按到达时刻排在轴上；点击可跳到 Events 对应行
-- **卡顿高亮** — 与上一条间隔 ≥250ms 的事件标红，方便找卡顿点
-- **间隔分布** — 相邻事件等待时长的直方图，长停顿一眼可见
-- **重连标记** — EventSource 重连会出现在时间轴上，并列出重连次数与 Last-Event-ID
+- **KPI 条** — 事件数、时长、最长间隔、重连次数一眼可见
+- **到达 + 等待双轨** — 上轨到达密度（Canvas LOD），下轨等待(ms)随时间变化；滚轮缩放、拖拽平移、Fit + 小地图
+- **阶段色带** — 到达轨铺底：TTFT / 稳态 / 卡顿 / 结束
+- **卡顿与重连浮标** — 最长卡顿与重连钉在时间点上；点击跳到 Events
+- **最长等待** — 按等待时长排序的 Top 列表，其后是重连；点击行可跳转
+- **间隔分布** — 相邻事件等待时长直方图；点击柱可下钻
+- **按事件类型** — 每种 SSE `event` 类型一行，可显示/隐藏，时间窗与到达轨同步
+- 点击刻度 / 浮标 / 列表行 → 跳到 Events 对应行
 
 <p align="center">
-  <img width="1200" alt="Timeline Tab" src="docs/assets/screenshots/tab-timeline.png">
+  <em>时序 — KPI、到达/等待双轨、间隔分布</em><br/>
+  <img width="1200" alt="时序 Tab：双轨与 KPI" src="docs/assets/screenshots/tab-timing.png">
 </p>
 
-DeepSeek 流在时间轴上 — 回复生成时的到达节奏与卡顿：
+<p align="center">
+  <em>时序 — 最长等待与按事件类型</em><br/>
+  <img width="1200" alt="时序 Tab：等待列表与类型分行" src="docs/assets/screenshots/tab-timing-lists.png">
+</p>
+
+DeepSeek 流在时序面板上 — 回复生成时的到达节奏与卡顿：
 
 <p align="center">
-  <img width="1200" alt="DeepSeek 时间轴" src="docs/assets/screenshots/deepseek-timeline.gif">
+  <img width="1200" alt="DeepSeek 时序" src="docs/assets/screenshots/deepseek-timing.gif">
 </p>
 
 ## 📄 Raw
@@ -296,7 +306,7 @@ Events、对话（正文 / 思考）、Raw 都用了虚拟滚动：屏幕外的�
 
 ## 主界面
 
-侧栏选流，右侧用 Tab 切换 Events / Request / Conversation / Timeline / Raw。
+侧栏选流，右侧用 Tab 切换 Events / Request / Conversation / 时序 / Raw。
 
 <p align="center">
   <img width="1400" alt="主界面" src="docs/assets/screenshots/main-workbench.png">
@@ -350,7 +360,7 @@ Events、对话（正文 / 思考）、Raw 都用了虚拟滚动：屏幕外的�
 | `chatglm-web`       | 智谱清言 / ChatGLM   | 思考 / 正文 / 搜索结果         |
 | `yuanbao-web`       | 腾讯元宝             | 深度搜索思考 + 来源            |
 | `anthropic`         | Anthropic 风格 SSE   | 仅协议识别 — 对话合并尚未实现  |
-| `generic`           | 未识别               | 仍可看 Events / Timeline / Raw |
+| `generic`           | 未识别               | 仍可看 Events / 时序 / Raw |
 
 > 各站协议常变。若对话视图为空或工具卡不对，请导出 Raw 或 JSON 并注明 URL。  
 > 未列出的站点：有真实样本后再适配。  
@@ -403,7 +413,7 @@ pnpm build && pnpm demo
 1. 浏览器打开 <http://127.0.0.1:8765>
 2. 确认扩展已加载 → 打开 DevTools → **SSE DevTools**
 3. **刷新 Demo 页** → 分别试 **Fetch SSE**、**EventSource**、**XHR SSE**、**Fetch NDJSON**
-4. 侧栏应出现流；Events / Conversation / Timeline / Raw 等 Tab 有数据
+4. 侧栏应出现流；Events / Conversation / 时序 / Raw 等 Tab 有数据
 
 ---
 

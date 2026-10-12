@@ -4,7 +4,7 @@ export const zh: UI = {
   meta: {
     title: "SSE DevTools Panel — Chrome / Edge 的 SSE / EventSource / NDJSON 流式调试扩展",
     description:
-      "SSE DevTools Panel 是面向 Chromium DevTools（Chrome / Edge）的 SSE / EventSource / NDJSON 流式调试扩展。自动捕获网页流、按事件解析与可视化，支持 Timeline、对话合并与长流调试。",
+      "SSE DevTools Panel 是面向 Chromium DevTools（Chrome / Edge）的 SSE / EventSource / NDJSON 流式调试扩展。自动捕获网页流、按事件解析与可视化，支持时序分析、对话合并与长流调试。",
     keywords:
       "SSE DevTools Panel, SSE 调试, EventSource, NDJSON, Chrome DevTools, Edge DevTools, 流式调试, AI 对话流, Server-Sent Events",
   },
@@ -35,7 +35,7 @@ export const zh: UI = {
   heroDemo: {
     ariaLabel: "产品演示",
     windowUrl: "F12 → SSE DevTools · /api/stream",
-    imageAlt: "SSE DevTools Panel 面板总览：Streams 列表、Timeline 与事件详情",
+    imageAlt: "SSE DevTools Panel 面板总览：Streams 列表、时序与事件详情",
   },
   pain: {
     title: "为什么需要它",
@@ -70,10 +70,11 @@ export const zh: UI = {
       {
         num: "02",
         title: "看清推流时序",
-        description: "Timeline / Stats 标出首包、间隔与卡顿，比只看 Network 整段耗时更直观。",
-        image: "tab-timeline.png",
-        alt: "Timeline 标签页：事件间隔与卡顿可视化",
-        tags: ["Timeline", "TTFT"],
+        description:
+          "时序展示到达密度、等待(ms)、阶段色带、卡顿浮标与按事件类型分行，比只看 Network 整段耗时更直观。",
+        image: "tab-timing.png",
+        alt: "时序标签页：到达密度、等待轨与卡顿浮标",
+        tags: ["时序", "TTFT", "缩放"],
       },
       {
         num: "03",
@@ -161,7 +162,7 @@ export const zh: UI = {
       {
         question: "和 Network 面板有什么区别？",
         answer:
-          "Network 看整段请求；SSE DevTools 专为流式设计——按事件解析、对话合并、时间线节奏与 TTFT，适合 AI 对话与 NDJSON 私有协议。",
+          "Network 看整段请求；SSE DevTools 专为流式设计——按事件解析、对话合并、时序节奏与 TTFT，适合 AI 对话与 NDJSON 私有协议。",
       },
     ],
   },

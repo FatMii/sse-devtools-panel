@@ -65,8 +65,8 @@
   "tabEvents": {
     "message": "事件"
   },
-  "tabTimeline": {
-    "message": "时间线"
+  "tabTiming": {
+    "message": "时序"
   },
   "tabRequest": {
     "message": "请求"
@@ -512,45 +512,245 @@
   "statsSelectedEventsPerSec": {
     "message": "事件/秒"
   },
-  "timelineMeta": {
-    "message": "$COUNT$ 个事件 · 跨度 $SPAN$ · p95 间隔 $P95$",
+  "timingKpiAria": {
+    "message": "时序摘要指标"
+  },
+  "timingKpiEvents": {
+    "message": "事件数"
+  },
+  "timingKpiEventsSub": {
+    "message": "$RATE$ /s",
     "placeholders": {
-      "count": {
+      "rate": {
         "content": "$1",
-        "example": "42"
-      },
-      "span": {
-        "content": "$2",
-        "example": "1.2 s"
-      },
-      "p95": {
-        "content": "$3",
-        "example": "80 ms"
+        "example": "103.5"
       }
     }
   },
-  "timelineTrackTitle": {
-    "message": "事件到达时间线"
+  "timingKpiDuration": {
+    "message": "时长"
   },
-  "timelineTrackHint": {
-    "message": "每个刻度对应一个事件。红色表示到达前等待 ≥250ms；蓝色为当前选中。点击可打开。"
+  "timingKpiDurationSub": {
+    "message": "TTFT $TTFT$",
+    "placeholders": {
+      "ttft": {
+        "content": "$1",
+        "example": "180 ms"
+      }
+    }
   },
-  "timelineGapHistogram": {
+  "timingKpiMaxGap": {
+    "message": "最长间隔"
+  },
+  "timingKpiMaxGapOk": {
+    "message": "阈值 $MS$ ms",
+    "placeholders": {
+      "ms": {
+        "content": "$1",
+        "example": "400"
+      }
+    }
+  },
+  "timingKpiMaxGapSlow": {
+    "message": "阈值 $MS$ ms · 有卡顿",
+    "placeholders": {
+      "ms": {
+        "content": "$1",
+        "example": "400"
+      }
+    }
+  },
+  "timingKpiReconnects": {
+    "message": "重连"
+  },
+  "timingKpiReconnectsSub": {
+    "message": "末次 $OFFSET$",
+    "placeholders": {
+      "offset": {
+        "content": "$1",
+        "example": "+8.1 s"
+      }
+    }
+  },
+  "timingKpiDash": {
+    "message": "—"
+  },
+  "timingLegendAria": {
+    "message": "时序图例"
+  },
+  "timingLegendNormal": {
+    "message": "正常"
+  },
+  "timingLegendStall": {
+    "message": "卡顿 ≥$MS$ms",
+    "placeholders": {
+      "ms": {
+        "content": "$1",
+        "example": "400"
+      }
+    }
+  },
+  "timingLegendWait": {
+    "message": "等待随时间（ms）"
+  },
+  "timingAnomalyStall": {
+    "message": "卡顿 $GAP$",
+    "placeholders": {
+      "gap": {
+        "content": "$1",
+        "example": "1.2 s"
+      }
+    }
+  },
+  "timingAnomalyReconnect": {
+    "message": "Reconnect #$COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
+  "timingLaneArrival": {
+    "message": "到达"
+  },
+  "timingLaneWait": {
+    "message": "等待"
+  },
+  "timingLegendReconnect": {
+    "message": "重连"
+  },
+  "timingLegendSelected": {
+    "message": "选中"
+  },
+  "timingTrackTitle": {
+    "message": "事件到达"
+  },
+  "timingTrackHintTop": {
+    "message": "上轨：到达刻度（红色 ≥$MS$ms）。",
+    "placeholders": {
+      "ms": {
+        "content": "$1",
+        "example": "400"
+      }
+    }
+  },
+  "timingTrackHintBottom": {
+    "message": "下轨：等待随时间（ms），与「最长间隔」同单位。"
+  },
+  "timingTrackHintAction": {
+    "message": "点击可在 Events 中打开。"
+  },
+  "timingZoomIn": {
+    "message": "放大"
+  },
+  "timingZoomOut": {
+    "message": "缩小"
+  },
+  "timingZoomFit": {
+    "message": "Fit"
+  },
+  "timingTrackNavHint": {
+    "message": "滚轮缩放 · 拖拽主轨或迷你图平移 · Fit 复位全量。"
+  },
+  "timingTrackTipsAria": {
+    "message": "时序使用提示"
+  },
+  "timingGapHistogram": {
     "message": "相邻事件等待时长分布"
   },
-  "timelineGapHistogramHint": {
-    "message": "横轴：两次事件之间等了多久；纵轴：这种等待发生了多少次。黄色柱（≥500ms）表示较长停顿。"
+  "timingGapHistogramTipsAria": {
+    "message": "等待分布说明"
   },
-  "timelineGapHistogramX": {
+  "timingGapHistogramHintAxes": {
+    "message": "横轴：两次事件之间等了多久；纵轴：次数。"
+  },
+  "timingGapHistogramHintHot": {
+    "message": "黄色（≥$MS$ms）。",
+    "placeholders": {
+      "ms": {
+        "content": "$1",
+        "example": "400"
+      }
+    }
+  },
+  "timingGapHistogramHintAction": {
+    "message": "点击柱体可跳到该区间内最长等待。"
+  },
+  "timingGapBinTipAction": {
+    "message": "点击跳到该区间内最长的一次等待"
+  },
+  "timingGapBinTipEmpty": {
+    "message": "该区间没有等待样本"
+  },
+  "timingTickTipMain": {
+    "message": "#$INDEX$ · $EVENT$ · 等待 $GAP$",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "12"
+      },
+      "event": {
+        "content": "$2",
+        "example": "message"
+      },
+      "gap": {
+        "content": "$3",
+        "example": "340 ms"
+      }
+    }
+  },
+  "timingTickTipMainFirst": {
+    "message": "#$INDEX$ · $EVENT$ · 首个事件",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "12"
+      },
+      "event": {
+        "content": "$2",
+        "example": "message"
+      }
+    }
+  },
+  "timingTickTipWaitMain": {
+    "message": "等待 ≈ $WAIT$",
+    "placeholders": {
+      "wait": {
+        "content": "$1",
+        "example": "1400 ms"
+      }
+    }
+  },
+  "timingTickTipNearestEvent": {
+    "message": "附近事件 #$INDEX$ · $EVENT$",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "12"
+      },
+      "event": {
+        "content": "$2",
+        "example": "message"
+      }
+    }
+  },
+  "timingTickTipStall": {
+    "message": "卡顿"
+  },
+  "timingTickTipAction": {
+    "message": "点击在 Events 中打开"
+  },
+  "timingGapHistogramX": {
     "message": "两次事件之间的等待 →"
   },
-  "timelineGapHistogramY": {
+  "timingGapHistogramY": {
     "message": "次数"
   },
-  "timelineGapHistogramEmpty": {
+  "timingGapHistogramEmpty": {
     "message": "至少需要 2 个事件才能展示等待分布。"
   },
-  "timelineGapBinTitle": {
+  "timingGapBinTitle": {
     "message": "$RANGE$：$COUNT$ 次等待",
     "placeholders": {
       "range": {
@@ -563,23 +763,62 @@
       }
     }
   },
-  "timelineLargestGaps": {
-    "message": "最长等待"
-  },
-  "timelineLargestGapsHint": {
-    "message": "点击可跳到这次长等待之后到达的事件。"
-  },
-  "timelineGapBeforeEvent": {
-    "message": "到达 #$INDEX$ 前等待",
+  "timingWaitRank": {
+    "message": "最长等待（Top $N$）",
     "placeholders": {
-      "index": {
+      "n": {
         "content": "$1",
-        "example": "42"
+        "example": "12"
       }
     }
   },
-  "timelineNoGaps": {
-    "message": "尚无事件间隔。"
+  "timingWaitRankTipsAria": {
+    "message": "最长等待说明"
+  },
+  "timingWaitRankHintSort": {
+    "message": "先按等待时长排序（条长 ∝ 时长），其后是重连。"
+  },
+  "timingWaitRankHintAction": {
+    "message": "点击行可在 Events 中打开。"
+  },
+  "timingWaitRankEmpty": {
+    "message": "尚无长等待或重连。"
+  },
+  "timingWaitRankReconnect": {
+    "message": "Reconnect #$COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
+  "timingLanesTitle": {
+    "message": "按事件类型"
+  },
+  "timingLanesTipsAria": {
+    "message": "按事件类型说明"
+  },
+  "timingLanesHintRows": {
+    "message": "每种 SSE event 类型一行（message / delta / ping / \u2026）。"
+  },
+  "timingLanesHintFilter": {
+    "message": "点上方按钮，可显示或隐藏某一类型。"
+  },
+  "timingLanesHintAction": {
+    "message": "时间窗与到达轨同步。点击刻度可在 Events 中打开。"
+  },
+  "timingLanesEmpty": {
+    "message": "尚无按类型可展示的事件。"
+  },
+  "timingLanesFilterAria": {
+    "message": "筛选事件类型 $TYPE$",
+    "placeholders": {
+      "type": {
+        "content": "$1",
+        "example": "message"
+      }
+    }
   },
   "originImported": {
     "message": "导入"
@@ -737,38 +976,6 @@
       "count": {
         "content": "$1",
         "example": "2"
-      }
-    }
-  },
-  "timelineReconnectsTitle": {
-    "message": "EventSource 重连"
-  },
-  "timelineReconnectsHint": {
-    "message": "轨道上的菱形为重连尝试；Last-Event-ID 为浏览器下次会带上的 id。"
-  },
-  "timelineReconnectMark": {
-    "message": "重连 #$COUNT$ · id $ID$ · $OFFSET$",
-    "placeholders": {
-      "count": {
-        "content": "$1",
-        "example": "1"
-      },
-      "id": {
-        "content": "$2",
-        "example": "42"
-      },
-      "offset": {
-        "content": "$3",
-        "example": "+1200ms"
-      }
-    }
-  },
-  "timelineReconnectItem": {
-    "message": "重连 #$COUNT$",
-    "placeholders": {
-      "count": {
-        "content": "$1",
-        "example": "1"
       }
     }
   },
@@ -976,35 +1183,62 @@
   "connectionSummary": {
     "message": "$LIVE$ 进行中 · $STREAMS$ 条流 · $EVENTS$ 个事件",
     "placeholders": {
-      "live": { "content": "$1", "example": "1" },
-      "streams": { "content": "$2", "example": "3" },
-      "events": { "content": "$3", "example": "42" }
+      "live": {
+        "content": "$1",
+        "example": "1"
+      },
+      "streams": {
+        "content": "$2",
+        "example": "3"
+      },
+      "events": {
+        "content": "$3",
+        "example": "42"
+      }
     }
   },
   "streamsCount": {
     "message": "$TOTAL$",
     "placeholders": {
-      "total": { "content": "$1", "example": "3" }
+      "total": {
+        "content": "$1",
+        "example": "3"
+      }
     }
   },
   "streamsCountFiltered": {
     "message": "$VISIBLE$ / $TOTAL$",
     "placeholders": {
-      "visible": { "content": "$1", "example": "2" },
-      "total": { "content": "$2", "example": "10" }
+      "visible": {
+        "content": "$1",
+        "example": "2"
+      },
+      "total": {
+        "content": "$2",
+        "example": "10"
+      }
     }
   },
   "eventsFilterHint": {
     "message": "$VISIBLE$ / $TOTAL$ 匹配",
     "placeholders": {
-      "visible": { "content": "$1", "example": "42" },
-      "total": { "content": "$2", "example": "42" }
+      "visible": {
+        "content": "$1",
+        "example": "42"
+      },
+      "total": {
+        "content": "$2",
+        "example": "42"
+      }
     }
   },
   "rawSizeKb": {
     "message": "$SIZE$ KB",
     "placeholders": {
-      "size": { "content": "$1", "example": "4.7" }
+      "size": {
+        "content": "$1",
+        "example": "4.7"
+      }
     }
   },
   "statusLive": {
@@ -1055,8 +1289,14 @@
   "tourStepLabel": {
     "message": "第 $CURRENT$ / $TOTAL$ 步",
     "placeholders": {
-      "CURRENT": { "content": "$1", "example": "1" },
-      "TOTAL": { "content": "$2", "example": "7" }
+      "CURRENT": {
+        "content": "$1",
+        "example": "1"
+      },
+      "TOTAL": {
+        "content": "$2",
+        "example": "7"
+      }
     }
   },
   "tourStep1Title": {
@@ -1090,10 +1330,10 @@
     "message": "对支持的 AI 协议，Conversation 会把思考与正文拼成可读通道。"
   },
   "tourStep6Title": {
-    "message": "Timeline 看推流节奏"
+    "message": "时序看推流节奏"
   },
   "tourStep6Body": {
-    "message": "Timeline 标出首包延迟、间隔与卡顿；旁边还有 Raw 看原文。"
+    "message": "时序展示到达密度、等待与卡顿。滚轮缩放，点击刻度可跳到 Events；旁边还有 Raw 看原文。"
   },
   "tourStep7Title": {
     "message": "More 里可重看引导"

@@ -18,6 +18,10 @@
   --good: #218739;
   --warning: #9a6700;
   --danger: #c33c30;
+  --lane-a: #176fc1;
+  --lane-b: #0f8a6a;
+  --lane-c: #8a5a00;
+  --lane-d: #c33c30;
 
   /* Component semantics */
   --json-key: #0b68b7;
@@ -113,6 +117,10 @@
   --good: #3ecf6e;
   --warning: #e6b84d;
   --danger: #f07167;
+  --lane-a: #4da3ff;
+  --lane-b: #3ecf9a;
+  --lane-c: #e6b84d;
+  --lane-d: #f07167;
 
   --json-key: #79c0ff;
   --json-string: #7ee787;

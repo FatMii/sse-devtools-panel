@@ -1,0 +1,553 @@
+.timing-view.active {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  background: var(--canvas);
+}
+
+.timing-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-height: 0;
+  overflow: auto;
+  padding: 9px 11px 16px;
+}
+
+.timing-meta {
+  color: var(--text-faint);
+  font: var(--text-xs) var(--mono);
+  font-variant-numeric: tabular-nums;
+  padding: 6px 8px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+}
+
+.timing-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.timing-kpi {
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+}
+
+.timing-kpi.is-alert {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--stroke));
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface-1));
+}
+
+.timing-kpi-label {
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.timing-kpi-value {
+  margin-top: 3px;
+  color: var(--text);
+  font: var(--weight-semibold) 15px / 1.2 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.timing-kpi.is-alert .timing-kpi-value {
+  color: var(--danger);
+}
+
+.timing-kpi-sub {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timing-track-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.timing-track-toolbar {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.timing-track-toolbar > button {
+  min-width: 28px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+  color: var(--text-muted);
+  font: var(--weight-semibold) 12px / 1 var(--sans);
+  cursor: pointer;
+}
+
+.timing-track-toolbar > button:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.timing-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+}
+
+.timing-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.timing-legend-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 14px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.timing-legend-swatch.is-normal {
+  background: color-mix(in srgb, var(--accent) 65%, transparent);
+}
+
+.timing-legend-swatch.is-stall {
+  background: var(--danger);
+}
+
+.timing-legend-swatch.is-wait {
+  background: var(--warning);
+  border-radius: 1px;
+  height: 3px;
+  align-self: center;
+}
+
+.timing-legend-swatch.is-reconnect {
+  width: 9px;
+  height: 9px;
+  border-radius: 1px;
+  background: transparent;
+  border: 1.5px solid var(--text-muted);
+  transform: rotate(45deg);
+}
+
+.timing-legend-swatch.is-selected {
+  background: var(--accent-strong);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.timing-tooltip {
+  position: fixed;
+  z-index: 1000;
+  min-width: 160px;
+  max-width: 280px;
+  padding: 8px 10px;
+  border: 1px solid var(--stroke-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-menu);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.timing-tooltip.is-on {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.timing-tooltip-main {
+  color: var(--text);
+  font: var(--weight-semibold) var(--text-xs) / 1.45 var(--sans);
+  font-variant-numeric: tabular-nums;
+}
+
+.timing-tooltip-sub {
+  margin-top: 3px;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.timing-tooltip-main.is-wait {
+  color: var(--warning);
+  font-weight: var(--weight-semibold);
+}
+
+.timing-tooltip-main.is-gap {
+  color: var(--text);
+  font-weight: var(--weight-semibold);
+}
+
+.timing-tooltip-sub.is-stall {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
+  font-weight: var(--weight-semibold);
+}
+
+.timing-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--stroke);
+}
+
+.timing-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.timing-section-title {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.timing-section-hint {
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+.timing-track-title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.timing-track-tips {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--stroke);
+  border-radius: 50%;
+  background: var(--surface-1);
+  color: var(--text-muted);
+  font: var(--weight-semibold) 11px / 1 var(--sans);
+  cursor: help;
+}
+
+.timing-track-tips:hover,
+.timing-track-tips:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+  background: var(--accent-wash);
+  outline: none;
+}
+
+.timing-track-canvas-wrap {
+  position: relative;
+  width: 100%;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+}
+
+.timing-anomaly-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.timing-anomaly-chip {
+  position: absolute;
+  top: 10px;
+  transform: translateX(-50%);
+  max-width: 140px;
+  padding: 3px 7px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-menu);
+  color: var(--text);
+  font: var(--weight-semibold) 10px / 1.2 var(--sans);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: auto;
+  cursor: pointer;
+  z-index: 3;
+}
+
+.timing-anomaly-chip.is-stall {
+  top: 10px;
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--stroke));
+  background: color-mix(in srgb, var(--danger) 12%, var(--surface-1));
+  color: var(--danger);
+}
+
+.timing-anomaly-chip.is-reconnect {
+  top: 36px;
+  border-color: color-mix(in srgb, var(--warning) 45%, var(--stroke));
+  background: color-mix(in srgb, var(--warning) 14%, var(--surface-1));
+  color: var(--warning);
+}
+
+.timing-anomaly-chip.is-selected {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.timing-anomaly-chip:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.timing-anomaly-chip:hover:not(:disabled) {
+  filter: brightness(1.03);
+}
+
+.timing-track-canvas-wrap.is-panning {
+  cursor: grabbing;
+}
+
+.timing-track-canvas {
+  display: block;
+  width: 100%;
+  height: 320px;
+  pointer-events: none;
+}
+
+.timing-track-axis {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.timing-minimap {
+  position: relative;
+  height: 18px;
+  margin-top: 8px;
+  border: 1px solid var(--stroke);
+  border-radius: 3px;
+  background: var(--surface-2, var(--surface-1));
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.timing-minimap.is-panning {
+  cursor: grabbing;
+}
+
+.timing-minimap-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.timing-minimap-window {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.timing-waterfall {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 280px;
+  overflow: auto;
+}
+
+.timing-waterfall-row {
+  display: grid;
+  grid-template-columns: minmax(72px, 28%) minmax(0, 1fr) 72px;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text);
+  font: 11px / 1.2 var(--mono);
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  cursor: pointer;
+}
+
+.timing-waterfall-row:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--stroke);
+}
+
+.timing-waterfall-row:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.timing-waterfall-row.is-selected {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--stroke));
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-1));
+}
+
+.timing-waterfall-label {
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timing-waterfall-row.is-reconnect .timing-waterfall-label {
+  color: var(--warning);
+}
+
+.timing-waterfall-track {
+  position: relative;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--stroke);
+  overflow: hidden;
+}
+
+.timing-waterfall-bar {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.timing-waterfall-bar.is-stall {
+  background: color-mix(in srgb, var(--warning) 75%, transparent);
+}
+
+.timing-waterfall-bar.is-severe {
+  background: color-mix(in srgb, var(--danger) 70%, transparent);
+}
+
+.timing-waterfall-bar.is-reconnect {
+  background: color-mix(in srgb, var(--warning) 65%, transparent);
+}
+
+.timing-waterfall-ms {
+  text-align: right;
+  font-weight: var(--weight-semibold);
+  color: var(--accent-strong);
+  white-space: nowrap;
+}
+
+.timing-waterfall-ms.is-stall {
+  color: var(--warning);
+}
+
+.timing-waterfall-ms.is-severe {
+  color: var(--danger);
+}
+
+.timing-waterfall-ms.is-reconnect {
+  color: var(--warning);
+}
+
+.timing-lanes-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 8px;
+}
+
+.timing-lanes-chip {
+  appearance: none;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font: 11px / 1.2 var(--mono);
+  padding: 3px 8px;
+  cursor: pointer;
+}
+
+.timing-lanes-chip.is-on {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--stroke));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-1));
+  color: var(--text);
+  font-weight: var(--weight-semibold);
+}
+
+.timing-lanes-chip.is-on[data-lane-color="a"] {
+  border-color: color-mix(in srgb, var(--lane-a) 45%, var(--stroke));
+  background: color-mix(in srgb, var(--lane-a) 12%, var(--surface-1));
+  color: var(--lane-a);
+}
+
+.timing-lanes-chip.is-on[data-lane-color="b"] {
+  border-color: color-mix(in srgb, var(--lane-b) 45%, var(--stroke));
+  background: color-mix(in srgb, var(--lane-b) 12%, var(--surface-1));
+  color: var(--lane-b);
+}
+
+.timing-lanes-chip.is-on[data-lane-color="c"] {
+  border-color: color-mix(in srgb, var(--lane-c) 45%, var(--stroke));
+  background: color-mix(in srgb, var(--lane-c) 12%, var(--surface-1));
+  color: var(--lane-c);
+}
+
+.timing-lanes-chip.is-on[data-lane-color="d"] {
+  border-color: color-mix(in srgb, var(--lane-d) 45%, var(--stroke));
+  background: color-mix(in srgb, var(--lane-d) 12%, var(--surface-1));
+  color: var(--lane-d);
+}
+
+.timing-lanes-canvas-wrap {
+  position: relative;
+  width: 100%;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+  overflow: hidden;
+}
+
+.timing-lanes-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: pointer;
+}

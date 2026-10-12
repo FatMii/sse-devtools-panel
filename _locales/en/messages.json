@@ -65,8 +65,8 @@
   "tabEvents": {
     "message": "Events"
   },
-  "tabTimeline": {
-    "message": "Timeline"
+  "tabTiming": {
+    "message": "Timing"
   },
   "tabRequest": {
     "message": "Request"
@@ -512,45 +512,245 @@
   "statsSelectedEventsPerSec": {
     "message": "events/s"
   },
-  "timelineMeta": {
-    "message": "$COUNT$ events · span $SPAN$ · p95 gap $P95$",
+  "timingKpiAria": {
+    "message": "Timing summary metrics"
+  },
+  "timingKpiEvents": {
+    "message": "Events"
+  },
+  "timingKpiEventsSub": {
+    "message": "$RATE$ /s",
     "placeholders": {
-      "count": {
+      "rate": {
         "content": "$1",
-        "example": "42"
-      },
-      "span": {
-        "content": "$2",
-        "example": "1.2 s"
-      },
-      "p95": {
-        "content": "$3",
-        "example": "80 ms"
+        "example": "103.5"
       }
     }
   },
-  "timelineTrackTitle": {
-    "message": "Event arrival timeline"
+  "timingKpiDuration": {
+    "message": "Duration"
   },
-  "timelineTrackHint": {
-    "message": "Each tick marks one event. Red ticks had ≥250ms wait before arrival; blue is selected. Click to open."
+  "timingKpiDurationSub": {
+    "message": "TTFT $TTFT$",
+    "placeholders": {
+      "ttft": {
+        "content": "$1",
+        "example": "180 ms"
+      }
+    }
   },
-  "timelineGapHistogram": {
+  "timingKpiMaxGap": {
+    "message": "Max gap"
+  },
+  "timingKpiMaxGapOk": {
+    "message": "Threshold $MS$ ms",
+    "placeholders": {
+      "ms": {
+        "content": "$1",
+        "example": "400"
+      }
+    }
+  },
+  "timingKpiMaxGapSlow": {
+    "message": "Threshold $MS$ ms · long wait",
+    "placeholders": {
+      "ms": {
+        "content": "$1",
+        "example": "400"
+      }
+    }
+  },
+  "timingKpiReconnects": {
+    "message": "Reconnects"
+  },
+  "timingKpiReconnectsSub": {
+    "message": "Last $OFFSET$",
+    "placeholders": {
+      "offset": {
+        "content": "$1",
+        "example": "+8.1 s"
+      }
+    }
+  },
+  "timingKpiDash": {
+    "message": "—"
+  },
+  "timingLegendAria": {
+    "message": "Timing legend"
+  },
+  "timingLegendNormal": {
+    "message": "Normal"
+  },
+  "timingLegendStall": {
+    "message": "Long wait ≥$MS$ms",
+    "placeholders": {
+      "ms": {
+        "content": "$1",
+        "example": "400"
+      }
+    }
+  },
+  "timingLegendWait": {
+    "message": "Wait over time (ms)"
+  },
+  "timingAnomalyStall": {
+    "message": "Stall $GAP$",
+    "placeholders": {
+      "gap": {
+        "content": "$1",
+        "example": "1.2 s"
+      }
+    }
+  },
+  "timingAnomalyReconnect": {
+    "message": "Reconnect #$COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
+  "timingLaneArrival": {
+    "message": "Arrival"
+  },
+  "timingLaneWait": {
+    "message": "Wait"
+  },
+  "timingLegendReconnect": {
+    "message": "Reconnect"
+  },
+  "timingLegendSelected": {
+    "message": "Selected"
+  },
+  "timingTrackTitle": {
+    "message": "Event arrival"
+  },
+  "timingTrackHintTop": {
+    "message": "Top: arrival ticks (red ≥$MS$ms).",
+    "placeholders": {
+      "ms": {
+        "content": "$1",
+        "example": "400"
+      }
+    }
+  },
+  "timingTrackHintBottom": {
+    "message": "Bottom: wait over time (ms), same unit as Max gap."
+  },
+  "timingTrackHintAction": {
+    "message": "Click to open in Events."
+  },
+  "timingZoomIn": {
+    "message": "Zoom in"
+  },
+  "timingZoomOut": {
+    "message": "Zoom out"
+  },
+  "timingZoomFit": {
+    "message": "Fit"
+  },
+  "timingTrackNavHint": {
+    "message": "Scroll to zoom · drag track or minimap to pan · Fit resets the full range."
+  },
+  "timingTrackTipsAria": {
+    "message": "Timing tips"
+  },
+  "timingGapHistogram": {
     "message": "Wait-time distribution between events"
   },
-  "timelineGapHistogramHint": {
-    "message": "X-axis: how long you waited between two events. Y-axis: how many times that wait length occurred. Yellow bars (≥500ms) are longer stalls."
+  "timingGapHistogramTipsAria": {
+    "message": "Wait distribution tips"
   },
-  "timelineGapHistogramX": {
+  "timingGapHistogramHintAxes": {
+    "message": "X-axis: wait between two events. Y-axis: how often."
+  },
+  "timingGapHistogramHintHot": {
+    "message": "Yellow (≥$MS$ms).",
+    "placeholders": {
+      "ms": {
+        "content": "$1",
+        "example": "400"
+      }
+    }
+  },
+  "timingGapHistogramHintAction": {
+    "message": "Click a bar to jump to its longest wait."
+  },
+  "timingGapBinTipAction": {
+    "message": "Click to jump to the longest wait in this range"
+  },
+  "timingGapBinTipEmpty": {
+    "message": "No waits in this range"
+  },
+  "timingTickTipMain": {
+    "message": "#$INDEX$ · $EVENT$ · wait $GAP$",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "12"
+      },
+      "event": {
+        "content": "$2",
+        "example": "message"
+      },
+      "gap": {
+        "content": "$3",
+        "example": "340 ms"
+      }
+    }
+  },
+  "timingTickTipMainFirst": {
+    "message": "#$INDEX$ · $EVENT$ · first event",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "12"
+      },
+      "event": {
+        "content": "$2",
+        "example": "message"
+      }
+    }
+  },
+  "timingTickTipWaitMain": {
+    "message": "Wait ≈ $WAIT$",
+    "placeholders": {
+      "wait": {
+        "content": "$1",
+        "example": "1400 ms"
+      }
+    }
+  },
+  "timingTickTipNearestEvent": {
+    "message": "Nearby event #$INDEX$ · $EVENT$",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "12"
+      },
+      "event": {
+        "content": "$2",
+        "example": "message"
+      }
+    }
+  },
+  "timingTickTipStall": {
+    "message": "Long wait"
+  },
+  "timingTickTipAction": {
+    "message": "Click to open in Events"
+  },
+  "timingGapHistogramX": {
     "message": "Wait between events →"
   },
-  "timelineGapHistogramY": {
+  "timingGapHistogramY": {
     "message": "Times"
   },
-  "timelineGapHistogramEmpty": {
+  "timingGapHistogramEmpty": {
     "message": "Need at least 2 events to show wait distribution."
   },
-  "timelineGapBinTitle": {
+  "timingGapBinTitle": {
     "message": "$RANGE$: $COUNT$ waits",
     "placeholders": {
       "range": {
@@ -563,23 +763,62 @@
       }
     }
   },
-  "timelineLargestGaps": {
-    "message": "Largest waits"
-  },
-  "timelineLargestGapsHint": {
-    "message": "Jump to the event that arrived after each long wait."
-  },
-  "timelineGapBeforeEvent": {
-    "message": "Wait before #$INDEX$",
+  "timingWaitRank": {
+    "message": "Longest waits (Top $N$)",
     "placeholders": {
-      "index": {
+      "n": {
         "content": "$1",
-        "example": "42"
+        "example": "12"
       }
     }
   },
-  "timelineNoGaps": {
-    "message": "No inter-event waits yet."
+  "timingWaitRankTipsAria": {
+    "message": "Longest waits tips"
+  },
+  "timingWaitRankHintSort": {
+    "message": "Sorted by wait duration (bar length ∝ duration), then reconnects."
+  },
+  "timingWaitRankHintAction": {
+    "message": "Click a row to open in Events."
+  },
+  "timingWaitRankEmpty": {
+    "message": "No long waits or reconnects yet."
+  },
+  "timingWaitRankReconnect": {
+    "message": "Reconnect #$COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
+  "timingLanesTitle": {
+    "message": "By event type"
+  },
+  "timingLanesTipsAria": {
+    "message": "By event type tips"
+  },
+  "timingLanesHintRows": {
+    "message": "One row per SSE event type (message / delta / ping / \u2026)."
+  },
+  "timingLanesHintFilter": {
+    "message": "Click a button above to show or hide that type."
+  },
+  "timingLanesHintAction": {
+    "message": "Aligned with the arrival track window. Click a tick to open in Events."
+  },
+  "timingLanesEmpty": {
+    "message": "No events to show by type yet."
+  },
+  "timingLanesFilterAria": {
+    "message": "Filter event type $TYPE$",
+    "placeholders": {
+      "type": {
+        "content": "$1",
+        "example": "message"
+      }
+    }
   },
   "originImported": {
     "message": "imported"
@@ -737,38 +976,6 @@
       "count": {
         "content": "$1",
         "example": "2"
-      }
-    }
-  },
-  "timelineReconnectsTitle": {
-    "message": "EventSource reconnects"
-  },
-  "timelineReconnectsHint": {
-    "message": "Diamond marks on the track are reconnect attempts. Last-Event-ID is what the browser would send next."
-  },
-  "timelineReconnectMark": {
-    "message": "Reconnect #$COUNT$ · id $ID$ · $OFFSET$",
-    "placeholders": {
-      "count": {
-        "content": "$1",
-        "example": "1"
-      },
-      "id": {
-        "content": "$2",
-        "example": "42"
-      },
-      "offset": {
-        "content": "$3",
-        "example": "+1200ms"
-      }
-    }
-  },
-  "timelineReconnectItem": {
-    "message": "Reconnect #$COUNT$",
-    "placeholders": {
-      "count": {
-        "content": "$1",
-        "example": "1"
       }
     }
   },
@@ -976,35 +1183,62 @@
   "connectionSummary": {
     "message": "$LIVE$ live · $STREAMS$ streams · $EVENTS$ events",
     "placeholders": {
-      "live": { "content": "$1", "example": "1" },
-      "streams": { "content": "$2", "example": "3" },
-      "events": { "content": "$3", "example": "42" }
+      "live": {
+        "content": "$1",
+        "example": "1"
+      },
+      "streams": {
+        "content": "$2",
+        "example": "3"
+      },
+      "events": {
+        "content": "$3",
+        "example": "42"
+      }
     }
   },
   "streamsCount": {
     "message": "$TOTAL$",
     "placeholders": {
-      "total": { "content": "$1", "example": "3" }
+      "total": {
+        "content": "$1",
+        "example": "3"
+      }
     }
   },
   "streamsCountFiltered": {
     "message": "$VISIBLE$ / $TOTAL$",
     "placeholders": {
-      "visible": { "content": "$1", "example": "2" },
-      "total": { "content": "$2", "example": "10" }
+      "visible": {
+        "content": "$1",
+        "example": "2"
+      },
+      "total": {
+        "content": "$2",
+        "example": "10"
+      }
     }
   },
   "eventsFilterHint": {
     "message": "$VISIBLE$ / $TOTAL$ matched",
     "placeholders": {
-      "visible": { "content": "$1", "example": "42" },
-      "total": { "content": "$2", "example": "42" }
+      "visible": {
+        "content": "$1",
+        "example": "42"
+      },
+      "total": {
+        "content": "$2",
+        "example": "42"
+      }
     }
   },
   "rawSizeKb": {
     "message": "$SIZE$ KB",
     "placeholders": {
-      "size": { "content": "$1", "example": "4.7" }
+      "size": {
+        "content": "$1",
+        "example": "4.7"
+      }
     }
   },
   "statusLive": {
@@ -1055,8 +1289,14 @@
   "tourStepLabel": {
     "message": "Step $CURRENT$ of $TOTAL$",
     "placeholders": {
-      "CURRENT": { "content": "$1", "example": "1" },
-      "TOTAL": { "content": "$2", "example": "7" }
+      "CURRENT": {
+        "content": "$1",
+        "example": "1"
+      },
+      "TOTAL": {
+        "content": "$2",
+        "example": "7"
+      }
     }
   },
   "tourStep1Title": {
@@ -1090,10 +1330,10 @@
     "message": "For supported AI protocols, Conversation rebuilds thinking and content into readable channels."
   },
   "tourStep6Title": {
-    "message": "Timeline for stream rhythm"
+    "message": "Timing for stream rhythm"
   },
   "tourStep6Body": {
-    "message": "Timeline highlights first-byte delay, gaps, and stalls. Raw is next to it when you need the original text."
+    "message": "Timing shows arrival density, waits, and stalls. Scroll to zoom, then click a mark to open Events. Raw is next to it when you need the original text."
   },
   "tourStep7Title": {
     "message": "Replay the tour from More"

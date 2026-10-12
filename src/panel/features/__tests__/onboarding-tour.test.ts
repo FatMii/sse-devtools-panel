@@ -17,7 +17,7 @@ describe("tour-sample", () => {
 
 describe("onboarding-tour defs", () => {
   it("keeps a seven-step tour ending on More help", () => {
-    expect(TOUR_VERSION).toBe(3);
+    expect(TOUR_VERSION).toBe(4);
     expect(TOUR_STEPS).toHaveLength(7);
     expect(TOUR_STEPS.map((s) => s.id)).toEqual([
       "streams",
@@ -25,7 +25,7 @@ describe("onboarding-tour defs", () => {
       "events",
       "request",
       "conversation",
-      "timeline",
+      "timing",
       "more-help",
     ]);
     expect(TOUR_STEPS[6]?.openMoreMenu).toBe(true);
