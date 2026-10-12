@@ -17,7 +17,9 @@ import {
   panTimelineView,
   TIMELINE_HOT_GAP_MS,
   TIMELINE_STALL_MS,
+  TIMELINE_WATERFALL_LIMIT,
   timelineSpanMs,
+  waterfallBarKind,
   zoomTimelineView,
   type GapSample,
   type HistogramBin,
@@ -29,7 +31,7 @@ import {
 } from "../../shared/stream-timing";
 import type { StreamReconnectMark, StreamRecord } from "../../shared/types";
 import { elTimelineBody, elTimelinePlaceholder } from "../core/dom";
-import { escapeHtml, formatGapBinLabel, formatMetricMs } from "../core/format";
+import { formatGapBinLabel, formatMetricMs } from "../core/format";
 import { ensureStreamMetrics } from "../features/stream-metrics";
 
 /** Re-export for callers; single source of truth is stream-timing. */
@@ -64,7 +66,7 @@ type TimelineShell = {
   kpiRow: HTMLElement;
   track: ArrivalTrackHandle;
   histHost: HTMLElement;
-  insightsHost: HTMLElement;
+  waterfallHost: HTMLElement;
 };
 
 let timelineShell: TimelineShell | null = null;
@@ -336,6 +338,7 @@ function applyTimelineRender(record: StreamRecord, options: RenderTimelineOption
     events: record.events,
     reconnects,
     originMs: origin,
+    stallLimit: TIMELINE_WATERFALL_LIMIT,
   });
 
   const sameStream = timelineShell?.requestId === record.requestId;
@@ -350,7 +353,7 @@ function applyTimelineRender(record: StreamRecord, options: RenderTimelineOption
   timelineShell.track.update(trackInput);
   timelineShell.track.paint();
   fillHistHost(timelineShell.histHost, gaps, options);
-  fillInsightsHost(timelineShell.insightsHost, insights, options);
+  fillWaterfallHost(timelineShell.waterfallHost, insights, options);
 }
 
 function rebuildTimelineShell(
@@ -384,6 +387,7 @@ function rebuildTimelineShell(
     t("timelineTrackNavHint"),
     t("timelineTrackHintTop", String(TIMELINE_STALL_MS)),
     t("timelineTrackHintBottom"),
+    t("timelineTrackHintAction"),
   ]);
   trackTitleBlock.append(trackTitle, trackTipsBtn);
   const track = buildArrivalTrackCanvas(trackInput);
@@ -392,33 +396,52 @@ function rebuildTimelineShell(
 
   const histSection = document.createElement("section");
   histSection.className = "timeline-section";
+  const histTitleRow = document.createElement("div");
+  histTitleRow.className = "timeline-track-title-row";
   const histTitle = document.createElement("div");
   histTitle.className = "timeline-section-title";
   histTitle.textContent = t("timelineGapHistogram");
-  const histHint = document.createElement("div");
-  histHint.className = "timeline-section-hint";
-  histHint.textContent = t("timelineGapHistogramHint", String(TIMELINE_HOT_GAP_MS));
+  const histTipsBtn = document.createElement("button");
+  histTipsBtn.type = "button";
+  histTipsBtn.className = "timeline-track-tips";
+  histTipsBtn.textContent = "?";
+  histTipsBtn.setAttribute("aria-label", t("timelineGapHistogramTipsAria"));
+  bindTimelineTooltip(histTipsBtn, [
+    t("timelineGapHistogramHintAxes"),
+    t("timelineGapHistogramHintHot", String(TIMELINE_HOT_GAP_MS)),
+    t("timelineGapHistogramHintAction"),
+  ]);
+  histTitleRow.append(histTitle, histTipsBtn);
   const histHost = document.createElement("div");
   histHost.className = "timeline-hist-host";
-  histSection.append(histTitle, histHint, histHost);
+  histSection.append(histTitleRow, histHost);
 
-  const insightsSection = document.createElement("section");
-  insightsSection.className = "timeline-section timeline-insights";
-  const insightsTitle = document.createElement("div");
-  insightsTitle.className = "timeline-section-title";
-  insightsTitle.textContent = t("timelineInsights");
-  const insightsHint = document.createElement("div");
-  insightsHint.className = "timeline-section-hint";
-  insightsHint.textContent = t("timelineInsightsHint");
-  const insightsHost = document.createElement("div");
-  insightsHost.className = "timeline-insights-host";
-  insightsSection.append(insightsTitle, insightsHint, insightsHost);
+  const waterfallSection = document.createElement("section");
+  waterfallSection.className = "timeline-section";
+  const waterfallTitleRow = document.createElement("div");
+  waterfallTitleRow.className = "timeline-track-title-row";
+  const waterfallTitle = document.createElement("div");
+  waterfallTitle.className = "timeline-section-title";
+  waterfallTitle.textContent = t("timelineWaitRank", String(TIMELINE_WATERFALL_LIMIT));
+  const waterfallTipsBtn = document.createElement("button");
+  waterfallTipsBtn.type = "button";
+  waterfallTipsBtn.className = "timeline-track-tips";
+  waterfallTipsBtn.textContent = "?";
+  waterfallTipsBtn.setAttribute("aria-label", t("timelineWaitRankTipsAria"));
+  bindTimelineTooltip(waterfallTipsBtn, [
+    t("timelineWaitRankHintSort"),
+    t("timelineWaitRankHintAction"),
+  ]);
+  waterfallTitleRow.append(waterfallTitle, waterfallTipsBtn);
+  const waterfallHost = document.createElement("div");
+  waterfallHost.className = "timeline-waterfall-host";
+  waterfallSection.append(waterfallTitleRow, waterfallHost);
 
-  elTimelineBody.append(kpiRow, trackSection, histSection, insightsSection);
-  timelineShell = { requestId, kpiRow, track, histHost, insightsHost };
+  elTimelineBody.append(kpiRow, trackSection, histSection, waterfallSection);
+  timelineShell = { requestId, kpiRow, track, histHost, waterfallHost };
 
   fillHistHost(histHost, gaps, options);
-  fillInsightsHost(insightsHost, insights, options);
+  fillWaterfallHost(waterfallHost, insights, options);
   track.paint();
 }
 
@@ -439,7 +462,7 @@ function fillHistHost(host: HTMLElement, gaps: GapSample[], options: RenderTimel
   );
 }
 
-function fillInsightsHost(
+function fillWaterfallHost(
   host: HTMLElement,
   insights: TimelineInsight[],
   options: RenderTimelineOptions,
@@ -448,16 +471,77 @@ function fillInsightsHost(
   if (insights.length === 0) {
     const empty = document.createElement("div");
     empty.className = "timeline-meta";
-    empty.textContent = t("timelineInsightsEmpty");
+    empty.textContent = t("timelineWaitRankEmpty");
     host.appendChild(empty);
     return;
   }
+
+  const stallGaps = insights.filter((item) => item.kind === "stall").map((item) => item.gapMs);
+  const maxGap = Math.max(1, ...stallGaps);
+
   const list = document.createElement("div");
-  list.className = "timeline-insight-list";
+  list.className = "timeline-waterfall";
+  list.setAttribute("role", "list");
+  list.setAttribute("aria-label", t("timelineWaitRank", String(TIMELINE_WATERFALL_LIMIT)));
+
   for (const insight of insights) {
-    list.appendChild(buildInsightButton(insight, options));
+    list.appendChild(buildWaterfallRow(insight, maxGap, options));
   }
   host.appendChild(list);
+}
+
+function buildWaterfallRow(
+  insight: TimelineInsight,
+  maxGap: number,
+  options: RenderTimelineOptions,
+): HTMLButtonElement {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "timeline-waterfall-row";
+  btn.setAttribute("role", "listitem");
+
+  const jumpIndex = insight.jumpIndex;
+  const canJump = typeof jumpIndex === "number";
+  btn.disabled = !canJump;
+  if (canJump && options.selectedEventIndex === jumpIndex) {
+    btn.classList.add("is-selected");
+  }
+
+  const label = document.createElement("span");
+  label.className = "timeline-waterfall-label";
+  const track = document.createElement("span");
+  track.className = "timeline-waterfall-track";
+  const bar = document.createElement("i");
+  bar.setAttribute("aria-hidden", "true");
+  track.appendChild(bar);
+  const ms = document.createElement("span");
+  ms.className = "timeline-waterfall-ms";
+
+  if (insight.kind === "stall") {
+    const tone = waterfallBarKind(insight.gapMs);
+    const eventBit = insight.eventName ? ` - ${insight.eventName}` : "";
+    label.textContent = `#${insight.afterIndex}${eventBit}`;
+    bar.className = `timeline-waterfall-bar is-${tone}`;
+    bar.style.width = `${Math.max(2, (insight.gapMs / maxGap) * 100)}%`;
+    ms.classList.add(`is-${tone}`);
+    ms.textContent = formatMetricMs(insight.gapMs);
+  } else {
+    btn.classList.add("is-reconnect");
+    label.textContent = t("timelineWaitRankReconnect", String(insight.reconnectCount));
+    bar.className = "timeline-waterfall-bar is-reconnect";
+    bar.style.width = "28%";
+    ms.classList.add("is-reconnect");
+    ms.textContent = `+${formatMetricMs(insight.offsetMs)}`;
+  }
+
+  btn.append(label, track, ms);
+  btn.title = canJump ? t("timelineTickTipAction") : "";
+  if (canJump) {
+    btn.addEventListener("click", () => {
+      options.onJumpToEvent(jumpIndex);
+    });
+  }
+  return btn;
 }
 
 /** Density lane taller for readable ticks; wait lane below. */
@@ -1105,49 +1189,6 @@ function drawArrivalMinimap(canvas: HTMLCanvasElement, input: ArrivalTrackInput)
     ctx.fillStyle = warning;
     ctx.fillRect(x - 1, 1, 2, 16);
   }
-}
-
-function buildInsightButton(
-  insight: TimelineInsight,
-  options: RenderTimelineOptions,
-): HTMLButtonElement {
-  const btn = document.createElement("button");
-  btn.type = "button";
-  const isReconnect = insight.kind === "reconnect";
-  const jumpIndex = insight.jumpIndex;
-  const canJump = typeof jumpIndex === "number";
-  btn.className = `timeline-insight${isReconnect ? " is-reconnect" : " is-stall"}${
-    canJump && options.selectedEventIndex === jumpIndex ? " is-selected" : ""
-  }`;
-  btn.disabled = !canJump;
-
-  const title =
-    insight.kind === "stall"
-      ? t("timelineInsightGapTitle", String(insight.afterIndex))
-      : t("timelineInsightReconnect", String(insight.reconnectCount));
-  const desc =
-    insight.kind === "stall"
-      ? t("timelineInsightGapDesc", insight.eventName ? insight.eventName : "—")
-      : t("timelineInsightReconnectDesc", insight.lastEventId ? insight.lastEventId : "—");
-  const metric =
-    insight.kind === "stall"
-      ? formatMetricMs(insight.gapMs)
-      : `+${formatMetricMs(insight.offsetMs)}`;
-
-  btn.innerHTML = `
-    <i class="timeline-insight-dot" aria-hidden="true"></i>
-    <span class="timeline-insight-copy">
-      <span class="timeline-insight-title">${escapeHtml(title)}</span>
-      <span class="timeline-insight-desc">${escapeHtml(desc)}</span>
-    </span>
-    <span class="timeline-insight-ms">${escapeHtml(metric)}</span>
-  `;
-  if (canJump) {
-    btn.addEventListener("click", () => {
-      options.onJumpToEvent(jumpIndex);
-    });
-  }
-  return btn;
 }
 
 type KpiRowInput = {

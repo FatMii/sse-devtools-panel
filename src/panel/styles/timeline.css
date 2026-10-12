@@ -334,87 +334,100 @@
   pointer-events: none;
 }
 
-.timeline-insight-list {
+.timeline-waterfall {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
+  max-height: 280px;
+  overflow: auto;
 }
 
-.timeline-insight {
+.timeline-waterfall-row {
   display: grid;
-  grid-template-columns: 18px minmax(0, 1fr) auto;
+  grid-template-columns: minmax(72px, 28%) minmax(0, 1fr) 72px;
   gap: 8px;
   align-items: center;
   width: 100%;
-  text-align: left;
-  padding: 8px 10px;
-  border: 1px solid var(--stroke);
+  padding: 4px 6px;
+  border: 1px solid transparent;
   border-radius: var(--r-sm);
-  background: var(--surface-1);
+  background: transparent;
   color: var(--text);
+  font: 11px / 1.2 var(--mono);
+  font-variant-numeric: tabular-nums;
+  text-align: left;
   cursor: pointer;
-  transition:
-    background-color var(--duration-ui) var(--ease-out),
-    border-color var(--duration-ui) var(--ease-out);
 }
 
-.timeline-insight:hover:not(:disabled) {
+.timeline-waterfall-row:hover:not(:disabled) {
   background: var(--surface-hover);
-  border-color: color-mix(in srgb, var(--accent) 35%, var(--stroke));
+  border-color: var(--stroke);
 }
 
-.timeline-insight:active:not(:disabled) {
-  transform: translateY(1px);
-}
-
-.timeline-insight:disabled {
+.timeline-waterfall-row:disabled {
   cursor: default;
   opacity: 0.72;
 }
 
-.timeline-insight.is-selected {
+.timeline-waterfall-row.is-selected {
   border-color: color-mix(in srgb, var(--accent) 45%, var(--stroke));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-1));
 }
 
-.timeline-insight-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--danger);
-}
-
-.timeline-insight.is-reconnect .timeline-insight-dot {
-  background: var(--warning);
-}
-
-.timeline-insight-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-
-.timeline-insight-title {
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-}
-
-.timeline-insight-desc {
+.timeline-waterfall-label {
   color: var(--text-muted);
-  font-size: var(--text-xs);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.timeline-insight-ms {
-  font: var(--weight-semibold) var(--text-sm) / 1.2 var(--mono);
-  font-variant-numeric: tabular-nums;
-  color: var(--danger);
+.timeline-waterfall-row.is-reconnect .timeline-waterfall-label {
+  color: var(--warning);
+}
+
+.timeline-waterfall-track {
+  position: relative;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--stroke);
+  overflow: hidden;
+}
+
+.timeline-waterfall-bar {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.timeline-waterfall-bar.is-stall {
+  background: color-mix(in srgb, var(--warning) 75%, transparent);
+}
+
+.timeline-waterfall-bar.is-severe {
+  background: color-mix(in srgb, var(--danger) 70%, transparent);
+}
+
+.timeline-waterfall-bar.is-reconnect {
+  background: color-mix(in srgb, var(--warning) 65%, transparent);
+}
+
+.timeline-waterfall-ms {
+  text-align: right;
+  font-weight: var(--weight-semibold);
+  color: var(--accent-strong);
   white-space: nowrap;
 }
 
-.timeline-insight.is-reconnect .timeline-insight-ms {
+.timeline-waterfall-ms.is-stall {
+  color: var(--warning);
+}
+
+.timeline-waterfall-ms.is-severe {
+  color: var(--danger);
+}
+
+.timeline-waterfall-ms.is-reconnect {
   color: var(--warning);
 }

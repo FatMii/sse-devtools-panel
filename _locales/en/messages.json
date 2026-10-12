@@ -618,7 +618,10 @@
     }
   },
   "timelineTrackHintBottom": {
-    "message": "Bottom: wait over time (ms), same unit as Max gap. Click to open in Events."
+    "message": "Bottom: wait over time (ms), same unit as Max gap."
+  },
+  "timelineTrackHintAction": {
+    "message": "Click to open in Events."
   },
   "timelineZoomIn": {
     "message": "Zoom in"
@@ -638,14 +641,23 @@
   "timelineGapHistogram": {
     "message": "Wait-time distribution between events"
   },
-  "timelineGapHistogramHint": {
-    "message": "X-axis: wait between two events. Y-axis: how often. Yellow (≥$MS$ms). Click a bar to jump to its longest wait.",
+  "timelineGapHistogramTipsAria": {
+    "message": "Wait distribution tips"
+  },
+  "timelineGapHistogramHintAxes": {
+    "message": "X-axis: wait between two events. Y-axis: how often."
+  },
+  "timelineGapHistogramHintHot": {
+    "message": "Yellow (≥$MS$ms).",
     "placeholders": {
       "ms": {
         "content": "$1",
         "example": "400"
       }
     }
+  },
+  "timelineGapHistogramHintAction": {
+    "message": "Click a bar to jump to its longest wait."
   },
   "timelineGapBinTipAction": {
     "message": "Click to jump to the longest wait in this range"
@@ -733,48 +745,33 @@
       }
     }
   },
-  "timelineInsights": {
-    "message": "Insights"
+  "timelineWaitRank": {
+    "message": "Longest waits (Top $N$)",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
   },
-  "timelineInsightsHint": {
-    "message": "Sorted by severity. Click to open the matching event in Events."
+  "timelineWaitRankTipsAria": {
+    "message": "Longest waits tips"
   },
-  "timelineInsightsEmpty": {
+  "timelineWaitRankHintSort": {
+    "message": "Sorted by wait duration (bar length ∝ duration), then reconnects."
+  },
+  "timelineWaitRankHintAction": {
+    "message": "Click a row to open in Events."
+  },
+  "timelineWaitRankEmpty": {
     "message": "No long waits or reconnects yet."
   },
-  "timelineInsightGapTitle": {
-    "message": "Wait before #$INDEX$",
-    "placeholders": {
-      "index": {
-        "content": "$1",
-        "example": "42"
-      }
-    }
-  },
-  "timelineInsightGapDesc": {
-    "message": "Event type · $EVENT$",
-    "placeholders": {
-      "event": {
-        "content": "$1",
-        "example": "message"
-      }
-    }
-  },
-  "timelineInsightReconnect": {
+  "timelineWaitRankReconnect": {
     "message": "Reconnect #$COUNT$",
     "placeholders": {
       "count": {
         "content": "$1",
         "example": "2"
-      }
-    }
-  },
-  "timelineInsightReconnectDesc": {
-    "message": "last-event-id · $ID$",
-    "placeholders": {
-      "id": {
-        "content": "$1",
-        "example": "evt-120"
       }
     }
   },

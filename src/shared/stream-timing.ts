@@ -52,6 +52,20 @@ export const TIMELINE_STALL_MS = 400;
 /** Histogram bins with fromMs ≥ this are "hot" (longer stalls). */
 export const TIMELINE_HOT_GAP_MS = 400;
 
+/** Longest-waits list shows the top N waits by duration. */
+export const TIMELINE_WATERFALL_LIMIT = 10;
+
+/** Gaps ≥ this use the strongest waterfall bar tone. */
+export const TIMELINE_WATERFALL_SEVERE_MS = 1000;
+
+export type WaterfallBarKind = "severe" | "stall" | "ok";
+
+export function waterfallBarKind(gapMs: number): WaterfallBarKind {
+  if (!Number.isFinite(gapMs) || gapMs < TIMELINE_STALL_MS) return "ok";
+  if (gapMs >= TIMELINE_WATERFALL_SEVERE_MS) return "severe";
+  return "stall";
+}
+
 export function isStallGapMs(gapMs: number | undefined | null): boolean {
   return typeof gapMs === "number" && Number.isFinite(gapMs) && gapMs >= TIMELINE_STALL_MS;
 }
@@ -179,8 +193,8 @@ export function findNearestEventIndex(
 }
 
 /**
- * Merge top stalls + reconnects for the Insights list.
- * Order: stalls by gap desc, then reconnects by count desc (newest first).
+ * Ranked waits + reconnects for the silence waterfall.
+ * Order: stalls by gap desc, then reconnects by count desc.
  */
 export function buildTimelineInsights(input: {
   gaps: GapSample[];
@@ -189,7 +203,7 @@ export function buildTimelineInsights(input: {
   originMs: number;
   stallLimit?: number;
 }): TimelineInsight[] {
-  const stallLimit = input.stallLimit ?? 5;
+  const stallLimit = input.stallLimit ?? TIMELINE_WATERFALL_LIMIT;
   const byIndex = new Map(input.events.map((ev) => [ev.index, ev]));
   const stalls = largestGaps(input.gaps, stallLimit).map((gap, i) => {
     const insight: TimelineInsight = {

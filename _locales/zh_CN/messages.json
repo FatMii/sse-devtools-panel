@@ -618,7 +618,10 @@
     }
   },
   "timelineTrackHintBottom": {
-    "message": "下轨：等待随时间（ms），与「最长间隔」同单位。点击可在 Events 中打开。"
+    "message": "下轨：等待随时间（ms），与「最长间隔」同单位。"
+  },
+  "timelineTrackHintAction": {
+    "message": "点击可在 Events 中打开。"
   },
   "timelineZoomIn": {
     "message": "放大"
@@ -638,14 +641,23 @@
   "timelineGapHistogram": {
     "message": "相邻事件等待时长分布"
   },
-  "timelineGapHistogramHint": {
-    "message": "横轴：两次事件之间等了多久；纵轴：次数。黄色（≥$MS$ms）。点击柱体可跳到该区间内最长等待。",
+  "timelineGapHistogramTipsAria": {
+    "message": "等待分布说明"
+  },
+  "timelineGapHistogramHintAxes": {
+    "message": "横轴：两次事件之间等了多久；纵轴：次数。"
+  },
+  "timelineGapHistogramHintHot": {
+    "message": "黄色（≥$MS$ms）。",
     "placeholders": {
       "ms": {
         "content": "$1",
         "example": "400"
       }
     }
+  },
+  "timelineGapHistogramHintAction": {
+    "message": "点击柱体可跳到该区间内最长等待。"
   },
   "timelineGapBinTipAction": {
     "message": "点击跳到该区间内最长的一次等待"
@@ -733,48 +745,33 @@
       }
     }
   },
-  "timelineInsights": {
-    "message": "洞察"
+  "timelineWaitRank": {
+    "message": "最长等待（Top $N$）",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
   },
-  "timelineInsightsHint": {
-    "message": "按严重度排序。点击可在 Events 中打开对应事件。"
+  "timelineWaitRankTipsAria": {
+    "message": "最长等待说明"
   },
-  "timelineInsightsEmpty": {
+  "timelineWaitRankHintSort": {
+    "message": "先按等待时长排序（条长 ∝ 时长），其后是重连。"
+  },
+  "timelineWaitRankHintAction": {
+    "message": "点击行可在 Events 中打开。"
+  },
+  "timelineWaitRankEmpty": {
     "message": "尚无长等待或重连。"
   },
-  "timelineInsightGapTitle": {
-    "message": "到达 #$INDEX$ 前等待",
-    "placeholders": {
-      "index": {
-        "content": "$1",
-        "example": "42"
-      }
-    }
-  },
-  "timelineInsightGapDesc": {
-    "message": "事件类型 · $EVENT$",
-    "placeholders": {
-      "event": {
-        "content": "$1",
-        "example": "message"
-      }
-    }
-  },
-  "timelineInsightReconnect": {
+  "timelineWaitRankReconnect": {
     "message": "Reconnect #$COUNT$",
     "placeholders": {
       "count": {
         "content": "$1",
         "example": "2"
-      }
-    }
-  },
-  "timelineInsightReconnectDesc": {
-    "message": "last-event-id · $ID$",
-    "placeholders": {
-      "id": {
-        "content": "$1",
-        "example": "evt-120"
       }
     }
   },

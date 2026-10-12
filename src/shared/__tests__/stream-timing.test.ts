@@ -16,6 +16,8 @@ import {
   isHotGapBinFromMs,
   isStallGapMs,
   largestGaps,
+  TIMELINE_WATERFALL_LIMIT,
+  waterfallBarKind,
   panTimelineView,
   TIMELINE_HOT_GAP_MS,
   TIMELINE_STALL_MS,
@@ -64,6 +66,22 @@ describe("stream-timing", () => {
 
     const top = largestGaps(gaps, 2);
     assert(top[0].gapMs === 1000 && top[1].gapMs === 50, "largest");
+  });
+
+  it("classifies waterfall bar tones and top-N waits", () => {
+    expect(TIMELINE_WATERFALL_LIMIT).toBe(10);
+    expect(waterfallBarKind(100)).toBe("ok");
+    expect(waterfallBarKind(400)).toBe("stall");
+    expect(waterfallBarKind(999)).toBe("stall");
+    expect(waterfallBarKind(1000)).toBe("severe");
+    const gaps = [
+      { afterIndex: 2, gapMs: 50 },
+      { afterIndex: 5, gapMs: 1800 },
+      { afterIndex: 9, gapMs: 600 },
+    ];
+    expect(largestGaps(gaps, TIMELINE_WATERFALL_LIMIT).map((g) => g.afterIndex)).toEqual([
+      5, 9, 2,
+    ]);
   });
 
   it("exposes unified stall / hot thresholds", () => {
