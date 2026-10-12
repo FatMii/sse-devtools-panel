@@ -30,9 +30,7 @@ export const elMenuCopyJsonPath = elContextMenu.querySelector<HTMLButtonElement>
   'button[data-action="copy-json-path"]',
 );
 export const elRaw = document.getElementById("raw-body") as HTMLElement;
-export const elTimingPlaceholder = document.getElementById(
-  "timing-placeholder",
-) as HTMLDivElement;
+export const elTimingPlaceholder = document.getElementById("timing-placeholder") as HTMLDivElement;
 export const elTimingBody = document.getElementById("timing-body") as HTMLDivElement;
 export const elRequestPlaceholder = document.getElementById(
   "request-placeholder",

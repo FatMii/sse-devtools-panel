@@ -100,13 +100,13 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 - **只有整段耗时**：首包延迟、chunk 间隔、卡顿和重连，都不会单独标出
 - **对话散落在原始帧里**：思考 / 正文 / 工具调用混在 raw 数据中，要自己对照才能读完一轮回复
 
-| 场景                                     | Chrome Network             | SSE DevTools Panel                        |
-| ---------------------------------------- | -------------------------- | ----------------------------------------- |
-| 标准 SSE（EventSource / 部分 fetch）     | 请求详情有 EventStream Tab | 同样可看，并带过滤、JSON 树、导出         |
-| AI / 厂商协议（NDJSON、Connect+JSON 等） | 多半是整段 Response 原文   | Profile 识别 + **对话**分通道合并         |
+| 场景                                     | Chrome Network             | SSE DevTools Panel                      |
+| ---------------------------------------- | -------------------------- | --------------------------------------- |
+| 标准 SSE（EventSource / 部分 fetch）     | 请求详情有 EventStream Tab | 同样可看，并带过滤、JSON 树、导出       |
+| AI / 厂商协议（NDJSON、Connect+JSON 等） | 多半是整段 Response 原文   | Profile 识别 + **对话**分通道合并       |
 | 流内时序与卡顿                           | 基本只有整请求耗时         | 时序（KPI / 缩放 / 等待 / 类型）+ Stats |
-| 规范与异常                               | 无针对性扫描               | SSE Spec 告警 · Anomalies                 |
-| 网页搜索等工具结果                       | 埋在 raw 里                | 归一成 `web_search` 卡片（查询 + 来源）   |
+| 规范与异常                               | 无针对性扫描               | SSE Spec 告警 · Anomalies               |
+| 网页搜索等工具结果                       | 埋在 raw 里                | 归一成 `web_search` 卡片（查询 + 来源） |
 
 ---
 
@@ -350,17 +350,17 @@ Events、对话（正文 / 思考）、Raw 都用了虚拟滚动：屏幕外的�
 
 对话视图会按协议类型合并内容。当前已适配：
 
-| Profile             | 典型站点 / 形态      | 说明                           |
-| ------------------- | -------------------- | ------------------------------ |
-| `openai-compatible` | 各类 OpenAI 兼容 API | 正文 / 思考 / 工具调用         |
-| `deepseek-web`      | DeepSeek 网页        | 思考 + 正文；支持搜索工具      |
-| `doubao-web`        | 豆包网页             | 思考与正文拆分；搜索结果去重   |
-| `kimi-web`          | Kimi                 | 思考 / 正文 / 搜索             |
-| `qwen-web`          | 通义千问网页         | 计划思考 / 深度思考 / 搜索     |
-| `chatglm-web`       | 智谱清言 / ChatGLM   | 思考 / 正文 / 搜索结果         |
-| `yuanbao-web`       | 腾讯元宝             | 深度搜索思考 + 来源            |
-| `anthropic`         | Anthropic 风格 SSE   | 仅协议识别 — 对话合并尚未实现  |
-| `generic`           | 未识别               | 仍可看 Events / 时序 / Raw |
+| Profile             | 典型站点 / 形态      | 说明                          |
+| ------------------- | -------------------- | ----------------------------- |
+| `openai-compatible` | 各类 OpenAI 兼容 API | 正文 / 思考 / 工具调用        |
+| `deepseek-web`      | DeepSeek 网页        | 思考 + 正文；支持搜索工具     |
+| `doubao-web`        | 豆包网页             | 思考与正文拆分；搜索结果去重  |
+| `kimi-web`          | Kimi                 | 思考 / 正文 / 搜索            |
+| `qwen-web`          | 通义千问网页         | 计划思考 / 深度思考 / 搜索    |
+| `chatglm-web`       | 智谱清言 / ChatGLM   | 思考 / 正文 / 搜索结果        |
+| `yuanbao-web`       | 腾讯元宝             | 深度搜索思考 + 来源           |
+| `anthropic`         | Anthropic 风格 SSE   | 仅协议识别 — 对话合并尚未实现 |
+| `generic`           | 未识别               | 仍可看 Events / 时序 / Raw    |
 
 > 各站协议常变。若对话视图为空或工具卡不对，请导出 Raw 或 JSON 并注明 URL。  
 > 未列出的站点：有真实样本后再适配。  
