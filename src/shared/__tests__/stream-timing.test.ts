@@ -3,6 +3,8 @@ import {
   buildGapHistogram,
   buildTimelineMarks,
   collectEventGaps,
+  gapsInBin,
+  isHotGapBin,
   isHotGapBinFromMs,
   isStallGapMs,
   largestGaps,
@@ -55,13 +57,26 @@ describe("stream-timing", () => {
   });
 
   it("exposes unified stall / hot thresholds", () => {
-    expect(TIMELINE_STALL_MS).toBe(800);
-    expect(TIMELINE_HOT_GAP_MS).toBe(800);
-    expect(isStallGapMs(799)).toBe(false);
-    expect(isStallGapMs(800)).toBe(true);
+    expect(TIMELINE_STALL_MS).toBe(400);
+    expect(TIMELINE_HOT_GAP_MS).toBe(400);
+    expect(isStallGapMs(399)).toBe(false);
+    expect(isStallGapMs(400)).toBe(true);
     expect(isStallGapMs(undefined)).toBe(false);
-    expect(isHotGapBinFromMs(500)).toBe(false);
-    expect(isHotGapBinFromMs(800)).toBe(true);
+    expect(isHotGapBinFromMs(250)).toBe(false);
+    expect(isHotGapBinFromMs(400)).toBe(true);
     expect(isHotGapBinFromMs(1000)).toBe(true);
+    expect(isHotGapBin({ fromMs: 250, toMs: 500 })).toBe(true);
+    expect(isHotGapBin({ fromMs: 100, toMs: 250 })).toBe(false);
+    expect(isHotGapBin({ fromMs: 1000, toMs: Number.POSITIVE_INFINITY })).toBe(true);
+
+    const inBin = gapsInBin(
+      [
+        { afterIndex: 1, gapMs: 15 },
+        { afterIndex: 2, gapMs: 900 },
+        { afterIndex: 3, gapMs: 1200 },
+      ],
+      { fromMs: 500, toMs: 1000 },
+    );
+    expect(inBin).toEqual([{ afterIndex: 2, gapMs: 900 }]);
   });
 });

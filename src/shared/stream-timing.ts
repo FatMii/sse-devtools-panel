@@ -28,10 +28,10 @@ export type TimelineMark = {
 export const DEFAULT_GAP_BIN_EDGES_MS = [0, 10, 25, 50, 100, 250, 500, 1000] as const;
 
 /** Gap ≥ this is a stall (red tick / KPI alert). */
-export const TIMELINE_STALL_MS = 800;
+export const TIMELINE_STALL_MS = 400;
 
 /** Histogram bins with fromMs ≥ this are "hot" (longer stalls). */
-export const TIMELINE_HOT_GAP_MS = 800;
+export const TIMELINE_HOT_GAP_MS = 400;
 
 export function isStallGapMs(gapMs: number | undefined | null): boolean {
   return typeof gapMs === "number" && Number.isFinite(gapMs) && gapMs >= TIMELINE_STALL_MS;
@@ -39,6 +39,19 @@ export function isStallGapMs(gapMs: number | undefined | null): boolean {
 
 export function isHotGapBinFromMs(fromMs: number): boolean {
   return Number.isFinite(fromMs) && fromMs >= TIMELINE_HOT_GAP_MS;
+}
+
+/** True if the bin range overlaps hot/stall waits (includes open-ended last bin). */
+export function isHotGapBin(bin: Pick<HistogramBin, "fromMs" | "toMs">): boolean {
+  if (bin.fromMs >= TIMELINE_HOT_GAP_MS) return true;
+  return bin.toMs > TIMELINE_HOT_GAP_MS;
+}
+
+export function gapsInBin(
+  gaps: Array<Pick<GapSample, "gapMs" | "afterIndex">>,
+  bin: Pick<HistogramBin, "fromMs" | "toMs">,
+): GapSample[] {
+  return gaps.filter((g) => g.gapMs >= bin.fromMs && g.gapMs < bin.toMs) as GapSample[];
 }
 
 export function collectEventGaps(

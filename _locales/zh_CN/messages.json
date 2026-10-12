@@ -564,7 +564,7 @@
     "placeholders": {
       "ms": {
         "content": "$1",
-        "example": "800"
+        "example": "400"
       }
     }
   },
@@ -573,7 +573,7 @@
     "placeholders": {
       "ms": {
         "content": "$1",
-        "example": "800"
+        "example": "400"
       }
     }
   },
@@ -603,7 +603,7 @@
     "placeholders": {
       "ms": {
         "content": "$1",
-        "example": "800"
+        "example": "400"
       }
     }
   },
@@ -621,7 +621,7 @@
     "placeholders": {
       "ms": {
         "content": "$1",
-        "example": "800"
+        "example": "400"
       }
     }
   },
@@ -629,13 +629,54 @@
     "message": "相邻事件等待时长分布"
   },
   "timelineGapHistogramHint": {
-    "message": "横轴：两次事件之间等了多久；纵轴：次数。黄色柱（≥$MS$ms）表示较长停顿。",
+    "message": "横轴：两次事件之间等了多久；纵轴：次数。黄色（≥$MS$ms）。点击柱体可跳到该区间内最长等待。",
     "placeholders": {
       "ms": {
         "content": "$1",
-        "example": "800"
+        "example": "400"
       }
     }
+  },
+  "timelineGapBinTipAction": {
+    "message": "点击跳到该区间内最长的一次等待"
+  },
+  "timelineGapBinTipEmpty": {
+    "message": "该区间没有等待样本"
+  },
+  "timelineTickTipMain": {
+    "message": "#$INDEX$ · $EVENT$ · +$OFFSET$",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "12"
+      },
+      "event": {
+        "content": "$2",
+        "example": "message"
+      },
+      "offset": {
+        "content": "$3",
+        "example": "1.2 s"
+      }
+    }
+  },
+  "timelineTickTipGap": {
+    "message": "间隔 $GAP$",
+    "placeholders": {
+      "gap": {
+        "content": "$1",
+        "example": "340 ms"
+      }
+    }
+  },
+  "timelineTickTipFirst": {
+    "message": "首个事件"
+  },
+  "timelineTickTipStall": {
+    "message": "卡顿"
+  },
+  "timelineTickTipAction": {
+    "message": "点击在 Events 中打开"
   },
   "timelineGapHistogramX": {
     "message": "两次事件之间的等待 →"

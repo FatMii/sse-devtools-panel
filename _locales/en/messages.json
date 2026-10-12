@@ -564,7 +564,7 @@
     "placeholders": {
       "ms": {
         "content": "$1",
-        "example": "800"
+        "example": "400"
       }
     }
   },
@@ -573,7 +573,7 @@
     "placeholders": {
       "ms": {
         "content": "$1",
-        "example": "800"
+        "example": "400"
       }
     }
   },
@@ -603,7 +603,7 @@
     "placeholders": {
       "ms": {
         "content": "$1",
-        "example": "800"
+        "example": "400"
       }
     }
   },
@@ -621,7 +621,7 @@
     "placeholders": {
       "ms": {
         "content": "$1",
-        "example": "800"
+        "example": "400"
       }
     }
   },
@@ -629,13 +629,54 @@
     "message": "Wait-time distribution between events"
   },
   "timelineGapHistogramHint": {
-    "message": "X-axis: wait between two events. Y-axis: how often. Yellow bars (≥$MS$ms) are longer stalls.",
+    "message": "X-axis: wait between two events. Y-axis: how often. Yellow (≥$MS$ms). Click a bar to jump to its longest wait.",
     "placeholders": {
       "ms": {
         "content": "$1",
-        "example": "800"
+        "example": "400"
       }
     }
+  },
+  "timelineGapBinTipAction": {
+    "message": "Click to jump to the longest wait in this range"
+  },
+  "timelineGapBinTipEmpty": {
+    "message": "No waits in this range"
+  },
+  "timelineTickTipMain": {
+    "message": "#$INDEX$ · $EVENT$ · +$OFFSET$",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "12"
+      },
+      "event": {
+        "content": "$2",
+        "example": "message"
+      },
+      "offset": {
+        "content": "$3",
+        "example": "1.2 s"
+      }
+    }
+  },
+  "timelineTickTipGap": {
+    "message": "Gap $GAP$",
+    "placeholders": {
+      "gap": {
+        "content": "$1",
+        "example": "340 ms"
+      }
+    }
+  },
+  "timelineTickTipFirst": {
+    "message": "First event"
+  },
+  "timelineTickTipStall": {
+    "message": "STALL"
+  },
+  "timelineTickTipAction": {
+    "message": "Click to open in Events"
   },
   "timelineGapHistogramX": {
     "message": "Wait between events →"

@@ -125,6 +125,51 @@
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
+.timeline-tooltip {
+  position: fixed;
+  z-index: 1000;
+  min-width: 160px;
+  max-width: 280px;
+  padding: 8px 10px;
+  border: 1px solid var(--stroke-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-menu);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.timeline-tooltip.is-on {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.timeline-tooltip-main {
+  color: var(--text);
+  font: var(--text-xs) / 1.45 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.timeline-tooltip-sub {
+  margin-top: 3px;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.timeline-tooltip-sub.is-stall {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
+  font-weight: var(--weight-semibold);
+}
+
 .timeline-section {
   display: flex;
   flex-direction: column;
@@ -182,6 +227,19 @@
 
 .timeline-track-svg .tick.is-stall {
   fill: var(--danger);
+}
+
+/* Selection chrome is a separate halo; keep stall fill solid red (no stroke on 4px tick). */
+.timeline-track-svg .tick.is-stall.is-selected {
+  fill: var(--danger);
+  stroke: none;
+}
+
+.timeline-track-svg .tick-select-halo {
+  fill: none;
+  stroke: var(--accent-strong);
+  stroke-width: 1.5;
+  pointer-events: none;
 }
 
 .timeline-track-svg .reconnect-mark {

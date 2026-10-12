@@ -3,13 +3,16 @@ import {
   buildGapHistogram,
   buildTimelineMarks,
   collectEventGaps,
-  isHotGapBinFromMs,
+  gapsInBin,
+  isHotGapBin,
   isStallGapMs,
   largestGaps,
   TIMELINE_HOT_GAP_MS,
   TIMELINE_STALL_MS,
   timelineSpanMs,
+  type GapSample,
   type HistogramBin,
+  type TimelineMark,
 } from "../../shared/stream-timing";
 import type { StreamRecord } from "../../shared/types";
 import { elTimelineBody, elTimelinePlaceholder } from "../core/dom";
@@ -24,7 +27,18 @@ export type RenderTimelineOptions = {
   onJumpToEvent: (eventIndex: number) => void;
 };
 
-export function createGapHistogramSvg(bins: HistogramBin[]): SVGSVGElement {
+type HistOptions = {
+  gaps: GapSample[];
+  onJumpToEvent: (eventIndex: number) => void;
+};
+
+/** Selected histogram bin index within the current render; -1 = none. */
+let activeHistBinIndex = -1;
+
+export function createGapHistogramSvg(
+  bins: HistogramBin[],
+  histOptions?: HistOptions,
+): SVGSVGElement {
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("class", "gap-histogram");
   svg.setAttribute("viewBox", "0 0 440 170");
@@ -40,6 +54,8 @@ export function createGapHistogramSvg(bins: HistogramBin[]): SVGSVGElement {
   const plotH = 170 - padT - padB;
   const gap = 4;
   const barW = Math.max(8, (plotW - gap * (bins.length - 1)) / bins.length);
+  const barRects: SVGRectElement[] = [];
+  const countLabels: Array<SVGTextElement | null> = [];
 
   // Y-axis baseline + value ticks
   const axis = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -79,26 +95,36 @@ export function createGapHistogramSvg(bins: HistogramBin[]): SVGSVGElement {
   yTitle.textContent = t("timelineGapHistogramY");
   svg.appendChild(yTitle);
 
+  const syncBarActiveState = (): void => {
+    for (let i = 0; i < barRects.length; i += 1) {
+      const selected = activeHistBinIndex === i;
+      const dimmed = activeHistBinIndex >= 0 && !selected;
+      barRects[i].classList.toggle("is-active", selected);
+      barRects[i].classList.toggle("is-dimmed", dimmed);
+      const countEl = countLabels[i];
+      if (countEl) countEl.classList.toggle("is-visible", selected);
+    }
+  };
+
   for (let i = 0; i < bins.length; i += 1) {
     const bin = bins[i];
     const h = (bin.count / maxCount) * plotH;
     const x = padL + i * (barW + gap);
     const y = padT + plotH - h;
     const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    rect.setAttribute("class", `bar${isHotGapBinFromMs(bin.fromMs) ? " is-hot" : ""}`);
+    rect.setAttribute("class", `bar${isHotGapBin(bin) ? " is-hot" : ""}`);
     rect.setAttribute("x", String(x));
     rect.setAttribute("y", String(y));
     rect.setAttribute("width", String(barW));
     rect.setAttribute("height", String(Math.max(bin.count > 0 ? 2 : 0, h)));
     rect.setAttribute("rx", "2");
-    rect.setAttribute(
-      "title",
-      t("timelineGapBinTitle", [formatGapBinLabel(bin), String(bin.count)]),
-    );
+    rect.style.cursor = bin.count > 0 ? "pointer" : "default";
+    barRects.push(rect);
     svg.appendChild(rect);
 
+    let countText: SVGTextElement | null = null;
     if (bin.count > 0) {
-      const countText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      countText = document.createElementNS("http://www.w3.org/2000/svg", "text");
       countText.setAttribute("class", "count-label");
       countText.setAttribute("x", String(x + barW / 2));
       countText.setAttribute("y", String(Math.max(14, y - 4)));
@@ -106,14 +132,47 @@ export function createGapHistogramSvg(bins: HistogramBin[]): SVGSVGElement {
       countText.textContent = String(bin.count);
       svg.appendChild(countText);
     }
+    countLabels.push(countText);
 
-    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    label.setAttribute("class", "axis-label bin-label");
-    label.setAttribute("x", String(x + barW / 2));
-    label.setAttribute("y", String(padT + plotH + 14));
-    label.setAttribute("text-anchor", "middle");
-    label.textContent = formatGapBinLabel(bin);
-    svg.appendChild(label);
+    // Show every other x label by default to reduce clutter; always show first/last.
+    const showBinLabel = i === 0 || i === bins.length - 1 || i % 2 === 0;
+    if (showBinLabel) {
+      const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      label.setAttribute("class", "axis-label bin-label");
+      label.setAttribute("x", String(x + barW / 2));
+      label.setAttribute("y", String(padT + plotH + 14));
+      label.setAttribute("text-anchor", "middle");
+      label.textContent = formatGapBinLabel(bin);
+      svg.appendChild(label);
+    }
+
+    const tipLines = [
+      t("timelineGapBinTitle", [formatGapBinLabel(bin), String(bin.count)]),
+      bin.count > 0 ? t("timelineGapBinTipAction") : t("timelineGapBinTipEmpty"),
+    ];
+    bindTimelineTooltip(rect, tipLines);
+
+    rect.addEventListener("pointerenter", () => {
+      if (countText) countText.classList.add("is-visible");
+    });
+    rect.addEventListener("pointerleave", () => {
+      if (countText && activeHistBinIndex !== i) countText.classList.remove("is-visible");
+    });
+
+    if (histOptions && bin.count > 0) {
+      rect.addEventListener("click", () => {
+        if (activeHistBinIndex === i) {
+          activeHistBinIndex = -1;
+          syncBarActiveState();
+          return;
+        }
+        activeHistBinIndex = i;
+        syncBarActiveState();
+        const inBin = gapsInBin(histOptions.gaps, bin);
+        const top = largestGaps(inBin, 1)[0];
+        if (top) histOptions.onJumpToEvent(top.afterIndex);
+      });
+    }
   }
 
   const xTitle = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -124,6 +183,7 @@ export function createGapHistogramSvg(bins: HistogramBin[]): SVGSVGElement {
   xTitle.textContent = t("timelineGapHistogramX");
   svg.appendChild(xTitle);
 
+  syncBarActiveState();
   return svg;
 }
 
@@ -132,6 +192,8 @@ export function renderTimeline(
   options: RenderTimelineOptions,
 ): void {
   if (!record) {
+    hideTimelineTooltip();
+    activeHistBinIndex = -1;
     elTimelinePlaceholder.hidden = false;
     elTimelinePlaceholder.textContent = t("noStreamSelected");
     elTimelineBody.hidden = true;
@@ -140,6 +202,8 @@ export function renderTimeline(
   }
 
   if (record.events.length === 0) {
+    hideTimelineTooltip();
+    activeHistBinIndex = -1;
     elTimelinePlaceholder.hidden = false;
     elTimelinePlaceholder.textContent = t("noEventsYet");
     elTimelineBody.hidden = true;
@@ -150,6 +214,8 @@ export function renderTimeline(
   elTimelinePlaceholder.hidden = true;
   elTimelineBody.hidden = false;
   elTimelineBody.innerHTML = "";
+  hideTimelineTooltip();
+  activeHistBinIndex = -1;
 
   const origin = record.startedAt;
   const marks = buildTimelineMarks(record.events, origin);
@@ -215,26 +281,37 @@ export function renderTimeline(
   line.setAttribute("y2", String(trackY));
   svg.appendChild(line);
 
-  for (const mark of marks) {
+  // Paint stalls after normal ticks so dense streams do not cover red marks.
+  const paintMarks = [...marks].sort((a, b) => {
+    const aStall = isStallGapMs(a.gapFromPrevMs) ? 1 : 0;
+    const bStall = isStallGapMs(b.gapFromPrevMs) ? 1 : 0;
+    return aStall - bStall || a.index - b.index;
+  });
+
+  for (const mark of paintMarks) {
     const x = padL + (mark.offsetMs / spanMs) * plotW;
     const isStall = isStallGapMs(mark.gapFromPrevMs);
     const isSelected = options.selectedEventIndex === mark.index;
+    if (isSelected) {
+      const halo = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      halo.setAttribute("class", "tick-select-halo");
+      halo.setAttribute("x", String(x - 5));
+      halo.setAttribute("y", String(trackY - 18));
+      halo.setAttribute("width", "10");
+      halo.setAttribute("height", "36");
+      halo.setAttribute("rx", "2");
+      svg.appendChild(halo);
+    }
+    const tickClass = `tick${isSelected ? " is-selected" : ""}${isStall ? " is-stall" : ""}`;
     const tick = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    tick.setAttribute(
-      "class",
-      `tick${isSelected ? " is-selected" : ""}${isStall && !isSelected ? " is-stall" : ""}`,
-    );
+    tick.setAttribute("class", tickClass);
     tick.setAttribute("x", String(x - 2));
     tick.setAttribute("y", String(trackY - 14));
     tick.setAttribute("width", "4");
     tick.setAttribute("height", "28");
     tick.setAttribute("rx", "1");
     tick.setAttribute("data-index", String(mark.index));
-    tick.setAttribute(
-      "title",
-      `#${mark.index} · ${mark.event} · +${Math.round(mark.offsetMs)}ms` +
-        (mark.gapFromPrevMs != null ? ` · gap ${Math.round(mark.gapFromPrevMs)}ms` : ""),
-    );
+    bindTimelineTooltip(tick, tipLinesForMark(mark));
     tick.addEventListener("click", () => {
       options.onJumpToEvent(mark.index);
     });
@@ -277,14 +354,13 @@ export function renderTimeline(
         "points",
         `${x},${trackY - 20} ${x + 5},${trackY - 10} ${x},${trackY} ${x - 5},${trackY - 10}`,
       );
-      marker.setAttribute(
-        "title",
+      bindTimelineTooltip(marker, [
         t("timelineReconnectMark", [
           String(reconnect.reconnectCount),
           reconnect.lastEventId ? reconnect.lastEventId : "—",
           `+${Math.round(offsetMs)}ms`,
         ]),
-      );
+      ]);
       svg.appendChild(marker);
     }
 
@@ -327,7 +403,12 @@ export function renderTimeline(
     empty.textContent = t("timelineGapHistogramEmpty");
     histSection.appendChild(empty);
   } else {
-    histSection.appendChild(createGapHistogramSvg(buildGapHistogram(gaps)));
+    histSection.appendChild(
+      createGapHistogramSvg(buildGapHistogram(gaps), {
+        gaps,
+        onJumpToEvent: options.onJumpToEvent,
+      }),
+    );
   }
   elTimelineBody.appendChild(histSection);
 
@@ -460,4 +541,74 @@ function buildLegend(): HTMLElement {
     legend.appendChild(row);
   }
   return legend;
+}
+
+function tipLinesForMark(mark: TimelineMark): string[] {
+  const lines = [
+    t("timelineTickTipMain", [String(mark.index), mark.event, formatMetricMs(mark.offsetMs)]),
+  ];
+  if (mark.gapFromPrevMs != null) {
+    lines.push(t("timelineTickTipGap", formatMetricMs(mark.gapFromPrevMs)));
+    if (isStallGapMs(mark.gapFromPrevMs)) lines.push(t("timelineTickTipStall"));
+  } else {
+    lines.push(t("timelineTickTipFirst"));
+  }
+  lines.push(t("timelineTickTipAction"));
+  return lines;
+}
+
+let timelineTipEl: HTMLDivElement | null = null;
+
+function ensureTimelineTooltip(): HTMLDivElement {
+  if (!timelineTipEl || !timelineTipEl.isConnected) {
+    timelineTipEl = document.createElement("div");
+    timelineTipEl.className = "timeline-tooltip";
+    timelineTipEl.setAttribute("role", "tooltip");
+    timelineTipEl.hidden = true;
+    document.body.appendChild(timelineTipEl);
+  }
+  return timelineTipEl;
+}
+
+function hideTimelineTooltip(): void {
+  if (!timelineTipEl) return;
+  timelineTipEl.hidden = true;
+  timelineTipEl.classList.remove("is-on");
+}
+
+function showTimelineTooltip(clientX: number, clientY: number, lines: string[]): void {
+  const tip = ensureTimelineTooltip();
+  tip.replaceChildren();
+  for (let i = 0; i < lines.length; i += 1) {
+    const row = document.createElement("div");
+    row.className = i === 0 ? "timeline-tooltip-main" : "timeline-tooltip-sub";
+    if (lines[i] === t("timelineTickTipStall")) row.classList.add("is-stall");
+    row.textContent = lines[i];
+    tip.appendChild(row);
+  }
+  tip.hidden = false;
+  tip.classList.add("is-on");
+  const pad = 12;
+  const tw = tip.offsetWidth || 180;
+  const th = tip.offsetHeight || 48;
+  let left = clientX + pad;
+  let top = clientY + pad;
+  if (left + tw > window.innerWidth - 8) left = Math.max(8, clientX - tw - pad);
+  if (top + th > window.innerHeight - 8) top = Math.max(8, clientY - th - pad);
+  tip.style.left = `${left}px`;
+  tip.style.top = `${top}px`;
+}
+
+function bindTimelineTooltip(target: Element, lines: string[]): void {
+  target.addEventListener("pointerenter", (e) => {
+    const pe = e as PointerEvent;
+    showTimelineTooltip(pe.clientX, pe.clientY, lines);
+  });
+  target.addEventListener("pointermove", (e) => {
+    const pe = e as PointerEvent;
+    showTimelineTooltip(pe.clientX, pe.clientY, lines);
+  });
+  target.addEventListener("pointerleave", () => {
+    hideTimelineTooltip();
+  });
 }
