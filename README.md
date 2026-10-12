@@ -102,7 +102,7 @@ For many AI / product streams that is not enough. They are often not plain Event
 | ----------------------------------------------- | ------------------------------ | ------------------------------------------------- |
 | Standard SSE (EventSource / some fetch)         | EventStream tab on the request | Same view, plus filters, JSON tree, export        |
 | AI / vendor protocols (NDJSON, Connect+JSON, …) | Mostly a whole Response body   | Profile detection + **Conversation** channels     |
-| In-stream timing & stalls                       | Mostly whole-request duration  | Timing (KPI / zoom / wait-ms / types) + Stats   |
+| In-stream timing & stalls                       | Mostly whole-request duration  | Timing (KPI / zoom / wait-ms / types) + Stats     |
 | Spec & anomalies                                | No targeted scan               | SSE Spec warnings · Anomalies                     |
 | Web search / tool results                       | Buried in raw                  | Normalized `web_search` cards (queries + sources) |
 
@@ -336,7 +336,7 @@ Conversation merges content by protocol profile. Currently supported:
 | `chatglm-web`       | ChatGLM / Zhipu Qingyan | Thinking / content / search results                |
 | `yuanbao-web`       | Tencent Yuanbao         | Deep-search thinking + sources                     |
 | `anthropic`         | Anthropic-style SSE     | Profile detection only — no Conversation merge yet |
-| `generic`           | Unrecognized            | Events / Timing / Raw still work                 |
+| `generic`           | Unrecognized            | Events / Timing / Raw still work                   |
 
 > Vendor protocols change often. If Conversation is empty or tool cards look wrong, export Raw or JSON and include the URL.  
 > Sites not listed here are adapted after we have a real sample.  

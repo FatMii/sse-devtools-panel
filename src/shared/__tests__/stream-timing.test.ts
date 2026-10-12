@@ -85,9 +85,7 @@ describe("stream-timing", () => {
       { afterIndex: 5, gapMs: 1800 },
       { afterIndex: 9, gapMs: 600 },
     ];
-    expect(largestGaps(gaps, TIMING_WATERFALL_LIMIT).map((g) => g.afterIndex)).toEqual([
-      5, 9, 2,
-    ]);
+    expect(largestGaps(gaps, TIMING_WATERFALL_LIMIT).map((g) => g.afterIndex)).toEqual([5, 9, 2]);
   });
 
   it("collects event-type swimlanes with preferred order", () => {

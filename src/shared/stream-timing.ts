@@ -585,12 +585,5 @@ export function hitTestTimingLaneMark(
   maxDistancePx = 16,
 ): number | null {
   const filtered = marks.filter((m) => normalizeTimingEventType(m.event) === eventType);
-  return hitTestArrivalMark(
-    filtered,
-    plotX,
-    plotWidthPx,
-    viewStartMs,
-    viewEndMs,
-    maxDistancePx,
-  );
+  return hitTestArrivalMark(filtered, plotX, plotWidthPx, viewStartMs, viewEndMs, maxDistancePx);
 }

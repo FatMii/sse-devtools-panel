@@ -286,10 +286,7 @@ export function createGapHistogramSvg(
   return svg;
 }
 
-export function renderTiming(
-  record: StreamRecord | undefined,
-  options: RenderTimingOptions,
-): void {
+export function renderTiming(record: StreamRecord | undefined, options: RenderTimingOptions): void {
   if (!record) {
     cancelTimingRender();
     teardownTimingShell();
@@ -473,10 +470,7 @@ function rebuildTimingShell(
   waterfallTipsBtn.className = "timing-track-tips";
   waterfallTipsBtn.textContent = "?";
   waterfallTipsBtn.setAttribute("aria-label", t("timingWaitRankTipsAria"));
-  bindTimingTooltip(waterfallTipsBtn, [
-    t("timingWaitRankHintSort"),
-    t("timingWaitRankHintAction"),
-  ]);
+  bindTimingTooltip(waterfallTipsBtn, [t("timingWaitRankHintSort"), t("timingWaitRankHintAction")]);
   waterfallTitleRow.append(waterfallTitle, waterfallTipsBtn);
   const waterfallHost = document.createElement("div");
   waterfallHost.className = "timing-waterfall-host";
@@ -1218,15 +1212,7 @@ function resolveLaneHit(
   if (!laneFilterOn.has(type)) return null;
   const plotX = e.clientX - rect.left - padL;
   if (plotX < -8 || plotX > plotW + 8) return null;
-  const index = hitTestTimingLaneMark(
-    marks,
-    type,
-    plotX,
-    plotW,
-    view.startMs,
-    view.endMs,
-    16,
-  );
+  const index = hitTestTimingLaneMark(marks, type, plotX, plotW, view.startMs, view.endMs, 16);
   if (index == null) return null;
   return { type, index };
 }
@@ -1516,8 +1502,7 @@ function drawArrivalTrack(
   ctx.lineWidth = 1.75;
   for (let i = 0; i < waitSeries.bucketCount; i += 1) {
     const x = padL + ((i + 0.5) / waitSeries.bucketCount) * plotW;
-    const y =
-      waitLane.bottom - (waitSeries.waitsMs[i] / Math.max(1, waitSeries.maxWaitMs)) * waitH;
+    const y = waitLane.bottom - (waitSeries.waitsMs[i] / Math.max(1, waitSeries.maxWaitMs)) * waitH;
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   }
@@ -1783,8 +1768,7 @@ function syncAnomalyChipLayer(
     if (anomaly.offsetMs < options.view.startMs || anomaly.offsetMs > options.view.endMs) {
       continue;
     }
-    const x =
-      options.padL + ((anomaly.offsetMs - options.view.startMs) / viewSpan) * options.plotW;
+    const x = options.padL + ((anomaly.offsetMs - options.view.startMs) / viewSpan) * options.plotW;
     if (x < options.padL - 4 || x > options.padL + options.plotW + 4) continue;
 
     const btn = document.createElement("button");
