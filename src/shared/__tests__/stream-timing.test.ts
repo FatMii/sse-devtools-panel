@@ -1,8 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
   buildGapHistogram,
+  buildTimelineInsights,
   buildTimelineMarks,
   collectEventGaps,
+  findNearestEventIndex,
   gapsInBin,
   isHotGapBin,
   isHotGapBinFromMs,
@@ -78,5 +80,46 @@ describe("stream-timing", () => {
       { fromMs: 500, toMs: 1000 },
     );
     expect(inBin).toEqual([{ afterIndex: 2, gapMs: 900 }]);
+  });
+
+  it("builds Insights from stalls and reconnects", () => {
+    const events = [
+      { index: 0, event: "message", receivedAt: 1000, id: "a" },
+      { index: 1, event: "delta", receivedAt: 1500, id: "b" },
+      { index: 2, event: "message", receivedAt: 2600, id: "c" },
+    ];
+    const gaps = collectEventGaps(events);
+    const insights = buildTimelineInsights({
+      gaps,
+      events,
+      reconnects: [
+        { at: 1800, reconnectCount: 1, lastEventId: "b" },
+        { at: 3000, reconnectCount: 2, lastEventId: "missing" },
+      ],
+      originMs: 1000,
+      stallLimit: 2,
+    });
+
+    expect(insights.map((item) => item.kind)).toEqual(["stall", "stall", "reconnect", "reconnect"]);
+    expect(insights[0]).toMatchObject({
+      kind: "stall",
+      rank: 1,
+      afterIndex: 2,
+      gapMs: 1100,
+      jumpIndex: 2,
+      eventName: "message",
+    });
+    expect(insights[2]).toMatchObject({
+      kind: "reconnect",
+      reconnectCount: 2,
+      jumpIndex: 2,
+    });
+    expect(insights[3]).toMatchObject({
+      kind: "reconnect",
+      reconnectCount: 1,
+      jumpIndex: 1,
+    });
+    expect(findNearestEventIndex(events, 1800, "b")).toBe(1);
+    expect(findNearestEventIndex([], 1800)).toBeNull();
   });
 });

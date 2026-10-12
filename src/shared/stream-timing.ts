@@ -1,10 +1,29 @@
-import type { SseEvent } from "./types";
+import type { SseEvent, StreamReconnectMark } from "./types";
 
 export type GapSample = {
   /** Gap before this event (event[i] - event[i-1]), i >= 1 */
   afterIndex: number;
   gapMs: number;
 };
+
+export type TimelineInsight =
+  | {
+      kind: "stall";
+      /** 1-based rank among listed stalls (1 = longest). */
+      rank: number;
+      afterIndex: number;
+      gapMs: number;
+      eventName?: string;
+      jumpIndex: number;
+    }
+  | {
+      kind: "reconnect";
+      reconnectCount: number;
+      offsetMs: number;
+      lastEventId?: string;
+      /** Nearest event to jump to; null when the stream has no events yet. */
+      jumpIndex: number | null;
+    };
 
 export type HistogramBin = {
   /** Inclusive lower bound in ms */
@@ -133,4 +152,69 @@ export function timelineSpanMs(marks: Array<Pick<TimelineMark, "offsetMs">>): nu
 /** Top N largest gaps, descending. */
 export function largestGaps(gaps: GapSample[], limit = 5): GapSample[] {
   return [...gaps].sort((a, b) => b.gapMs - a.gapMs).slice(0, Math.max(0, limit));
+}
+
+/** Prefer matching Last-Event-ID; otherwise nearest receive time. */
+export function findNearestEventIndex(
+  events: Array<Pick<SseEvent, "index" | "receivedAt" | "id">>,
+  atMs: number,
+  lastEventId?: string,
+): number | null {
+  if (events.length === 0) return null;
+  if (lastEventId) {
+    for (let i = events.length - 1; i >= 0; i -= 1) {
+      if (events[i].id === lastEventId) return events[i].index;
+    }
+  }
+  let bestIndex = events[0].index;
+  let bestDist = Math.abs(events[0].receivedAt - atMs);
+  for (let i = 1; i < events.length; i += 1) {
+    const dist = Math.abs(events[i].receivedAt - atMs);
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestIndex = events[i].index;
+    }
+  }
+  return bestIndex;
+}
+
+/**
+ * Merge top stalls + reconnects for the Insights list.
+ * Order: stalls by gap desc, then reconnects by count desc (newest first).
+ */
+export function buildTimelineInsights(input: {
+  gaps: GapSample[];
+  events: Array<Pick<SseEvent, "index" | "event" | "receivedAt" | "id">>;
+  reconnects: StreamReconnectMark[];
+  originMs: number;
+  stallLimit?: number;
+}): TimelineInsight[] {
+  const stallLimit = input.stallLimit ?? 5;
+  const byIndex = new Map(input.events.map((ev) => [ev.index, ev]));
+  const stalls = largestGaps(input.gaps, stallLimit).map((gap, i) => {
+    const insight: TimelineInsight = {
+      kind: "stall",
+      rank: i + 1,
+      afterIndex: gap.afterIndex,
+      gapMs: gap.gapMs,
+      eventName: byIndex.get(gap.afterIndex)?.event,
+      jumpIndex: gap.afterIndex,
+    };
+    return insight;
+  });
+
+  const reconnects = [...input.reconnects]
+    .sort((a, b) => b.reconnectCount - a.reconnectCount)
+    .map((reconnect) => {
+      const insight: TimelineInsight = {
+        kind: "reconnect",
+        reconnectCount: reconnect.reconnectCount,
+        offsetMs: Math.max(0, reconnect.at - input.originMs),
+        lastEventId: reconnect.lastEventId,
+        jumpIndex: findNearestEventIndex(input.events, reconnect.at, reconnect.lastEventId),
+      };
+      return insight;
+    });
+
+  return [...stalls, ...reconnects];
 }

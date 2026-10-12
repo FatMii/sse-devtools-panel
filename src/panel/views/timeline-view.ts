@@ -1,6 +1,7 @@
 import { t } from "../../shared/i18n";
 import {
   buildGapHistogram,
+  buildTimelineInsights,
   buildTimelineMarks,
   collectEventGaps,
   gapsInBin,
@@ -12,6 +13,7 @@ import {
   timelineSpanMs,
   type GapSample,
   type HistogramBin,
+  type TimelineInsight,
   type TimelineMark,
 } from "../../shared/stream-timing";
 import type { StreamRecord } from "../../shared/types";
@@ -363,29 +365,6 @@ export function renderTimeline(
       ]);
       svg.appendChild(marker);
     }
-
-    const reconnectSection = document.createElement("section");
-    reconnectSection.className = "timeline-section timeline-reconnects";
-    const reconnectTitle = document.createElement("div");
-    reconnectTitle.className = "timeline-section-title";
-    reconnectTitle.textContent = t("timelineReconnectsTitle");
-    const reconnectHint = document.createElement("div");
-    reconnectHint.className = "timeline-section-hint";
-    reconnectHint.textContent = t("timelineReconnectsHint");
-    reconnectSection.append(reconnectTitle, reconnectHint);
-
-    for (const reconnect of reconnects) {
-      const row = document.createElement("div");
-      row.className = "timeline-reconnect-item";
-      const offsetMs = Math.max(0, reconnect.at - origin);
-      row.innerHTML = `
-        <span>${escapeHtml(t("timelineReconnectItem", String(reconnect.reconnectCount)))}</span>
-        <span>${escapeHtml(`+${Math.round(offsetMs)}ms`)}</span>
-        <code>${escapeHtml(reconnect.lastEventId || "—")}</code>
-      `;
-      reconnectSection.appendChild(row);
-    }
-    elTimelineBody.appendChild(reconnectSection);
   }
 
   const histSection = document.createElement("section");
@@ -412,38 +391,87 @@ export function renderTimeline(
   }
   elTimelineBody.appendChild(histSection);
 
-  const gapBox = document.createElement("section");
-  gapBox.className = "timeline-section timeline-gaps";
-  const gapTitle = document.createElement("div");
-  gapTitle.className = "timeline-section-title";
-  gapTitle.textContent = t("timelineLargestGaps");
-  const gapHint = document.createElement("div");
-  gapHint.className = "timeline-section-hint";
-  gapHint.textContent = t("timelineLargestGapsHint");
-  gapBox.append(gapTitle, gapHint);
+  const insights = buildTimelineInsights({
+    gaps,
+    events: record.events,
+    reconnects,
+    originMs: origin,
+  });
+  elTimelineBody.appendChild(buildInsightsSection(insights, options));
+}
 
-  const topGaps = largestGaps(gaps, 5);
-  if (topGaps.length === 0) {
+function buildInsightsSection(
+  insights: TimelineInsight[],
+  options: RenderTimelineOptions,
+): HTMLElement {
+  const section = document.createElement("section");
+  section.className = "timeline-section timeline-insights";
+  const title = document.createElement("div");
+  title.className = "timeline-section-title";
+  title.textContent = t("timelineInsights");
+  const hint = document.createElement("div");
+  hint.className = "timeline-section-hint";
+  hint.textContent = t("timelineInsightsHint");
+  section.append(title, hint);
+
+  if (insights.length === 0) {
     const empty = document.createElement("div");
     empty.className = "timeline-meta";
-    empty.textContent = t("timelineNoGaps");
-    gapBox.appendChild(empty);
-  } else {
-    for (const gap of topGaps) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "timeline-gap-item";
-      btn.innerHTML = `
-        <span>${escapeHtml(t("timelineGapBeforeEvent", String(gap.afterIndex)))}</span>
-        <strong>${escapeHtml(formatMetricMs(gap.gapMs))}</strong>
-      `;
-      btn.addEventListener("click", () => {
-        options.onJumpToEvent(gap.afterIndex);
-      });
-      gapBox.appendChild(btn);
-    }
+    empty.textContent = t("timelineInsightsEmpty");
+    section.appendChild(empty);
+    return section;
   }
-  elTimelineBody.appendChild(gapBox);
+
+  const list = document.createElement("div");
+  list.className = "timeline-insight-list";
+  for (const insight of insights) {
+    list.appendChild(buildInsightButton(insight, options));
+  }
+  section.appendChild(list);
+  return section;
+}
+
+function buildInsightButton(
+  insight: TimelineInsight,
+  options: RenderTimelineOptions,
+): HTMLButtonElement {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  const isReconnect = insight.kind === "reconnect";
+  const jumpIndex = insight.jumpIndex;
+  const canJump = typeof jumpIndex === "number";
+  btn.className = `timeline-insight${isReconnect ? " is-reconnect" : " is-stall"}${
+    canJump && options.selectedEventIndex === jumpIndex ? " is-selected" : ""
+  }`;
+  btn.disabled = !canJump;
+
+  const title =
+    insight.kind === "stall"
+      ? t("timelineInsightGapTitle", String(insight.afterIndex))
+      : t("timelineInsightReconnect", String(insight.reconnectCount));
+  const desc =
+    insight.kind === "stall"
+      ? t("timelineInsightGapDesc", insight.eventName ? insight.eventName : "—")
+      : t("timelineInsightReconnectDesc", insight.lastEventId ? insight.lastEventId : "—");
+  const metric =
+    insight.kind === "stall"
+      ? formatMetricMs(insight.gapMs)
+      : `+${formatMetricMs(insight.offsetMs)}`;
+
+  btn.innerHTML = `
+    <i class="timeline-insight-dot" aria-hidden="true"></i>
+    <span class="timeline-insight-copy">
+      <span class="timeline-insight-title">${escapeHtml(title)}</span>
+      <span class="timeline-insight-desc">${escapeHtml(desc)}</span>
+    </span>
+    <span class="timeline-insight-ms">${escapeHtml(metric)}</span>
+  `;
+  if (canJump) {
+    btn.addEventListener("click", () => {
+      options.onJumpToEvent(jumpIndex);
+    });
+  }
+  return btn;
 }
 
 type KpiRowInput = {

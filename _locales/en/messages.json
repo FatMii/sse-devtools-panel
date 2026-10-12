@@ -569,7 +569,7 @@
     }
   },
   "timelineKpiMaxGapSlow": {
-    "message": "Threshold $MS$ ms · stall",
+    "message": "Threshold $MS$ ms · long wait",
     "placeholders": {
       "ms": {
         "content": "$1",
@@ -599,7 +599,7 @@
     "message": "Normal"
   },
   "timelineLegendStall": {
-    "message": "Stall ≥$MS$ms",
+    "message": "Long wait ≥$MS$ms",
     "placeholders": {
       "ms": {
         "content": "$1",
@@ -617,7 +617,7 @@
     "message": "Event arrival timeline"
   },
   "timelineTrackHint": {
-    "message": "Each tick is one event. Stall ≥$MS$ms; see legend. Click to open in Events.",
+    "message": "Each tick is one event. Red marks waits ≥$MS$ms; see legend. Click to open in Events.",
     "placeholders": {
       "ms": {
         "content": "$1",
@@ -673,7 +673,7 @@
     "message": "First event"
   },
   "timelineTickTipStall": {
-    "message": "STALL"
+    "message": "Long wait"
   },
   "timelineTickTipAction": {
     "message": "Click to open in Events"
@@ -717,6 +717,51 @@
   },
   "timelineNoGaps": {
     "message": "No inter-event waits yet."
+  },
+  "timelineInsights": {
+    "message": "Insights"
+  },
+  "timelineInsightsHint": {
+    "message": "Sorted by severity. Click to open the matching event in Events."
+  },
+  "timelineInsightsEmpty": {
+    "message": "No long waits or reconnects yet."
+  },
+  "timelineInsightGapTitle": {
+    "message": "Wait before #$INDEX$",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "42"
+      }
+    }
+  },
+  "timelineInsightGapDesc": {
+    "message": "Event type · $EVENT$",
+    "placeholders": {
+      "event": {
+        "content": "$1",
+        "example": "message"
+      }
+    }
+  },
+  "timelineInsightReconnect": {
+    "message": "Reconnect #$COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
+  "timelineInsightReconnectDesc": {
+    "message": "last-event-id · $ID$",
+    "placeholders": {
+      "id": {
+        "content": "$1",
+        "example": "evt-120"
+      }
+    }
   },
   "originImported": {
     "message": "imported"
@@ -1230,7 +1275,7 @@
     "message": "Timeline for stream rhythm"
   },
   "tourStep6Body": {
-    "message": "Timeline highlights first-byte delay, gaps, and stalls. Raw is next to it when you need the original text."
+    "message": "Timeline highlights first-byte delay, gaps, and long waits. Raw is next to it when you need the original text."
   },
   "tourStep7Title": {
     "message": "Replay the tour from More"

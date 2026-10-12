@@ -599,7 +599,7 @@
     "message": "正常"
   },
   "timelineLegendStall": {
-    "message": "Stall ≥$MS$ms",
+    "message": "卡顿 ≥$MS$ms",
     "placeholders": {
       "ms": {
         "content": "$1",
@@ -617,7 +617,7 @@
     "message": "事件到达时间线"
   },
   "timelineTrackHint": {
-    "message": "每个刻度对应一个事件。Stall ≥$MS$ms，见图例。点击可在 Events 中打开。",
+    "message": "每个刻度对应一个事件。红色表示等待 ≥$MS$ms，见图例。点击可在 Events 中打开。",
     "placeholders": {
       "ms": {
         "content": "$1",
@@ -717,6 +717,51 @@
   },
   "timelineNoGaps": {
     "message": "尚无事件间隔。"
+  },
+  "timelineInsights": {
+    "message": "洞察"
+  },
+  "timelineInsightsHint": {
+    "message": "按严重度排序。点击可在 Events 中打开对应事件。"
+  },
+  "timelineInsightsEmpty": {
+    "message": "尚无长等待或重连。"
+  },
+  "timelineInsightGapTitle": {
+    "message": "到达 #$INDEX$ 前等待",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "42"
+      }
+    }
+  },
+  "timelineInsightGapDesc": {
+    "message": "事件类型 · $EVENT$",
+    "placeholders": {
+      "event": {
+        "content": "$1",
+        "example": "message"
+      }
+    }
+  },
+  "timelineInsightReconnect": {
+    "message": "Reconnect #$COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
+  "timelineInsightReconnectDesc": {
+    "message": "last-event-id · $ID$",
+    "placeholders": {
+      "id": {
+        "content": "$1",
+        "example": "evt-120"
+      }
+    }
   },
   "originImported": {
     "message": "导入"
