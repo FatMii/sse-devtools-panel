@@ -263,6 +263,47 @@ export function aggregateArrivalLod(
   return { buckets, maxCount: Math.max(1, maxCount) };
 }
 
+export type ArrivalWaitSeries = {
+  /** Wait duration (ms) covering each time bucket — same unit as KPI max gap. */
+  waitsMs: number[];
+  maxWaitMs: number;
+  bucketCount: number;
+};
+
+/**
+ * For each time bucket in [viewStartMs, viewEndMs], take the longest inter-event
+ * wait whose interval overlaps that bucket. Y unit is milliseconds (not events/s).
+ */
+export function buildArrivalWaitSeries(
+  marks: Array<Pick<TimelineMark, "offsetMs" | "gapFromPrevMs">>,
+  viewStartMs: number,
+  viewEndMs: number,
+  bucketCount: number,
+): ArrivalWaitSeries {
+  const n = Math.max(1, Math.floor(bucketCount));
+  const span = Math.max(1, viewEndMs - viewStartMs);
+  const waitsMs = new Array<number>(n).fill(0);
+
+  for (const mark of marks) {
+    const gap = mark.gapFromPrevMs;
+    if (typeof gap !== "number" || !Number.isFinite(gap) || gap <= 0) continue;
+    const waitEnd = mark.offsetMs;
+    const waitStart = mark.offsetMs - gap;
+    if (waitEnd < viewStartMs || waitStart > viewEndMs) continue;
+    const bi0 = Math.floor(((Math.max(waitStart, viewStartMs) - viewStartMs) / span) * n);
+    const bi1 = Math.floor(((Math.min(waitEnd, viewEndMs) - viewStartMs) / span) * n);
+    for (let bi = Math.max(0, bi0); bi <= Math.min(n - 1, bi1); bi += 1) {
+      if (gap > waitsMs[bi]) waitsMs[bi] = gap;
+    }
+  }
+
+  let maxWaitMs = 0;
+  for (const wait of waitsMs) {
+    if (wait > maxWaitMs) maxWaitMs = wait;
+  }
+  return { waitsMs, maxWaitMs: Math.max(maxWaitMs, 1), bucketCount: n };
+}
+
 /** Visible time window on the arrival track (offsets from stream origin). */
 export type TimelineViewWindow = {
   startMs: number;

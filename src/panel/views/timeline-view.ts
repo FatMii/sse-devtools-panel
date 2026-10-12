@@ -1,6 +1,7 @@
 import { t } from "../../shared/i18n";
 import {
   aggregateArrivalLod,
+  buildArrivalWaitSeries,
   buildGapHistogram,
   buildTimelineInsights,
   buildTimelineMarks,
@@ -51,8 +52,8 @@ type ArrivalTrackHandle = {
   wrap: HTMLElement;
   axis: HTMLElement;
   toolbar: HTMLElement;
+  legend: HTMLElement;
   minimap: HTMLElement;
-  navHint: HTMLElement;
   update: (next: ArrivalTrackInput) => void;
   paint: () => void;
   disconnect: () => void;
@@ -370,16 +371,24 @@ function rebuildTimelineShell(
   const trackHead = document.createElement("div");
   trackHead.className = "timeline-track-head";
   const trackTitleBlock = document.createElement("div");
+  trackTitleBlock.className = "timeline-track-title-row";
   const trackTitle = document.createElement("div");
   trackTitle.className = "timeline-section-title";
   trackTitle.textContent = t("timelineTrackTitle");
-  const trackHint = document.createElement("div");
-  trackHint.className = "timeline-section-hint";
-  trackHint.textContent = t("timelineTrackHint", String(TIMELINE_STALL_MS));
-  trackTitleBlock.append(trackTitle, trackHint);
+  const trackTipsBtn = document.createElement("button");
+  trackTipsBtn.type = "button";
+  trackTipsBtn.className = "timeline-track-tips";
+  trackTipsBtn.textContent = "?";
+  trackTipsBtn.setAttribute("aria-label", t("timelineTrackTipsAria"));
+  bindTimelineTooltip(trackTipsBtn, [
+    t("timelineTrackNavHint"),
+    t("timelineTrackHintTop", String(TIMELINE_STALL_MS)),
+    t("timelineTrackHintBottom"),
+  ]);
+  trackTitleBlock.append(trackTitle, trackTipsBtn);
   const track = buildArrivalTrackCanvas(trackInput);
-  trackHead.append(trackTitleBlock, buildLegend(), track.toolbar);
-  trackSection.append(trackHead, track.wrap, track.axis, track.minimap, track.navHint);
+  trackHead.append(trackTitleBlock, track.legend, track.toolbar);
+  trackSection.append(trackHead, track.wrap, track.axis, track.minimap);
 
   const histSection = document.createElement("section");
   histSection.className = "timeline-section";
@@ -451,9 +460,13 @@ function fillInsightsHost(
   host.appendChild(list);
 }
 
-const ARRIVAL_TRACK_CSS_H = 88;
+/** Density lane taller for readable ticks; wait lane below. */
+const ARRIVAL_DENSITY_USABLE_H = 180;
+const ARRIVAL_WAIT_LANE_H = 120;
+const ARRIVAL_TRACK_CSS_H = ARRIVAL_DENSITY_USABLE_H + 20 + ARRIVAL_WAIT_LANE_H;
 const ARRIVAL_MINIMAP_CSS_H = 18;
-const ARRIVAL_PAD_L = 12;
+/** Wide enough for peak labels like "9948 ms" right-aligned in the gutter. */
+const ARRIVAL_PAD_L = 56;
 const ARRIVAL_PAD_R = 12;
 
 type ArrivalTrackInput = {
@@ -498,11 +511,14 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
   const axisEnd = document.createElement("span");
   axis.append(axisStart, axisMid, axisEnd);
 
+  const legend = buildLegend();
+
   const toolbar = document.createElement("div");
   toolbar.className = "timeline-track-toolbar";
+
   const btnZoomOut = document.createElement("button");
   btnZoomOut.type = "button";
-  btnZoomOut.textContent = "âˆ’";
+  btnZoomOut.textContent = "\u2212";
   btnZoomOut.title = t("timelineZoomOut");
   btnZoomOut.setAttribute("aria-label", t("timelineZoomOut"));
   const btnZoomIn = document.createElement("button");
@@ -525,11 +541,11 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
   miniWindow.className = "timeline-minimap-window";
   minimap.append(miniCanvas, miniWindow);
 
-  const navHint = document.createElement("div");
-  navHint.className = "timeline-track-nav-hint";
-  navHint.textContent = t("timelineTrackNavHint");
-
-  let plotLayout = { padL: ARRIVAL_PAD_L, plotW: 1, cssW: 1 };
+  let plotLayout = {
+    padL: ARRIVAL_PAD_L,
+    plotW: 1,
+    cssW: 1,
+  };
 
   const syncChrome = (): void => {
     syncMinimapWindow(miniWindow, view, input.spanMs);
@@ -540,7 +556,7 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
 
   const paintFrame = (): void => {
     if (needsRemeasure) {
-      plotLayout = measureArrivalPlot(canvas);
+      plotLayout = measureArrivalPlot(canvas, ARRIVAL_PAD_L);
       needsRemeasure = false;
     }
     drawArrivalTrack(canvas, input, plotLayout, view);
@@ -646,6 +662,17 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
       hideTimelineTooltip();
       return;
     }
+    const waitSeries = buildArrivalWaitSeries(
+      input.marks,
+      view.startMs,
+      view.endMs,
+      Math.max(24, Math.floor(plotLayout.plotW / 2)),
+    );
+    const waitBi = Math.min(
+      waitSeries.bucketCount - 1,
+      Math.max(0, Math.floor((plotX / Math.max(1, plotLayout.plotW)) * waitSeries.bucketCount)),
+    );
+    const waitAtHoverMs = waitSeries.waitsMs[waitBi] ?? 0;
     const index = hitTestArrivalMark(
       input.marks,
       plotX,
@@ -654,16 +681,22 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
       view.endMs,
       16,
     );
-    if (index == null) {
+    const mark = index == null ? null : (marksByIndex.get(index) ?? null);
+    const rect = canvas.getBoundingClientRect();
+    const localY = ((e.clientY - rect.top) / Math.max(1, rect.height)) * ARRIVAL_TRACK_CSS_H;
+    const tipFocus = resolveTipFocus(localY);
+    if (tipFocus === "density" && !mark) {
       hideTimelineTooltip();
       return;
     }
-    const mark = marksByIndex.get(index);
-    if (!mark) {
-      hideTimelineTooltip();
-      return;
-    }
-    showTimelineTooltip(e.clientX, e.clientY, tipLinesForMark(mark));
+    showTimelineTooltip(
+      e.clientX,
+      e.clientY,
+      tipLinesForHover(mark, {
+        focus: tipFocus,
+        waitAtHoverMs,
+      }),
+    );
   });
 
   wrap.addEventListener("pointerleave", () => {
@@ -771,8 +804,8 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
     wrap,
     axis,
     toolbar,
+    legend,
     minimap,
-    navHint,
     update: (next) => {
       input = next;
       marksByIndex = new Map(next.marks.map((m) => [m.index, m]));
@@ -788,14 +821,23 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
   };
 }
 
-function measureArrivalPlot(canvas: HTMLCanvasElement): {
+function resolveTipFocus(localY: number): "density" | "wait" {
+  const lanes = arrivalLaneLayout(ARRIVAL_TRACK_CSS_H);
+  if (lanes.splitY != null && localY >= lanes.splitY) return "wait";
+  return "density";
+}
+
+function measureArrivalPlot(
+  canvas: HTMLCanvasElement,
+  padL: number,
+): {
   padL: number;
   plotW: number;
   cssW: number;
 } {
   const cssW = Math.max(1, canvas.getBoundingClientRect().width || canvas.clientWidth || 320);
-  const plotW = Math.max(1, cssW - ARRIVAL_PAD_L - ARRIVAL_PAD_R);
-  return { padL: ARRIVAL_PAD_L, plotW, cssW };
+  const plotW = Math.max(1, cssW - padL - ARRIVAL_PAD_R);
+  return { padL, plotW, cssW };
 }
 
 function readCssColor(name: string, fallback: string): string {
@@ -805,6 +847,28 @@ function readCssColor(name: string, fallback: string): string {
 
 function mixCssColor(color: string, pct: number): string {
   return `color-mix(in srgb, ${color} ${Math.round(pct)}%, transparent)`;
+}
+
+type ArrivalLaneLayout = {
+  density: { top: number; bottom: number; mid: number };
+  wait: { top: number; bottom: number };
+  markerTop: number;
+  markerBottom: number;
+  splitY: number;
+};
+
+/** Top = arrival density at old solo-track usable height; bottom = wait-ms. */
+function arrivalLaneLayout(cssH: number): ArrivalLaneLayout {
+  const dTop = 10;
+  const dBottom = dTop + ARRIVAL_DENSITY_USABLE_H;
+  const splitY = dBottom + 4;
+  return {
+    density: { top: dTop, bottom: dBottom, mid: (dTop + dBottom) / 2 },
+    wait: { top: splitY + 6, bottom: cssH - 10 },
+    markerTop: 6,
+    markerBottom: cssH - 8,
+    splitY,
+  };
 }
 
 function drawArrivalTrack(
@@ -830,7 +894,7 @@ function drawArrivalTrack(
 
   const padL = layout.padL;
   const plotW = layout.plotW;
-  const trackY = 40;
+  const lanes = arrivalLaneLayout(cssH);
   const viewStart = view.startMs;
   const viewEnd = Math.max(viewStart + 1, view.endMs);
   const viewSpan = viewEnd - viewStart;
@@ -840,37 +904,97 @@ function drawArrivalTrack(
   const warning = readCssColor("--warning", "#9a6700");
   const good = readCssColor("--good", "#218739");
   const muted = readCssColor("--text-muted", "#596779");
+  const stroke = readCssColor("--stroke", "#d8dee8");
   const strokeStrong = readCssColor("--stroke-strong", "#b8c3d1");
+  const sans = readCssColor("--sans", "sans-serif");
 
   const toX = (offsetMs: number): number => padL + ((offsetMs - viewStart) / viewSpan) * plotW;
 
-  const { buckets, maxCount } = aggregateArrivalLod(input.marks, plotW, viewStart, viewEnd);
-
+  const dens = lanes.density;
+  const densH = Math.max(1, dens.bottom - dens.top);
   for (const phase of input.phases) {
     if (phase.endMs <= viewStart || phase.startMs >= viewEnd) continue;
     const left = Math.max(padL, toX(phase.startMs));
     const right = Math.min(padL + plotW, toX(phase.endMs));
     if (right <= left) continue;
     ctx.fillStyle = phaseBandFill(phase.kind, accent, good, danger, muted);
-    ctx.fillRect(left, 10, right - left, 60);
+    ctx.fillRect(left, dens.top, right - left, densH);
   }
 
   ctx.strokeStyle = strokeStrong;
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(padL, trackY);
-  ctx.lineTo(padL + plotW, trackY);
+  ctx.moveTo(padL, dens.mid);
+  ctx.lineTo(padL + plotW, dens.mid);
   ctx.stroke();
 
+  const { buckets, maxCount } = aggregateArrivalLod(input.marks, plotW, viewStart, viewEnd);
+  // Bars must scale with densH — a hard 26px cap made taller lanes look unchanged.
+  const maxBar = densH * 0.72;
   for (let i = 0; i < buckets.length; i += 1) {
     const bucket = buckets[i];
     if (!bucket.count) continue;
     const alpha = 0.25 + 0.75 * (bucket.count / maxCount);
     ctx.fillStyle =
       bucket.stallCount > 0 ? mixCssColor(danger, alpha * 100) : mixCssColor(accent, alpha * 70);
-    const bh = 10 + 26 * (bucket.count / maxCount);
-    ctx.fillRect(padL + i, trackY - bh / 2, 1, bh);
+    const bh = Math.max(12, maxBar * (bucket.count / maxCount));
+    ctx.fillRect(padL + i, dens.mid - bh / 2, 1.5, bh);
   }
+
+  ctx.fillStyle = muted;
+  ctx.font = `10px ${sans}`;
+  ctx.textAlign = "right";
+  ctx.textBaseline = "top";
+  ctx.fillText(t("timelineLaneArrival"), padL + plotW, dens.top);
+
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padL, lanes.splitY);
+  ctx.lineTo(padL + plotW, lanes.splitY);
+  ctx.stroke();
+
+  const waitLane = lanes.wait;
+  const waitSeries = buildArrivalWaitSeries(
+    input.marks,
+    viewStart,
+    viewEnd,
+    Math.max(24, Math.floor(plotW / 2)),
+  );
+  const waitH = Math.max(1, waitLane.bottom - waitLane.top);
+  const peakLabel = formatMetricMs(waitSeries.maxWaitMs);
+
+  ctx.strokeStyle = mixCssColor(strokeStrong, 55);
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padL, waitLane.bottom);
+  ctx.lineTo(padL + plotW, waitLane.bottom);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.strokeStyle = warning;
+  ctx.lineWidth = 1.75;
+  for (let i = 0; i < waitSeries.bucketCount; i += 1) {
+    const x = padL + ((i + 0.5) / waitSeries.bucketCount) * plotW;
+    const y =
+      waitLane.bottom - (waitSeries.waitsMs[i] / Math.max(1, waitSeries.maxWaitMs)) * waitH;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Y scale fully inside left gutter (padL=56); title on the right.
+  ctx.fillStyle = muted;
+  ctx.font = `10px ${sans}`;
+  ctx.textAlign = "right";
+  ctx.textBaseline = "top";
+  ctx.fillText(peakLabel, padL - 8, waitLane.top + 1);
+  ctx.textBaseline = "bottom";
+  ctx.fillText("0", padL - 8, waitLane.bottom);
+  ctx.textAlign = "right";
+  ctx.textBaseline = "top";
+  ctx.fillStyle = warning;
+  ctx.fillText(t("timelineLaneWait"), padL + plotW, waitLane.top + 1);
 
   if (input.selectedEventIndex != null) {
     const selected = input.marks.find((m) => m.index === input.selectedEventIndex);
@@ -880,19 +1004,21 @@ function drawArrivalTrack(
       ctx.lineWidth = 1;
       ctx.setLineDash([3, 3]);
       ctx.beginPath();
-      ctx.moveTo(sx, 8);
-      ctx.lineTo(sx, 72);
+      ctx.moveTo(sx, lanes.markerTop);
+      ctx.lineTo(sx, lanes.markerBottom);
       ctx.stroke();
       ctx.setLineDash([]);
+      const tickMid = dens.mid;
+      const tickH = Math.min(48, densH * 0.7);
       if (isStallGapMs(selected.gapFromPrevMs)) {
         ctx.strokeStyle = accentStrong;
         ctx.lineWidth = 1.5;
-        ctx.strokeRect(sx - 5, trackY - 18, 10, 36);
+        ctx.strokeRect(sx - 5, tickMid - tickH / 2, 10, tickH);
         ctx.fillStyle = danger;
       } else {
         ctx.fillStyle = accentStrong;
       }
-      ctx.fillRect(sx - 2, trackY - 16, 4, 32);
+      ctx.fillRect(sx - 2, tickMid - tickH / 2, 4, tickH);
     }
   }
 
@@ -901,21 +1027,24 @@ function drawArrivalTrack(
     if (offsetMs < viewStart || offsetMs > viewEnd) continue;
     const x = toX(offsetMs);
     ctx.setLineDash([2, 3]);
-    ctx.strokeStyle = warning;
+    ctx.strokeStyle = muted;
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(x, 6);
-    ctx.lineTo(x, 74);
+    ctx.moveTo(x, lanes.markerTop);
+    ctx.lineTo(x, lanes.markerBottom);
     ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = warning;
+    const cy = lanes.markerTop + 14;
+    ctx.strokeStyle = muted;
+    ctx.fillStyle = "transparent";
+    ctx.lineWidth = 1.25;
     ctx.beginPath();
-    ctx.moveTo(x, 12);
-    ctx.lineTo(x + 5, 20);
-    ctx.lineTo(x, 28);
-    ctx.lineTo(x - 5, 20);
+    ctx.moveTo(x, cy - 5);
+    ctx.lineTo(x + 5, cy);
+    ctx.lineTo(x, cy + 5);
+    ctx.lineTo(x - 5, cy);
     ctx.closePath();
-    ctx.fill();
+    ctx.stroke();
   }
 }
 
@@ -998,8 +1127,8 @@ function buildInsightButton(
       : t("timelineInsightReconnect", String(insight.reconnectCount));
   const desc =
     insight.kind === "stall"
-      ? t("timelineInsightGapDesc", insight.eventName ? insight.eventName : "â€”")
-      : t("timelineInsightReconnectDesc", insight.lastEventId ? insight.lastEventId : "â€”");
+      ? t("timelineInsightGapDesc", insight.eventName ? insight.eventName : "—")
+      : t("timelineInsightReconnectDesc", insight.lastEventId ? insight.lastEventId : "—");
   const metric =
     insight.kind === "stall"
       ? formatMetricMs(insight.gapMs)
@@ -1149,6 +1278,7 @@ function buildLegend(): HTMLElement {
   const items: Array<{ swatch: string; label: string }> = [
     { swatch: "is-normal", label: t("timelineLegendNormal") },
     { swatch: "is-stall", label: t("timelineLegendStall", String(TIMELINE_STALL_MS)) },
+    { swatch: "is-wait", label: t("timelineLegendWait") },
     { swatch: "is-reconnect", label: t("timelineLegendReconnect") },
     { swatch: "is-selected", label: t("timelineLegendSelected") },
   ];
@@ -1167,17 +1297,50 @@ function buildLegend(): HTMLElement {
   return legend;
 }
 
-function tipLinesForMark(mark: TimelineMark): string[] {
-  const lines = [
-    t("timelineTickTipMain", [String(mark.index), mark.event, formatMetricMs(mark.offsetMs)]),
-  ];
-  if (mark.gapFromPrevMs != null) {
-    lines.push(t("timelineTickTipGap", formatMetricMs(mark.gapFromPrevMs)));
-    if (isStallGapMs(mark.gapFromPrevMs)) lines.push(t("timelineTickTipStall"));
-  } else {
-    lines.push(t("timelineTickTipFirst"));
+type TipLine = { text: string; kind: "main" | "wait" | "gap" | "stall" | "action" | "meta" };
+
+function tipLinesForHover(
+  mark: TimelineMark | null,
+  options: { focus: "density" | "wait"; waitAtHoverMs: number },
+): TipLine[] {
+  if (options.focus === "wait") {
+    const lines: TipLine[] = [
+      {
+        text: t("timelineTickTipWaitMain", formatMetricMs(options.waitAtHoverMs)),
+        kind: "wait",
+      },
+    ];
+    if (mark) {
+      lines.push({
+        text: t("timelineTickTipNearestEvent", [String(mark.index), mark.event]),
+        kind: "meta",
+      });
+      lines.push({ text: t("timelineTickTipAction"), kind: "action" });
+    }
+    return lines;
   }
-  lines.push(t("timelineTickTipAction"));
+
+  if (!mark) return [];
+  const lines: TipLine[] = [];
+  if (mark.gapFromPrevMs != null) {
+    lines.push({
+      text: t("timelineTickTipMain", [
+        String(mark.index),
+        mark.event,
+        formatMetricMs(mark.gapFromPrevMs),
+      ]),
+      kind: "gap",
+    });
+    if (isStallGapMs(mark.gapFromPrevMs)) {
+      lines.push({ text: t("timelineTickTipStall"), kind: "stall" });
+    }
+  } else {
+    lines.push({
+      text: t("timelineTickTipMainFirst", [String(mark.index), mark.event]),
+      kind: "main",
+    });
+  }
+  lines.push({ text: t("timelineTickTipAction"), kind: "action" });
   return lines;
 }
 
@@ -1200,14 +1363,20 @@ function hideTimelineTooltip(): void {
   timelineTipEl.classList.remove("is-on");
 }
 
-function showTimelineTooltip(clientX: number, clientY: number, lines: string[]): void {
+function showTimelineTooltip(clientX: number, clientY: number, lines: TipLine[]): void {
   const tip = ensureTimelineTooltip();
   tip.replaceChildren();
   for (let i = 0; i < lines.length; i += 1) {
     const row = document.createElement("div");
-    row.className = i === 0 ? "timeline-tooltip-main" : "timeline-tooltip-sub";
-    if (lines[i] === t("timelineTickTipStall")) row.classList.add("is-stall");
-    row.textContent = lines[i];
+    const line = lines[i];
+    row.className =
+      i === 0 || line.kind === "wait" || line.kind === "gap"
+        ? "timeline-tooltip-main"
+        : "timeline-tooltip-sub";
+    if (line.kind === "stall") row.classList.add("is-stall");
+    if (line.kind === "wait") row.classList.add("is-wait");
+    if (line.kind === "gap") row.classList.add("is-gap");
+    row.textContent = line.text;
     tip.appendChild(row);
   }
   tip.hidden = false;
@@ -1224,13 +1393,17 @@ function showTimelineTooltip(clientX: number, clientY: number, lines: string[]):
 }
 
 function bindTimelineTooltip(target: Element, lines: string[]): void {
+  const tipLines: TipLine[] = lines.map((text, i) => ({
+    text,
+    kind: i === 0 ? "main" : "meta",
+  }));
   target.addEventListener("pointerenter", (e) => {
     const pe = e as PointerEvent;
-    showTimelineTooltip(pe.clientX, pe.clientY, lines);
+    showTimelineTooltip(pe.clientX, pe.clientY, tipLines);
   });
   target.addEventListener("pointermove", (e) => {
     const pe = e as PointerEvent;
-    showTimelineTooltip(pe.clientX, pe.clientY, lines);
+    showTimelineTooltip(pe.clientX, pe.clientY, tipLines);
   });
   target.addEventListener("pointerleave", () => {
     hideTimelineTooltip();

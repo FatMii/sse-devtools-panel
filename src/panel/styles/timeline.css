@@ -83,11 +83,13 @@
 
 .timeline-track-toolbar {
   display: inline-flex;
-  gap: 4px;
+  flex-wrap: wrap;
+  gap: 6px 8px;
   align-items: center;
+  justify-content: flex-end;
 }
 
-.timeline-track-toolbar button {
+.timeline-track-toolbar > button {
   min-width: 28px;
   height: 26px;
   padding: 0 8px;
@@ -99,7 +101,7 @@
   cursor: pointer;
 }
 
-.timeline-track-toolbar button:hover {
+.timeline-track-toolbar > button:hover {
   background: var(--surface-hover);
   color: var(--text);
 }
@@ -135,11 +137,19 @@
   background: var(--danger);
 }
 
-.timeline-legend-swatch.is-reconnect {
-  width: 10px;
-  height: 10px;
-  border-radius: 1px;
+.timeline-legend-swatch.is-wait {
   background: var(--warning);
+  border-radius: 1px;
+  height: 3px;
+  align-self: center;
+}
+
+.timeline-legend-swatch.is-reconnect {
+  width: 9px;
+  height: 9px;
+  border-radius: 1px;
+  background: transparent;
+  border: 1.5px solid var(--text-muted);
   transform: rotate(45deg);
 }
 
@@ -173,7 +183,7 @@
 
 .timeline-tooltip-main {
   color: var(--text);
-  font: var(--text-xs) / 1.45 var(--mono);
+  font: var(--weight-semibold) var(--text-xs) / 1.45 var(--sans);
   font-variant-numeric: tabular-nums;
 }
 
@@ -181,6 +191,16 @@
   margin-top: 3px;
   color: var(--text-muted);
   font-size: var(--text-xs);
+}
+
+.timeline-tooltip-main.is-wait {
+  color: var(--warning);
+  font-weight: var(--weight-semibold);
+}
+
+.timeline-tooltip-main.is-gap {
+  color: var(--text);
+  font-weight: var(--weight-semibold);
 }
 
 .timeline-tooltip-sub.is-stall {
@@ -220,6 +240,34 @@
   line-height: 1.5;
 }
 
+.timeline-track-title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.timeline-track-tips {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--stroke);
+  border-radius: 50%;
+  background: var(--surface-1);
+  color: var(--text-muted);
+  font: var(--weight-semibold) 11px / 1 var(--sans);
+  cursor: help;
+}
+
+.timeline-track-tips:hover,
+.timeline-track-tips:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+  background: var(--accent-wash);
+  outline: none;
+}
+
 .timeline-track-canvas-wrap {
   width: 100%;
   border: 1px solid var(--stroke);
@@ -238,7 +286,7 @@
 .timeline-track-canvas {
   display: block;
   width: 100%;
-  height: 88px;
+  height: 320px;
   pointer-events: none;
 }
 
@@ -284,12 +332,6 @@
   background: color-mix(in srgb, var(--accent) 18%, transparent);
   border-radius: 2px;
   pointer-events: none;
-}
-
-.timeline-track-nav-hint {
-  margin-top: 6px;
-  color: var(--text-faint);
-  font-size: 11px;
 }
 
 .timeline-insight-list {

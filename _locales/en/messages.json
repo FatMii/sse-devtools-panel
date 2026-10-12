@@ -512,23 +512,6 @@
   "statsSelectedEventsPerSec": {
     "message": "events/s"
   },
-  "timelineMeta": {
-    "message": "$COUNT$ events · span $SPAN$ · p95 gap $P95$",
-    "placeholders": {
-      "count": {
-        "content": "$1",
-        "example": "42"
-      },
-      "span": {
-        "content": "$2",
-        "example": "1.2 s"
-      },
-      "p95": {
-        "content": "$3",
-        "example": "80 ms"
-      }
-    }
-  },
   "timelineKpiAria": {
     "message": "Timeline summary metrics"
   },
@@ -607,6 +590,15 @@
       }
     }
   },
+  "timelineLegendWait": {
+    "message": "Wait over time (ms)"
+  },
+  "timelineLaneArrival": {
+    "message": "Arrival"
+  },
+  "timelineLaneWait": {
+    "message": "Wait"
+  },
   "timelineLegendReconnect": {
     "message": "Reconnect"
   },
@@ -616,14 +608,17 @@
   "timelineTrackTitle": {
     "message": "Event arrival timeline"
   },
-  "timelineTrackHint": {
-    "message": "Each tick is one event. Red marks waits ≥$MS$ms; see legend. Click to open in Events.",
+  "timelineTrackHintTop": {
+    "message": "Top: arrival ticks (red ≥$MS$ms).",
     "placeholders": {
       "ms": {
         "content": "$1",
         "example": "400"
       }
     }
+  },
+  "timelineTrackHintBottom": {
+    "message": "Bottom: wait over time (ms), same unit as Max gap. Click to open in Events."
   },
   "timelineZoomIn": {
     "message": "Zoom in"
@@ -636,6 +631,9 @@
   },
   "timelineTrackNavHint": {
     "message": "Scroll to zoom · drag track or minimap to pan · Fit resets the full range."
+  },
+  "timelineTrackTipsAria": {
+    "message": "Timeline tips"
   },
   "timelineGapHistogram": {
     "message": "Wait-time distribution between events"
@@ -656,7 +654,7 @@
     "message": "No waits in this range"
   },
   "timelineTickTipMain": {
-    "message": "#$INDEX$ · $EVENT$ · +$OFFSET$",
+    "message": "#$INDEX$ · $EVENT$ · wait $GAP$",
     "placeholders": {
       "index": {
         "content": "$1",
@@ -666,23 +664,46 @@
         "content": "$2",
         "example": "message"
       },
-      "offset": {
-        "content": "$3",
-        "example": "1.2 s"
-      }
-    }
-  },
-  "timelineTickTipGap": {
-    "message": "Gap $GAP$",
-    "placeholders": {
       "gap": {
-        "content": "$1",
+        "content": "$3",
         "example": "340 ms"
       }
     }
   },
-  "timelineTickTipFirst": {
-    "message": "First event"
+  "timelineTickTipMainFirst": {
+    "message": "#$INDEX$ · $EVENT$ · first event",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "12"
+      },
+      "event": {
+        "content": "$2",
+        "example": "message"
+      }
+    }
+  },
+  "timelineTickTipWaitMain": {
+    "message": "Wait ≈ $WAIT$",
+    "placeholders": {
+      "wait": {
+        "content": "$1",
+        "example": "1400 ms"
+      }
+    }
+  },
+  "timelineTickTipNearestEvent": {
+    "message": "Nearby event #$INDEX$ · $EVENT$",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "12"
+      },
+      "event": {
+        "content": "$2",
+        "example": "message"
+      }
+    }
   },
   "timelineTickTipStall": {
     "message": "Long wait"
@@ -711,24 +732,6 @@
         "example": "3"
       }
     }
-  },
-  "timelineLargestGaps": {
-    "message": "Largest waits"
-  },
-  "timelineLargestGapsHint": {
-    "message": "Jump to the event that arrived after each long wait."
-  },
-  "timelineGapBeforeEvent": {
-    "message": "Wait before #$INDEX$",
-    "placeholders": {
-      "index": {
-        "content": "$1",
-        "example": "42"
-      }
-    }
-  },
-  "timelineNoGaps": {
-    "message": "No inter-event waits yet."
   },
   "timelineInsights": {
     "message": "Insights"
@@ -931,38 +934,6 @@
       "count": {
         "content": "$1",
         "example": "2"
-      }
-    }
-  },
-  "timelineReconnectsTitle": {
-    "message": "EventSource reconnects"
-  },
-  "timelineReconnectsHint": {
-    "message": "Diamond marks on the track are reconnect attempts. Last-Event-ID is what the browser would send next."
-  },
-  "timelineReconnectMark": {
-    "message": "Reconnect #$COUNT$ · id $ID$ · $OFFSET$",
-    "placeholders": {
-      "count": {
-        "content": "$1",
-        "example": "1"
-      },
-      "id": {
-        "content": "$2",
-        "example": "42"
-      },
-      "offset": {
-        "content": "$3",
-        "example": "+1200ms"
-      }
-    }
-  },
-  "timelineReconnectItem": {
-    "message": "Reconnect #$COUNT$",
-    "placeholders": {
-      "count": {
-        "content": "$1",
-        "example": "1"
       }
     }
   },
@@ -1170,35 +1141,62 @@
   "connectionSummary": {
     "message": "$LIVE$ live · $STREAMS$ streams · $EVENTS$ events",
     "placeholders": {
-      "live": { "content": "$1", "example": "1" },
-      "streams": { "content": "$2", "example": "3" },
-      "events": { "content": "$3", "example": "42" }
+      "live": {
+        "content": "$1",
+        "example": "1"
+      },
+      "streams": {
+        "content": "$2",
+        "example": "3"
+      },
+      "events": {
+        "content": "$3",
+        "example": "42"
+      }
     }
   },
   "streamsCount": {
     "message": "$TOTAL$",
     "placeholders": {
-      "total": { "content": "$1", "example": "3" }
+      "total": {
+        "content": "$1",
+        "example": "3"
+      }
     }
   },
   "streamsCountFiltered": {
     "message": "$VISIBLE$ / $TOTAL$",
     "placeholders": {
-      "visible": { "content": "$1", "example": "2" },
-      "total": { "content": "$2", "example": "10" }
+      "visible": {
+        "content": "$1",
+        "example": "2"
+      },
+      "total": {
+        "content": "$2",
+        "example": "10"
+      }
     }
   },
   "eventsFilterHint": {
     "message": "$VISIBLE$ / $TOTAL$ matched",
     "placeholders": {
-      "visible": { "content": "$1", "example": "42" },
-      "total": { "content": "$2", "example": "42" }
+      "visible": {
+        "content": "$1",
+        "example": "42"
+      },
+      "total": {
+        "content": "$2",
+        "example": "42"
+      }
     }
   },
   "rawSizeKb": {
     "message": "$SIZE$ KB",
     "placeholders": {
-      "size": { "content": "$1", "example": "4.7" }
+      "size": {
+        "content": "$1",
+        "example": "4.7"
+      }
     }
   },
   "statusLive": {
@@ -1249,8 +1247,14 @@
   "tourStepLabel": {
     "message": "Step $CURRENT$ of $TOTAL$",
     "placeholders": {
-      "CURRENT": { "content": "$1", "example": "1" },
-      "TOTAL": { "content": "$2", "example": "7" }
+      "CURRENT": {
+        "content": "$1",
+        "example": "1"
+      },
+      "TOTAL": {
+        "content": "$2",
+        "example": "7"
+      }
     }
   },
   "tourStep1Title": {

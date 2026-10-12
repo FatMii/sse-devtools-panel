@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   aggregateArrivalLod,
+  buildArrivalWaitSeries,
   buildGapHistogram,
   buildTimelineInsights,
   buildTimelineMarks,
@@ -148,6 +149,23 @@ describe("stream-timing", () => {
     expect(hitTestArrivalMark(marks, 0, 100, 0, 1000)).toBe(0);
     expect(hitTestArrivalMark(marks, 52, 100, 0, 1000, 0.5)).toBe(3);
     expect(hitTestArrivalMark([], 10, 100, 0, 1000)).toBeNull();
+  });
+
+  it("builds a wait-ms series aligned with inter-event gaps", () => {
+    const marks = [
+      { offsetMs: 0 },
+      { offsetMs: 100, gapFromPrevMs: 100 },
+      { offsetMs: 700, gapFromPrevMs: 600 },
+      { offsetMs: 800, gapFromPrevMs: 100 },
+    ];
+    const series = buildArrivalWaitSeries(marks, 0, 1000, 10);
+    expect(series.bucketCount).toBe(10);
+    expect(series.waitsMs).toHaveLength(10);
+    // 100→700 wait of 600ms covers buckets ~1–6
+    expect(series.waitsMs[2]).toBe(600);
+    expect(series.waitsMs[5]).toBe(600);
+    expect(series.maxWaitMs).toBe(600);
+    expect(buildArrivalWaitSeries([], 0, 1000, 4).waitsMs).toEqual([0, 0, 0, 0]);
   });
 
   it("builds TTFT / steady / stall / done phase bands", () => {

@@ -512,23 +512,6 @@
   "statsSelectedEventsPerSec": {
     "message": "事件/秒"
   },
-  "timelineMeta": {
-    "message": "$COUNT$ 个事件 · 跨度 $SPAN$ · p95 间隔 $P95$",
-    "placeholders": {
-      "count": {
-        "content": "$1",
-        "example": "42"
-      },
-      "span": {
-        "content": "$2",
-        "example": "1.2 s"
-      },
-      "p95": {
-        "content": "$3",
-        "example": "80 ms"
-      }
-    }
-  },
   "timelineKpiAria": {
     "message": "时间线摘要指标"
   },
@@ -607,6 +590,15 @@
       }
     }
   },
+  "timelineLegendWait": {
+    "message": "等待随时间（ms）"
+  },
+  "timelineLaneArrival": {
+    "message": "到达"
+  },
+  "timelineLaneWait": {
+    "message": "等待"
+  },
   "timelineLegendReconnect": {
     "message": "重连"
   },
@@ -616,14 +608,17 @@
   "timelineTrackTitle": {
     "message": "事件到达时间线"
   },
-  "timelineTrackHint": {
-    "message": "每个刻度对应一个事件。红色表示等待 ≥$MS$ms，见图例。点击可在 Events 中打开。",
+  "timelineTrackHintTop": {
+    "message": "上轨：到达刻度（红色 ≥$MS$ms）。",
     "placeholders": {
       "ms": {
         "content": "$1",
         "example": "400"
       }
     }
+  },
+  "timelineTrackHintBottom": {
+    "message": "下轨：等待随时间（ms），与「最长间隔」同单位。点击可在 Events 中打开。"
   },
   "timelineZoomIn": {
     "message": "放大"
@@ -636,6 +631,9 @@
   },
   "timelineTrackNavHint": {
     "message": "滚轮缩放 · 拖拽主轨或迷你图平移 · Fit 复位全量。"
+  },
+  "timelineTrackTipsAria": {
+    "message": "时间线使用提示"
   },
   "timelineGapHistogram": {
     "message": "相邻事件等待时长分布"
@@ -656,7 +654,7 @@
     "message": "该区间没有等待样本"
   },
   "timelineTickTipMain": {
-    "message": "#$INDEX$ · $EVENT$ · +$OFFSET$",
+    "message": "#$INDEX$ · $EVENT$ · 等待 $GAP$",
     "placeholders": {
       "index": {
         "content": "$1",
@@ -666,23 +664,46 @@
         "content": "$2",
         "example": "message"
       },
-      "offset": {
-        "content": "$3",
-        "example": "1.2 s"
-      }
-    }
-  },
-  "timelineTickTipGap": {
-    "message": "间隔 $GAP$",
-    "placeholders": {
       "gap": {
-        "content": "$1",
+        "content": "$3",
         "example": "340 ms"
       }
     }
   },
-  "timelineTickTipFirst": {
-    "message": "首个事件"
+  "timelineTickTipMainFirst": {
+    "message": "#$INDEX$ · $EVENT$ · 首个事件",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "12"
+      },
+      "event": {
+        "content": "$2",
+        "example": "message"
+      }
+    }
+  },
+  "timelineTickTipWaitMain": {
+    "message": "等待 ≈ $WAIT$",
+    "placeholders": {
+      "wait": {
+        "content": "$1",
+        "example": "1400 ms"
+      }
+    }
+  },
+  "timelineTickTipNearestEvent": {
+    "message": "附近事件 #$INDEX$ · $EVENT$",
+    "placeholders": {
+      "index": {
+        "content": "$1",
+        "example": "12"
+      },
+      "event": {
+        "content": "$2",
+        "example": "message"
+      }
+    }
   },
   "timelineTickTipStall": {
     "message": "卡顿"
@@ -711,24 +732,6 @@
         "example": "3"
       }
     }
-  },
-  "timelineLargestGaps": {
-    "message": "最长等待"
-  },
-  "timelineLargestGapsHint": {
-    "message": "点击可跳到这次长等待之后到达的事件。"
-  },
-  "timelineGapBeforeEvent": {
-    "message": "到达 #$INDEX$ 前等待",
-    "placeholders": {
-      "index": {
-        "content": "$1",
-        "example": "42"
-      }
-    }
-  },
-  "timelineNoGaps": {
-    "message": "尚无事件间隔。"
   },
   "timelineInsights": {
     "message": "洞察"
@@ -931,38 +934,6 @@
       "count": {
         "content": "$1",
         "example": "2"
-      }
-    }
-  },
-  "timelineReconnectsTitle": {
-    "message": "EventSource 重连"
-  },
-  "timelineReconnectsHint": {
-    "message": "轨道上的菱形为重连尝试；Last-Event-ID 为浏览器下次会带上的 id。"
-  },
-  "timelineReconnectMark": {
-    "message": "重连 #$COUNT$ · id $ID$ · $OFFSET$",
-    "placeholders": {
-      "count": {
-        "content": "$1",
-        "example": "1"
-      },
-      "id": {
-        "content": "$2",
-        "example": "42"
-      },
-      "offset": {
-        "content": "$3",
-        "example": "+1200ms"
-      }
-    }
-  },
-  "timelineReconnectItem": {
-    "message": "重连 #$COUNT$",
-    "placeholders": {
-      "count": {
-        "content": "$1",
-        "example": "1"
       }
     }
   },
@@ -1170,35 +1141,62 @@
   "connectionSummary": {
     "message": "$LIVE$ 进行中 · $STREAMS$ 条流 · $EVENTS$ 个事件",
     "placeholders": {
-      "live": { "content": "$1", "example": "1" },
-      "streams": { "content": "$2", "example": "3" },
-      "events": { "content": "$3", "example": "42" }
+      "live": {
+        "content": "$1",
+        "example": "1"
+      },
+      "streams": {
+        "content": "$2",
+        "example": "3"
+      },
+      "events": {
+        "content": "$3",
+        "example": "42"
+      }
     }
   },
   "streamsCount": {
     "message": "$TOTAL$",
     "placeholders": {
-      "total": { "content": "$1", "example": "3" }
+      "total": {
+        "content": "$1",
+        "example": "3"
+      }
     }
   },
   "streamsCountFiltered": {
     "message": "$VISIBLE$ / $TOTAL$",
     "placeholders": {
-      "visible": { "content": "$1", "example": "2" },
-      "total": { "content": "$2", "example": "10" }
+      "visible": {
+        "content": "$1",
+        "example": "2"
+      },
+      "total": {
+        "content": "$2",
+        "example": "10"
+      }
     }
   },
   "eventsFilterHint": {
     "message": "$VISIBLE$ / $TOTAL$ 匹配",
     "placeholders": {
-      "visible": { "content": "$1", "example": "42" },
-      "total": { "content": "$2", "example": "42" }
+      "visible": {
+        "content": "$1",
+        "example": "42"
+      },
+      "total": {
+        "content": "$2",
+        "example": "42"
+      }
     }
   },
   "rawSizeKb": {
     "message": "$SIZE$ KB",
     "placeholders": {
-      "size": { "content": "$1", "example": "4.7" }
+      "size": {
+        "content": "$1",
+        "example": "4.7"
+      }
     }
   },
   "statusLive": {
@@ -1249,8 +1247,14 @@
   "tourStepLabel": {
     "message": "第 $CURRENT$ / $TOTAL$ 步",
     "placeholders": {
-      "CURRENT": { "content": "$1", "example": "1" },
-      "TOTAL": { "content": "$2", "example": "7" }
+      "CURRENT": {
+        "content": "$1",
+        "example": "1"
+      },
+      "TOTAL": {
+        "content": "$2",
+        "example": "7"
+      }
     }
   },
   "tourStep1Title": {
