@@ -625,6 +625,18 @@
       }
     }
   },
+  "timelineZoomIn": {
+    "message": "Zoom in"
+  },
+  "timelineZoomOut": {
+    "message": "Zoom out"
+  },
+  "timelineZoomFit": {
+    "message": "Fit"
+  },
+  "timelineTrackNavHint": {
+    "message": "Scroll to zoom · drag track or minimap to pan · Fit resets the full range."
+  },
   "timelineGapHistogram": {
     "message": "Wait-time distribution between events"
   },

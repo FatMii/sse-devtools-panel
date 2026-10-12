@@ -4,17 +4,21 @@ import {
   buildGapHistogram,
   buildTimelineInsights,
   buildTimelineMarks,
+  clampTimelineView,
   collectEventGaps,
   findNearestEventIndex,
+  fitTimelineView,
   gapsInBin,
   hitTestArrivalMark,
   isHotGapBin,
   isHotGapBinFromMs,
   isStallGapMs,
   largestGaps,
+  panTimelineView,
   TIMELINE_HOT_GAP_MS,
   TIMELINE_STALL_MS,
   timelineSpanMs,
+  zoomTimelineView,
 } from "../stream-timing";
 
 function assert(cond: unknown, msg: string): asserts cond {
@@ -143,5 +147,19 @@ describe("stream-timing", () => {
     expect(hitTestArrivalMark(marks, 0, 100, 0, 1000)).toBe(0);
     expect(hitTestArrivalMark(marks, 52, 100, 0, 1000, 0.5)).toBe(3);
     expect(hitTestArrivalMark([], 10, 100, 0, 1000)).toBeNull();
+  });
+
+  it("clamps zooms and pans the timeline view window", () => {
+    expect(fitTimelineView(2000)).toEqual({ startMs: 0, endMs: 2000 });
+    expect(clampTimelineView({ startMs: -100, endMs: 500 }, 1000)).toEqual({
+      startMs: 0,
+      endMs: 600,
+    });
+    expect(zoomTimelineView({ startMs: 0, endMs: 2000 }, 2000, 0.5, 0.5)).toEqual({
+      startMs: 500,
+      endMs: 1500,
+    });
+    const panned = panTimelineView({ startMs: 500, endMs: 1500 }, 2000, 800);
+    expect(panned).toEqual({ startMs: 1000, endMs: 2000 });
   });
 });

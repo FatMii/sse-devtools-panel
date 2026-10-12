@@ -263,6 +263,69 @@ export function aggregateArrivalLod(
   return { buckets, maxCount: Math.max(1, maxCount) };
 }
 
+/** Visible time window on the arrival track (offsets from stream origin). */
+export type TimelineViewWindow = {
+  startMs: number;
+  endMs: number;
+};
+
+/** Smallest arrival-track window; lower = allow deeper zoom-in. */
+export const TIMELINE_MIN_VIEW_MS = 50;
+
+export function fitTimelineView(spanMs: number): TimelineViewWindow {
+  return { startMs: 0, endMs: Math.max(1, spanMs) };
+}
+
+export function clampTimelineView(
+  view: TimelineViewWindow,
+  spanMs: number,
+  minWindowMs = TIMELINE_MIN_VIEW_MS,
+): TimelineViewWindow {
+  const span = Math.max(1, spanMs);
+  const minWin = Math.min(span, Math.max(1, minWindowMs));
+  const windowMs = Math.min(span, Math.max(minWin, view.endMs - view.startMs));
+  let startMs = view.startMs;
+  let endMs = startMs + windowMs;
+  if (startMs < 0) {
+    startMs = 0;
+    endMs = windowMs;
+  }
+  if (endMs > span) {
+    endMs = span;
+    startMs = Math.max(0, endMs - windowMs);
+  }
+  return { startMs, endMs };
+}
+
+/** Zoom around an anchor ratio within the current window (0 = left, 1 = right). */
+export function zoomTimelineView(
+  view: TimelineViewWindow,
+  spanMs: number,
+  factor: number,
+  anchorRatio = 0.5,
+  minWindowMs = TIMELINE_MIN_VIEW_MS,
+): TimelineViewWindow {
+  const cur = Math.max(1, view.endMs - view.startMs);
+  const ratio = Math.min(1, Math.max(0, anchorRatio));
+  const anchor = view.startMs + ratio * cur;
+  const nextWindow = Math.min(Math.max(spanMs, 1), Math.max(minWindowMs, cur * factor));
+  const startMs = anchor - ratio * nextWindow;
+  return clampTimelineView({ startMs, endMs: startMs + nextWindow }, spanMs, minWindowMs);
+}
+
+export function panTimelineView(
+  view: TimelineViewWindow,
+  spanMs: number,
+  deltaMs: number,
+  minWindowMs = TIMELINE_MIN_VIEW_MS,
+): TimelineViewWindow {
+  return clampTimelineView(
+    { startMs: view.startMs + deltaMs, endMs: view.endMs + deltaMs },
+    spanMs,
+    minWindowMs,
+  );
+}
+
 /** Map a plot-local X coordinate to the nearest in-view mark index. */
 export function hitTestArrivalMark(
   marks: Array<Pick<TimelineMark, "index" | "offsetMs">>,

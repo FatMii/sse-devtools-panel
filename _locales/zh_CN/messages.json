@@ -625,6 +625,18 @@
       }
     }
   },
+  "timelineZoomIn": {
+    "message": "放大"
+  },
+  "timelineZoomOut": {
+    "message": "缩小"
+  },
+  "timelineZoomFit": {
+    "message": "Fit"
+  },
+  "timelineTrackNavHint": {
+    "message": "滚轮缩放 · 拖拽主轨或迷你图平移 · Fit 复位全量。"
+  },
   "timelineGapHistogram": {
     "message": "相邻事件等待时长分布"
   },

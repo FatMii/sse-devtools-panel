@@ -81,6 +81,29 @@
   gap: var(--space-3);
 }
 
+.timeline-track-toolbar {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.timeline-track-toolbar button {
+  min-width: 28px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+  color: var(--text-muted);
+  font: var(--weight-semibold) 12px / 1 var(--sans);
+  cursor: pointer;
+}
+
+.timeline-track-toolbar button:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
 .timeline-legend {
   display: flex;
   flex-wrap: wrap;
@@ -203,12 +226,20 @@
   border-radius: var(--r-sm);
   background: var(--surface-1);
   overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+}
+
+.timeline-track-canvas-wrap.is-panning {
+  cursor: grabbing;
 }
 
 .timeline-track-canvas {
   display: block;
   width: 100%;
   height: 88px;
+  pointer-events: none;
 }
 
 .timeline-track-axis {
@@ -219,6 +250,46 @@
   color: var(--text-muted);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
+}
+
+.timeline-minimap {
+  position: relative;
+  height: 18px;
+  margin-top: 8px;
+  border: 1px solid var(--stroke);
+  border-radius: 3px;
+  background: var(--surface-2, var(--surface-1));
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.timeline-minimap.is-panning {
+  cursor: grabbing;
+}
+
+.timeline-minimap-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.timeline-minimap-window {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.timeline-track-nav-hint {
+  margin-top: 6px;
+  color: var(--text-faint);
+  font-size: 11px;
 }
 
 .timeline-insight-list {

@@ -4,19 +4,24 @@ import {
   buildGapHistogram,
   buildTimelineInsights,
   buildTimelineMarks,
+  clampTimelineView,
   collectEventGaps,
+  fitTimelineView,
   gapsInBin,
   hitTestArrivalMark,
   isHotGapBin,
   isStallGapMs,
   largestGaps,
+  panTimelineView,
   TIMELINE_HOT_GAP_MS,
   TIMELINE_STALL_MS,
   timelineSpanMs,
+  zoomTimelineView,
   type GapSample,
   type HistogramBin,
   type TimelineInsight,
   type TimelineMark,
+  type TimelineViewWindow,
 } from "../../shared/stream-timing";
 import type { StreamReconnectMark, StreamRecord } from "../../shared/types";
 import { elTimelineBody, elTimelinePlaceholder } from "../core/dom";
@@ -42,6 +47,9 @@ let activeHistBinIndex = -1;
 type ArrivalTrackHandle = {
   wrap: HTMLElement;
   axis: HTMLElement;
+  toolbar: HTMLElement;
+  minimap: HTMLElement;
+  navHint: HTMLElement;
   update: (next: ArrivalTrackInput) => void;
   paint: () => void;
   disconnect: () => void;
@@ -358,11 +366,9 @@ function rebuildTimelineShell(
   trackHint.className = "timeline-section-hint";
   trackHint.textContent = t("timelineTrackHint", String(TIMELINE_STALL_MS));
   trackTitleBlock.append(trackTitle, trackHint);
-  trackHead.append(trackTitleBlock, buildLegend());
-  trackSection.appendChild(trackHead);
-
   const track = buildArrivalTrackCanvas(trackInput);
-  trackSection.append(track.wrap, track.axis);
+  trackHead.append(trackTitleBlock, buildLegend(), track.toolbar);
+  trackSection.append(trackHead, track.wrap, track.axis, track.minimap, track.navHint);
 
   const histSection = document.createElement("section");
   histSection.className = "timeline-section";
@@ -435,6 +441,7 @@ function fillInsightsHost(
 }
 
 const ARRIVAL_TRACK_CSS_H = 88;
+const ARRIVAL_MINIMAP_CSS_H = 18;
 const ARRIVAL_PAD_L = 12;
 const ARRIVAL_PAD_R = 12;
 
@@ -450,6 +457,19 @@ type ArrivalTrackInput = {
 function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle {
   let input = initial;
   let marksByIndex = new Map(initial.marks.map((m) => [m.index, m]));
+  let view: TimelineViewWindow = fitTimelineView(initial.spanMs);
+  let wasFit = true;
+  let trackDragging = false;
+  let trackDragMoved = false;
+  let trackPointerId: number | null = null;
+  let trackDragOriginX = 0;
+  let trackDragOriginView = view;
+  let miniDragging = false;
+  let miniDragMoved = false;
+  let miniPointerId: number | null = null;
+  let miniGrabOffsetRatio = 0;
+  let paintRaf = 0;
+  let needsRemeasure = false;
 
   const wrap = document.createElement("div");
   wrap.className = "timeline-track-canvas-wrap";
@@ -466,19 +486,91 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
   const axisEnd = document.createElement("span");
   axis.append(axisStart, axisMid, axisEnd);
 
+  const toolbar = document.createElement("div");
+  toolbar.className = "timeline-track-toolbar";
+  const btnZoomOut = document.createElement("button");
+  btnZoomOut.type = "button";
+  btnZoomOut.textContent = "−";
+  btnZoomOut.title = t("timelineZoomOut");
+  btnZoomOut.setAttribute("aria-label", t("timelineZoomOut"));
+  const btnZoomIn = document.createElement("button");
+  btnZoomIn.type = "button";
+  btnZoomIn.textContent = "+";
+  btnZoomIn.title = t("timelineZoomIn");
+  btnZoomIn.setAttribute("aria-label", t("timelineZoomIn"));
+  const btnFit = document.createElement("button");
+  btnFit.type = "button";
+  btnFit.textContent = t("timelineZoomFit");
+  btnFit.title = t("timelineZoomFit");
+  toolbar.append(btnZoomOut, btnZoomIn, btnFit);
+
+  const minimap = document.createElement("div");
+  minimap.className = "timeline-minimap";
+  const miniCanvas = document.createElement("canvas");
+  miniCanvas.className = "timeline-minimap-canvas";
+  miniCanvas.setAttribute("aria-hidden", "true");
+  const miniWindow = document.createElement("div");
+  miniWindow.className = "timeline-minimap-window";
+  minimap.append(miniCanvas, miniWindow);
+
+  const navHint = document.createElement("div");
+  navHint.className = "timeline-track-nav-hint";
+  navHint.textContent = t("timelineTrackNavHint");
+
   let plotLayout = { padL: ARRIVAL_PAD_L, plotW: 1, cssW: 1 };
 
+  const syncChrome = (): void => {
+    syncMinimapWindow(miniWindow, view, input.spanMs);
+    axisStart.textContent = formatMetricMs(view.startMs);
+    axisMid.textContent = formatMetricMs((view.startMs + view.endMs) / 2);
+    axisEnd.textContent = formatMetricMs(view.endMs);
+  };
+
   const paintFrame = (): void => {
-    drawArrivalTrack(canvas, input, plotLayout);
-    axisStart.textContent = "0";
-    axisMid.textContent = formatMetricMs(input.spanMs / 2);
-    axisEnd.textContent = formatMetricMs(input.spanMs);
+    if (needsRemeasure) {
+      plotLayout = measureArrivalPlot(canvas);
+      needsRemeasure = false;
+    }
+    drawArrivalTrack(canvas, input, plotLayout, view);
+    drawArrivalMinimap(miniCanvas, input);
+    syncChrome();
+  };
+
+  const schedulePaint = (remeasure = false): void => {
+    if (remeasure) needsRemeasure = true;
+    if (paintRaf) return;
+    paintRaf = requestAnimationFrame(() => {
+      paintRaf = 0;
+      paintFrame();
+    });
   };
 
   const paint = (): void => {
-    plotLayout = measureArrivalPlot(canvas);
+    needsRemeasure = true;
+    if (paintRaf) {
+      cancelAnimationFrame(paintRaf);
+      paintRaf = 0;
+    }
     paintFrame();
   };
+
+  const setView = (next: TimelineViewWindow, fit = false): void => {
+    view = clampTimelineView(next, input.spanMs);
+    wasFit = fit;
+    // Window chrome updates immediately; canvas redraw coalesces to next frame.
+    syncChrome();
+    schedulePaint();
+  };
+
+  btnZoomIn.addEventListener("click", () => {
+    setView(zoomTimelineView(view, input.spanMs, 1 / 2, 0.5), false);
+  });
+  btnZoomOut.addEventListener("click", () => {
+    setView(zoomTimelineView(view, input.spanMs, 2, 0.5), false);
+  });
+  btnFit.addEventListener("click", () => {
+    setView(fitTimelineView(input.spanMs), true);
+  });
 
   const resolvePlotX = (clientX: number): number | null => {
     const rect = canvas.getBoundingClientRect();
@@ -486,23 +578,72 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
     return clientX - rect.left - plotLayout.padL;
   };
 
-  canvas.addEventListener("click", (e) => {
-    const plotX = resolvePlotX(e.clientX);
-    if (plotX == null) return;
-    const index = hitTestArrivalMark(input.marks, plotX, plotLayout.plotW, 0, input.spanMs);
-    if (index != null) input.onJumpToEvent(index);
+  wrap.addEventListener(
+    "wheel",
+    (e) => {
+      e.preventDefault();
+      const plotX = resolvePlotX(e.clientX);
+      const ratio =
+        plotX == null || plotLayout.plotW <= 0
+          ? 0.5
+          : Math.min(1, Math.max(0, plotX / plotLayout.plotW));
+      const factor = e.deltaY > 0 ? 1.35 : 1 / 1.35;
+      setView(zoomTimelineView(view, input.spanMs, factor, ratio), false);
+    },
+    { passive: false },
+  );
+
+  wrap.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    trackDragging = true;
+    trackDragMoved = false;
+    trackPointerId = e.pointerId;
+    trackDragOriginX = e.clientX;
+    trackDragOriginView = view;
+    wrap.classList.add("is-panning");
+    wrap.setPointerCapture(e.pointerId);
   });
 
-  canvas.addEventListener("pointermove", (e) => {
+  const endTrackDrag = (pointerId: number): void => {
+    if (trackPointerId !== pointerId) return;
+    trackDragging = false;
+    trackPointerId = null;
+    wrap.classList.remove("is-panning");
+  };
+
+  wrap.addEventListener("pointerup", (e) => {
+    endTrackDrag(e.pointerId);
+  });
+  wrap.addEventListener("pointercancel", (e) => {
+    endTrackDrag(e.pointerId);
+  });
+
+  wrap.addEventListener("pointermove", (e) => {
+    if (trackDragging) {
+      const dx = e.clientX - trackDragOriginX;
+      if (Math.abs(dx) > 2) trackDragMoved = true;
+      const span = Math.max(1, trackDragOriginView.endMs - trackDragOriginView.startMs);
+      const dMs = (-dx / Math.max(1, plotLayout.plotW)) * span;
+      setView(panTimelineView(trackDragOriginView, input.spanMs, dMs), false);
+      hideTimelineTooltip();
+      return;
+    }
+
     const plotX = resolvePlotX(e.clientX);
     if (plotX == null) {
       hideTimelineTooltip();
       return;
     }
-    const index = hitTestArrivalMark(input.marks, plotX, plotLayout.plotW, 0, input.spanMs, 16);
+    const index = hitTestArrivalMark(
+      input.marks,
+      plotX,
+      plotLayout.plotW,
+      view.startMs,
+      view.endMs,
+      16,
+    );
     if (index == null) {
       hideTimelineTooltip();
-      canvas.style.cursor = "default";
       return;
     }
     const mark = marksByIndex.get(index);
@@ -510,29 +651,126 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
       hideTimelineTooltip();
       return;
     }
-    canvas.style.cursor = "pointer";
     showTimelineTooltip(e.clientX, e.clientY, tipLinesForMark(mark));
   });
 
-  canvas.addEventListener("pointerleave", () => {
-    hideTimelineTooltip();
-    canvas.style.cursor = "default";
+  wrap.addEventListener("pointerleave", () => {
+    if (!trackDragging) hideTimelineTooltip();
+  });
+
+  wrap.addEventListener("click", (e) => {
+    if (trackDragMoved) return;
+    const plotX = resolvePlotX(e.clientX);
+    if (plotX == null) return;
+    const index = hitTestArrivalMark(
+      input.marks,
+      plotX,
+      plotLayout.plotW,
+      view.startMs,
+      view.endMs,
+    );
+    if (index != null) input.onJumpToEvent(index);
+  });
+
+  const eClientXToRatio = (clientX: number, rect: DOMRect): number =>
+    Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+
+  minimap.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const rect = minimap.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const ratio = eClientXToRatio(e.clientX, rect);
+    const span = Math.max(1, input.spanMs);
+    const startRatio = view.startMs / span;
+    const endRatio = view.endMs / span;
+    const windowRatio = Math.max(0.002, endRatio - startRatio);
+    if (ratio >= startRatio && ratio <= endRatio) {
+      miniGrabOffsetRatio = ratio - startRatio;
+    } else {
+      miniGrabOffsetRatio = windowRatio / 2;
+      setView(
+        clampTimelineView(
+          {
+            startMs: ratio * span - (windowRatio * span) / 2,
+            endMs: ratio * span + (windowRatio * span) / 2,
+          },
+          span,
+        ),
+        false,
+      );
+    }
+    miniDragging = true;
+    miniDragMoved = false;
+    miniPointerId = e.pointerId;
+    minimap.classList.add("is-panning");
+    minimap.setPointerCapture(e.pointerId);
+  });
+
+  const endMiniDrag = (pointerId: number): void => {
+    if (miniPointerId !== pointerId) return;
+    miniDragging = false;
+    miniPointerId = null;
+    minimap.classList.remove("is-panning");
+  };
+
+  minimap.addEventListener("pointermove", (e) => {
+    if (!miniDragging) return;
+    miniDragMoved = true;
+    const rect = minimap.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const ratio = eClientXToRatio(e.clientX, rect);
+    const span = Math.max(1, input.spanMs);
+    const windowMs = Math.max(1, view.endMs - view.startMs);
+    const startMs = (ratio - miniGrabOffsetRatio) * span;
+    setView(clampTimelineView({ startMs, endMs: startMs + windowMs }, span), false);
+  });
+
+  minimap.addEventListener("pointerup", (e) => {
+    endMiniDrag(e.pointerId);
+  });
+  minimap.addEventListener("pointercancel", (e) => {
+    endMiniDrag(e.pointerId);
+  });
+
+  minimap.addEventListener("click", (e) => {
+    if (miniDragMoved) return;
+    const rect = minimap.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const ratio = eClientXToRatio(e.clientX, rect);
+    const windowMs = Math.max(1, view.endMs - view.startMs);
+    const center = ratio * input.spanMs;
+    setView(
+      clampTimelineView(
+        { startMs: center - windowMs / 2, endMs: center + windowMs / 2 },
+        input.spanMs,
+      ),
+      false,
+    );
   });
 
   const ro = new ResizeObserver(() => {
-    paint();
+    schedulePaint(true);
   });
   ro.observe(wrap);
+  ro.observe(minimap);
 
   return {
     wrap,
     axis,
+    toolbar,
+    minimap,
+    navHint,
     update: (next) => {
       input = next;
       marksByIndex = new Map(next.marks.map((m) => [m.index, m]));
+      if (wasFit) view = fitTimelineView(next.spanMs);
+      else view = clampTimelineView(view, next.spanMs);
     },
     paint,
     disconnect: () => {
+      if (paintRaf) cancelAnimationFrame(paintRaf);
+      paintRaf = 0;
       ro.disconnect();
     },
   };
@@ -561,6 +799,7 @@ function drawArrivalTrack(
   canvas: HTMLCanvasElement,
   input: ArrivalTrackInput,
   layout: { padL: number; plotW: number; cssW: number },
+  view: TimelineViewWindow,
 ): void {
   const dpr = window.devicePixelRatio || 1;
   const cssW = layout.cssW;
@@ -580,21 +819,25 @@ function drawArrivalTrack(
   const padL = layout.padL;
   const plotW = layout.plotW;
   const trackY = 40;
-  const spanMs = Math.max(1, input.spanMs);
+  const viewStart = view.startMs;
+  const viewEnd = Math.max(viewStart + 1, view.endMs);
+  const viewSpan = viewEnd - viewStart;
   const accent = readCssColor("--accent", "#176fc1");
   const accentStrong = readCssColor("--accent-strong", "#145fa8");
   const danger = readCssColor("--danger", "#c33c30");
   const warning = readCssColor("--warning", "#9a6700");
   const strokeStrong = readCssColor("--stroke-strong", "#b8c3d1");
 
-  const { buckets, maxCount } = aggregateArrivalLod(input.marks, plotW, 0, spanMs);
+  const toX = (offsetMs: number): number => padL + ((offsetMs - viewStart) / viewSpan) * plotW;
 
-  // Long-wait bands behind the baseline.
+  const { buckets, maxCount } = aggregateArrivalLod(input.marks, plotW, viewStart, viewEnd);
+
   ctx.fillStyle = mixCssColor(danger, 12);
   for (const mark of input.marks) {
     if (!isStallGapMs(mark.gapFromPrevMs) || mark.gapFromPrevMs == null) continue;
-    const x0 = padL + ((mark.offsetMs - mark.gapFromPrevMs) / spanMs) * plotW;
-    const x1 = padL + (mark.offsetMs / spanMs) * plotW;
+    if (mark.offsetMs < viewStart || mark.offsetMs - mark.gapFromPrevMs > viewEnd) continue;
+    const x0 = toX(mark.offsetMs - mark.gapFromPrevMs);
+    const x1 = toX(mark.offsetMs);
     const left = Math.max(padL, x0);
     const right = Math.min(padL + plotW, x1);
     if (right > left) ctx.fillRect(left, 18, right - left, 44);
@@ -619,8 +862,8 @@ function drawArrivalTrack(
 
   if (input.selectedEventIndex != null) {
     const selected = input.marks.find((m) => m.index === input.selectedEventIndex);
-    if (selected) {
-      const sx = padL + (selected.offsetMs / spanMs) * plotW;
+    if (selected && selected.offsetMs >= viewStart && selected.offsetMs <= viewEnd) {
+      const sx = toX(selected.offsetMs);
       ctx.strokeStyle = accentStrong;
       ctx.lineWidth = 1;
       ctx.setLineDash([3, 3]);
@@ -643,7 +886,8 @@ function drawArrivalTrack(
 
   for (const reconnect of input.reconnects) {
     const offsetMs = Math.max(0, reconnect.at - input.originMs);
-    const x = padL + (Math.min(offsetMs, spanMs) / spanMs) * plotW;
+    if (offsetMs < viewStart || offsetMs > viewEnd) continue;
+    const x = toX(offsetMs);
     ctx.setLineDash([2, 3]);
     ctx.strokeStyle = warning;
     ctx.lineWidth = 1;
@@ -660,6 +904,46 @@ function drawArrivalTrack(
     ctx.lineTo(x - 5, 20);
     ctx.closePath();
     ctx.fill();
+  }
+}
+
+function syncMinimapWindow(windowEl: HTMLElement, view: TimelineViewWindow, spanMs: number): void {
+  const span = Math.max(1, spanMs);
+  const leftPct = (view.startMs / span) * 100;
+  const widthPct = (Math.max(1, view.endMs - view.startMs) / span) * 100;
+  windowEl.style.left = `${leftPct}%`;
+  windowEl.style.width = `${Math.min(100, Math.max(1.5, widthPct))}%`;
+}
+
+function drawArrivalMinimap(canvas: HTMLCanvasElement, input: ArrivalTrackInput): void {
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = Math.max(1, canvas.getBoundingClientRect().width || canvas.clientWidth || 320);
+  const cssH = ARRIVAL_MINIMAP_CSS_H;
+  const pixelW = Math.max(1, Math.floor(cssW * dpr));
+  const pixelH = Math.max(1, Math.floor(cssH * dpr));
+  if (canvas.width !== pixelW || canvas.height !== pixelH) {
+    canvas.width = pixelW;
+    canvas.height = pixelH;
+  }
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  const spanMs = Math.max(1, input.spanMs);
+  const accent = readCssColor("--accent", "#176fc1");
+  const warning = readCssColor("--warning", "#9a6700");
+  const { buckets, maxCount } = aggregateArrivalLod(input.marks, cssW, 0, spanMs);
+  for (let i = 0; i < buckets.length; i += 1) {
+    if (!buckets[i].count) continue;
+    ctx.fillStyle = mixCssColor(accent, 30 + (70 * buckets[i].count) / maxCount);
+    ctx.fillRect(i, 3, 1, 12);
+  }
+  for (const reconnect of input.reconnects) {
+    const offsetMs = Math.max(0, reconnect.at - input.originMs);
+    const x = (Math.min(offsetMs, spanMs) / spanMs) * cssW;
+    ctx.fillStyle = warning;
+    ctx.fillRect(x - 1, 1, 2, 16);
   }
 }
 
