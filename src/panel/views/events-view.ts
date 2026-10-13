@@ -37,7 +37,6 @@ import {
 
 export const DRAWER_WIDTH_MIN = 20;
 export const DRAWER_WIDTH_MAX = 75;
-export const DRAWER_WIDTH_DEFAULT = 42;
 
 const COL_COUNT = 4;
 const NEAR_BOTTOM_PX = 48;
@@ -199,15 +198,6 @@ function scrollFilteredIndexIntoView(filteredIndex: number, mode: "nearest" | "s
     wrap.scrollTop = Math.max(0, rowBottom - (wrap.clientHeight - headerHeight) + pad);
   }
   paintVisibleRows();
-}
-
-export function scrollEventRowIntoView(row: HTMLTableRowElement, mode: "nearest" | "start"): void {
-  const indexAttr = row.getAttribute("data-index");
-  if (indexAttr == null) return;
-  const eventIndex = Number(indexAttr);
-  const filteredIndex = browsableEvents.findIndex((ev) => ev.index === eventIndex);
-  if (filteredIndex === -1) return;
-  scrollFilteredIndexIntoView(filteredIndex, mode);
 }
 
 export function selectEventByIndex(

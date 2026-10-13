@@ -39,9 +39,6 @@ import { elTimingBody, elTimingPlaceholder } from "../core/dom";
 import { formatGapBinLabel, formatMetricMs } from "../core/format";
 import { ensureStreamMetrics } from "../features/stream-metrics";
 
-/** Re-export for callers; single source of truth is stream-timing. */
-export { TIMING_STALL_MS, TIMING_HOT_GAP_MS };
-
 export type RenderTimingOptions = {
   selectedEventIndex: number | null;
   onJumpToEvent: (eventIndex: number) => void;

@@ -20,7 +20,6 @@ const catalogs: Record<LocaleId, Catalog> = {
 };
 
 let activeLocale: LocaleId = "en";
-let ready = false;
 
 export function getActiveLocale(): LocaleId {
   return activeLocale;
@@ -61,7 +60,6 @@ function resolveLocale(pref: LocalePreference): LocaleId {
 export async function initI18n(): Promise<LocaleId> {
   const pref = await getLocalePreference();
   activeLocale = resolveLocale(pref);
-  ready = true;
   return activeLocale;
 }
 
@@ -113,10 +111,6 @@ export function applyDomI18n(root: ParentNode = document): void {
     if (!key) return;
     el.placeholder = t(key);
   });
-}
-
-export function isI18nReady(): boolean {
-  return ready;
 }
 
 /** Subscribe to locale preference changes. */

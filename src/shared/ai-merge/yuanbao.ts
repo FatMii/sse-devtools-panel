@@ -193,11 +193,3 @@ export function snapshotYuanbaoWeb(state: YuanbaoWebMergeState): MergeChannelsRe
     chunkCount: state.chunkCount,
   };
 }
-
-export function mergeYuanbaoWeb(
-  events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,
-): MergeChannelsResult {
-  const s = createYuanbaoWebMergeState();
-  pushYuanbaoWeb(s, events);
-  return snapshotYuanbaoWeb(s);
-}

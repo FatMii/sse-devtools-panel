@@ -464,11 +464,3 @@ export function snapshotKimiWeb(state: KimiWebMergeState): MergeChannelsResult {
     chunkCount: state.chunkCount,
   };
 }
-
-export function mergeKimiWeb(
-  events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,
-): MergeChannelsResult {
-  const s = createKimiWebMergeState();
-  pushKimiWeb(s, events);
-  return snapshotKimiWeb(s);
-}

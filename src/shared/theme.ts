@@ -15,10 +15,6 @@ export function getActiveThemePreference(): ThemePreference {
   return activePreference;
 }
 
-export function getActiveTheme(): ThemeId {
-  return activeTheme;
-}
-
 /** Best-effort DevTools theme name (`default` | `dark`), or null when unavailable. */
 export function getDevToolsThemeName(): string | null {
   try {

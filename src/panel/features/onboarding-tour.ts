@@ -180,10 +180,6 @@ function createTourDriver(): Driver {
   });
 }
 
-export function isTourActive(): boolean {
-  return Boolean(activeDriver?.isActive());
-}
-
 export function startOnboardingTour(nextHooks: OnboardingTourHooks, stepIndex = 0): void {
   hooks = nextHooks;
   if (activeDriver?.isActive()) {

@@ -93,11 +93,3 @@ export function snapshotOpenAiCompatible(state: OpenAiCompatibleMergeState): Mer
     chunkCount: state.chunkCount,
   };
 }
-
-export function mergeOpenAiCompatible(
-  events: ReadonlyArray<Pick<SseEvent, "data">>,
-): MergeChannelsResult {
-  const s = createOpenAiCompatibleMergeState();
-  pushOpenAiCompatible(s, events);
-  return snapshotOpenAiCompatible(s);
-}

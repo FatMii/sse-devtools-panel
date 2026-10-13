@@ -55,13 +55,6 @@ export class RelayBuffer<T extends BufferedRelay> {
     this.bytes = 0;
     return out;
   }
-
-  clear(): void {
-    this.items.length = 0;
-    this.bytes = 0;
-    this.truncated = false;
-    this.dropped = 0;
-  }
 }
 
 /** Rough size for budget accounting (not exact JSON size). */

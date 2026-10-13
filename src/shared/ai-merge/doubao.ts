@@ -241,11 +241,3 @@ export function snapshotDoubaoWeb(state: DoubaoWebMergeState): MergeChannelsResu
     chunkCount: state.chunkCount,
   };
 }
-
-export function mergeDoubaoWeb(
-  events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,
-): MergeChannelsResult {
-  const s = createDoubaoWebMergeState();
-  pushDoubaoWeb(s, events);
-  return snapshotDoubaoWeb(s);
-}

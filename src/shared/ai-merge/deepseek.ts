@@ -2,6 +2,12 @@ import type { SseEvent } from "../types";
 import type { AiEndMeta, AiToolCall, AiConversationChannels, MergeChannelsResult } from "./types";
 import { isRecord, parseEventData } from "./helpers";
 
+/**
+ * DeepSeek web (chat.deepseek.com): JSON Patch style.
+ * - THINK / RESPONSE text fragments
+ * - SEARCH fragment → Tools as web_search (queries + results)
+ * - Shorthand { v: "token" } appends to current fragment
+ */
 export type FragType = "THINK" | "RESPONSE" | "SEARCH" | "TIP" | "OTHER";
 
 export type DeepseekWebMergeState = {
@@ -249,18 +255,4 @@ export function snapshotDeepseekWeb(state: DeepseekWebMergeState): MergeChannels
     endMeta: state.endMeta,
     chunkCount: state.chunkCount,
   };
-}
-
-/**
- * DeepSeek web (chat.deepseek.com): JSON Patch style.
- * - THINK / RESPONSE text fragments
- * - SEARCH fragment → Tools as web_search (queries + results)
- * - Shorthand { v: "token" } appends to current fragment
- */
-export function mergeDeepseekWeb(
-  events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,
-): MergeChannelsResult {
-  const s = createDeepseekWebMergeState();
-  pushDeepseekWeb(s, events);
-  return snapshotDeepseekWeb(s);
 }

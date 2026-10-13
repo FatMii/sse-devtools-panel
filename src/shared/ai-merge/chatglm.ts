@@ -418,11 +418,3 @@ export function snapshotChatglmWeb(state: ChatglmWebMergeState): MergeChannelsRe
     chunkCount: state.chunkCount,
   };
 }
-
-export function mergeChatglmWeb(
-  events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,
-): MergeChannelsResult {
-  const s = createChatglmWebMergeState();
-  pushChatglmWeb(s, events);
-  return snapshotChatglmWeb(s);
-}

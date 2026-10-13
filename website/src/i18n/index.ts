@@ -2,10 +2,9 @@ import { en } from "./en";
 import { zh } from "./zh";
 import type { Locale, UI } from "./types";
 
-export type { FaqItem, Locale, UI } from "./types";
+export type { Locale, UI } from "./types";
 
 export const defaultLocale: Locale = "zh";
-export const locales: Locale[] = ["zh", "en"];
 
 const catalog: Record<Locale, UI> = { zh, en };
 

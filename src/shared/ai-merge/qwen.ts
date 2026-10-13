@@ -339,11 +339,3 @@ export function snapshotQwenWeb(state: QwenWebMergeState): MergeChannelsResult {
     chunkCount: state.chunkCount,
   };
 }
-
-export function mergeQwenWeb(
-  events: ReadonlyArray<Pick<SseEvent, "data" | "event">>,
-): MergeChannelsResult {
-  const s = createQwenWebMergeState();
-  pushQwenWeb(s, events);
-  return snapshotQwenWeb(s);
-}
