@@ -1,0 +1,18 @@
+# Normalize line endings to LF in the working tree, regardless of each
+# contributor's core.autocrlf. Without this, checkout on Windows writes CRLF
+# and Prettier (endOfLine: "lf") reports one warning per line.
+* text=auto eol=lf
+
+# Binary assets - never rewrite bytes
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.mp4 binary
+*.webm binary
+*.zip binary
+*.gz binary
+*.woff binary
+*.woff2 binary
