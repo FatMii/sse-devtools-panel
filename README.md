@@ -206,7 +206,7 @@ DeepSeek web example — Conversation merges thinking / content / search while t
 
 ## ⏱ Timing
 
-Use Timing to see when events arrived, how long gaps lasted, and where the stream stalled (stall threshold **400ms**):
+Use Timing to see when events arrived, how long gaps lasted, and where the stream stalled. The **Stall** field on the Timing toolbar sets the threshold (default 400 ms) and applies immediately:
 
 - **KPI strip** — event count, duration, max gap, reconnects at a glance
 - **Arrival + wait tracks** — density (Canvas LOD) on top, wait-ms over time below; scroll to zoom, drag to pan, Fit + minimap

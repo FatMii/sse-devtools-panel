@@ -23,6 +23,8 @@ import {
   collectTimingLaneTypes,
   hitTestTimingLaneMark,
   normalizeTimingEventType,
+  normalizeTimingStallMs,
+  setActiveTimingStallMs,
   waterfallBarKind,
   panTimingView,
   TIMING_HOT_GAP_MS,
@@ -159,6 +161,28 @@ describe("stream-timing", () => {
     expect(isHotGapBin({ fromMs: 250, toMs: 500 })).toBe(true);
     expect(isHotGapBin({ fromMs: 100, toMs: 250 })).toBe(false);
     expect(isHotGapBin({ fromMs: 1000, toMs: Number.POSITIVE_INFINITY })).toBe(true);
+
+    expect(normalizeTimingStallMs("")).toBe(400);
+    expect(normalizeTimingStallMs("nope")).toBe(400);
+    expect(normalizeTimingStallMs(12)).toBe(50);
+    expect(normalizeTimingStallMs(80_000)).toBe(10_000);
+    expect(normalizeTimingStallMs(799.6)).toBe(800);
+    setActiveTimingStallMs(800);
+    try {
+      expect(isStallGapMs(400)).toBe(false);
+      expect(isStallGapMs(800)).toBe(true);
+      expect(waterfallBarKind(400)).toBe("ok");
+      expect(waterfallBarKind(800)).toBe("stall");
+      expect(isHotGapBinFromMs(400)).toBe(false);
+      const phases = buildTimingPhases({
+        marks: [{ offsetMs: 0 }, { offsetMs: 500, gapFromPrevMs: 500 }],
+        spanMs: 500,
+        ended: true,
+      });
+      expect(phases.some((segment) => segment.kind === "stall")).toBe(false);
+    } finally {
+      setActiveTimingStallMs(TIMING_STALL_MS);
+    }
 
     const inBin = gapsInBin(
       [

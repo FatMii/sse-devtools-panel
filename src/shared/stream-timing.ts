@@ -46,11 +46,41 @@ export type TimingMark = {
 /** Default gap histogram edges (ms). Last bin is open-ended. */
 export const DEFAULT_GAP_BIN_EDGES_MS = [0, 10, 25, 50, 100, 250, 500, 1000] as const;
 
-/** Gap ≥ this is a stall (red tick / KPI alert). */
+/** Gap ≥ this is a stall (red tick / KPI alert). Default; Options can override. */
 export const TIMING_STALL_MS = 400;
 
-/** Histogram bins with fromMs ≥ this are "hot" (longer stalls). */
-export const TIMING_HOT_GAP_MS = 400;
+/** Lowest stall threshold the Options page will store. */
+export const TIMING_STALL_MIN_MS = 50;
+
+/** Highest stall threshold the Options page will store. */
+export const TIMING_STALL_MAX_MS = 10_000;
+
+/** Default hot-gap cutoff. Live checks use the active stall threshold. */
+export const TIMING_HOT_GAP_MS = TIMING_STALL_MS;
+
+let activeTimingStallMs = TIMING_STALL_MS;
+
+/** Stall / hot-gap cutoff used by Timing. Defaults to 400 until Options loads. */
+export function getTimingStallMs(): number {
+  return activeTimingStallMs;
+}
+
+/** Clamp a stored or typed value. Blank and non-numeric input fall back to the default. */
+export function normalizeTimingStallMs(value: unknown): number {
+  if (value == null || value === "") return TIMING_STALL_MS;
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) return TIMING_STALL_MS;
+  const rounded = Math.round(n);
+  if (rounded < TIMING_STALL_MIN_MS) return TIMING_STALL_MIN_MS;
+  if (rounded > TIMING_STALL_MAX_MS) return TIMING_STALL_MAX_MS;
+  return rounded;
+}
+
+/** Apply a stall threshold for this page. Returns the value actually used. */
+export function setActiveTimingStallMs(value: unknown): number {
+  activeTimingStallMs = normalizeTimingStallMs(value);
+  return activeTimingStallMs;
+}
 
 /** Longest-waits list shows the top N waits by duration. */
 export const TIMING_WATERFALL_LIMIT = 10;
@@ -114,24 +144,30 @@ export function buildTimingAnomalies(input: {
 
 export type WaterfallBarKind = "severe" | "stall" | "ok";
 
-export function waterfallBarKind(gapMs: number): WaterfallBarKind {
-  if (!Number.isFinite(gapMs) || gapMs < TIMING_STALL_MS) return "ok";
+export function waterfallBarKind(gapMs: number, stallMs = getTimingStallMs()): WaterfallBarKind {
+  if (!Number.isFinite(gapMs) || gapMs < stallMs) return "ok";
   if (gapMs >= TIMING_WATERFALL_SEVERE_MS) return "severe";
   return "stall";
 }
 
-export function isStallGapMs(gapMs: number | undefined | null): boolean {
-  return typeof gapMs === "number" && Number.isFinite(gapMs) && gapMs >= TIMING_STALL_MS;
+export function isStallGapMs(
+  gapMs: number | undefined | null,
+  stallMs = getTimingStallMs(),
+): boolean {
+  return typeof gapMs === "number" && Number.isFinite(gapMs) && gapMs >= stallMs;
 }
 
-export function isHotGapBinFromMs(fromMs: number): boolean {
-  return Number.isFinite(fromMs) && fromMs >= TIMING_HOT_GAP_MS;
+export function isHotGapBinFromMs(fromMs: number, hotMs = getTimingStallMs()): boolean {
+  return Number.isFinite(fromMs) && fromMs >= hotMs;
 }
 
 /** True if the bin range overlaps hot/stall waits (includes open-ended last bin). */
-export function isHotGapBin(bin: Pick<HistogramBin, "fromMs" | "toMs">): boolean {
-  if (bin.fromMs >= TIMING_HOT_GAP_MS) return true;
-  return bin.toMs > TIMING_HOT_GAP_MS;
+export function isHotGapBin(
+  bin: Pick<HistogramBin, "fromMs" | "toMs">,
+  hotMs = getTimingStallMs(),
+): boolean {
+  if (bin.fromMs >= hotMs) return true;
+  return bin.toMs > hotMs;
 }
 
 export function gapsInBin(
@@ -456,7 +492,7 @@ export function buildTimingPhases(input: {
   stallMs?: number;
 }): TimingPhaseSegment[] {
   const spanMs = Math.max(1, input.spanMs);
-  const stallMs = input.stallMs ?? TIMING_STALL_MS;
+  const stallMs = input.stallMs ?? getTimingStallMs();
   const ended = Boolean(input.ended);
   const marks = input.marks;
   const raw: TimingPhaseSegment[] = [];

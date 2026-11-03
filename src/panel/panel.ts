@@ -28,6 +28,7 @@ import {
   setThemePreference,
   type ThemePreference,
 } from "../shared/theme";
+import { initTimingStall, onTimingStallChange } from "../shared/timing-stall";
 import { stampReceivedAt } from "../shared/event-stamp";
 import { latestEventIdFromEvents } from "../shared/stream-close";
 import { SseParser, type ParsedSseEvent } from "../shared/sse-parser";
@@ -1149,6 +1150,7 @@ function refreshLocaleUi(): void {
 }
 
 void initI18n().then(async () => {
+  await initTimingStall();
   refreshLocaleUi();
   await initTheme();
   refreshThemeUi();
@@ -1158,6 +1160,9 @@ void initI18n().then(async () => {
   connect();
   onLocaleChange(() => {
     refreshLocaleUi();
+  });
+  onTimingStallChange(() => {
+    renderDetail();
   });
   // Defer one frame so layout has settled before measuring tour targets.
   requestAnimationFrame(() => {

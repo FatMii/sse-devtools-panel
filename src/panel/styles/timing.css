@@ -89,6 +89,31 @@
   justify-content: flex-end;
 }
 
+.timing-stall-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+}
+
+.timing-stall-field input {
+  width: 64px;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+  color: var(--text);
+  font: var(--weight-semibold) 12px / 1 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.timing-stall-field input:focus {
+  outline: 1px solid var(--accent);
+}
+
 .timing-track-toolbar > button {
   min-width: 28px;
   height: 26px;

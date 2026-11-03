@@ -1283,6 +1283,15 @@
   "optionsLanguageHint": {
     "message": "Panel UI language. Changes apply immediately in an open SSE DevTools panel."
   },
+  "timingStallLabel": {
+    "message": "Stall"
+  },
+  "timingStallUnit": {
+    "message": "ms"
+  },
+  "timingStallHint": {
+    "message": "Gaps at or above this count as stalls. Default 400."
+  },
   "shortcutsMenu": {
     "message": "Shortcuts"
   },

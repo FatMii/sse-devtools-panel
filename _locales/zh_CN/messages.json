@@ -1283,6 +1283,15 @@
   "optionsLanguageHint": {
     "message": "用于面板界面文案。已打开的 SSE DevTools 面板会立即生效。"
   },
+  "timingStallLabel": {
+    "message": "卡顿"
+  },
+  "timingStallUnit": {
+    "message": "毫秒"
+  },
+  "timingStallHint": {
+    "message": "达到该间隔即视为卡顿。默认 400。"
+  },
   "shortcutsMenu": {
     "message": "快捷键"
   },

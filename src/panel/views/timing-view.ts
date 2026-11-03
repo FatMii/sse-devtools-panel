@@ -17,10 +17,11 @@ import {
   isHotGapBin,
   isStallGapMs,
   largestGaps,
+  getTimingStallMs,
+  TIMING_STALL_MAX_MS,
+  TIMING_STALL_MIN_MS,
   normalizeTimingEventType,
   panTimingView,
-  TIMING_HOT_GAP_MS,
-  TIMING_STALL_MS,
   TIMING_WATERFALL_LIMIT,
   timingSpanMs,
   waterfallBarKind,
@@ -34,6 +35,7 @@ import {
   type TimingPhaseSegment,
   type TimingViewWindow,
 } from "../../shared/stream-timing";
+import { setTimingStallPreference } from "../../shared/timing-stall";
 import type { SseEvent, StreamReconnectMark, StreamRecord } from "../../shared/types";
 import { elTimingBody, elTimingPlaceholder } from "../core/dom";
 import { formatGapBinLabel, formatMetricMs } from "../core/format";
@@ -424,7 +426,7 @@ function rebuildTimingShell(
   trackTipsBtn.setAttribute("aria-label", t("timingTrackTipsAria"));
   bindTimingTooltip(trackTipsBtn, [
     t("timingTrackNavHint"),
-    t("timingTrackHintTop", String(TIMING_STALL_MS)),
+    t("timingTrackHintTop", String(getTimingStallMs())),
     t("timingTrackHintBottom"),
     t("timingTrackHintAction"),
   ]);
@@ -447,7 +449,7 @@ function rebuildTimingShell(
   histTipsBtn.setAttribute("aria-label", t("timingGapHistogramTipsAria"));
   bindTimingTooltip(histTipsBtn, [
     t("timingGapHistogramHintAxes"),
-    t("timingGapHistogramHintHot", String(TIMING_HOT_GAP_MS)),
+    t("timingGapHistogramHintHot", String(getTimingStallMs())),
     t("timingGapHistogramHintAction"),
   ]);
   histTitleRow.append(histTitle, histTipsBtn);
@@ -650,6 +652,7 @@ function buildArrivalTrackCanvas(initial: ArrivalTrackInput): ArrivalTrackHandle
 
   const toolbar = document.createElement("div");
   toolbar.className = "timing-track-toolbar";
+  toolbar.append(buildStallField());
 
   const btnZoomOut = document.createElement("button");
   btnZoomOut.type = "button";
@@ -1662,8 +1665,8 @@ function buildKpiRow(input: KpiRowInput): HTMLElement {
       {
         alert: input.maxGapSlow,
         sub: input.maxGapSlow
-          ? t("timingKpiMaxGapSlow", String(TIMING_STALL_MS))
-          : t("timingKpiMaxGapOk", String(TIMING_STALL_MS)),
+          ? t("timingKpiMaxGapSlow", String(getTimingStallMs()))
+          : t("timingKpiMaxGapOk", String(getTimingStallMs())),
       },
     ),
     kpiCard("reconnects", t("timingKpiReconnects"), String(input.reconnectCount), {
@@ -1696,8 +1699,8 @@ function updateKpiRow(row: HTMLElement, input: KpiRowInput): void {
     {
       alert: input.maxGapSlow,
       sub: input.maxGapSlow
-        ? t("timingKpiMaxGapSlow", String(TIMING_STALL_MS))
-        : t("timingKpiMaxGapOk", String(TIMING_STALL_MS)),
+        ? t("timingKpiMaxGapSlow", String(getTimingStallMs()))
+        : t("timingKpiMaxGapOk", String(getTimingStallMs())),
     },
   );
   setKpiCard(row, "reconnects", String(input.reconnectCount), {
@@ -1799,6 +1802,31 @@ function anomalyChipLabel(anomaly: TimingAnomaly): string {
   }
 }
 
+function buildStallField(): HTMLLabelElement {
+  const field = document.createElement("label");
+  field.className = "timing-stall-field";
+  const label = document.createElement("span");
+  label.textContent = t("timingStallLabel");
+  const input = document.createElement("input");
+  input.type = "number";
+  input.min = String(TIMING_STALL_MIN_MS);
+  input.max = String(TIMING_STALL_MAX_MS);
+  input.step = "50";
+  input.inputMode = "numeric";
+  input.value = String(getTimingStallMs());
+  input.title = t("timingStallHint");
+  input.setAttribute("aria-label", t("timingStallLabel"));
+  const unit = document.createElement("span");
+  unit.textContent = t("timingStallUnit");
+  field.append(label, input, unit);
+  input.addEventListener("change", () => {
+    void setTimingStallPreference(input.value).then((next) => {
+      input.value = String(next);
+    });
+  });
+  return field;
+}
+
 function buildLegend(): HTMLElement {
   const legend = document.createElement("div");
   legend.className = "timing-legend";
@@ -1807,7 +1835,7 @@ function buildLegend(): HTMLElement {
 
   const items: Array<{ swatch: string; label: string }> = [
     { swatch: "is-normal", label: t("timingLegendNormal") },
-    { swatch: "is-stall", label: t("timingLegendStall", String(TIMING_STALL_MS)) },
+    { swatch: "is-stall", label: t("timingLegendStall", String(getTimingStallMs())) },
     { swatch: "is-wait", label: t("timingLegendWait") },
     { swatch: "is-reconnect", label: t("timingLegendReconnect") },
     { swatch: "is-selected", label: t("timingLegendSelected") },
