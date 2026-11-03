@@ -65,17 +65,32 @@
   "tabEvents": {
     "message": "Events"
   },
+  "tabEventsTitle": {
+    "message": "Events (1)"
+  },
   "tabTiming": {
     "message": "Timing"
+  },
+  "tabTimingTitle": {
+    "message": "Timing (4)"
   },
   "tabRequest": {
     "message": "Request"
   },
+  "tabRequestTitle": {
+    "message": "Request (2)"
+  },
   "tabConversation": {
     "message": "Conversation"
   },
+  "tabConversationTitle": {
+    "message": "Conversation (3)"
+  },
   "tabRaw": {
     "message": "Raw"
+  },
+  "tabRawTitle": {
+    "message": "Raw (5)"
   },
   "conversationChannelContent": {
     "message": "Content"
@@ -192,7 +207,7 @@
     "message": "Export JSON"
   },
   "exportJsonTitle": {
-    "message": "Download the selected stream as JSON"
+    "message": "Download the selected stream as JSON (E)"
   },
   "exportCsv": {
     "message": "Export CSV"
@@ -369,19 +384,19 @@
     "message": "Search All"
   },
   "searchAllTitle": {
-    "message": "Search Event/Data across all streams"
+    "message": "Search Event/Data across all streams (/)"
   },
   "pauseUi": {
     "message": "Pause UI"
   },
   "pauseUiTitle": {
-    "message": "Pause UI repaint only (capture continues)"
+    "message": "Pause UI repaint only (capture continues) (P)"
   },
   "resumeUi": {
     "message": "Resume UI"
   },
   "resumeUiTitle": {
-    "message": "Resume UI and flush buffered updates"
+    "message": "Resume UI and flush buffered updates (P)"
   },
   "themeMenu": {
     "message": "Theme"
@@ -1267,6 +1282,48 @@
   },
   "optionsLanguageHint": {
     "message": "Panel UI language. Changes apply immediately in an open SSE DevTools panel."
+  },
+  "shortcutsMenu": {
+    "message": "Shortcuts"
+  },
+  "shortcutsMenuTitle": {
+    "message": "Show keyboard shortcuts (?)"
+  },
+  "shortcutsDialogTitle": {
+    "message": "Keyboard shortcuts"
+  },
+  "shortcutShowList": {
+    "message": "Show this list"
+  },
+  "shortcutPause": {
+    "message": "Pause or resume UI"
+  },
+  "shortcutSearchAll": {
+    "message": "Search all streams"
+  },
+  "shortcutExportJson": {
+    "message": "Export the selected stream as JSON"
+  },
+  "shortcutTabEvents": {
+    "message": "Switch to Events"
+  },
+  "shortcutTabRequest": {
+    "message": "Switch to Request"
+  },
+  "shortcutTabConversation": {
+    "message": "Switch to Conversation"
+  },
+  "shortcutTabTiming": {
+    "message": "Switch to Timing"
+  },
+  "shortcutTabRaw": {
+    "message": "Switch to Raw"
+  },
+  "shortcutDrawerNav": {
+    "message": "Previous or next event while the drawer is open"
+  },
+  "shortcutDismiss": {
+    "message": "Close menus"
   },
   "openSettings": {
     "message": "Settings"

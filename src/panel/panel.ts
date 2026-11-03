@@ -59,6 +59,7 @@ import {
   elArchives,
   elStats,
   elAnomalies,
+  elShortcuts,
   elSpecWarnings,
   elSearchAll,
   elDialog,
@@ -131,9 +132,15 @@ import {
 } from "./features/onboarding-tour";
 import { buildTourSampleRecord } from "./features/tour-sample";
 import {
+  isTextEntryTarget,
+  matchPanelShortcut,
+  type PanelShortcutAction,
+} from "./features/shortcuts";
+import {
   showAnomaliesDialog,
   showArchivesDialog,
   showGlobalSearchDialog,
+  showShortcutsDialog,
   showSpecWarningsDialog,
   showStatsDialog,
   type DialogHooks,
@@ -664,30 +671,32 @@ function activateTab(tab: ActiveTab): void {
   document.getElementById(`view-${tab}`)?.classList.add("active");
 }
 
+function showTab(tab: ActiveTab): void {
+  activateTab(tab);
+  const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
+  if (tab === "events") {
+    if (record) renderEvents(record, false);
+    else clearEventsView();
+  } else if (tab === "timing") {
+    renderTimingForSelection(record);
+  } else if (tab === "request") {
+    renderRequestForSelection(record);
+  } else if (tab === "raw") {
+    renderRawView(record);
+  } else if (tab === "conversation") {
+    renderConversationForSelection(record);
+  }
+}
+
 function loadTourSampleStream(): void {
   addStaticStream(buildTourSampleRecord(), exportHooks);
-  activateTab("conversation");
-  const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
-  renderConversationForSelection(record);
+  showTab("conversation");
   showToast(t("toastTourSampleLoaded"));
 }
 
 function getTourHooks(): OnboardingTourHooks {
   return {
-    activateTab: (tab) => {
-      activateTab(tab);
-      const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
-      if (tab === "events") {
-        if (record) renderEvents(record, false);
-        else clearEventsView();
-      } else if (tab === "request") {
-        renderRequestForSelection(record);
-      } else if (tab === "conversation") {
-        renderConversationForSelection(record);
-      } else if (tab === "timing") {
-        renderTimingForSelection(record);
-      }
-    },
+    activateTab: showTab,
     openMoreMenu,
     closeMenus: closeAllMenus,
   };
@@ -719,35 +728,56 @@ function renderConversationForSelection(record: StreamRecord | undefined): void 
   renderConversation(record, { copyText, showToast });
 }
 
+function isActiveTab(tab: string | undefined): tab is ActiveTab {
+  return (
+    tab === "events" ||
+    tab === "raw" ||
+    tab === "timing" ||
+    tab === "request" ||
+    tab === "conversation"
+  );
+}
+
 function setupTabs(): void {
   document.querySelectorAll<HTMLButtonElement>(".tab").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const tab = btn.dataset.tab as ActiveTab;
-      if (
-        tab !== "events" &&
-        tab !== "raw" &&
-        tab !== "timing" &&
-        tab !== "request" &&
-        tab !== "conversation"
-      ) {
-        return;
-      }
-      activateTab(tab);
-      const record = state.selectedId ? state.streams.get(state.selectedId) : undefined;
-      if (tab === "events") {
-        if (record) renderEvents(record, false);
-        else clearEventsView();
-      } else if (tab === "timing") {
-        renderTimingForSelection(record);
-      } else if (tab === "request") {
-        renderRequestForSelection(record);
-      } else if (tab === "raw") {
-        renderRawView(record);
-      } else if (tab === "conversation") {
-        renderConversationForSelection(record);
-      }
+      const tab = btn.dataset.tab;
+      if (!isActiveTab(tab)) return;
+      showTab(tab);
     });
   });
+}
+
+function runPanelShortcut(action: PanelShortcutAction): void {
+  switch (action) {
+    case "show-shortcuts":
+      showShortcutsDialog();
+      break;
+    case "toggle-pause":
+      setUiPaused(!state.uiPaused, pauseHooks);
+      break;
+    case "search-all":
+      showGlobalSearchDialog(dialogHooks);
+      break;
+    case "export-json":
+      exportSelectedStreamJson();
+      break;
+    case "tab-events":
+      showTab("events");
+      break;
+    case "tab-request":
+      showTab("request");
+      break;
+    case "tab-conversation":
+      showTab("conversation");
+      break;
+    case "tab-timing":
+      showTab("timing");
+      break;
+    case "tab-raw":
+      showTab("raw");
+      break;
+  }
 }
 
 function setupActions(): void {
@@ -863,6 +893,10 @@ function setupActions(): void {
 
   elAnomalies.addEventListener("click", () => {
     showAnomaliesDialog(dialogHooks);
+  });
+
+  elShortcuts.addEventListener("click", () => {
+    showShortcutsDialog();
   });
 
   elSpecWarnings.addEventListener("click", () => {
@@ -982,14 +1016,18 @@ function setupActions(): void {
       closeAllMenus();
       return;
     }
-    if (elDrawer.hidden) return;
-    const target = e.target as HTMLElement | null;
-    if (
-      target &&
-      (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)
-    ) {
-      return;
+    if (isTextEntryTarget(e.target) || elDialog.open) return;
+    if (!e.repeat) {
+      const action = matchPanelShortcut(e);
+      if (action) {
+        e.preventDefault();
+        hideContextMenu();
+        closeAllMenus();
+        runPanelShortcut(action);
+        return;
+      }
     }
+    if (elDrawer.hidden || e.defaultPrevented) return;
     if (e.key === "ArrowLeft") {
       e.preventDefault();
       navigateDrawer(-1);

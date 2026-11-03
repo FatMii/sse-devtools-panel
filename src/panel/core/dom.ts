@@ -54,6 +54,7 @@ export const elSaveArchive = document.getElementById("btn-save-archive") as HTML
 export const elArchives = document.getElementById("btn-archives") as HTMLButtonElement;
 export const elStats = document.getElementById("btn-stats") as HTMLButtonElement;
 export const elAnomalies = document.getElementById("btn-anomalies") as HTMLButtonElement;
+export const elShortcuts = document.getElementById("btn-shortcuts") as HTMLButtonElement;
 export const elSpecWarnings = document.getElementById("btn-spec-warnings") as HTMLButtonElement;
 export const elSearchAll = document.getElementById("btn-search-all") as HTMLButtonElement;
 export const elDialog = document.getElementById("app-dialog") as HTMLDialogElement;

@@ -263,6 +263,8 @@ Events, Conversation (Content / Thinking), and Raw use virtual scrolling: off-sc
 | **Clear**          | Clears streams captured in the current session                                |
 | **Settings**       | Opens the options page (language, etc.)                                       |
 
+With the panel focused and the cursor outside a text field, `P` pauses or resumes the UI, `/` opens Search All, and `E` exports the selected stream as JSON. `1`–`5` switch Events, Request, Conversation, Timing, and Raw. While the event drawer is open, `←` / `→` move between events, and `Esc` closes menus. The full list is under **More → Shortcuts**, or press `?`.
+
 <p align="center">
   <img width="1200" alt="Stats" src="docs/assets/screenshots/dialog-stats.png">
 </p>

@@ -19,6 +19,7 @@ import {
 } from "./stream-anomalies";
 import { state } from "../core/state";
 import { closeAppDialog, openAppDialog } from "../core/ui-chrome";
+import { PANEL_SHORTCUT_ROWS } from "./shortcuts";
 
 export type DialogHooks = {
   renderList: () => void;
@@ -42,6 +43,22 @@ export function jumpToStreamEvent(requestId: string, eventIndex: number, hooks: 
   // Keep global-search jump behavior stable even when user is on Timing/Raw/Request.
   hooks.activateTab("events");
   hooks.selectEventByIndex(record, eventIndex, { scrollMode: "start" });
+}
+
+export function showShortcutsDialog(): void {
+  const body = document.createElement("div");
+  body.className = "shortcut-list";
+  for (const row of PANEL_SHORTCUT_ROWS) {
+    const line = document.createElement("div");
+    line.className = "shortcut-row";
+    const label = document.createElement("span");
+    label.textContent = t(row.labelKey);
+    const keys = document.createElement("kbd");
+    keys.textContent = row.keys;
+    line.append(label, keys);
+    body.append(line);
+  }
+  openAppDialog(t("shortcutsDialogTitle"), body);
 }
 
 export function showStatsDialog(): void {

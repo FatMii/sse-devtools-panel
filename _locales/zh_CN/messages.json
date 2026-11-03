@@ -65,17 +65,32 @@
   "tabEvents": {
     "message": "事件"
   },
+  "tabEventsTitle": {
+    "message": "事件（1）"
+  },
   "tabTiming": {
     "message": "时序"
+  },
+  "tabTimingTitle": {
+    "message": "时序（4）"
   },
   "tabRequest": {
     "message": "请求"
   },
+  "tabRequestTitle": {
+    "message": "请求（2）"
+  },
   "tabConversation": {
     "message": "对话"
   },
+  "tabConversationTitle": {
+    "message": "对话（3）"
+  },
   "tabRaw": {
     "message": "原始流"
+  },
+  "tabRawTitle": {
+    "message": "原始流（5）"
   },
   "conversationChannelContent": {
     "message": "正文"
@@ -192,7 +207,7 @@
     "message": "导出 JSON"
   },
   "exportJsonTitle": {
-    "message": "将当前选中的数据流下载为 JSON 文件"
+    "message": "将当前选中的数据流下载为 JSON 文件（E）"
   },
   "exportCsv": {
     "message": "导出 CSV"
@@ -369,19 +384,19 @@
     "message": "全局搜索"
   },
   "searchAllTitle": {
-    "message": "跨所有数据流搜索事件/数据"
+    "message": "跨所有数据流搜索事件/数据（/）"
   },
   "pauseUi": {
     "message": "暂停 UI"
   },
   "pauseUiTitle": {
-    "message": "暂停界面刷新（继续捕获数据）"
+    "message": "暂停界面刷新（继续捕获数据）（P）"
   },
   "resumeUi": {
     "message": "恢复 UI"
   },
   "resumeUiTitle": {
-    "message": "恢复界面刷新并显示暂停期间的数据"
+    "message": "恢复界面刷新并显示暂停期间的数据（P）"
   },
   "themeMenu": {
     "message": "主题"
@@ -1267,6 +1282,48 @@
   },
   "optionsLanguageHint": {
     "message": "用于面板界面文案。已打开的 SSE DevTools 面板会立即生效。"
+  },
+  "shortcutsMenu": {
+    "message": "快捷键"
+  },
+  "shortcutsMenuTitle": {
+    "message": "查看键盘快捷键（?）"
+  },
+  "shortcutsDialogTitle": {
+    "message": "快捷键"
+  },
+  "shortcutShowList": {
+    "message": "打开本列表"
+  },
+  "shortcutPause": {
+    "message": "暂停或恢复界面刷新"
+  },
+  "shortcutSearchAll": {
+    "message": "全局搜索"
+  },
+  "shortcutExportJson": {
+    "message": "将当前选中的流导出为 JSON"
+  },
+  "shortcutTabEvents": {
+    "message": "切换到事件"
+  },
+  "shortcutTabRequest": {
+    "message": "切换到请求"
+  },
+  "shortcutTabConversation": {
+    "message": "切换到对话"
+  },
+  "shortcutTabTiming": {
+    "message": "切换到时序"
+  },
+  "shortcutTabRaw": {
+    "message": "切换到原始流"
+  },
+  "shortcutDrawerNav": {
+    "message": "事件抽屉打开时切换上一条或下一条"
+  },
+  "shortcutDismiss": {
+    "message": "关闭菜单"
   },
   "openSettings": {
     "message": "设置"

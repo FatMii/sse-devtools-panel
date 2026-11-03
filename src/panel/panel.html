@@ -198,6 +198,15 @@
                 <button
                   type="button"
                   role="menuitem"
+                  id="btn-shortcuts"
+                  data-i18n="shortcutsMenu"
+                  data-i18n-title="shortcutsMenuTitle"
+                >
+                  Shortcuts
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
                   id="btn-replay-tour"
                   data-i18n="replayTour"
                   data-i18n-title="replayTourTitle"
@@ -277,11 +286,23 @@
         <section class="detail">
           <div class="detail-nav">
             <div class="tabs">
-              <button type="button" class="tab active" data-tab="events" data-tour="tab-events">
+              <button
+                type="button"
+                class="tab active"
+                data-tab="events"
+                data-tour="tab-events"
+                data-i18n-title="tabEventsTitle"
+              >
                 <span data-i18n="tabEvents">Events</span>
                 <span class="tab-count" id="tab-count-events" hidden></span>
               </button>
-              <button type="button" class="tab" data-tab="request" data-tour="tab-request">
+              <button
+                type="button"
+                class="tab"
+                data-tab="request"
+                data-tour="tab-request"
+                data-i18n-title="tabRequestTitle"
+              >
                 <span data-i18n="tabRequest">Request</span>
               </button>
               <button
@@ -289,14 +310,21 @@
                 class="tab"
                 data-tab="conversation"
                 data-tour="tab-conversation"
+                data-i18n-title="tabConversationTitle"
               >
                 <span data-i18n="tabConversation">Conversation</span>
                 <span class="tab-count" id="tab-count-conversation" hidden></span>
               </button>
-              <button type="button" class="tab" data-tab="timing" data-tour="tab-timing">
+              <button
+                type="button"
+                class="tab"
+                data-tab="timing"
+                data-tour="tab-timing"
+                data-i18n-title="tabTimingTitle"
+              >
                 <span data-i18n="tabTiming">Timing</span>
               </button>
-              <button type="button" class="tab" data-tab="raw">
+              <button type="button" class="tab" data-tab="raw" data-i18n-title="tabRawTitle">
                 <span data-i18n="tabRaw">Raw</span>
                 <span class="tab-count" id="tab-count-raw" hidden></span>
               </button>
