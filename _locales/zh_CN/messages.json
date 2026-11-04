@@ -314,6 +314,15 @@
   "anomaliesTitle": {
     "message": "扫描并查看各数据流中的可疑事件"
   },
+  "streamAnomalyLink": {
+    "message": "$COUNT$ 处异常",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
   "specWarnings": {
     "message": "规范"
   },
@@ -446,6 +455,9 @@
   "anomalyOversizedPacket": {
     "message": "超长包"
   },
+  "anomalyStall": {
+    "message": "卡顿"
+  },
   "anomalyEmptyDataDesc": {
     "message": "data 为空或仅包含空白字符"
   },
@@ -458,6 +470,15 @@
       "id": {
         "content": "$1",
         "example": "evt-1"
+      }
+    }
+  },
+  "anomalyStallDesc": {
+    "message": "这条事件之前等待了 $GAP$",
+    "placeholders": {
+      "gap": {
+        "content": "$1",
+        "example": "2.1 s"
       }
     }
   },

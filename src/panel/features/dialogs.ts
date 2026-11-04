@@ -115,8 +115,11 @@ export function showStatsDialog(): void {
   openAppDialog(t("statsDialogTitle"), body);
 }
 
-export function showAnomaliesDialog(hooks: DialogHooks): void {
-  const all = Array.from(state.streams.values())
+export function showAnomaliesDialog(hooks: DialogHooks, requestId?: string): void {
+  const records = requestId
+    ? [state.streams.get(requestId)].filter((record): record is StreamRecord => record != null)
+    : Array.from(state.streams.values());
+  const all = records
     .map((record) => ({ record, anomalies: scanStreamAnomalies(record) }))
     .filter((item) => item.anomalies.length > 0)
     .sort((a, b) => b.record.startedAt - a.record.startedAt);
@@ -133,24 +136,31 @@ export function showAnomaliesDialog(hooks: DialogHooks): void {
     return;
   }
 
-  const list = document.createElement("ul");
-  list.className = "archives-list";
+  const single = all.length === 1;
+  const list = document.createElement("div");
+  list.className = "anomalies-panel";
   for (const item of all) {
-    const li = document.createElement("li");
-    li.className = "archives-item";
+    const section = document.createElement("section");
+    section.className = "anomalies-stream";
+    if (!single) {
+      const head = document.createElement("div");
+      head.className = "anomalies-stream-head";
+      head.innerHTML = `
+        <div class="anomalies-stream-path" title="${escapeHtml(item.record.url)}"><span class="method">${escapeHtml(
+          item.record.method,
+        )}</span>${escapeHtml(shortPath(item.record.url))}</div>
+        <div class="anomalies-stream-count">${escapeHtml(
+          t("streamAnomalyLink", String(item.anomalies.length)),
+        )}</div>
+      `;
+      section.appendChild(head);
+    }
 
-    const meta = document.createElement("div");
-    meta.className = "archives-meta";
-    meta.innerHTML = `
-      <div class="archives-name">${escapeHtml(shortPath(item.record.url))}</div>
-      <div class="archives-sub">${escapeHtml(
-        t("anomaliesCount", String(item.anomalies.length)),
-      )}</div>
-    `;
-
-    const actions = document.createElement("div");
-    actions.className = "archives-actions";
-    for (const anomaly of item.anomalies.slice(0, 8)) {
+    const rows = document.createElement("div");
+    rows.className = "anomalies-rows";
+    const content = item.anomalies.filter((anomaly) => anomaly.kind !== "stall").slice(0, 8);
+    const stalls = item.anomalies.filter((anomaly) => anomaly.kind === "stall");
+    for (const anomaly of [...content, ...stalls]) {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "search-all-item";
@@ -164,10 +174,10 @@ export function showAnomaliesDialog(hooks: DialogHooks): void {
         closeAppDialog();
         jumpToStreamEvent(item.record.requestId, anomaly.eventIndex, hooks);
       });
-      actions.appendChild(btn);
+      rows.appendChild(btn);
     }
-    li.append(meta, actions);
-    list.appendChild(li);
+    section.appendChild(rows);
+    list.appendChild(section);
   }
   body.appendChild(list);
   openAppDialog(t("anomaliesDialogTitle"), body);

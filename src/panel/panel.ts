@@ -785,10 +785,22 @@ function setupActions(): void {
   // Prefer pointerdown: XHR streaming may rewrite row contents between mousedown/mouseup.
   elList.addEventListener("pointerdown", (e) => {
     if (e.button !== 0) return;
-    const li = (e.target as HTMLElement | null)?.closest("li.stream, li.stream-item");
+    const target = e.target as HTMLElement | null;
+    const li = target?.closest("li.stream, li.stream-item");
     if (!(li instanceof HTMLLIElement) || !elList.contains(li)) return;
     const id = li.dataset.id;
-    if (!id || !state.streams.has(id) || id === state.selectedId) return;
+    if (!id || !state.streams.has(id)) return;
+    if (target?.closest(".stream-anomalies")) {
+      if (id !== state.selectedId) {
+        state.selectedId = id;
+        state.selectedEventIndex = null;
+        renderList();
+        renderDetail();
+      }
+      showAnomaliesDialog(dialogHooks, id);
+      return;
+    }
+    if (id === state.selectedId) return;
     state.selectedId = id;
     state.selectedEventIndex = null;
     renderList();
@@ -1163,6 +1175,7 @@ void initI18n().then(async () => {
   });
   onTimingStallChange(() => {
     renderDetail();
+    scheduleRenderList();
   });
   // Defer one frame so layout has settled before measuring tour targets.
   requestAnimationFrame(() => {

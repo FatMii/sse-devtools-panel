@@ -125,6 +125,46 @@
   font-size: var(--text-xs);
 }
 
+.anomalies-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.anomalies-stream-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.anomalies-stream-path {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: var(--text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.anomalies-stream-path .method {
+  margin-right: 6px;
+  color: var(--accent-strong);
+  font-weight: var(--weight-semibold);
+}
+
+.anomalies-stream-count {
+  flex: 0 0 auto;
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+}
+
+.anomalies-rows {
+  display: grid;
+  gap: 4px;
+}
+
 .search-all-empty {
   color: var(--text-faint);
   padding: var(--space-5) var(--space-2);

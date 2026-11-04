@@ -314,6 +314,15 @@
   "anomaliesTitle": {
     "message": "Scan and review suspicious events"
   },
+  "streamAnomalyLink": {
+    "message": "$COUNT$ anomalies",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
   "specWarnings": {
     "message": "Spec"
   },
@@ -446,6 +455,9 @@
   "anomalyOversizedPacket": {
     "message": "Oversized packet"
   },
+  "anomalyStall": {
+    "message": "Stall"
+  },
   "anomalyEmptyDataDesc": {
     "message": "data is empty or whitespace-only"
   },
@@ -458,6 +470,15 @@
       "id": {
         "content": "$1",
         "example": "evt-1"
+      }
+    }
+  },
+  "anomalyStallDesc": {
+    "message": "Waited $GAP$ before this event",
+    "placeholders": {
+      "gap": {
+        "content": "$1",
+        "example": "2.1 s"
       }
     }
   },

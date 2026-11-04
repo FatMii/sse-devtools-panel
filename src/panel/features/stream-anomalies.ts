@@ -4,10 +4,17 @@ import {
   type SseSpecWarning,
   type SseSpecWarningKind,
 } from "../../shared/sse-spec";
+import {
+  collectEventGaps,
+  getTimingStallMs,
+  isStallGapMs,
+  TIMING_WATERFALL_LIMIT,
+} from "../../shared/stream-timing";
 import type { StreamRecord } from "../../shared/types";
+import { formatDuration } from "../core/format";
 
 export type StreamAnomalyKind =
-  "empty-data" | "json-parse-failed" | "duplicate-id" | "oversized-packet";
+  "empty-data" | "json-parse-failed" | "duplicate-id" | "oversized-packet" | "stall";
 
 export type StreamAnomaly = {
   kind: StreamAnomalyKind;
@@ -17,7 +24,10 @@ export type StreamAnomaly = {
 
 export const OVERSIZED_PACKET_THRESHOLD = 16_000;
 
-const anomalyCache = new Map<string, { eventCount: number; anomalies: StreamAnomaly[] }>();
+const anomalyCache = new Map<
+  string,
+  { eventCount: number; stallMs: number; anomalies: StreamAnomaly[] }
+>();
 const specWarningCache = new Map<
   string,
   { eventCount: number; rawLen: number; warnings: SseSpecWarning[] }
@@ -43,14 +53,29 @@ export function anomalyKindLabel(kind: StreamAnomalyKind): string {
       return t("anomalyDuplicateId");
     case "oversized-packet":
       return t("anomalyOversizedPacket");
+    case "stall":
+      return t("anomalyStall");
     default:
       return kind;
   }
 }
 
+function stallAnomalies(record: StreamRecord): StreamAnomaly[] {
+  return collectEventGaps(record.events)
+    .filter((gap) => isStallGapMs(gap.gapMs))
+    .sort((a, b) => b.gapMs - a.gapMs)
+    .slice(0, TIMING_WATERFALL_LIMIT)
+    .map((gap) => ({
+      kind: "stall" as const,
+      eventIndex: gap.afterIndex,
+      message: t("anomalyStallDesc", formatDuration(gap.gapMs)),
+    }));
+}
+
 export function scanStreamAnomalies(record: StreamRecord): StreamAnomaly[] {
+  const stallMs = getTimingStallMs();
   const cached = anomalyCache.get(record.requestId);
-  if (cached && cached.eventCount === record.events.length) {
+  if (cached && cached.eventCount === record.events.length && cached.stallMs === stallMs) {
     return cached.anomalies;
   }
   const seenIds = new Set<string>();
@@ -95,7 +120,8 @@ export function scanStreamAnomalies(record: StreamRecord): StreamAnomaly[] {
       });
     }
   }
-  anomalyCache.set(record.requestId, { eventCount: record.events.length, anomalies });
+  anomalies.push(...stallAnomalies(record));
+  anomalyCache.set(record.requestId, { eventCount: record.events.length, stallMs, anomalies });
   return anomalies;
 }
 
