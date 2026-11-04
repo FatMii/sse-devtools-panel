@@ -297,6 +297,7 @@ select {
   border-top: 1px solid var(--stroke);
   color: var(--text-faint);
   font-size: 10px;
+  line-height: 1.4;
 }
 
 .empty-hint {
@@ -305,13 +306,8 @@ select {
   line-height: 1.55;
 }
 
-.empty-hint-lead {
-  margin: 0;
-  font-size: var(--text-base);
-}
-
 .empty-hint-guide {
-  margin: var(--space-3) 0 0;
+  margin: 0;
   color: var(--text-faint);
   font-size: var(--text-sm);
   line-height: 1.5;
@@ -325,11 +321,6 @@ select {
   padding-top: var(--space-6);
   text-align: center;
   font-size: var(--text-sm);
-}
-
-.empty-hint code {
-  font-family: var(--mono);
-  font-size: 11px;
 }
 
 .event-spec-mark {

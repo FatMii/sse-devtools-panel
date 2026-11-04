@@ -76,13 +76,7 @@ export function renderList(): void {
     elEmpty.textContent = t("noStreamsMatchFilter");
   } else {
     elEmpty.className = "empty-hint";
-    elEmpty.innerHTML = `
-      <p class="empty-hint-lead">
-        <span>${escapeHtml(t("emptyWaitingBefore"))}</span>
-        <code>text/event-stream</code><span>${escapeHtml(t("emptyWaitingAfter"))}</span>
-      </p>
-      <p class="empty-hint-guide">${escapeHtml(t("emptyHintGuide"))}</p>
-    `;
+    elEmpty.innerHTML = `<p class="empty-hint-guide">${escapeHtml(t("emptyHintGuide"))}</p>`;
   }
 
   const seen = new Set<string>();

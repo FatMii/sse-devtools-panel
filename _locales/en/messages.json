@@ -53,12 +53,6 @@
   "noStreamsMatchFilter": {
     "message": "No streams match current filters"
   },
-  "emptyWaitingBefore": {
-    "message": "Waiting for"
-  },
-  "emptyWaitingAfter": {
-    "message": "…"
-  },
   "emptyHintGuide": {
     "message": "Trigger SSE or NDJSON in this tab, or import a JSON capture."
   },
@@ -1156,8 +1150,8 @@
   "moreMenuTitle": {
     "message": "More analysis actions"
   },
-  "sidebarFooter": {
-    "message": "Captures Fetch · EventSource · XHR · NDJSON"
+  "sidebarSwGap": {
+    "message": "Requests started inside a page Service Worker are not captured."
   },
   "sidebarResizeTitle": {
     "message": "Drag to resize sidebar"

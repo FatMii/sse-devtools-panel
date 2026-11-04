@@ -53,12 +53,6 @@
   "noStreamsMatchFilter": {
     "message": "当前过滤条件下没有匹配的数据流"
   },
-  "emptyWaitingBefore": {
-    "message": "等待"
-  },
-  "emptyWaitingAfter": {
-    "message": "…"
-  },
   "emptyHintGuide": {
     "message": "在本标签页发起 SSE/NDJSON 请求，或导入 JSON 捕获文件。"
   },
@@ -1156,8 +1150,8 @@
   "moreMenuTitle": {
     "message": "更多分析操作"
   },
-  "sidebarFooter": {
-    "message": "捕获 Fetch · EventSource · XHR · NDJSON"
+  "sidebarSwGap": {
+    "message": "页面 Service Worker 里发起的请求抓不到。"
   },
   "sidebarResizeTitle": {
     "message": "拖动调整侧边栏宽度"
