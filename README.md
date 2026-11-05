@@ -260,15 +260,15 @@ Events, Conversation (Content / Thinking), and Raw use virtual scrolling: off-sc
 
 ## 🛠 Analysis & toolbar
 
-| Capability         | Description                                                                   |
-| ------------------ | ----------------------------------------------------------------------------- |
-| **Pause / Resume** | Pauses UI refresh only; capture keeps running; resume refreshes list & detail |
-| **Stats**          | First-byte latency, duration, avg / max gap, events per second, and more      |
+| Capability         | Description                                                                                                                                                                                    |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Pause / Resume** | Pauses UI refresh only; capture keeps running; resume refreshes list & detail                                                                                                                  |
+| **Stats**          | First-byte latency, duration, avg / max gap, events per second, and more                                                                                                                       |
 | **Anomalies**      | Empty `data`, bad JSON, duplicate ids, oversized packets, and waits at or above the stall threshold. **N anomalies** under that stream opens its scan; **More → Anomalies** scans every stream |
-| **Spec**           | SSE-spec hints for fields, newlines, BOM, and related issues                  |
-| **Search All**     | Global search across streams                                                  |
-| **Clear**          | Clears streams captured in the current session                                |
-| **Settings**       | Opens the options page (language, etc.)                                       |
+| **Spec**           | SSE-spec hints for fields, newlines, BOM, and related issues                                                                                                                                   |
+| **Search All**     | Global search across streams                                                                                                                                                                   |
+| **Clear**          | Clears streams captured in the current session                                                                                                                                                 |
+| **Settings**       | Opens the options page (language, etc.)                                                                                                                                                        |
 
 With the panel focused and the cursor outside a text field, `P` pauses or resumes the UI, `/` opens Search All, and `E` exports the selected stream as JSON. `1`–`5` switch Events, Request, Conversation, Timing, and Raw. While the event drawer is open, `←` / `→` move between events, and `Esc` closes menus. The full list is under **More → Shortcuts**, or press `?`.
 
