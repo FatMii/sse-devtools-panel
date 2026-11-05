@@ -15,7 +15,13 @@ const ffmpeg = require("ffmpeg-static");
 const sourceDir = path.join(root, "docs", "assets", "screenshots");
 const targetDir = path.join(root, "website", "public", "screenshots");
 
-const clips = ["panel-overview", "deepseek-conversation", "virtual-scrolling"];
+const clips = [
+  "panel-overview",
+  "deepseek-conversation",
+  "conversation-profile",
+  "stream-anomalies",
+  "virtual-scrolling",
+];
 
 if (!ffmpeg || !fs.existsSync(ffmpeg)) {
   console.error(

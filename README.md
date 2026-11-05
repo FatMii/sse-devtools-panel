@@ -181,6 +181,7 @@ Merge stream fragments into a readable conversation, split by channel:
 | **Meta**     | Finish reason, usage, model, protocol type, and more    |
 
 - Top chips show the detected protocol and site hint
+- If detection is wrong, **Profile:** on the toolbar re-merges the whole stream with a profile that already has a merger. **Auto** detects again. Anthropic is not listed, because Conversation merge is not implemented for it
 - Tool cards are collapsible; web search shows query chips and result lists (title / URL / snippet)
 - **Virtual scrolling** — longer Content / Thinking text is not dumped into the page all at once
 - One-click copy for the current channel
@@ -202,6 +203,12 @@ DeepSeek web example — Conversation merges thinking / content / search while t
 
 <p align="center">
   <img width="1200" alt="DeepSeek conversation" src="docs/assets/screenshots/deepseek-conversation.gif">
+</p>
+
+Pick a profile when detection is wrong — the stream is re-merged with that profile:
+
+<p align="center">
+  <img width="1200" alt="Override the conversation profile" src="docs/assets/screenshots/conversation-profile.gif">
 </p>
 
 ## ⏱ Timing
@@ -257,13 +264,19 @@ Events, Conversation (Content / Thinking), and Raw use virtual scrolling: off-sc
 | ------------------ | ----------------------------------------------------------------------------- |
 | **Pause / Resume** | Pauses UI refresh only; capture keeps running; resume refreshes list & detail |
 | **Stats**          | First-byte latency, duration, avg / max gap, events per second, and more      |
-| **Anomalies**      | Scans empty data, odd gaps, and similar suspects                              |
+| **Anomalies**      | Empty `data`, bad JSON, duplicate ids, oversized packets, and waits at or above the stall threshold. **N anomalies** under that stream opens its scan; **More → Anomalies** scans every stream |
 | **Spec**           | SSE-spec hints for fields, newlines, BOM, and related issues                  |
 | **Search All**     | Global search across streams                                                  |
 | **Clear**          | Clears streams captured in the current session                                |
 | **Settings**       | Opens the options page (language, etc.)                                       |
 
 With the panel focused and the cursor outside a text field, `P` pauses or resumes the UI, `/` opens Search All, and `E` exports the selected stream as JSON. `1`–`5` switch Events, Request, Conversation, Timing, and Raw. While the event drawer is open, `←` / `→` move between events, and `Esc` closes menus. The full list is under **More → Shortcuts**, or press `?`.
+
+A stream with hits shows **N anomalies** under its meta. Click it to open that stream’s scan, then jump to the event:
+
+<p align="center">
+  <img width="1200" alt="Open a stream anomaly scan from the sidebar" src="docs/assets/screenshots/stream-anomalies.gif">
+</p>
 
 <p align="center">
   <img width="1200" alt="Stats" src="docs/assets/screenshots/dialog-stats.png">
@@ -340,7 +353,7 @@ Conversation merges content by protocol profile. Currently supported:
 | `anthropic`         | Anthropic-style SSE     | Profile detection only — no Conversation merge yet |
 | `generic`           | Unrecognized            | Events / Timing / Raw still work                   |
 
-> Vendor protocols change often. If Conversation is empty or tool cards look wrong, export Raw or JSON and include the URL.  
+> Vendor protocols change often. If Conversation is empty or tool cards look wrong, pick a profile from **Profile:** on the Conversation toolbar and re-merge. If it is still wrong, export Raw or JSON and include the URL.  
 > Sites not listed here are adapted after we have a real sample.  
 > CI regression samples: [`fixtures/vendors/`](./fixtures/vendors/).
 

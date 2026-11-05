@@ -193,6 +193,7 @@ Chrome Network 对**标准 SSE**已有请求详情里的 [EventStream](https://d
 | **元数据** | 结束原因、用量、模型、协议类型等          |
 
 - 顶部可看到当前识别到的协议与站点提示
+- 识别不准时，工具栏上的 **协议:** 可改选已实现合并的协议，整条流会按该协议重新合并。选 **自动** 会重新识别。Anthropic 不在列表里，因为对话合并尚未实现
 - 工具卡可折叠；网页搜索展示查询芯片与结果列表（标题 / URL / 摘要）
 - **虚拟滚动** — 正文、思考偏长时不会整段塞进页面，滚动更稳
 - 当前通道内容可一键复制
@@ -214,6 +215,12 @@ DeepSeek 网页示例 — 推流过程中 Conversation 合并思考 / 正文 / �
 
 <p align="center">
   <img width="1200" alt="DeepSeek 对话" src="docs/assets/screenshots/deepseek-conversation.gif">
+</p>
+
+识别不准时，在对话工具栏改选协议，整条流会按该协议重新合并：
+
+<p align="center">
+  <img width="1200" alt="手动改选对话协议" src="docs/assets/screenshots/conversation-profile.gif">
 </p>
 
 ## ⏱ 时序（Timing）
@@ -273,13 +280,19 @@ Events、对话（正文 / 思考）、Raw 都用了虚拟滚动：屏幕外的�
 | --------------- | ---------------------------------------------------------- |
 | **暂停 / 继续** | 只暂停界面刷新，后台仍继续捕获；继续后会补上最新列表与详情 |
 | **Stats**       | 首包延迟、总时长、平均 / 最大间隔、每秒事件数等            |
-| **Anomalies**   | 扫描空数据、异常间隔等可疑情况                             |
+| **Anomalies**   | 空 data、JSON 解析失败、重复 id、超大包，以及达到卡顿阈值的等待。该流 meta 下的 **N 处异常** 只看这一条；**更多 → 异常扫描** 查看全部 |
 | **Spec**        | 对照 SSE 规范提示字段、换行、BOM 等问题                    |
 | **Search All**  | 跨多条流全局搜索                                           |
 | **Clear**       | 清空当前会话已捕获的流                                     |
 | **Settings**    | 打开选项页（语言等）                                       |
 
 面板获得焦点、且光标不在输入框里时：`P` 暂停或恢复界面刷新，`/` 打开全局搜索，`E` 把当前选中的流导出为 JSON。`1`–`5` 依次切到事件、请求、对话、时序、原始流。事件抽屉打开时，`←` / `→` 切换上一条和下一条事件，`Esc` 关闭菜单。完整列表在 **更多 → 快捷键**，或按 `?`。
+
+有命中的流会在 meta 下面显示 **N 处异常**。点进去打开这条流的扫描结果，再跳到对应事件：
+
+<p align="center">
+  <img width="1200" alt="从侧栏打开该流的异常扫描" src="docs/assets/screenshots/stream-anomalies.gif">
+</p>
 
 <p align="center">
   <img width="1200" alt="Stats" src="docs/assets/screenshots/dialog-stats.png">
@@ -364,7 +377,7 @@ Events、对话（正文 / 思考）、Raw 都用了虚拟滚动：屏幕外的�
 | `anthropic`         | Anthropic 风格 SSE   | 仅协议识别 — 对话合并尚未实现 |
 | `generic`           | 未识别               | 仍可看 Events / 时序 / Raw    |
 
-> 各站协议常变。若对话视图为空或工具卡不对，请导出 Raw 或 JSON 并注明 URL。  
+> 各站协议常变。若对话为空或工具卡不对，可在对话工具栏用 **协议:** 指定协议并重新合并。仍不对时，请导出 Raw 或 JSON 并注明 URL。  
 > 未列出的站点：有真实样本后再适配。  
 > CI 回归样本：[`fixtures/vendors/`](./fixtures/vendors/)。
 

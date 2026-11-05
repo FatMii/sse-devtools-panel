@@ -106,6 +106,22 @@ export const en: UI = {
         tags: ["Conversation", "DeepSeek", "AI Web"],
       },
       {
+        title: "Override the profile and re-merge",
+        description:
+          "When detection locks onto the wrong protocol, pick one from Profile: on the Conversation toolbar. The whole stream is merged again. Auto detects from scratch.",
+        image: "conversation-profile.gif",
+        alt: "Choosing a conversation profile and re-merging the stream",
+        tags: ["Conversation", "Profile"],
+      },
+      {
+        title: "Anomalies, one click from the stream",
+        description:
+          "A stream with hits shows N anomalies under its meta. Open that stream’s scan, then jump straight to the event. More → Anomalies still covers every stream.",
+        image: "stream-anomalies.gif",
+        alt: "Opening a stream’s anomaly scan from the sidebar and jumping to the event",
+        tags: ["Anomalies", "Timing"],
+      },
+      {
         title: "Smooth scrolling on long streams",
         description:
           "Events, Conversation, and Raw use virtual scrolling—only on-screen rows render, so heavy streams stay responsive.",

@@ -105,6 +105,22 @@ export const zh: UI = {
         tags: ["Conversation", "DeepSeek", "AI Web"],
       },
       {
+        title: "协议不对，就改选再合并",
+        description:
+          "识别锁错协议时，在对话工具栏的「协议:」里改选。整条流会按所选协议重新合并；选「自动」则重新识别。",
+        image: "conversation-profile.gif",
+        alt: "在对话工具栏改选协议并重新合并",
+        tags: ["Conversation", "协议"],
+      },
+      {
+        title: "异常就在这条流下面",
+        description:
+          "有命中时，侧栏在该流 meta 下显示「N 处异常」。点开只看这一条，再跳到对应事件。更多里的异常扫描仍查看全部流。",
+        image: "stream-anomalies.gif",
+        alt: "从侧栏打开该流的异常扫描并跳到事件",
+        tags: ["异常扫描", "时序"],
+      },
+      {
         title: "长流也能顺畅滚动",
         description:
           "Events / 对话 / Raw 使用虚拟滚动：事件再多也只渲染可见区域，长连接调试不卡顿。",
