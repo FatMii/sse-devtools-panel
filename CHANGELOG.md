@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 GitHub Releases mirror these notes and attach the offline zip for each tag:
 https://github.com/FatMii/sse-devtools-panel/releases
 
+## [1.4.0] — 2026-11-05
+
+### Added
+
+- **Keyboard shortcuts** when the panel is focused and the cursor is outside a text field: `P` pauses or resumes the UI, `/` opens Search All, `E` exports the selected stream as JSON, `1`–`5` switch Events, Request, Conversation, Timing, and Raw. With the event drawer open, `←` / `→` move between events and `Esc` closes menus. The full list is under **More → Shortcuts**, or press `?`
+- **Stall threshold** on the Timing toolbar (default 400 ms, range 50–10000). Saved in `chrome.storage.sync` and applied immediately
+- Sidebar note that requests started inside a page Service Worker are not captured
+- Anomaly scan includes waits at or above the current stall threshold. A stream with hits shows **N anomalies** under its meta and opens that stream only; **More → Anomalies** still scans every stream
+- Conversation toolbar **Profile:** re-merges the whole stream with a selected profile. **Auto** detects again. Anthropic stays detection-only
+
+### Changed
+
+- README (en/zh) and the website spotlight cover profile override and the per-stream anomaly link
+
 ## [1.3.0] — 2026-10-12
 
 ### Changed
@@ -137,6 +151,7 @@ https://github.com/FatMii/sse-devtools-panel/releases
 
 - Initial public release: Chromium DevTools panel for SSE / EventSource / NDJSON capture, Events, Request, Conversation, Timing, Raw, import/export, and local demo
 
+[1.4.0]: https://github.com/FatMii/sse-devtools-panel/releases/tag/v1.4.0
 [1.3.0]: https://github.com/FatMii/sse-devtools-panel/releases/tag/v1.3.0
 [1.2.6]: https://github.com/FatMii/sse-devtools-panel/releases/tag/v1.2.6
 [1.2.5]: https://github.com/FatMii/sse-devtools-panel/releases/tag/v1.2.5

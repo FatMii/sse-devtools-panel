@@ -14,6 +14,18 @@ export const releasePulse: {
 } = {
   items: [
     {
+      version: "1.4.0",
+      date: "2026-11-05",
+      title: {
+        zh: "协议手选与异常入口",
+        en: "Profile override and anomaly entry",
+      },
+      blurb: {
+        zh: "对话工具栏可改选协议并整段重合并。侧栏「N 处异常」打开该流的扫描，卡顿也算进去。另有快捷键，时序工具条可改卡顿阈值。",
+        en: "Pick a conversation profile and re-merge the stream. N anomalies under a stream opens that scan, including stalls. Shortcuts and a Timing stall threshold are included.",
+      },
+    },
+    {
       version: "1.3.0",
       date: "2026-10-12",
       title: {
