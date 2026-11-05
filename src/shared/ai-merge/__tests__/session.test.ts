@@ -42,4 +42,46 @@ describe("session", () => {
     session.push(events);
     assert(session.snapshot().channels.content === "Hello!", "idempotent");
   });
+
+  it("replays the whole stream when the profile is forced", () => {
+    function chunk(content: string) {
+      return {
+        event: "message",
+        data: JSON.stringify({
+          id: "x",
+          object: "chat.completion.chunk",
+          choices: [{ index: 0, delta: { content } }],
+        }),
+      };
+    }
+
+    const events = [chunk("Hel"), chunk("lo")];
+    const session = new ConversationMergeSession();
+    session.push(events);
+    expect(session.snapshot().profile).toBe("openai-compatible");
+    expect(session.snapshot().profileOverride).toBeNull();
+    expect(session.snapshot().channels.content).toBe("Hello");
+
+    session.setForcedProfile("deepseek-web");
+    session.push(events);
+    const forced = session.snapshot();
+    expect(forced.profile).toBe("deepseek-web");
+    expect(forced.profileOverride).toBe("deepseek-web");
+    expect(forced.vendorHint).toBe("deepseek");
+    expect(forced.channels.content).toBe("");
+
+    session.setForcedProfile("openai-compatible");
+    session.push(events);
+    session.push([...events, chunk("!")]);
+    const replayed = session.snapshot();
+    expect(replayed.profileOverride).toBe("openai-compatible");
+    expect(replayed.channels.content).toBe("Hello!");
+
+    session.setForcedProfile(null);
+    session.push([...events, chunk("!")]);
+    const detected = session.snapshot();
+    expect(detected.profile).toBe("openai-compatible");
+    expect(detected.profileOverride).toBeNull();
+    expect(detected.channels.content).toBe("Hello!");
+  });
 });

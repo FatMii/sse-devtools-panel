@@ -1,5 +1,11 @@
 import type { SseEvent } from "../types";
-import { detectAiProfile, type AiProfile, type AiProfileResult } from "../ai-profile";
+import {
+  detectAiProfile,
+  type AiProfile,
+  type AiProfileResult,
+  type AiVendorHint,
+  type MergeableAiProfile,
+} from "../ai-profile";
 import type { AiConversation, MergeChannelsResult } from "./types";
 import {
   createOpenAiCompatibleMergeState,
@@ -54,6 +60,25 @@ type VendorState =
   | { profile: "qwen-web"; state: QwenWebMergeState }
   | { profile: "chatglm-web"; state: ChatglmWebMergeState }
   | { profile: "yuanbao-web"; state: YuanbaoWebMergeState };
+
+function vendorHintForProfile(profile: MergeableAiProfile): AiVendorHint {
+  switch (profile) {
+    case "openai-compatible":
+      return "openai";
+    case "deepseek-web":
+      return "deepseek";
+    case "doubao-web":
+      return "doubao-web";
+    case "kimi-web":
+      return "moonshot";
+    case "qwen-web":
+      return "qwen";
+    case "chatglm-web":
+      return "chatglm";
+    case "yuanbao-web":
+      return "yuanbao";
+  }
+}
 
 function emptyChannelsResult(): MergeChannelsResult {
   return {
@@ -139,6 +164,7 @@ export class ConversationMergeSession {
   private url: string | undefined;
   private detection: AiProfileResult | null = null;
   private profileLocked = false;
+  private forcedProfile: MergeableAiProfile | null = null;
   private vendor: VendorState | null = null;
 
   reset(): void {
@@ -146,6 +172,12 @@ export class ConversationMergeSession {
     this.detection = null;
     this.profileLocked = false;
     this.vendor = null;
+  }
+
+  /** Unlock and replay from the start on the next push. Null returns to detection. */
+  setForcedProfile(profile: MergeableAiProfile | null): void {
+    this.forcedProfile = profile;
+    this.reset();
   }
 
   /**
@@ -156,6 +188,21 @@ export class ConversationMergeSession {
 
     if (this.offset > events.length) {
       this.reset();
+    }
+
+    if (!this.profileLocked && this.forcedProfile) {
+      const profile = this.forcedProfile;
+      this.profileLocked = true;
+      this.detection = {
+        profile,
+        vendorHint: vendorHintForProfile(profile),
+        matched: true,
+        reasoningFields: [],
+      };
+      this.vendor = createVendor(profile);
+      if (this.vendor) pushVendor(this.vendor, events);
+      this.offset = events.length;
+      return;
     }
 
     if (!this.profileLocked) {
@@ -198,6 +245,7 @@ export class ConversationMergeSession {
       channels: merged.channels,
       endMeta: merged.endMeta,
       chunkCount: merged.chunkCount,
+      profileOverride: this.forcedProfile,
     };
   }
 
@@ -224,6 +272,19 @@ export function discardConversationMergeSession(requestId: string): void {
 
 export function clearConversationMergeSessions(): void {
   sessions.clear();
+}
+
+/** Replace the locked profile and replay every event with that merger. */
+export function overrideConversationProfile(
+  requestId: string,
+  profile: MergeableAiProfile | null,
+  events: ReadonlyArray<EventLike>,
+  url?: string,
+): AiConversation {
+  const session = getConversationMergeSession(requestId);
+  session.setForcedProfile(profile);
+  session.push(events, url);
+  return session.snapshot();
 }
 
 /** Ensure session is caught up with record.events and return a snapshot. */

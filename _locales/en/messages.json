@@ -113,6 +113,36 @@
   "conversationProfileLabel": {
     "message": "Profile"
   },
+  "conversationProfileOverride": {
+    "message": "Profile:"
+  },
+  "conversationProfileOverrideTitle": {
+    "message": "Re-merge this stream with the selected profile. Auto detects again."
+  },
+  "conversationProfileAuto": {
+    "message": "Auto"
+  },
+  "conversationProfileOpenai": {
+    "message": "OpenAI"
+  },
+  "conversationProfileDeepseek": {
+    "message": "DeepSeek"
+  },
+  "conversationProfileDoubao": {
+    "message": "Doubao"
+  },
+  "conversationProfileKimi": {
+    "message": "Kimi"
+  },
+  "conversationProfileQwen": {
+    "message": "Qwen"
+  },
+  "conversationProfileChatglm": {
+    "message": "ChatGLM"
+  },
+  "conversationProfileYuanbao": {
+    "message": "Yuanbao"
+  },
   "conversationVendorLabel": {
     "message": "Vendor"
   },

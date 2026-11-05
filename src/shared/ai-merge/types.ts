@@ -27,6 +27,8 @@ export interface AiConversation {
   endMeta: AiEndMeta;
   /** Number of events that contributed a parseable AI chunk. */
   chunkCount: number;
+  /** User-selected profile. Null means detection is in charge. */
+  profileOverride: AiProfile | null;
 }
 
 export type MergeChannelsResult = {

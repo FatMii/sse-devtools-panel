@@ -12,6 +12,19 @@ export type AiProfile =
   | "anthropic"
   | "generic";
 
+/** Profiles that have a conversation merge implementation. */
+export const MERGEABLE_AI_PROFILES = [
+  "openai-compatible",
+  "deepseek-web",
+  "doubao-web",
+  "kimi-web",
+  "qwen-web",
+  "chatglm-web",
+  "yuanbao-web",
+] as const satisfies readonly AiProfile[];
+
+export type MergeableAiProfile = (typeof MERGEABLE_AI_PROFILES)[number];
+
 /** Vendor guess from host / payload. */
 export type AiVendorHint =
   | "deepseek"

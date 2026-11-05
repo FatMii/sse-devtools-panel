@@ -9,8 +9,11 @@ export {
   getConversationMergeSession,
   discardConversationMergeSession,
   clearConversationMergeSessions,
+  overrideConversationProfile,
   syncConversationMergeSession,
 } from "./session";
+export { MERGEABLE_AI_PROFILES } from "../ai-profile";
+export type { MergeableAiProfile } from "../ai-profile";
 
 /**
  * Merge stream events into an AI conversation (one-shot via incremental session).

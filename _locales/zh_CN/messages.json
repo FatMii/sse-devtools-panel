@@ -113,6 +113,36 @@
   "conversationProfileLabel": {
     "message": "协议"
   },
+  "conversationProfileOverride": {
+    "message": "协议:"
+  },
+  "conversationProfileOverrideTitle": {
+    "message": "按所选协议重新合并整条流。自动会重新识别。"
+  },
+  "conversationProfileAuto": {
+    "message": "自动"
+  },
+  "conversationProfileOpenai": {
+    "message": "OpenAI"
+  },
+  "conversationProfileDeepseek": {
+    "message": "DeepSeek"
+  },
+  "conversationProfileDoubao": {
+    "message": "豆包"
+  },
+  "conversationProfileKimi": {
+    "message": "Kimi"
+  },
+  "conversationProfileQwen": {
+    "message": "千问"
+  },
+  "conversationProfileChatglm": {
+    "message": "智谱"
+  },
+  "conversationProfileYuanbao": {
+    "message": "元宝"
+  },
   "conversationVendorLabel": {
     "message": "厂商"
   },

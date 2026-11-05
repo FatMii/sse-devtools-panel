@@ -1,7 +1,9 @@
 import {
-  conversationHasContent,
+  MERGEABLE_AI_PROFILES,
+  overrideConversationProfile,
   syncConversationMergeSession,
   type AiConversation,
+  type MergeableAiProfile,
 } from "../../shared/ai-merge";
 import { t } from "../../shared/i18n";
 import type { StreamRecord } from "../../shared/types";
@@ -191,6 +193,7 @@ function buildConversationFingerprint(
 ): string {
   return [
     merged.profile,
+    merged.profileOverride ?? "auto",
     merged.channels.content.length,
     merged.channels.reasoning.length,
     merged.channels.tools.length,
@@ -505,6 +508,8 @@ function syncConversationChrome(shell: HTMLElement, merged: AiConversation): voi
     chipVendor.className = "meta-chip conversation-chip";
     chipVendor.textContent = `${t("conversationVendorLabel")}: ${merged.vendorHint}`;
     chips.append(chipProfile, chipVendor);
+    const profileSelect = shell.querySelector<HTMLSelectElement>(".conversation-profile-select");
+    if (profileSelect) profileSelect.value = merged.profileOverride ?? "";
     if (merged.endMeta.finishReason) {
       const chipFinish = document.createElement("span");
       chipFinish.className = "meta-chip conversation-chip";
@@ -525,6 +530,49 @@ function syncConversationChrome(shell: HTMLElement, merged: AiConversation): voi
   });
 }
 
+const PROFILE_LABEL_KEYS: Record<MergeableAiProfile, string> = {
+  "openai-compatible": "conversationProfileOpenai",
+  "deepseek-web": "conversationProfileDeepseek",
+  "doubao-web": "conversationProfileDoubao",
+  "kimi-web": "conversationProfileKimi",
+  "qwen-web": "conversationProfileQwen",
+  "chatglm-web": "conversationProfileChatglm",
+  "yuanbao-web": "conversationProfileYuanbao",
+};
+
+function createProfileOverride(
+  record: StreamRecord,
+  merged: AiConversation,
+  options: RenderConversationOptions,
+): HTMLLabelElement {
+  const label = document.createElement("label");
+  label.className = "conversation-profile-override";
+  const caption = document.createElement("span");
+  caption.textContent = t("conversationProfileOverride");
+  const select = document.createElement("select");
+  select.className = "conversation-profile-select";
+  select.title = t("conversationProfileOverrideTitle");
+  const auto = document.createElement("option");
+  auto.value = "";
+  auto.textContent = t("conversationProfileAuto");
+  select.append(auto);
+  for (const profile of MERGEABLE_AI_PROFILES) {
+    const option = document.createElement("option");
+    option.value = profile;
+    option.textContent = t(PROFILE_LABEL_KEYS[profile]);
+    select.append(option);
+  }
+  select.value = merged.profileOverride ?? "";
+  select.addEventListener("change", () => {
+    const next = select.value === "" ? null : (select.value as MergeableAiProfile);
+    overrideConversationProfile(record.requestId, next, record.events, record.url);
+    conversationFingerprint = "";
+    renderConversation(record, options);
+  });
+  label.append(caption, select);
+  return label;
+}
+
 function mountFullConversation(
   record: StreamRecord,
   merged: AiConversation,
@@ -543,7 +591,7 @@ function mountFullConversation(
 
   const chips = document.createElement("div");
   chips.className = "conversation-chips";
-  toolbar.append(chips);
+  toolbar.append(createProfileOverride(record, merged, options), chips);
 
   const copyBtn = document.createElement("button");
   copyBtn.type = "button";
@@ -643,19 +691,6 @@ export function renderConversation(
     return;
   }
   conversationFingerprint = fp;
-
-  if (!conversationHasContent(merged) && merged.profile === "generic") {
-    elConversationPlaceholder.hidden = false;
-    elConversationPlaceholder.textContent = t("conversationEmpty");
-    elConversationBody.hidden = true;
-    disposeVirtualTextPane();
-    elConversationBody.replaceChildren();
-    lastRenderedChannelText = "";
-    lastRenderedStreamId = null;
-    lastRenderedChannel = null;
-    lastToolsFingerprint = "";
-    return;
-  }
 
   const existingShell = elConversationBody.querySelector<HTMLElement>(".conversation-shell");
   const text = conversationChannelText(merged, conversationChannel);
