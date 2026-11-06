@@ -92,7 +92,7 @@ export interface UI {
     subtitle: string;
     footPrefix: string;
     footLink: string;
-    items: [FaqItem, FaqItem, FaqItem, FaqItem];
+    items: [FaqItem, FaqItem, FaqItem, FaqItem, FaqItem];
   };
   install: {
     title: string;

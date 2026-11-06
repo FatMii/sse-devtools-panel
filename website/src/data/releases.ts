@@ -17,12 +17,12 @@ export const releasePulse: {
       version: "1.4.0",
       date: "2026-11-05",
       title: {
-        zh: "可以改协议，异常更好找",
-        en: "Pick the protocol, find problems faster",
+        zh: "协议可改，卡顿可调，异常直达",
+        en: "Pick the protocol, set the stall, jump straight to anomalies",
       },
       blurb: {
-        zh: "对话页左上角的「协议:」是自动判断的，不对可以改，改完这条流会按新协议重新拼一遍。左侧每条流下面的「3 处异常」点开只看这一条，两次事件之间等太久也会列在里面。另外可以用快捷键。时序页工具条上的「卡顿」填的是两次事件隔多少毫秒算一次停顿，默认 400。",
-        en: "Profile: at the top left of Conversation is filled in automatically. If it is wrong, pick another one and that stream is assembled again. “3 anomalies” under a stream opens just that stream, and long waits between events show up there too. The panel also has keyboard shortcuts. On Timing, Stall is how many milliseconds between two events counts as a pause, 400 by default.",
+        zh: "对话页的协议可以手动指定，改完这条流立即按新协议重拼；时序页的卡顿阈值（默认 400 毫秒）决定多长的间隔算一次停顿，异常扫描与它同口径；出问题的流在侧栏多一行「N 处异常」，点开只列这一条。快捷键也补齐了：? 看全表，P 暂停刷新，1–5 切换五个标签。",
+        en: "Pick the protocol on Conversation yourself and the stream is re-merged with it; the stall threshold on Timing (400 ms unless you change it) sets what counts as a pause and drives the anomaly scan; and a stream with problems carries an “N anomalies” row that opens just that stream. Shortcuts are in too: ? for the full list, P to pause the refresh, 1–5 for the five tabs.",
       },
     },
     {

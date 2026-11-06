@@ -12,6 +12,10 @@ const { locale } = Astro.props;
 const t = getTranslations(locale);
 const lang = locale === "zh" ? "zh" : "en";
 const latest = releasePulse.items[0]!;
+const latestSentences = latest.blurb[lang]
+  .split(lang === "zh" ? /(?<=[。！？])/ : /(?<=[.!?])\s+(?=[A-Z“"(])/)
+  .map((sentence) => sentence.trim())
+  .filter(Boolean);
 ---
 
 <section class="pulse" id="whats-new" aria-labelledby="pulse-title">
@@ -28,7 +32,11 @@ const latest = releasePulse.items[0]!;
       <time datetime={latest.date}>{formatReleaseDate(latest.date, lang)}</time>
     </div>
     <h3>{latest.title[lang]}</h3>
-    <p>{latest.blurb[lang]}</p>
+    <p>
+      {latestSentences.map((sentence) => (
+        <span>{sentence}</span>
+      ))}
+    </p>
     <div class="pulse-latest-actions">
       <a class="button primary" href={site.urls.changelog} target="_blank" rel="noreferrer"
         >{t.pulse.changelogCta}</a

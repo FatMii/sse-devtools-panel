@@ -1024,7 +1024,10 @@ img[data-zoomable] {
   margin: 10px 0 0;
   color: var(--text-soft);
   line-height: 1.65;
-  max-width: 60ch;
+}
+
+.pulse-latest > p > span {
+  display: block;
 }
 
 .pulse-latest-actions {
