@@ -17,12 +17,12 @@ export const releasePulse: {
       version: "1.4.0",
       date: "2026-11-05",
       title: {
-        zh: "协议手选与异常入口",
-        en: "Profile override and anomaly entry",
+        zh: "可以改协议，异常更好找",
+        en: "Pick the protocol, find problems faster",
       },
       blurb: {
-        zh: "对话工具栏可改选协议并整段重合并。侧栏「N 处异常」打开该流的扫描，卡顿也算进去。另有快捷键，时序工具条可改卡顿阈值。",
-        en: "Pick a conversation profile and re-merge the stream. N anomalies under a stream opens that scan, including stalls. Shortcuts and a Timing stall threshold are included.",
+        zh: "对话页左上角的「协议:」是自动判断的，不对可以改，改完这条流会按新协议重新拼一遍。左侧每条流下面的「3 处异常」点开只看这一条，两次事件之间等太久也会列在里面。另外可以用快捷键。时序页工具条上的「卡顿」填的是两次事件隔多少毫秒算一次停顿，默认 400。",
+        en: "Profile: at the top left of Conversation is filled in automatically. If it is wrong, pick another one and that stream is assembled again. “3 anomalies” under a stream opens just that stream, and long waits between events show up there too. The panel also has keyboard shortcuts. On Timing, Stall is how many milliseconds between two events counts as a pause, 400 by default.",
       },
     },
     {
