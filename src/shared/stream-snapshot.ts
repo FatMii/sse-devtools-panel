@@ -43,6 +43,7 @@ export interface StreamExportBody {
   endedAt?: number;
   streamStatus: StreamStatus;
   errorMessage?: string;
+  closeNote?: string;
   closeReason?: StreamCloseReason;
   lastEventId?: string;
   reconnectCount?: number;
@@ -81,6 +82,7 @@ export function buildStreamExportPayload(record: StreamRecord): StreamExportPayl
       endedAt: record.endedAt,
       streamStatus: record.streamStatus,
       errorMessage: record.errorMessage,
+      closeNote: record.closeNote,
       closeReason: record.closeReason,
       lastEventId: record.lastEventId,
       reconnectCount: record.reconnectCount,
@@ -109,7 +111,7 @@ function isStreamKind(value: unknown): value is StreamKind {
 }
 
 function isStreamStatus(value: unknown): value is StreamStatus {
-  return value === "streaming" || value === "done" || value === "error";
+  return value === "streaming" || value === "done" || value === "aborted" || value === "error";
 }
 
 function normalizeMetrics(raw: unknown): StreamMetrics | undefined {
@@ -205,6 +207,7 @@ function normalizeStreamBody(body: Record<string, unknown>): StreamExportBody {
     endedAt: typeof body.endedAt === "number" ? body.endedAt : undefined,
     streamStatus: body.streamStatus === "streaming" ? "done" : body.streamStatus,
     errorMessage: typeof body.errorMessage === "string" ? body.errorMessage : undefined,
+    closeNote: typeof body.closeNote === "string" ? body.closeNote : undefined,
     closeReason: isStreamCloseReason(body.closeReason) ? body.closeReason : undefined,
     lastEventId: typeof body.lastEventId === "string" ? body.lastEventId : undefined,
     reconnectCount: typeof body.reconnectCount === "number" ? body.reconnectCount : undefined,
@@ -271,6 +274,7 @@ export function streamRecordFromExport(
     endedAt: body.endedAt,
     streamStatus: body.streamStatus === "streaming" ? "done" : body.streamStatus,
     errorMessage: body.errorMessage,
+    closeNote: body.closeNote,
     closeReason: body.closeReason,
     lastEventId: body.lastEventId,
     reconnectCount: body.reconnectCount,

@@ -300,6 +300,16 @@ select {
   background: var(--text-faint);
 }
 
+.stream-status.aborted,
+.status.aborted {
+  color: var(--warning);
+}
+
+.stream-status.aborted i,
+.status.aborted i {
+  background: var(--warning);
+}
+
 .stream-status.error,
 .status.error {
   color: var(--danger);

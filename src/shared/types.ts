@@ -3,7 +3,7 @@ export const MESSAGE_SOURCE = "eventstream" as const;
 /** chrome.runtime Port name between DevTools panel and service worker. */
 export const PANEL_PORT = "eventstream-panel" as const;
 
-export type StreamStatus = "streaming" | "done" | "error";
+export type StreamStatus = "streaming" | "done" | "aborted" | "error";
 
 /** How the page opened the streaming request. */
 export type StreamTransport = "fetch" | "eventsource" | "xhr";
@@ -121,7 +121,10 @@ export interface StreamRecord {
   startedAt: number;
   endedAt?: number;
   streamStatus: StreamStatus;
+  /** Real failure text only; client-initiated aborts never land here. */
   errorMessage?: string;
+  /** Neutral explanation of how the stream ended (e.g. abort after a terminal event). */
+  closeNote?: string;
   closeReason?: StreamCloseReason;
   /** Latest SSE `id` / EventSource `lastEventId` observed. */
   lastEventId?: string;

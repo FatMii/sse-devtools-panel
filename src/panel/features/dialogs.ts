@@ -66,6 +66,7 @@ export function showStatsDialog(): void {
   const eventCount = items.reduce((sum, s) => sum + s.events.length, 0);
   const streaming = items.filter((s) => s.streamStatus === "streaming").length;
   const done = items.filter((s) => s.streamStatus === "done").length;
+  const aborted = items.filter((s) => s.streamStatus === "aborted").length;
   const error = items.filter((s) => s.streamStatus === "error").length;
   const durations = items
     .filter((s) => typeof s.endedAt === "number")
@@ -82,6 +83,7 @@ export function showStatsDialog(): void {
     <div class="stats-row"><span>${escapeHtml(t("statsEventCount"))}</span><strong>${eventCount}</strong></div>
     <div class="stats-row"><span>${escapeHtml(t("statsStreamingCount"))}</span><strong>${streaming}</strong></div>
     <div class="stats-row"><span>${escapeHtml(t("statsDoneCount"))}</span><strong>${done}</strong></div>
+    <div class="stats-row"><span>${escapeHtml(t("statsAbortedCount"))}</span><strong>${aborted}</strong></div>
     <div class="stats-row"><span>${escapeHtml(t("statsErrorCount"))}</span><strong>${error}</strong></div>
     <div class="stats-row"><span>${escapeHtml(t("statsAvgDuration"))}</span><strong>${
       avgMs == null ? "—" : escapeHtml(formatDuration(avgMs))

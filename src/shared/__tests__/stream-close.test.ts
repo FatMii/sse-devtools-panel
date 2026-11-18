@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
   classifyHttpStatus,
   classifyThrownError,
+  hasTerminalEvent,
   isStreamCloseReason,
+  isTerminalEventData,
   latestEventIdFromEvents,
   normalizeReconnectMarks,
 } from "../stream-close";
@@ -40,5 +42,31 @@ describe("stream-close", () => {
     assert(marks?.length === 2, "reconnect marks");
     assert(marks[0].lastEventId === "a", "reconnect id");
     assert(marks[1].lastEventId === undefined, "reconnect id optional");
+  });
+
+  it("detects terminal markers in stream payloads", () => {
+    assert(isTerminalEventData("[DONE]"), "openai done sentinel");
+    assert(isTerminalEventData("  [done]  "), "sentinel is trimmed/case-insensitive");
+    assert(isTerminalEventData('{"type":"finished","status":"completed"}'), "type=finished");
+    assert(isTerminalEventData('{"status":"finished"}'), "status=finished");
+    assert(isTerminalEventData('{"event":"done"}'), "event=done");
+    assert(isTerminalEventData('{"choices":[{"finish_reason":"stop"}]}'), "finish_reason");
+
+    assert(!isTerminalEventData('{"type":"content","content":"hi"}'), "content chunk");
+    assert(!isTerminalEventData('{"status":"running"}'), "running status");
+    assert(!isTerminalEventData("not json"), "plain text");
+    assert(!isTerminalEventData(""), "empty payload");
+    assert(!isTerminalEventData("[1,2,3]"), "array payload");
+  });
+
+  it("looks only at the tail when deciding whether a stream finished", () => {
+    const events = [
+      { data: "[DONE]" },
+      ...Array.from({ length: 10 }, (_, i) => ({ data: `{"seq":${i}}` })),
+    ];
+    assert(!hasTerminalEvent(events), "terminal marker out of lookback window");
+    assert(hasTerminalEvent(events, 11), "lookback window covers the marker");
+    assert(hasTerminalEvent([{ data: '{"type":"content"}' }, { data: "[DONE]" }]), "tail marker");
+    assert(!hasTerminalEvent([]), "no events");
   });
 });

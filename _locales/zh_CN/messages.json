@@ -548,6 +548,9 @@
   "statsErrorCount": {
     "message": "错误"
   },
+  "statsAbortedCount": {
+    "message": "已中止"
+  },
   "statsAvgDuration": {
     "message": "平均耗时"
   },
@@ -935,6 +938,9 @@
   "statusError": {
     "message": "错误"
   },
+  "statusAborted": {
+    "message": "已中止"
+  },
   "eventsCount": {
     "message": "$COUNT$ 个事件",
     "placeholders": {
@@ -967,6 +973,12 @@
   },
   "badgeAbort": {
     "message": "中止"
+  },
+  "closeNoteAbortAfterTerminal": {
+    "message": "服务端已发送结束事件，客户端随后主动断开"
+  },
+  "closeNoteAbortNoReason": {
+    "message": "客户端主动调用 AbortController.abort()（未指定原因）"
   },
   "metaReconnects": {
     "message": "重连：$COUNT$",
@@ -1101,6 +1113,9 @@
   },
   "requestErrorMessage": {
     "message": "错误信息"
+  },
+  "requestCloseNote": {
+    "message": "说明"
   },
   "requestLastEventId": {
     "message": "最近事件 ID"
@@ -1309,6 +1324,9 @@
   },
   "statusErrorShort": {
     "message": "错误"
+  },
+  "statusAbortedShort": {
+    "message": "中止"
   },
   "optionsTitle": {
     "message": "SSE DevTools Panel 选项"

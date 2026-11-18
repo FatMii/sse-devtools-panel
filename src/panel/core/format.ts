@@ -92,6 +92,8 @@ export function statusLabel(status: StreamRecord["streamStatus"]): string {
       return t("statusStreaming");
     case "done":
       return t("statusDone");
+    case "aborted":
+      return t("statusAborted");
     case "error":
       return t("statusError");
     default:
@@ -133,9 +135,23 @@ export function streamStatusShort(status: StreamRecord["streamStatus"]): string 
       return t("statusLive");
     case "done":
       return t("statusDoneShort");
+    case "aborted":
+      return t("statusAbortedShort");
     case "error":
       return t("statusErrorShort");
     default:
       return statusLabel(status);
   }
+}
+
+/**
+ * Chrome reports `abort()` without a reason as "signal is aborted without reason".
+ * Surface it as a human-readable note instead of a scary-looking error string.
+ */
+export function describeAbortMessage(message: string): string {
+  const text = message.trim();
+  if (!text) return t("closeNoteAbortNoReason");
+  if (/signal is aborted without reason/i.test(text)) return t("closeNoteAbortNoReason");
+  if (/^(AbortError|DOMException)/i.test(text)) return t("closeNoteAbortNoReason");
+  return text;
 }

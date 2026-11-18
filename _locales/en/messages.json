@@ -548,6 +548,9 @@
   "statsErrorCount": {
     "message": "Error"
   },
+  "statsAbortedCount": {
+    "message": "Aborted"
+  },
   "statsAvgDuration": {
     "message": "Avg duration"
   },
@@ -935,6 +938,9 @@
   "statusError": {
     "message": "error"
   },
+  "statusAborted": {
+    "message": "aborted"
+  },
   "eventsCount": {
     "message": "$COUNT$ events",
     "placeholders": {
@@ -967,6 +973,12 @@
   },
   "badgeAbort": {
     "message": "abort"
+  },
+  "closeNoteAbortAfterTerminal": {
+    "message": "Server already sent a terminal event; the client closed the connection afterwards"
+  },
+  "closeNoteAbortNoReason": {
+    "message": "Client called AbortController.abort() without a reason"
   },
   "metaReconnects": {
     "message": "Reconnects: $COUNT$",
@@ -1101,6 +1113,9 @@
   },
   "requestErrorMessage": {
     "message": "Error message"
+  },
+  "requestCloseNote": {
+    "message": "Note"
   },
   "requestLastEventId": {
     "message": "Last-Event-ID"
@@ -1309,6 +1324,9 @@
   },
   "statusErrorShort": {
     "message": "ERROR"
+  },
+  "statusAbortedShort": {
+    "message": "ABORTED"
   },
   "optionsTitle": {
     "message": "SSE DevTools Panel Options"

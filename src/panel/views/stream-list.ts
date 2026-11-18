@@ -38,6 +38,7 @@ export function streamItemFingerprint(s: StreamRecord): string {
     s.method,
     s.url,
     s.closeReason ?? "",
+    s.closeNote ?? "",
     String(s.reconnectCount ?? 0),
     s.lastEventId ?? "",
     s.errorMessage ?? "",

@@ -30,7 +30,7 @@ import {
 } from "../shared/theme";
 import { initTimingStall, onTimingStallChange } from "../shared/timing-stall";
 import { stampReceivedAt } from "../shared/event-stamp";
-import { latestEventIdFromEvents } from "../shared/stream-close";
+import { hasTerminalEvent, latestEventIdFromEvents } from "../shared/stream-close";
 import { SseParser, type ParsedSseEvent } from "../shared/sse-parser";
 import { NdjsonParser } from "../shared/ndjson-parser";
 import { ConnectJsonParser } from "../shared/connect-json-parser";
@@ -95,7 +95,13 @@ import {
   elResizer,
   elEvents,
 } from "./core/dom";
-import { escapeHtml, formatDuration, formatTime, closeReasonLabel } from "./core/format";
+import {
+  closeReasonLabel,
+  describeAbortMessage,
+  escapeHtml,
+  formatDuration,
+  formatTime,
+} from "./core/format";
 import { computeStreamMetrics } from "./features/stream-metrics";
 import {
   clearStreamAnomalyCaches,
@@ -405,8 +411,21 @@ function onEnd(payload: StreamEndPayload): void {
 function onError(payload: StreamErrorPayload): void {
   const record = state.streams.get(payload.requestId);
   if (!record) return;
-  record.streamStatus = "error";
-  record.errorMessage = payload.message;
+
+  if (payload.closeReason === "abort") {
+    // A client-side abort is not a failure: the page called AbortController.abort().
+    // If the server already sent a terminal event, treat it as a normal finish.
+    const terminalSeen = hasTerminalEvent(record.events);
+    record.streamStatus = terminalSeen ? "done" : "aborted";
+    record.closeNote = terminalSeen
+      ? t("closeNoteAbortAfterTerminal")
+      : describeAbortMessage(payload.message);
+    record.errorMessage = undefined;
+  } else {
+    record.streamStatus = "error";
+    record.errorMessage = payload.message;
+    record.closeNote = undefined;
+  }
   record.closeReason = payload.closeReason ?? "error";
   record.endedAt = payload.endedAt;
   record.metrics = computeStreamMetrics(record);
@@ -492,6 +511,13 @@ function renderStreamMeta(record: StreamRecord | undefined): void {
     bits.push(
       `<span class="meta-chip ${record.closeReason === "abort" ? "warn" : "error"}">${escapeHtml(
         closeReasonLabel(record.closeReason),
+      )}</span>`,
+    );
+  }
+  if (record.closeNote) {
+    bits.push(
+      `<span class="meta-chip warn" title="${escapeHtml(record.closeNote)}">${escapeHtml(
+        record.closeNote,
       )}</span>`,
     );
   }

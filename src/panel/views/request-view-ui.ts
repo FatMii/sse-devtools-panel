@@ -8,7 +8,7 @@ import {
 } from "../../shared/request-view";
 import type { StreamRecord } from "../../shared/types";
 import { elRequestBody, elRequestPlaceholder } from "../core/dom";
-import { closeReasonLabel, escapeHtml, transportLabel } from "../core/format";
+import { closeReasonLabel, describeAbortMessage, escapeHtml, transportLabel } from "../core/format";
 import { createJsonTree, tryParseJsonValue } from "../widgets/json-tree";
 import { createCollapsibleSourceText } from "./request-source-fold";
 
@@ -84,6 +84,11 @@ export function buildRequestViewFingerprint(record: StreamRecord): string {
     record.requestPayloadPreview ?? "",
     JSON.stringify(record.requestHeaders ?? null),
     JSON.stringify(record.responseHeaders ?? null),
+    record.closeReason ?? "",
+    record.closeNote ?? "",
+    record.errorMessage ?? "",
+    record.lastEventId ?? "",
+    String(record.reconnectCount ?? 0),
   ].join("\n");
 }
 
@@ -181,7 +186,15 @@ export function renderRequest(
   if (record.closeReason) {
     appendKvRow(generalKv, t("requestCloseReason"), closeReasonLabel(record.closeReason));
   }
-  if (record.errorMessage) {
+  const closeNote =
+    record.closeNote ??
+    (record.closeReason === "abort" && record.errorMessage
+      ? describeAbortMessage(record.errorMessage)
+      : undefined);
+  if (closeNote) {
+    appendKvRow(generalKv, t("requestCloseNote"), closeNote);
+  }
+  if (record.errorMessage && record.closeReason !== "abort") {
     appendKvRow(generalKv, t("requestErrorMessage"), record.errorMessage);
   }
   if (record.lastEventId) {

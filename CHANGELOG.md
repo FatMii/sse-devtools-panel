@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 GitHub Releases mirror these notes and attach the offline zip for each tag:
 https://github.com/FatMii/sse-devtools-panel/releases
 
+## [Unreleased]
+
+### Fixed
+
+- **Client aborts are no longer reported as errors.** When the page calls `AbortController.abort()` (Chrome's
+  `signal is aborted without reason`), the stream now gets its own amber **aborted** status instead of a red error
+  dot and `错误：…` chip. Aborts that arrive after a terminal event (`[DONE]`, `finish`/`finished`/`completed`,
+  OpenAI `finish_reason`) are downgraded to **done** with a note that the server had already finished.
+- Request tab shows the abort as a readable note (说明) instead of an "Error message" row; archives/imports keep
+  the new `closeNote` and `aborted` status.
+
 ## [1.4.0] — 2026-11-05
 
 ### Added

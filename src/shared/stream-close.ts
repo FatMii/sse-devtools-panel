@@ -64,6 +64,69 @@ export function normalizeReconnectMarks(raw: unknown): StreamReconnectMark[] | u
   return out.length > 0 ? out : undefined;
 }
 
+/** Payload words that mean "the producer says this stream is over". */
+const TERMINAL_WORDS = new Set([
+  "done",
+  "end",
+  "ended",
+  "finish",
+  "finished",
+  "complete",
+  "completed",
+  "close",
+  "closed",
+  "success",
+]);
+
+const TERMINAL_TYPE_KEYS = ["type", "event", "status", "state", "phase"] as const;
+
+/**
+ * True when one parsed payload is a terminal marker: `[DONE]`, a JSON object whose
+ * type/event/status/state/phase is terminal, or an OpenAI chunk carrying finish_reason.
+ */
+export function isTerminalEventData(data: string): boolean {
+  const trimmed = data.trim();
+  if (!trimmed) return false;
+  if (/^\[DONE\]$/i.test(trimmed)) return true;
+  if (trimmed.length > 4096) return false;
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(trimmed);
+  } catch {
+    return false;
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return false;
+
+  const row = parsed as Record<string, unknown>;
+  for (const key of TERMINAL_TYPE_KEYS) {
+    const value = row[key];
+    if (typeof value === "string" && TERMINAL_WORDS.has(value.trim().toLowerCase())) return true;
+  }
+
+  const choices = row.choices;
+  if (Array.isArray(choices) && choices.length > 0) {
+    const first = choices[0];
+    if (first && typeof first === "object") {
+      const finishReason = (first as Record<string, unknown>).finish_reason;
+      if (typeof finishReason === "string" && finishReason.trim()) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * True when the last few events already carry a terminal marker.
+ * Used to tell "client hung up after the server finished" from a real abort.
+ */
+export function hasTerminalEvent(events: Array<{ data?: string }>, lookback = 5): boolean {
+  const from = Math.max(0, events.length - Math.max(1, lookback));
+  for (let i = events.length - 1; i >= from; i -= 1) {
+    if (isTerminalEventData(events[i]?.data ?? "")) return true;
+  }
+  return false;
+}
+
 /** Derive lastEventId from parsed SSE events (latest non-empty id). */
 export function latestEventIdFromEvents(events: Array<{ id?: string }>): string | undefined {
   for (let i = events.length - 1; i >= 0; i -= 1) {
