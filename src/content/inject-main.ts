@@ -1,3 +1,4 @@
+import { createStreamIdFactory } from "../shared/stream-id";
 import { MESSAGE_SOURCE, type PageToExtensionMessage } from "../shared/types";
 import { patchEventSource } from "./inject/patch-eventsource";
 import { patchFetch } from "./inject/patch-fetch";
@@ -25,8 +26,9 @@ if (!window[STATE_KEY]) {
 }
 
 function install(): void {
-  let seq = 0;
-  const nextId = () => `sse-${Date.now()}-${++seq}`;
+  // Each frame runs its own copy of this script; the factory's per-frame token
+  // keeps request ids unique across the page and all of its iframes.
+  const nextId = createStreamIdFactory();
 
   const post = (msg: PageToExtensionMessage): void => {
     window.postMessage(msg, "*");
