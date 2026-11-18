@@ -12,10 +12,9 @@ const { locale } = Astro.props;
 const t = getTranslations(locale);
 const lang = locale === "zh" ? "zh" : "en";
 const latest = releasePulse.items[0]!;
-const latestSentences = latest.blurb[lang]
-  .split(lang === "zh" ? /(?<=[。！？])/ : /(?<=[.!?])\s+(?=[A-Z“"(])/)
-  .map((sentence) => sentence.trim())
-  .filter(Boolean);
+const latestPoints = latest.points?.map((point) => point[lang]) ?? [
+  latest.blurb[lang],
+];
 ---
 
 <section class="pulse" id="whats-new" aria-labelledby="pulse-title">
@@ -32,11 +31,11 @@ const latestSentences = latest.blurb[lang]
       <time datetime={latest.date}>{formatReleaseDate(latest.date, lang)}</time>
     </div>
     <h3>{latest.title[lang]}</h3>
-    <p>
-      {latestSentences.map((sentence) => (
-        <span>{sentence}</span>
+    <ol class="pulse-points pulse-latest-points">
+      {latestPoints.map((point) => (
+        <li>{point}</li>
       ))}
-    </p>
+    </ol>
     <div class="pulse-latest-actions">
       <a class="button primary" href={site.urls.changelog} target="_blank" rel="noreferrer"
         >{t.pulse.changelogCta}</a
@@ -62,7 +61,11 @@ const latestSentences = latest.blurb[lang]
               <time datetime={item.date}>{formatReleaseDate(item.date, lang)}</time>
             </div>
             <span class="pulse-item-title">{item.title[lang]}</span>
-            <span class="pulse-item-blurb">{item.blurb[lang]}</span>
+            <ol class="pulse-points pulse-item-points">
+              {item.points.map((point) => (
+                <li>{point[lang]}</li>
+              ))}
+            </ol>
           </a>
         </li>
       ))

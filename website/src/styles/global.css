@@ -428,7 +428,7 @@ code {
 }
 
 .lead {
-  max-width: 32em;
+  max-width: 36em;
   margin: 18px 0 0;
   color: var(--text-soft);
   font-size: clamp(1.02rem, 1.5vw, 1.125rem);
@@ -683,7 +683,7 @@ code {
   color: var(--text-soft);
   font-size: 15px;
   line-height: 1.65;
-  max-width: 42ch;
+  max-width: 30em;
 }
 
 .feature-grid {
@@ -1020,14 +1020,47 @@ img[data-zoomable] {
   letter-spacing: -0.03em;
 }
 
-.pulse-latest > p {
-  margin: 10px 0 0;
+.pulse-points {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: pulse-point;
+  display: grid;
+  gap: 8px;
+}
+
+.pulse-points li {
+  display: grid;
+  grid-template-columns: 1.5em minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
   color: var(--text-soft);
   line-height: 1.65;
 }
 
-.pulse-latest > p > span {
-  display: block;
+.pulse-points li::before {
+  counter-increment: pulse-point;
+  content: counter(pulse-point);
+  color: var(--accent);
+  font: 600 13px/1.65 var(--font-mono);
+}
+
+.pulse-latest-points {
+  margin-top: 14px;
+}
+
+.pulse-item-points {
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+.pulse-item-points li {
+  line-height: 1.55;
+}
+
+.pulse-item-points li::before {
+  font-size: 12px;
+  line-height: 1.55;
 }
 
 .pulse-latest-actions {
@@ -1084,12 +1117,6 @@ img[data-zoomable] {
   font-weight: 650;
   line-height: 1.35;
   letter-spacing: -0.02em;
-}
-
-.pulse-item-blurb {
-  color: var(--text-soft);
-  font-size: 0.9rem;
-  line-height: 1.55;
 }
 
 .pulse-item time {
