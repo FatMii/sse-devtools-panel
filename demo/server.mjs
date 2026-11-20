@@ -367,6 +367,22 @@ const DEMO_HTML = `<!DOCTYPE html>
       animation: rise 0.55s var(--ease) 0.26s both;
     }
 
+    .frame-slot:empty {
+      display: none;
+    }
+
+    .frame-slot {
+      width: 100%;
+    }
+
+    .frame-slot iframe {
+      width: 100%;
+      height: 200px;
+      border: 1px dashed var(--line-strong);
+      border-radius: 12px;
+      background: var(--surface);
+    }
+
     @keyframes rise {
       from { opacity: 0; transform: translateY(14px); }
       to { opacity: 1; transform: none; }
@@ -405,7 +421,9 @@ const DEMO_HTML = `<!DOCTYPE html>
       <button id="go-json-ct" class="ghost" type="button">Fetch SSE (JSON CT)</button>
       <button id="go-es-on" class="ghost" type="button">EventSource onping</button>
       <button id="go10k" class="ghost" type="button">Fetch SSE 10k</button>
+      <button id="go-iframe" class="ghost" type="button">Fetch SSE in iframe</button>
     </div>
+    <div class="frame-slot" id="frameSlot"></div>
     <div class="status" id="status" aria-live="polite">
       <span class="dot" aria-hidden="true"></span>
       <span id="statusText">Idle</span>
@@ -529,6 +547,52 @@ const DEMO_HTML = `<!DOCTYPE html>
       });
     document.getElementById("go-es-on").onclick = () => runEventSource("/api/stream-custom", true);
     document.getElementById("go10k").onclick = () => runFetchStream("/api/stream?count=10000", "Fetch SSE 10k");
+    document.getElementById("go-iframe").onclick = () => {
+      const slot = document.getElementById("frameSlot");
+      slot.textContent = "";
+      const frame = document.createElement("iframe");
+      frame.src = "/iframe-child";
+      frame.title = "SSE started inside an iframe";
+      slot.appendChild(frame);
+      statusText.textContent = "Iframe · start the stream inside the child frame";
+    };
+  </script>
+</body>
+</html>`;
+
+// Child document for the iframe demo: the stream is opened inside this frame,
+// which is what the `all_frames` content script has to capture.
+const IFRAME_CHILD_HTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SSE DevTools · iframe child</title>
+  <style>
+    body { margin: 0; padding: 0.9rem; font: 500 0.85rem/1.5 "Plus Jakarta Sans", "Segoe UI", sans-serif; color: #0f172a; background: #fdfefe; }
+    button { appearance: none; border: 1px solid #b8c7d8; border-radius: 8px; padding: 0.5rem 0.9rem; background: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+    pre { margin: 0.7rem 0 0; max-height: 105px; overflow: auto; font: 400 0.75rem/1.45 "IBM Plex Mono", Consolas, monospace; color: #475569; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <button id="go" type="button">Start SSE inside this iframe</button>
+  <pre id="out"></pre>
+  <script>
+    const out = document.getElementById("out");
+    document.getElementById("go").onclick = async () => {
+      out.textContent = "";
+      let n = 0;
+      const res = await fetch("/api/stream");
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const text = decoder.decode(value, { stream: true });
+        n += 1;
+        out.textContent = "chunks=" + n + "\\n" + text.slice(-400);
+      }
+      out.textContent = out.textContent + "\\n--- done ---";
+    };
   </script>
 </body>
 </html>`;
@@ -539,6 +603,12 @@ const server = http.createServer((req, res) => {
   if (url.pathname === "/" || url.pathname === "/index.html") {
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
     res.end(DEMO_HTML);
+    return;
+  }
+
+  if (url.pathname === "/iframe-child") {
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+    res.end(IFRAME_CHILD_HTML);
     return;
   }
 
@@ -582,4 +652,5 @@ server.listen(PORT, () => {
   console.log(`  SSE:    http://127.0.0.1:${PORT}/api/stream`);
   console.log(`  NDJSON: http://127.0.0.1:${PORT}/api/ndjson`);
   console.log(`  10k:    http://127.0.0.1:${PORT}/api/stream?count=10000`);
+  console.log(`  iframe: open the demo, then "Fetch SSE in iframe"`);
 });

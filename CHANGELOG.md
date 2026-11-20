@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 GitHub Releases mirror these notes and attach the offline zip for each tag:
 https://github.com/FatMii/sse-devtools-panel/releases
 
+## [Unreleased]
+
+### Added
+
+- **Streams opened inside iframes are captured.** Both content scripts now run in every frame (`all_frames`,
+  including `about:blank` / `srcdoc` frames through `match_about_blank` and `match_origin_as_fallback`), and
+  request ids carry a per-frame token so the page and its frames no longer collide. Try it with
+  **Fetch SSE in iframe** on `pnpm demo`.
+
 ## [1.4.0] — 2026-11-05
 
 ### Added
