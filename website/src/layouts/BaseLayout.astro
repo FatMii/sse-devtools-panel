@@ -15,9 +15,10 @@ interface Props {
   title?: string;
   description?: string;
   keywords?: string;
+  alternates?: { zh: URL; en: URL };
 }
 
-const { locale, title, description, keywords } = Astro.props;
+const { locale, title, description, keywords, alternates } = Astro.props;
 
 const pageTitle = title ?? site.name;
 const pageDescription = description ?? site.tagline;
@@ -32,8 +33,8 @@ const favicon = assetUrl("favicon.png", base);
 const favicon48 = assetUrl("favicon-48.png", base);
 const favicon32 = assetUrl("favicon-32.png", base);
 const appleTouchIcon = assetUrl("apple-touch-icon.png", base);
-const zhUrl = new URL(localeHomePath("zh", base), Astro.site);
-const enUrl = new URL(localeHomePath("en", base), Astro.site);
+const zhUrl = alternates?.zh ?? new URL(localeHomePath("zh", base), Astro.site);
+const enUrl = alternates?.en ?? new URL(localeHomePath("en", base), Astro.site);
 const ogLocale = locale === "zh" ? "zh_CN" : "en_US";
 const ogLocaleAlt = locale === "zh" ? "en_US" : "zh_CN";
 
@@ -58,13 +59,14 @@ const jsonLd = {
       url: site.urls.website,
       downloadUrl: site.urls.chromeStore,
       softwareVersion: site.version,
+      isAccessibleForFree: true,
       offers: {
         "@type": "Offer",
         price: "0",
-        priceCurrency: "USD",
+        priceCurrency: "CNY",
       },
       author: {
-        "@type": "Organization",
+        "@type": "Person",
         name: "FatMii",
         url: site.urls.github,
       },

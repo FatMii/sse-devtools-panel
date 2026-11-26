@@ -24,6 +24,8 @@
     "release:zip": "node scripts/package-release.mjs",
     "website:dev": "node scripts/sync-website-screenshots.mjs && pnpm --dir website dev",
     "website:build": "pnpm build && pnpm release:zip && node scripts/build-website.mjs",
+    "website:build:cn": "node scripts/build-website-cn.mjs",
+    "website:serve-ip": "node scripts/serve-website-ip.mjs",
     "website:preview": "pnpm --dir website preview",
     "website:encode-media": "pnpm --dir website exec node ../scripts/encode-website-media.mjs"
   },

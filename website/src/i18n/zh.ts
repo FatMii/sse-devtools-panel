@@ -209,5 +209,45 @@ export const zh: UI = {
   footer: {
     readme: "README",
     changelog: "Changelog",
+    privacy: "隐私说明",
+    personal: "本站为个人开源项目，扩展免费使用，非经营性网站。",
+  },
+  privacy: {
+    title: "隐私说明",
+    updated: "最近更新：2026-08-08",
+    sections: [
+      {
+        heading: "这个扩展处理哪些数据",
+        paragraphs: [
+          "SSE DevTools Panel 是运行在 Chrome 和 Edge 开发者工具里的扩展，用来调试 SSE、EventSource、NDJSON 和 Connect+JSON 流。下面这些数据只留在你的电脑上，除非你自己导出或复制走。扩展没有上传这些数据的服务器。",
+        ],
+      },
+      {
+        heading: "面板里看得到的内容",
+        paragraphs: [
+          "网页已经收到的流式响应正文，以及能取到的请求信息：URL、方法、状态码、Content-Type、传输方式。",
+          "请求头和响应头会按常见敏感名称自动打码，例如 Authorization、Cookie，以及名称里带 token、api-key 的头。打码只覆盖已知命名方式，自定义头不一定都能识别。",
+          "请求体只保留文本预览。特别大的内容会在界面里截断并标明。由这些内容生成的事件、时序、原文和对话合并视图也只在本地面板里展示。",
+        ],
+      },
+      {
+        heading: "存在这台设备上的内容",
+        paragraphs: [
+          "语言和界面偏好存在浏览器的 chrome.storage 里。只有你主动保存流时，才会把这份记录写入本地 IndexedDB，其中可以包含上面列出的同类内容。",
+          "导出 JSON、CSV、fixture 或复制时，会带上当前这条记录里已有的内容。分享到工单或发给别人之前，请自行去掉密钥。",
+        ],
+      },
+      {
+        heading: "扩展不会做的事",
+        paragraphs: [
+          "没有收集扩展数据的后端，不出售用户数据，也不把这些数据用于广告。扩展不从登录表单里故意抓取密码；请求体预览只反映页面自己发出的流式请求。",
+          "storage 权限用于本机偏好和可选的本地存档。主机权限用于观察你正在调试的页面上的流式响应，数据在本地面板展示，只有你选择保存或导出时才会离开当前这条记录。",
+        ],
+      },
+      {
+        heading: "联系",
+        paragraphs: ["隐私问题请到 GitHub 仓库提交 issue。国内访问 GitHub 可能较慢或不稳定。"],
+      },
+    ],
   },
 };

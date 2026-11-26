@@ -1,0 +1,57 @@
+---
+import type { Locale } from "../i18n";
+import { assetUrl, getTranslations, localeHomePath } from "../i18n";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteFooter from "./SiteFooter.astro";
+import { site } from "../data/site";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = getTranslations(locale);
+const base = import.meta.env.BASE_URL;
+const home = localeHomePath(locale, base);
+const otherLocale: Locale = locale === "zh" ? "en" : "zh";
+const otherPrivacy = assetUrl(otherLocale === "zh" ? "privacy/" : "en/privacy/", base);
+const zhUrl = new URL(assetUrl("privacy/", base), Astro.site);
+const enUrl = new URL(assetUrl("en/privacy/", base), Astro.site);
+---
+
+<BaseLayout
+  locale={locale}
+  title={`${t.privacy.title} — ${site.name}`}
+  description={t.privacy.sections[0].paragraphs[0]}
+  alternates={{ zh: zhUrl, en: enUrl }}
+>
+  <nav class="site-nav">
+    <a class="brand" href={home}>
+      <span class="brand-mark">SSE</span>
+      <span class="brand-name">{site.name}</span>
+    </a>
+    <div class="nav-actions">
+      <a class="lang-switch" href={otherPrivacy}>{t.nav.switchLang}</a>
+      <a class="install-mini" href={`${home}#install`}>
+        <span class="install-mini-full">{t.nav.install}</span>
+        <span class="install-mini-short">{locale === "zh" ? "安装" : "Install"}</span>
+      </a>
+    </div>
+  </nav>
+  <main class="legal-page">
+    <h1>{t.privacy.title}</h1>
+    <p class="legal-updated">{t.privacy.updated}</p>
+    {
+      t.privacy.sections.map((section) => (
+        <section>
+          <h2>{section.heading}</h2>
+          {section.paragraphs.map((paragraph) => (
+            <p>{paragraph}</p>
+          ))}
+        </section>
+      ))
+    }
+    <p><a href={site.urls.github} target="_blank" rel="noreferrer">GitHub</a></p>
+  </main>
+  <SiteFooter locale={locale} />
+</BaseLayout>

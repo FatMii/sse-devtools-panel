@@ -210,5 +210,45 @@ export const en: UI = {
   footer: {
     readme: "README",
     changelog: "Changelog",
+    privacy: "Privacy",
+    personal: "Personal open-source project. The extension is free; this site is non-commercial.",
+  },
+  privacy: {
+    title: "Privacy",
+    updated: "Last updated: 2026-08-08",
+    sections: [
+      {
+        heading: "Data the extension handles",
+        paragraphs: [
+          "SSE DevTools Panel is a Chromium DevTools extension (Chrome and Edge) for debugging SSE, EventSource, NDJSON, and Connect+JSON streams. The data below stays on your machine unless you export or copy it. The extension does not upload it to a server.",
+        ],
+      },
+      {
+        heading: "Shown in the local panel",
+        paragraphs: [
+          "Streaming response bodies the page already received, plus request metadata when available: URL, method, status, Content-Type, and transport.",
+          "Request and response headers are redacted for common sensitive names such as Authorization, Cookie, and headers matching token or api-key. Redaction follows known names and may miss custom headers.",
+          "Request bodies are kept as a text preview. Very large payloads are truncated in the UI and marked. Events, timing, raw text, and conversation views are derived locally from that same data.",
+        ],
+      },
+      {
+        heading: "Stored on the device",
+        paragraphs: [
+          "Language and UI preferences use chrome.storage. A stream is written to local IndexedDB only when you explicitly save it, and that archive can include the same kinds of data listed above.",
+          "JSON, CSV, fixture export, and Copy include whatever is in the selected record. Remove secrets before sharing an export.",
+        ],
+      },
+      {
+        heading: "What it does not do",
+        paragraphs: [
+          "There is no backend that collects extension data. Data is not sold and is not used for advertising. The extension does not intentionally read passwords from login forms; request previews only reflect streaming fetch, XHR, or EventSource calls the page already sends.",
+          "The storage permission keeps preferences and optional local archives on the device. Host access is required to observe streams on the page you are debugging. Captured data stays in the local panel unless you save or export it.",
+        ],
+      },
+      {
+        heading: "Contact",
+        paragraphs: ["For privacy questions, open an issue on the GitHub repository."],
+      },
+    ],
   },
 };

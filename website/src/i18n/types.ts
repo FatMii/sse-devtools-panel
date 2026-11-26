@@ -114,5 +114,12 @@ export interface UI {
   footer: {
     readme: string;
     changelog: string;
+    privacy: string;
+    personal: string;
+  };
+  privacy: {
+    title: string;
+    updated: string;
+    sections: { heading: string; paragraphs: string[] }[];
   };
 }
