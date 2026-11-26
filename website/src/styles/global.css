@@ -361,7 +361,8 @@ code {
 }
 
 .hero-copy {
-  max-width: 40rem;
+  /* YaHei is wider than Noto Sans SC; 40rem wraps the Chinese title on large screens. */
+  max-width: 43rem;
   margin: 0 auto;
   text-align: center;
 }
